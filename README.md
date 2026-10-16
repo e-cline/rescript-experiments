@@ -1,4 +1,4 @@
-# res-experiments
+# rescript-experiments
 
 Some experiments written in [ReScript](https://rescript-lang.org/). Mostly written with Claude.
 

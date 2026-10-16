@@ -1,5 +1,5 @@
 {
-  "name": "@e-cline/res-experiments",
+  "name": "@e-cline/rescript-experiments",
   "dependencies": [
     "@e-cline/res_common",
     "@e-cline/res_priority_queue",

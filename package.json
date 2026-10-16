@@ -1,17 +1,17 @@
 {
-  "name": "@e-cline/res-experiments",
+  "name": "@e-cline/rescript-experiments",
   "version": "0.0.1",
   "private": true,
   "description": "Experiments authoring packages in ReScript",
-  "homepage": "https://github.com/e-cline/res-experiments",
+  "homepage": "https://github.com/e-cline/rescript-experiments",
   "bugs": {
-    "url": "https://github.com/e-cline/res-experiments/issues"
+    "url": "https://github.com/e-cline/rescript-experiments/issues"
   },
   "license": "MIT",
   "author": "Ethan Cline",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/e-cline/res-experiments.git"
+    "url": "git+https://github.com/e-cline/rescript-experiments.git"
   },
   "type": "module",
   "scripts": {

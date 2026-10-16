@@ -7,7 +7,7 @@ Shared support for the test files in this package. Not itself a test (no `_test`
 A Lehmer/Park-Miller LCG PRNG, seeded for reproducibility -- a flaky,
 hard-to-reproduce test failure is worse than a fixed seed that always
 exercises the same (still effectively arbitrary) sequence. The same as
-`res_b_tree/tests/TestSupport.res`'s `Random` module (plus `nextFloat`) --
+`res_trees/tests/TestSupport.res`'s `Random` module (plus `nextFloat`) --
 duplicated rather than shared across packages, since this is test-only
 infrastructure, not something either package's public API should depend on the
 other for.

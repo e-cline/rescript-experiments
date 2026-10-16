@@ -30,8 +30,6 @@
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
-    "@e-cline/res_b_tree": "workspace:*",
-    "@e-cline/res_b_tree_benchmarks": "workspace:*",
     "@e-cline/res_benchmarking": "workspace:*",
     "@e-cline/res_common": "workspace:*",
     "@e-cline/res_http_server_example": "workspace:*",
@@ -44,6 +42,8 @@
     "@e-cline/res_signals": "workspace:*",
     "@e-cline/res_signals_benchmarks": "workspace:*",
     "@e-cline/res_tree_shaking_example": "workspace:*",
+    "@e-cline/res_trees": "workspace:*",
+    "@e-cline/res_trees_benchmarks": "workspace:*",
     "@types/node": "catalog:",
     "rescript": "catalog:",
     "tsx": "catalog:",

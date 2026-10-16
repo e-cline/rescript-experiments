@@ -1,5 +1,5 @@
 /***
-Benchmarks for every sorted map in `res_b_tree`, and `Belt.Map` (an AVL tree, built from the same
+Benchmarks for every sorted map in `res_trees`, and `Belt.Map` (an AVL tree, built from the same
 comparator) as the standard to beat: the same operations on each, at 1,000, 10,000 and 100,000
 keys (see `SortedMapSuite.res` for what they are, and `SortedMaps.res` for the implementations).
 The run ends with a table of them side by side.
@@ -15,7 +15,7 @@ argument (see `Runner.main`) matches on a benchmark's own name, not its group's.
 */
 
 open ResBenchmarking
-module BTree = ResBTree.BTree
+module BTree = ResTrees.BTree
 
 let comparison = Comparison.make(
   ~implementations=SortedMaps.all->Array.map(implementation => {

@@ -36,7 +36,7 @@ let make: (
   ~name: string=?,
   ~historyLength: int=?,
   ~id: Belt.Id.comparable<'k, 'id>,
-  ResBTree.BTree.t<'k, 'v, 'id>,
+  ResTrees.BTree.t<'k, 'v, 'id>,
 ) => t<'k, 'v, 'id>
 
 /**
@@ -53,7 +53,7 @@ let fromArray: (
 ) => t<'k, 'v, 'id>
 
 /** A read-only `Signal.t` view of this map's underlying tree. */
-let signal: t<'k, 'v, 'id> => ResSignals.Signal.t<ResBTree.BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>
+let signal: t<'k, 'v, 'id> => ResSignals.Signal.t<ResTrees.BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>
 
 /**
 A read-only `ComputedMap` view of this map -- what every derived-map method below is implemented in
@@ -65,7 +65,7 @@ let asComputedMap: t<'k, 'v, 'id> => ComputedMap.t<'k, 'v, 'id>
 The current tree, capturing this map's underlying signal as a dependency if called from within a
 `Computed`/effect.
 */
-let get: t<'k, 'v, 'id> => ResBTree.BTree.t<'k, 'v, 'id>
+let get: t<'k, 'v, 'id> => ResTrees.BTree.t<'k, 'v, 'id>
 
 /** The value stored under `key` in the current tree, if any. Captures a dependency, like `get`. */
 let getValue: (t<'k, 'v, 'id>, 'k) => option<'v>
@@ -86,7 +86,7 @@ let toArray: t<'k, 'v, 'id> => array<('k, 'v)>
 Sets the tree to the given one, and returns the resulting tree. A no-op if it's unchanged (by
 `===`). See `Atom.set`.
 */
-let set: (t<'k, 'v, 'id>, ResBTree.BTree.t<'k, 'v, 'id>) => ResBTree.BTree.t<'k, 'v, 'id>
+let set: (t<'k, 'v, 'id>, ResTrees.BTree.t<'k, 'v, 'id>) => ResTrees.BTree.t<'k, 'v, 'id>
 
 /**
 Updates the tree using the given function, e.g. `AtomMap.update(m, t => BTree.set(t, k, v))`, and
@@ -94,21 +94,21 @@ returns the resulting tree. A no-op if the function returns the very same tree. 
 */
 let update: (
   t<'k, 'v, 'id>,
-  ResBTree.BTree.t<'k, 'v, 'id> => ResBTree.BTree.t<'k, 'v, 'id>,
-) => ResBTree.BTree.t<'k, 'v, 'id>
+  ResTrees.BTree.t<'k, 'v, 'id> => ResTrees.BTree.t<'k, 'v, 'id>,
+) => ResTrees.BTree.t<'k, 'v, 'id>
 
 /**
 Sets a single key-value pair, and returns the resulting tree. A thin wrapper over `update` and
 `BTree.set`. Since `BTree.set` always builds a new tree, setting a key to the value it already has
 still counts as a change (with an empty diff), not a no-op.
 */
-let setValue: (t<'k, 'v, 'id>, 'k, 'v) => ResBTree.BTree.t<'k, 'v, 'id>
+let setValue: (t<'k, 'v, 'id>, 'k, 'v) => ResTrees.BTree.t<'k, 'v, 'id>
 
 /**
 Removes a single key, and returns the resulting tree. A no-op if `key` isn't present. A thin wrapper
 over `update` and `BTree.remove`.
 */
-let remove: (t<'k, 'v, 'id>, 'k) => ResBTree.BTree.t<'k, 'v, 'id>
+let remove: (t<'k, 'v, 'id>, 'k) => ResTrees.BTree.t<'k, 'v, 'id>
 
 /** See `ComputedMap.mapValues`. */
 let mapValues: (

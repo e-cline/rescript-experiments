@@ -1,9 +1,9 @@
-# @e-cline/res_b_tree_benchmarks
+# @e-cline/res_trees_benchmarks
 
-Benchmarks for [`@e-cline/res_b_tree`](..), using [mitata](https://github.com/evanwashere/mitata)
+Benchmarks for [`@e-cline/res_trees`](..), using [mitata](https://github.com/evanwashere/mitata)
 through the bindings in [`tools/benchmarking`](../../../tools/benchmarking). Not published.
 
-It is a package of its own, rather than part of `res_b_tree`, so that the benchmarks measure a
+It is a package of its own, rather than part of `res_trees`, so that the benchmarks measure a
 production build: `vp build` bundles `src/Main.res`'s compiled output, together with the tree and
 ReScript runtime modules it imports, into one Terser-minified `dist/bench.js`, and that file is what
 runs.
@@ -190,5 +190,5 @@ diff (10 overwrites) n=10000  838.54 ns    1.17x  718.56 ns    1.00x  718.55 ns 
   optimizes it less well for each than if it saw one: which implementation runs first has moved some
   of these results by 10-20%. Run alone, each implementation is measured as if it were the only one,
   so judge one tree against another with `bench:record`.
-- The bundle reflects this package's Terser settings (see `vite.config.ts`). `res_b_tree` ships as
+- The bundle reflects this package's Terser settings (see `vite.config.ts`). `res_trees` ships as
   ReScript source, so a consumer's own bundler configuration decides what they actually run.

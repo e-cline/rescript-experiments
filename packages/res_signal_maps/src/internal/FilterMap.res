@@ -10,10 +10,10 @@ passes both before and after), or nothing at all (it fails the filter both befor
 */
 
 // See `AtomMap.res`'s own comment on these opens: `Signal`/`Computed` are
-// res_signals', `BTree` is res_b_tree's, each reached through its own
+// res_signals', `BTree` is res_trees's, each reached through its own
 // namespace.
 open ResSignals
-open ResBTree
+open ResTrees
 
 let buildFromScratch = (
   ~id: Belt.Id.comparable<'k, 'id>,

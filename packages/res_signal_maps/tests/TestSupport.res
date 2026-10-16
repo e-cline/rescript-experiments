@@ -3,11 +3,11 @@ Shared support for the test files in this package. Not itself a test (no `_test`
 `test.include` never picks it up).
 */
 
-open ResBTree
+open ResTrees
 
 /**
 Comparators for plain `int`/`string` keys -- duplicated from
-`res_b_tree/tests/TestSupport.res` rather than imported from it, matching
+`res_trees/tests/TestSupport.res` rather than imported from it, matching
 that package's own convention: this is test-only infrastructure, not
 something either package's real API should depend on the other for.
 */

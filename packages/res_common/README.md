@@ -21,7 +21,7 @@ them along with your own code.
 ## Layout
 
 Every module here is a top-level `src/*.res` + `.resi` pair (no `internal/` subdirectory -- unlike
-`res_b_tree`, nothing here is deep enough to need one), each independent of the others except where
+`res_trees`, nothing here is deep enough to need one), each independent of the others except where
 noted:
 
 - **`Env.res`** -- `isDev`/`isProd`, bound to `@e-cline/js_env`'s `IS_DEV`/`IS_PROD` constants via a
@@ -41,7 +41,7 @@ noted:
   idiom. See "Sequence" below.
 - **`tests/TestSupport.res`** (no `_test` suffix, so it isn't itself picked up as a test file) --
   shared test fixtures: a seeded Lehmer/Park-Miller PRNG, duplicated from
-  `res_b_tree/tests/TestSupport.res` rather than imported from it -- this is test-only
+  `res_trees/tests/TestSupport.res` rather than imported from it -- this is test-only
   infrastructure, not something either package's real API should depend on the other for.
 
 Like most ReScript libraries, this package has no `exports` map in its `package.json`: it ships its
@@ -50,15 +50,16 @@ be importable from wherever that project's `rescript.json` puts them.
 
 ## Belt usage
 
-Following `res_b_tree`'s established convention: reach for Belt directly wherever it already has a
+Following `res_trees`'s established convention: reach for Belt directly wherever it already has a
 direct equivalent, and only hand-write something where it doesn't.
 
 - **`Arrays`** exists specifically because Belt has no chunk/zip/partition/groupBy/unique/flatten,
-  and no immutable positional-splice helpers either (the same gap `res_b_tree/internal/ArrayOps.res`
-  filled privately for its own use -- see "Why `Arrays` doesn't just import `res_b_tree`'s
-  `ArrayOps`" below). Where Belt does have a direct equivalent, this uses it instead of reinventing
-  it: `zip`/ `zipWith` delegate to `Belt.Array.zip`/`Belt.Array.zipBy`, and `groupBy`/`uniqueBy` are
-  built on `Belt.Map.String`/`Belt.MutableSet.String` rather than a hand-rolled hash table.
+  and no immutable positional-splice helpers either (the same gap
+  `res_trees/src/btree/internal/ArrayOps.res` filled privately for its own use -- see "Why `Arrays`
+  doesn't just import `res_trees`'s `ArrayOps`" below). Where Belt does have a direct equivalent,
+  this uses it instead of reinventing it: `zip`/ `zipWith` delegate to
+  `Belt.Array.zip`/`Belt.Array.zipBy`, and `groupBy`/`uniqueBy` are built on
+  `Belt.Map.String`/`Belt.MutableSet.String` rather than a hand-rolled hash table.
 - **Belt has no string/structural hashing implementation and no lazy sequence type**
   (`Belt.Id.hashable(~hash, ~eq)` is a _slot_ you plug a hash function into, not an implementation)
   -- confirmed by checking `@rescript/runtime`'s actual module list before writing
@@ -68,18 +69,18 @@ direct equivalent, and only hand-write something where it doesn't.
   `@rescript/runtime` doesn't expose that particular operation, unlike the bitwise ops it does cover
   (`Int.bitwiseXor`/`Int.bitwiseOr`/`Int.shiftLeft`/`Int.shiftRightUnsigned`, all used directly).
 
-### Why `Arrays` doesn't just import `res_b_tree`'s `ArrayOps`
+### Why `Arrays` doesn't just import `res_trees`'s `ArrayOps`
 
-`res_b_tree/internal/ArrayOps.res` already has benchmarked, working versions of
+`res_trees/src/btree/internal/ArrayOps.res` already has benchmarked, working versions of
 `insertAt`/`removeAt`/ `replaceAt`. `Arrays.res` here duplicates that shape (and the same
 `Belt.Array.makeUninitializedUnsafe`
 
 - hand-written-loop technique, for the same benchmarked reason -- see `ArrayOps.res`'s own header
-  comment) rather than making `res_common` a dependency of `res_b_tree` (or vice versa) to share it.
-  `res_b_tree` already shipped, was already benchmarked as a whole, and its `ArrayOps` is
-  `internal/` -- not exposed, not meant to be a public dependency target -- so reaching into it from
-  a new package would mean either exposing it publicly (churn to an already-finished package, for a
-  benefit that amounts to a few dozen lines) or depending on `res_b_tree` as a whole just to get its
+  comment) rather than making `res_common` a dependency of `res_trees` (or vice versa) to share it.
+  `res_trees` already shipped, was already benchmarked as a whole, and its `ArrayOps` is `internal/`
+  -- not exposed, not meant to be a public dependency target -- so reaching into it from a new
+  package would mean either exposing it publicly (churn to an already-finished package, for a
+  benefit that amounts to a few dozen lines) or depending on `res_trees` as a whole just to get its
   array helpers. Duplicating a small, self-contained, already-correct algorithm is the smaller
   footprint here.
 
@@ -131,7 +132,7 @@ outside this module can mutate the array a `t` wraps out from under it, whether 
 reference to what was passed in or by mutating what came out.
 
 If an access pattern actually needs real structural sharing on large collections (most of a big
-array unchanged across edits, e.g. an undo history over a large dataset), that's what `res_b_tree`'s
+array unchanged across edits, e.g. an undo history over a large dataset), that's what `res_trees`'s
 `BTree` is for -- `ImmutableArray` intentionally doesn't try to be that.
 
 ## Sequence
@@ -162,7 +163,7 @@ plain value (not an already-lazy `t<'a>`) needed the same treatment spelled out 
 ## Testing
 
 Every test is written directly in ReScript with
-[`rescript-vitest`](https://github.com/cometkim/rescript-vitest), following `res_b_tree`'s
+[`rescript-vitest`](https://github.com/cometkim/rescript-vitest), following `res_trees`'s
 conventions: ordinary unit tests plus edge cases (empty/single-element inputs, out-of-bounds access,
 custom comparators), and where an independent reference exists, an oracle-style stress test that
 cross-checks a long randomized sequence of operations against it (a plain mutable array for

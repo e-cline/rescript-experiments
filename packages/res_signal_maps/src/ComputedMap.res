@@ -1,10 +1,10 @@
 // See `ComputedMap.resi` for what this module does; this file is the implementation.
 
 // See `AtomMap.res`'s own comment on these opens: `Signal`/`Computed` are
-// res_signals', `BTree` is res_b_tree's, each reached through its own
+// res_signals', `BTree` is res_trees's, each reached through its own
 // namespace.
 open ResSignals
-open ResBTree
+open ResTrees
 
 type t<'k, 'v, 'id> = {
   signal: Signal.t<BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,

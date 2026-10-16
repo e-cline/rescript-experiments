@@ -1,4 +1,4 @@
-# @e-cline/res_b_tree
+# @e-cline/res_trees
 
 Persistent sorted maps for ReScript, each with a mutable wrapper, positional access, and a diff that
 skips whatever two trees share.
@@ -18,33 +18,35 @@ slower on diffs a few edits apart. `ChunkTree` sits between the two: level on `g
 on `getAt`, 1.5-5x on `reduce`, `toArray` and `keysArray`, level or faster on diffs, and 1.1-1.8x
 slower to insert or remove. Iterating with a callback (`forEach`) is within 1.2x across all three,
 and is the measurement most moved by whatever else has run in the process, by up to 3x. The numbers
-are in [`benchmarks/README.md`](benchmarks/README.md#results), and the details in each tree's
-section below and in [`src/avl/README.md`](src/avl/README.md) and
-[`src/chunk/README.md`](src/chunk/README.md).
+are in [`benchmarks/README.md`](benchmarks/README.md#results), and the details in each tree's own
+README: [`src/btree/`](src/btree/README.md), [`src/avl/`](src/avl/README.md) and
+[`src/chunk/`](src/chunk/README.md).
 
 ## Installing
 
 Needs ReScript 12.
 
 ```bash
-npm install @e-cline/res_b_tree rescript @rescript/runtime
+npm install @e-cline/res_trees rescript @rescript/runtime
 ```
 
-Add `"@e-cline/res_b_tree"` to the `dependencies` in your `rescript.json`. The modules are under the
-`ResBTree` namespace (`ResBTree.BTree.make`), and your project's `rescript build` compiles them
+Add `"@e-cline/res_trees"` to the `dependencies` in your `rescript.json`. The modules are under the
+`ResTrees` namespace (`ResTrees.BTree.make`), and your project's `rescript build` compiles them
 along with your own code.
 
 ## Layout
 
 The public modules are `BTree`, `AvlTree` and `ChunkTree`, each with a `Mutable` wrapper, and each
-with a `.resi` that keeps its tree type opaque. Everything else is implementation, in an `internal/`
-directory next to the tree it belongs to:
+with a `.resi` that keeps its tree type opaque. Each tree has a directory of its own under `src/`,
+with a README, and everything else is implementation, in an `internal/` directory next to the tree
+it belongs to:
 
-- **`src/`**: `BTree` and `MutableBTree`, with `internal/` holding the B+tree's node (`Node`),
-  insertion (`Insert`), removal (`Delete`), diff (`Diff`) and array helpers (`ArrayOps`).
+- **[`src/btree/`](src/btree)**: `BTree` and `MutableBTree`, with `internal/` holding the B+tree's
+  node (`Node`), insertion (`Insert`), removal (`Delete`), diff (`Diff`) and array helpers
+  (`ArrayOps`).
 - **[`src/avl/`](src/avl)**: `AvlTree` and `MutableAvlTree`.
 - **[`src/chunk/`](src/chunk)**: `ChunkTree` and `MutableChunkTree`.
-- **`tests/`**: the tests for each tree, plus
+- **`tests/`**: the tests for each tree, in `btree/`, `avl/` and `chunk/` to match `src/`, plus
   [`tests/candidates/Conformance.res`](tests/candidates/Conformance.res), one suite that any tree
   with `AvlTree`'s interface can be run through.
 - **[`benchmarks/`](benchmarks)**: a separate, unpublished package measuring each tree against
@@ -55,31 +57,14 @@ the persistent operation and store the result back. That gets in-place-feeling m
 second implementation, and its `snapshot()` is `O(1)` and always safe to hold onto, so "what changed
 since then" is `diff` on two snapshots.
 
-## How `BTree` works
+## How each tree works
 
-A B+tree: entries live in the leaves, and internal nodes hold separator keys for routing.
-`maxNodeSize` (default 32, clamped to 4-256) is the most keys a leaf, or children an internal node,
-may hold, and every node but the root holds at least half that. `internal/Node.res` describes the
-node in full; the choices that matter for speed are:
-
-- **One record shape for leaves and internal nodes**, `{keys, values, links}`, with the fields a
-  kind doesn't use holding one shared empty array. Every field read in a descent sees one hidden
-  class, and "is this a leaf" is a pointer comparison.
-- **Leaves are two parallel arrays**, `keys` and `values`, rather than an array of `(key, value)`
-  tuples: no extra object to load per key while searching, and no new tuple per write.
-- **An internal node's children and their cumulative entry counts share one array**:
-  `links = [child0, count0, child1, count1, ...]`. An edit below a node copies exactly that one
-  array, and reuses `keys` unless a child split, borrowed or merged. `getAt` binary-searches the
-  counts; `indexOf` reads one count per level.
-- **An overwrite copies a leaf's `values` and keeps its `keys`**, and setting a key to the value it
-  already holds returns the same tree.
-- **Every node array is packed and exactly sized**, built with `slice`, `toSpliced` or `concat`. An
-  array made with `new Array(n)` and then filled stays `HOLEY` in V8 for good, and so does every
-  array copied from it.
-- **A search within a node halves down to 8 keys, then scans** with an early exit.
-- **No function on a hot path has a single caller**, because the minifier inlines such a function as
-  an immediately-called function expression, which V8 was seen to allocate a closure for on every
-  call. See the note at the top of `BTree.res`.
+- **[`BTree`](src/btree/README.md)**: a B+tree with up to `maxNodeSize` (default 32) keys per leaf,
+  whose leaves are parallel key and value arrays and whose internal nodes keep children and
+  cumulative counts in one array, so an edit copies one array per level.
+- **[`AvlTree`](src/avl/README.md)**: one entry per node, height-balanced, with each node caching
+  its subtree's size for positional access.
+- **[`ChunkTree`](src/chunk/README.md)**: `AvlTree`'s spine with small sorted arrays as leaves.
 
 ## Diffing
 
@@ -108,36 +93,6 @@ for it.)
 `sharedSubtreeCount(left, right)` runs the same walk and counts the skips, so that a test can
 confirm two related trees really do share structure, not just that the diff happens to come out
 right.
-
-## Performance history
-
-`BTree` was rebuilt in October 2026. The first version was written to be easy to read: leaves of
-`(key, value)` tuples, three arrays per internal node (`separators`, `children`, `sizes`), arrays
-filled after `new Array(n)`, and a diff that walked every entry of each changed leaf through an
-allocating cursor. A survey of other persistent sorted maps and of V8's handling of objects and
-arrays pointed at each of those, and a redesigned B+tree was prototyped and measured against the AVL
-tree through a shared harness before replacing it. Against the AVL tree, before and after (1,000 /
-10,000 / 100,000 entries):
-
-| Operation                   | Before             | After              |
-| --------------------------- | ------------------ | ------------------ |
-| `get`                       | 2.27 / 1.41 / 1.14 | 0.86 / 0.49 / 0.52 |
-| `set`, overwriting          | 1.56 / 1.16 / 1.10 | 1.01 / 0.83 / 0.81 |
-| `remove`                    | 1.76 / 1.38 / 1.25 | 1.90 / 1.26 / 1.12 |
-| `reduce`                    | 2.34 / 1.27 / 0.98 | 0.22 / 0.13 / 0.11 |
-| `indexOf`                   | 2.49 / 1.96 / 1.68 | 0.79 / 0.45 / 0.48 |
-| `diff`, 10 overwrites apart | 21 / 24 / 32       | 1.16 / 1.23 / 1.34 |
-| `diff`, 30 mixed edits      | 9.8 / 14 / 18      | 0.81 / 1.36 / 1.23 |
-
-Times are relative to `AvlTree` (below 1.00 is faster), each the mean of two runs with the
-measurement order swapped. Against `Belt.Map`, measured the same way at the time, `BTree` was
-1.3-2.1x faster on `get`, 6-11x faster on `reduce` and 1.6-3x on `toArray`, within 1.3x either way
-on `set`, and 1.1-2.1x slower on `remove`. Current measurements, each benchmark run alone, are in
-[`benchmarks/README.md`](benchmarks/README.md#results).
-
-Removal is the operation the redesign didn't improve. Rebalancing is the textbook kind (a node below
-half full borrows one entry from a sibling or merges with it), so emptying a small tree rebalances
-on most removals; a lower minimum would help, and hasn't been tried.
 
 ## Belt usage
 
@@ -187,6 +142,4 @@ The strongest coverage comes from three techniques, used for all three trees:
   inside: where nodes split, borrow and merge, which arrays an edit reuses, and diffs across runs of
   shared nodes.
 
-`BTree_test.res`, `BTree_diff_test.res` and `MutableBTree_test.res` test the public API directly,
-including the `maxNodeSize` clamp boundaries and that two bindings to one `MutableBTree.t` observe
-each other's writes.
+Each tree's README lists the tests specific to it.

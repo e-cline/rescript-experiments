@@ -1,7 +1,7 @@
 {
   "name": "@e-cline/res_signal_maps",
   "version": "0.0.1",
-  "description": "A signal-backed sorted map (AtomMap/ComputedMap), authored in ReScript, with diff-driven incremental updates -- built on @e-cline/res_signals and @e-cline/res_b_tree.",
+  "description": "A signal-backed sorted map (AtomMap/ComputedMap), authored in ReScript, with diff-driven incremental updates -- built on @e-cline/res_signals and @e-cline/res_trees.",
   "keywords": [
     "incremental",
     "reactive",
@@ -31,8 +31,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@e-cline/res_b_tree": "workspace:^",
-    "@e-cline/res_signals": "workspace:^"
+    "@e-cline/res_signals": "workspace:^",
+    "@e-cline/res_trees": "workspace:^"
   },
   "devDependencies": {
     "@rescript/runtime": "catalog:",

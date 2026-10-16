@@ -42,11 +42,11 @@ unordered) -- confirmed by checking `@rescript/runtime`'s actual module list bef
 rather than assuming.
 
 Both queues identify priority via `Belt.Id.comparable` (built with `Belt.Id.MakeComparable`) rather
-than a bare `(a, a) => int` function -- the same mechanism `Belt.Set`/`Belt.Map`/`res_b_tree`'s
+than a bare `(a, a) => int` function -- the same mechanism `Belt.Set`/`Belt.Map`/`res_trees`'s
 `BTree` use, and for the same reason: a compile-time guarantee that two comparator-carrying values
 were built from an equivalent comparator, rather than a runtime hope. `make`/`fromArray` both need
 the `(type a, id, ...)` locally-abstract-type idiom to unpack the first-class module -- see the root
-`RESCRIPT.md`'s gap #11, or `res_b_tree/README.md`'s "Belt usage" section, for the mechanics.
+`RESCRIPT.md`'s gap #11, or `res_trees/README.md`'s "Belt usage" section, for the mechanics.
 
 ## The two queues
 
@@ -68,7 +68,7 @@ cost real complexity for a structure whose whole point is being simple to read.
 ## Testing
 
 Every test is written directly in ReScript with
-[`rescript-vitest`](https://github.com/cometkim/rescript-vitest), following `res_b_tree`'s
+[`rescript-vitest`](https://github.com/cometkim/rescript-vitest), following `res_trees`'s
 conventions: ordinary unit tests plus edge cases (empty/single-element queues, duplicate priorities,
 custom comparators), and for each queue an oracle-style stress test that cross-checks a long
 randomized sequence of enqueues and dequeues against a sorted array rather than hand-computed

@@ -3,8 +3,8 @@
   "dependencies": [
     "@e-cline/res_common",
     "@e-cline/res_priority_queue",
-    "@e-cline/res_b_tree",
-    "@e-cline/res_b_tree_benchmarks",
+    "@e-cline/res_trees",
+    "@e-cline/res_trees_benchmarks",
     "@e-cline/res_benchmarking",
     "@e-cline/res_signals",
     "@e-cline/res_signals_benchmarks",

@@ -6,8 +6,8 @@ height-balanced binary spine, with small sorted arrays as leaves instead of sing
 position about twice as fast. `MutableChunkTree` is the same mutable wrapper the other two trees
 have.
 
-Both live in the B-tree's package, under the same namespace: `ResBTree.ChunkTree` and
-`ResBTree.MutableChunkTree`.
+Both live in `res_trees` alongside the other trees, under the same namespace: `ResTrees.ChunkTree`
+and `ResTrees.MutableChunkTree`.
 
 ```rescript
 module IntCmp = Belt.Id.MakeComparable({
@@ -15,12 +15,12 @@ module IntCmp = Belt.Id.MakeComparable({
   let cmp = (a: int, b: int) => a - b
 })
 
-let before = ResBTree.ChunkTree.fromArray(~id=module(IntCmp), [(1, "one"), (2, "two"), (3, "three")])
-let after = before->ResBTree.ChunkTree.set(2, "TWO")->ResBTree.ChunkTree.remove(3)
+let before = ResTrees.ChunkTree.fromArray(~id=module(IntCmp), [(1, "one"), (2, "two"), (3, "three")])
+let after = before->ResTrees.ChunkTree.set(2, "TWO")->ResTrees.ChunkTree.remove(3)
 
-ResBTree.ChunkTree.getAt(after, 1) // Some((2, "TWO"))
+ResTrees.ChunkTree.getAt(after, 1) // Some((2, "TWO"))
 
-ResBTree.ChunkTree.diff(
+ResTrees.ChunkTree.diff(
   before,
   after,
   ~onlyLeft=(key, _) => Console.log2("removed", key), // removed 3

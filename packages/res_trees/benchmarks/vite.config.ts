@@ -4,7 +4,7 @@ import {rootResTask} from '../../../vite.config.base.ts';
 
 // The benchmarks are ReScript (`src/Main.res`), compiled to `src/Main.res.jsx`
 // by the root-level `res` task (see ../../../vite.config.ts). `build` bundles
-// that output, together with the `@e-cline/res_b_tree` and `@rescript/runtime`
+// that output, together with the `@e-cline/res_trees` and `@rescript/runtime`
 // modules it imports, into a single minified `dist/bench.js`, so that the
 // `bench` task measures the code a consumer's production build would run
 // rather than the compiler's unbundled output.

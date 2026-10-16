@@ -15,7 +15,7 @@
   "dependencies": [
     "@e-cline/res_signal_maps",
     "@e-cline/res_signals",
-    "@e-cline/res_b_tree",
+    "@e-cline/res_trees",
     "@e-cline/res_benchmarking"
   ]
 }

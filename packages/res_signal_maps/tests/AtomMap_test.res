@@ -134,7 +134,7 @@ describe("AtomMap.map (rekey)", () => {
     // underlying atom writes/diff epochs), this lets the remove-then-add
     // ordering within one batch resolve the swap cleanly. See
     // `internal/Rekey.res`'s own comment on per-batch processing.
-    AtomMap.update(m, tree => tree->ResBTree.BTree.set(1, "y")->ResBTree.BTree.set(2, "x"))->ignore
+    AtomMap.update(m, tree => tree->ResTrees.BTree.set(1, "y")->ResTrees.BTree.set(2, "x"))->ignore
     t->expect(ComputedMap.toArray(byValue))->Expect.toEqual([("x", 2), ("y", 1)])
   })
 

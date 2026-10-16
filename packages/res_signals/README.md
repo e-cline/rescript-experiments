@@ -4,7 +4,7 @@ A ReScript-authored reactive signals library -- `Atom`, `Computed`, `EffectBase`
 `Untracked` -- with a small, dependency-free core: dependency tracking, lazy recomputation, and
 diff-driven history. This package has no dependencies of its own; see
 [`@e-cline/res_signal_maps`](../res_signal_maps) for `AtomMap`/`ComputedMap`, a sorted,
-signal-backed map built on top of it (and on [`@e-cline/res_b_tree`](../res_b_tree)) whose derived
+signal-backed map built on top of it (and on [`@e-cline/res_trees`](../res_trees)) whose derived
 views (`mapValues`, `filterMap`, `map`, `fold`, ...) update incrementally from a diff instead of
 recomputing from scratch on every change.
 

@@ -7,7 +7,7 @@ so this fills a genuine gap.
 
 Rather than by a bare comparator function, priority is identified via
 `Belt.Id.comparable` -- the same mechanism `Belt.Set`/`Belt.Map` use, and the
-convention `res_b_tree` established for this repo's other collections. The comparator
+convention `res_trees` established for this repo's other collections. The comparator
 follows the usual convention: negative means the first argument has *higher* priority
 than the second, zero means equal priority, positive means the second has higher
 priority. So an ordinary ascending comparator gives a min-heap (the smallest element is

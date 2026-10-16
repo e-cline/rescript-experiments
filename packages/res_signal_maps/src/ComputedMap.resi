@@ -29,7 +29,7 @@ Wraps an existing signal (and the comparator its tree uses) as a `ComputedMap` -
 written once.
 */
 let fromSignal: (
-  ResSignals.Signal.t<ResBTree.BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,
+  ResSignals.Signal.t<ResTrees.BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,
   Belt.Id.comparable<'k, 'id>,
 ) => t<'k, 'v, 'id>
 
@@ -40,7 +40,7 @@ let name: t<'k, 'v, 'id> => string
 The current tree, recomputing (or reusing a cached value) as needed, and capturing this map's
 underlying signal as a dependency if called from within a `Computed`/effect.
 */
-let get: t<'k, 'v, 'id> => ResBTree.BTree.t<'k, 'v, 'id>
+let get: t<'k, 'v, 'id> => ResTrees.BTree.t<'k, 'v, 'id>
 
 /** The value stored under `key` in the current tree, if any. Captures a dependency, like `get`. */
 let getValue: (t<'k, 'v, 'id>, 'k) => option<'v>

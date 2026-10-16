@@ -5,7 +5,7 @@ positional splicing, chunking/zipping/partitioning/grouping, and binary search.
 Belt has no positional-splice-on-an-immutable-array equivalent, and no
 chunk/zip/partition/groupBy/unique/flatten either, so everything here fills one of
 those gaps rather than wrapping something Belt already does. The
-positional-splice helpers are a public, reusable version of the ones `res_b_tree`'s internal
+positional-splice helpers are a public, reusable version of the ones `res_trees`'s internal
 `ArrayOps` wrote for its own private use.
 
 None of these functions mutate their input.

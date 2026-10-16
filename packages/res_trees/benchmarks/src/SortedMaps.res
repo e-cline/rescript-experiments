@@ -5,43 +5,43 @@ it (`vp run bench "^ChunkTree\."`).
 */
 
 module BTree: SortedMapSuite.S = {
-  type t<'k, 'v, 'id> = ResBTree.BTree.t<'k, 'v, 'id>
+  type t<'k, 'v, 'id> = ResTrees.BTree.t<'k, 'v, 'id>
   let name = "BTree"
   // At its default node size.
-  let make = (~id) => ResBTree.BTree.make(~id)
-  let fromArray = (~id, entries) => ResBTree.BTree.fromArray(~id, entries)
-  let get = ResBTree.BTree.get
-  let set = ResBTree.BTree.set
-  let remove = ResBTree.BTree.remove
-  let forEach = ResBTree.BTree.forEach
-  let reduce = ResBTree.BTree.reduce
-  let toArray = ResBTree.BTree.toArray
-  let keysArray = ResBTree.BTree.keysArray
-  let getAt = Some(ResBTree.BTree.getAt)
-  let indexOf = Some(ResBTree.BTree.indexOf)
-  let diff = Some((left, right, ~different) => ResBTree.BTree.diff(left, right, ~different))
+  let make = (~id) => ResTrees.BTree.make(~id)
+  let fromArray = (~id, entries) => ResTrees.BTree.fromArray(~id, entries)
+  let get = ResTrees.BTree.get
+  let set = ResTrees.BTree.set
+  let remove = ResTrees.BTree.remove
+  let forEach = ResTrees.BTree.forEach
+  let reduce = ResTrees.BTree.reduce
+  let toArray = ResTrees.BTree.toArray
+  let keysArray = ResTrees.BTree.keysArray
+  let getAt = Some(ResTrees.BTree.getAt)
+  let indexOf = Some(ResTrees.BTree.indexOf)
+  let diff = Some((left, right, ~different) => ResTrees.BTree.diff(left, right, ~different))
 }
 
 module AvlTree: SortedMapSuite.S = {
-  type t<'k, 'v, 'id> = ResBTree.AvlTree.t<'k, 'v, 'id>
+  type t<'k, 'v, 'id> = ResTrees.AvlTree.t<'k, 'v, 'id>
   let name = "AvlTree"
-  let make = ResBTree.AvlTree.make
-  let fromArray = ResBTree.AvlTree.fromArray
-  let get = ResBTree.AvlTree.get
-  let set = ResBTree.AvlTree.set
-  let remove = ResBTree.AvlTree.remove
-  let forEach = ResBTree.AvlTree.forEach
-  let reduce = ResBTree.AvlTree.reduce
-  let toArray = ResBTree.AvlTree.toArray
-  let keysArray = ResBTree.AvlTree.keysArray
-  let getAt = Some(ResBTree.AvlTree.getAt)
-  let indexOf = Some(ResBTree.AvlTree.indexOf)
-  let diff = Some((left, right, ~different) => ResBTree.AvlTree.diff(left, right, ~different))
+  let make = ResTrees.AvlTree.make
+  let fromArray = ResTrees.AvlTree.fromArray
+  let get = ResTrees.AvlTree.get
+  let set = ResTrees.AvlTree.set
+  let remove = ResTrees.AvlTree.remove
+  let forEach = ResTrees.AvlTree.forEach
+  let reduce = ResTrees.AvlTree.reduce
+  let toArray = ResTrees.AvlTree.toArray
+  let keysArray = ResTrees.AvlTree.keysArray
+  let getAt = Some(ResTrees.AvlTree.getAt)
+  let indexOf = Some(ResTrees.AvlTree.indexOf)
+  let diff = Some((left, right, ~different) => ResTrees.AvlTree.diff(left, right, ~different))
 }
 
 /** `ChunkTree` and its variants, all of which share its interface. */
 module Chunked = (
-  Tree: ResBTree.ChunkTree.S,
+  Tree: ResTrees.ChunkTree.S,
   Name: {
     let name: string
   },
@@ -64,7 +64,7 @@ module Chunked = (
 
 /** With its default leaves of up to 16 entries. */
 module ChunkTree = Chunked(
-  ResBTree.ChunkTree,
+  ResTrees.ChunkTree,
   {
     let name = "ChunkTree"
   },
@@ -72,7 +72,7 @@ module ChunkTree = Chunked(
 
 /** With leaves of up to 32 entries. */
 module ChunkTree32 = Chunked(
-  ResBTree.ChunkTree.Make({
+  ResTrees.ChunkTree.Make({
     let maxLeafSize = 32
   }),
   {

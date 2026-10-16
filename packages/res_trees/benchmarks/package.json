@@ -1,13 +1,13 @@
 {
-  "name": "@e-cline/res_b_tree_benchmarks",
+  "name": "@e-cline/res_trees_benchmarks",
   "version": "0.0.0",
   "private": true,
-  "description": "Benchmarks for @e-cline/res_b_tree, run against a Rolldown-bundled, Terser-minified build.",
+  "description": "Benchmarks for @e-cline/res_trees, run against a Rolldown-bundled, Terser-minified build.",
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@e-cline/res_b_tree": "workspace:*",
     "@e-cline/res_benchmarking": "workspace:*",
+    "@e-cline/res_trees": "workspace:*",
     "@rescript/runtime": "catalog:",
     "mitata": "catalog:"
   },

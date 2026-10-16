@@ -2,7 +2,7 @@
 
 A sorted, signal-backed map -- `AtomMap`/`ComputedMap` -- authored in ReScript, extracted from
 [`@e-cline/res_signals`](../res_signals) (which this package depends on for `Atom`/`Computed`/
-`Signal`) and built on [`@e-cline/res_b_tree`](../res_b_tree)'s `BTree.t`. Loosely modeled on Jane
+`Signal`) and built on [`@e-cline/res_trees`](../res_trees)'s `BTree.t`. Loosely modeled on Jane
 Street's `Incr_map`. `AtomMap`'s derived views (`mapValues`, `filterMap`, `map`, `fold`, ...) update
 incrementally from a diff instead of recomputing from scratch on every change.
 
@@ -18,14 +18,14 @@ Add `"@e-cline/res_signal_maps"` to the `dependencies` in your `rescript.json`. 
 under the `ResSignalMaps` namespace (`ResSignalMaps.AtomMap.make`), and your project's
 `rescript build` compiles them along with your own code.
 
-`AtomMap` is built from a `ResBTree.BTree.t`, and its views are `ResSignals` signals, so you'll
-usually want `@e-cline/res_b_tree` and `@e-cline/res_signals` installed and listed as well.
+`AtomMap` is built from a `ResTrees.BTree.t`, and its views are `ResSignals` signals, so you'll
+usually want `@e-cline/res_trees` and `@e-cline/res_signals` installed and listed as well.
 
 ## `AtomMap` / `ComputedMap`: efficient incremental map updates
 
 `AtomMap` (backed by a res_signals `Atom`) whose derived views (`ComputedMap`) update incrementally
 by replaying a diff against the _previous_ result, instead of recomputing from scratch. Built on
-`@e-cline/res_b_tree`'s `BTree.t` -- an immutable B-tree with structural-sharing-aware diffing
+`@e-cline/res_trees`'s `BTree.t` -- an immutable B-tree with structural-sharing-aware diffing
 (`BTree.diff`), which is what makes `AtomMap.set`/`update` cheap to diff against the previous tree
 in the first place.
 
@@ -97,10 +97,9 @@ separate `Internal` module on the res_signals side for this package to depend on
 ## A note for anyone extending this package
 
 Cross-package references need the dependency's namespace opened (or qualified) explicitly --
-`@e-cline/res_signals`'s `rescript.json` sets `"namespace": "ResSignals"` and
-`@e-cline/res_b_tree`'s sets `"namespace": "ResBTree"`, so every file here that reads/writes a
-`BTree.t` or reaches for `Atom`/`Signal`/`Computed` starts with `open ResSignals` and
-`open ResBTree` (see `AtomMap.res`'s own comment on this). Omitting one doesn't fail loudly with an
-"unknown namespace" error; it fails as a plain "the module or file `Atom`/`BTree` can't be found,"
-which is easy to mistake for the dependency not being wired up in `rescript.json`/`package.json` at
-all.
+`@e-cline/res_signals`'s `rescript.json` sets `"namespace": "ResSignals"` and `@e-cline/res_trees`'s
+sets `"namespace": "ResTrees"`, so every file here that reads/writes a `BTree.t` or reaches for
+`Atom`/`Signal`/`Computed` starts with `open ResSignals` and `open ResTrees` (see `AtomMap.res`'s
+own comment on this). Omitting one doesn't fail loudly with an "unknown namespace" error; it fails
+as a plain "the module or file `Atom`/`BTree` can't be found," which is easy to mistake for the
+dependency not being wired up in `rescript.json`/`package.json` at all.

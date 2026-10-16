@@ -1,13 +1,13 @@
 // See `AtomMap.resi` for what this module does; this file is the implementation.
 //
-// Depends on `@e-cline/res_signals` (`Atom`/`Signal`) and `@e-cline/res_b_tree`
+// Depends on `@e-cline/res_signals` (`Atom`/`Signal`) and `@e-cline/res_trees`
 // (`BTree`) -- two other ReScript packages -- directly through ReScript's own
-// module system: each namespaces its modules (`ResSignals`/`ResBTree`, per
+// module system: each namespaces its modules (`ResSignals`/`ResTrees`, per
 // their own `rescript.json`'s `"namespace"`), so `Atom`/`Signal`/`BTree` aren't
 // visible to another package unqualified -- opened here (and in every other
 // file in this package that needs them) rather than qualifying every call.
 open ResSignals
-open ResBTree
+open ResTrees
 
 type t<'k, 'v, 'id> = {
   atom: Atom.t<BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,

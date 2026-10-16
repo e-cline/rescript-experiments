@@ -6,10 +6,10 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@e-cline/res_b_tree": "workspace:*",
     "@e-cline/res_benchmarking": "workspace:*",
     "@e-cline/res_signal_maps": "workspace:*",
     "@e-cline/res_signals": "workspace:*",
+    "@e-cline/res_trees": "workspace:*",
     "@rescript/runtime": "catalog:",
     "mitata": "catalog:"
   },

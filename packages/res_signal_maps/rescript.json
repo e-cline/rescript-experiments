@@ -13,5 +13,5 @@
   "suffix": ".res.jsx",
   "namespace": "ResSignalMaps",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/res_signals", "@e-cline/res_b_tree"]
+  "dependencies": ["@e-cline/res_signals", "@e-cline/res_trees"]
 }

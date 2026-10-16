@@ -1,5 +1,5 @@
 {
-  "name": "@e-cline/res_b_tree_benchmarks",
+  "name": "@e-cline/res_trees_benchmarks",
   "sources": {
     "dir": "src",
     "subdirs": true
@@ -11,6 +11,6 @@
     }
   ],
   "suffix": ".res.jsx",
-  "namespace": "ResBTreeBenchmarks",
-  "dependencies": ["@e-cline/res_b_tree", "@e-cline/res_benchmarking"]
+  "namespace": "ResTreesBenchmarks",
+  "dependencies": ["@e-cline/res_trees", "@e-cline/res_benchmarking"]
 }

@@ -1,14 +1,14 @@
 // Binary search (`bisectLeft`/`bisectRight`), plus the "immutable positional
-// splice" helpers `res_b_tree/internal/ArrayOps.res` wrote for its
+// splice" helpers `res_trees/src/btree/internal/ArrayOps.res` wrote for its
 // own private use, generalized here as this package's public, reusable version.
-// `res_b_tree` itself is deliberately left on its own `ArrayOps` rather than
+// `res_trees` itself is deliberately left on its own `ArrayOps` rather than
 // switched over to this module, to avoid touching an already-shipped,
 // already-benchmarked package (see this package's README for the full reasoning).
 //
 // Every splice-shaped helper below pre-allocates with
 // `Belt.Array.makeUninitializedUnsafe` and fills with a hand-written `for` loop
 // rather than `Belt.Array.makeBy(n, i => ...)` -- see
-// `res_b_tree/internal/ArrayOps.res`'s header comment for the benchmark this is
+// `res_trees/src/btree/internal/ArrayOps.res`'s header comment for the benchmark this is
 // based on (a per-element closure call is real, consistent overhead once the
 // loop body branches).
 

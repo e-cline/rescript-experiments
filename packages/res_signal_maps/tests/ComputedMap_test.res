@@ -37,7 +37,7 @@ describe("ComputedMap: chaining stays incremental", () => {
     let m = AtomMap.fromArray(~id, [(1, 1), (2, 2)])
     let doubled = AtomMap.mapValues(m, (_key, value) => value * 2)
     let total = Computed.make(
-      () => doubled->ComputedMap.get->ResBTree.BTree.reduce(0, (acc, _key, value) => acc + value),
+      () => doubled->ComputedMap.get->ResTrees.BTree.reduce(0, (acc, _key, value) => acc + value),
     )
     t->expect(Signal.get(total))->Expect.toBe(6)
     AtomMap.setValue(m, 3, 3)->ignore

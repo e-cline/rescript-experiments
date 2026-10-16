@@ -7,10 +7,10 @@ since "left"/"right" is what's meaningful when a derived map's diff (e.g. `AtomM
 result) is itself diffed against a *different* pair of trees than the ones a reader might assume.
 */
 
-// `@e-cline/res_b_tree`'s own `rescript.json` sets `"namespace": "ResBTree"`,
+// `@e-cline/res_trees`'s own `rescript.json` sets `"namespace": "ResTrees"`,
 // so its modules (`BTree`, `MutableBTree`) aren't visible to another package
 // unqualified without this -- see `AtomMap.res`'s own comment on these opens.
-open ResBTree
+open ResTrees
 
 /**
 One key's change between an older tree (left) and a newer one (right): `OnlyLeft(key, value)` if

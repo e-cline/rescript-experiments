@@ -1,8 +1,9 @@
 {
-  "name": "@e-cline/res_b_tree",
+  "name": "@e-cline/res_trees",
   "version": "0.0.1",
-  "description": "A B-tree, authored in ReScript, with mutable and immutable variants and efficient structural-sharing-aware diffing.",
+  "description": "Persistent sorted maps (a B+tree, an AVL tree and a chunked AVL tree), authored in ReScript, with mutable and immutable variants and efficient structural-sharing-aware diffing.",
   "keywords": [
+    "avl-tree",
     "b-tree",
     "btree",
     "data-structures",
@@ -10,7 +11,7 @@
     "rescript",
     "sorted-map"
   ],
-  "homepage": "https://github.com/e-cline/res-experiments/tree/main/packages/res_b_tree#readme",
+  "homepage": "https://github.com/e-cline/res-experiments/tree/main/packages/res_trees#readme",
   "bugs": {
     "url": "https://github.com/e-cline/res-experiments/issues"
   },
@@ -19,7 +20,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/e-cline/res-experiments.git",
-    "directory": "packages/res_b_tree"
+    "directory": "packages/res_trees"
   },
   "files": [
     "rescript.json",

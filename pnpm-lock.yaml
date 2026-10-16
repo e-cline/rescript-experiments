@@ -238,12 +238,6 @@ importers:
       '@changesets/cli':
         specifier: 'catalog:'
         version: 3.0.3
-      '@e-cline/res_b_tree':
-        specifier: workspace:*
-        version: link:packages/res_b_tree
-      '@e-cline/res_b_tree_benchmarks':
-        specifier: workspace:*
-        version: link:packages/res_b_tree/benchmarks
       '@e-cline/res_benchmarking':
         specifier: workspace:*
         version: link:tools/benchmarking
@@ -280,6 +274,12 @@ importers:
       '@e-cline/res_tree_shaking_example':
         specifier: workspace:*
         version: link:examples/res_tree_shaking
+      '@e-cline/res_trees':
+        specifier: workspace:*
+        version: link:packages/res_trees
+      '@e-cline/res_trees_benchmarks':
+        specifier: workspace:*
+        version: link:packages/res_trees/benchmarks
       '@types/node':
         specifier: 'catalog:'
         version: 26.2.0
@@ -426,49 +426,6 @@ importers:
         specifier: 'catalog:'
         version: 0.2.9(@types/node@26.2.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/res_b_tree:
-    devDependencies:
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript-vitest:
-        specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.2.0)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(rescript@12.3.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
-
-  packages/res_b_tree/benchmarks:
-    dependencies:
-      '@e-cline/res_b_tree':
-        specifier: workspace:*
-        version: link:..
-      '@e-cline/res_benchmarking':
-        specifier: workspace:*
-        version: link:../../../tools/benchmarking
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-      mitata:
-        specifier: 'catalog:'
-        version: 1.0.34
-    devDependencies:
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      terser:
-        specifier: 'catalog:'
-        version: 5.50.0
-      tsx:
-        specifier: 'catalog:'
-        version: 4.23.12
-      vite:
-        specifier: npm:@voidzero-dev/vite-plus-core@0.2.9
-        version: '@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
-      vite-plus:
-        specifier: 'catalog:'
-        version: 0.2.9(@types/node@26.2.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
-
   packages/res_common:
     dependencies:
       '@e-cline/js_env':
@@ -525,12 +482,12 @@ importers:
 
   packages/res_signal_maps:
     dependencies:
-      '@e-cline/res_b_tree':
-        specifier: workspace:^
-        version: link:../res_b_tree
       '@e-cline/res_signals':
         specifier: workspace:^
         version: link:../res_signals
+      '@e-cline/res_trees':
+        specifier: workspace:^
+        version: link:../res_trees
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -544,9 +501,6 @@ importers:
 
   packages/res_signal_maps/benchmarks:
     dependencies:
-      '@e-cline/res_b_tree':
-        specifier: workspace:*
-        version: link:../../res_b_tree
       '@e-cline/res_benchmarking':
         specifier: workspace:*
         version: link:../../../tools/benchmarking
@@ -556,6 +510,9 @@ importers:
       '@e-cline/res_signals':
         specifier: workspace:*
         version: link:../../res_signals
+      '@e-cline/res_trees':
+        specifier: workspace:*
+        version: link:../../res_trees
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -597,6 +554,49 @@ importers:
         specifier: workspace:*
         version: link:../../../tools/benchmarking
       '@e-cline/res_signals':
+        specifier: workspace:*
+        version: link:..
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      mitata:
+        specifier: 'catalog:'
+        version: 1.0.34
+    devDependencies:
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      terser:
+        specifier: 'catalog:'
+        version: 5.50.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.12
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@0.2.9
+        version: '@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.2.9(@types/node@26.2.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/res_trees:
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.2.0)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(rescript@12.3.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/res_trees/benchmarks:
+    dependencies:
+      '@e-cline/res_benchmarking':
+        specifier: workspace:*
+        version: link:../../../tools/benchmarking
+      '@e-cline/res_trees':
         specifier: workspace:*
         version: link:..
       '@rescript/runtime':

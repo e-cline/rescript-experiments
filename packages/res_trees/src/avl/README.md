@@ -1,11 +1,11 @@
 # AvlTree
 
 A persistent sorted map built on an AVL tree, with a thin mutable wrapper. It does what
-[`BTree`](../BTree.resi) does -- positional access, a diff that skips whatever two trees share,
-snapshots -- at close to `Belt.Map`'s speed for point reads and writes.
+[`BTree`](../btree/BTree.resi) does -- positional access, a diff that skips whatever two trees
+share, snapshots -- at close to `Belt.Map`'s speed for point reads and writes.
 
-It lives in the B-tree's package for now, under the same namespace: `ResBTree.AvlTree` and
-`ResBTree.MutableAvlTree`.
+It lives in `res_trees` alongside the other trees, under the same namespace: `ResTrees.AvlTree` and
+`ResTrees.MutableAvlTree`.
 
 ```rescript
 module IntCmp = Belt.Id.MakeComparable({
@@ -13,13 +13,13 @@ module IntCmp = Belt.Id.MakeComparable({
   let cmp = (a: int, b: int) => a - b
 })
 
-let before = ResBTree.AvlTree.fromArray(~id=module(IntCmp), [(1, "one"), (2, "two"), (3, "three")])
-let after = before->ResBTree.AvlTree.set(2, "TWO")->ResBTree.AvlTree.remove(3)
+let before = ResTrees.AvlTree.fromArray(~id=module(IntCmp), [(1, "one"), (2, "two"), (3, "three")])
+let after = before->ResTrees.AvlTree.set(2, "TWO")->ResTrees.AvlTree.remove(3)
 
-ResBTree.AvlTree.getAt(after, 1) // Some((2, "TWO"))
-ResBTree.AvlTree.indexOf(after, 2) // Some(1)
+ResTrees.AvlTree.getAt(after, 1) // Some((2, "TWO"))
+ResTrees.AvlTree.indexOf(after, 2) // Some(1)
 
-ResBTree.AvlTree.diff(
+ResTrees.AvlTree.diff(
   before,
   after,
   ~onlyLeft=(key, _) => Console.log2("removed", key), // removed 3

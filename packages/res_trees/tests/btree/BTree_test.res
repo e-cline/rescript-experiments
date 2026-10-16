@@ -1,7 +1,7 @@
 /***
 Written directly in ReScript, using rescript-vitest's bindings to
 Vitest's own `describe`/`test`/`expect` API -- see
-the res_b_tree README for why this is named `BTree_test.res`, not
+the res_trees README for why this is named `BTree_test.res`, not
 `b_tree.test.res`.
 */
 

@@ -5,7 +5,7 @@ never touching the one it was called on.
 This is deliberately just "a plain array with a type that guarantees you can't mutate
 it by accident", not a tree-backed structure with structural sharing on every edit:
 each edit copies the whole array (`O(n)`). If the access pattern calls for cheap
-edits of large collections, use `res_b_tree`'s `BTree`/`MutableBTree` instead.
+edits of large collections, use `res_trees`'s `BTree`/`MutableBTree` instead.
 
 `t<'a>` is opaque so nothing outside this module can reach in and mutate the array
 a `t` wraps -- the one invariant this type exists to hold. `fromArray`/`toArray` copy

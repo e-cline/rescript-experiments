@@ -33,16 +33,18 @@ pnpm run build
 ### The OCaml toolchain
 
 There's no OCaml version to install or select by hand. The PPX's build task runs
-`tools/ppx/pretty_print/setup.sh`, which creates an opam switch local to that directory
-(`tools/ppx/pretty_print/_opam/`, gitignored) containing exactly the compiler and packages pinned in
+`tools/ppx/pretty_print/setup.sh`, which creates a global opam switch named `ppx_pretty_print`
+(under `~/.opam`) containing exactly the compiler and packages pinned in
 `tools/ppx/pretty_print/ppx_pretty_print.opam.locked` -- currently OCaml 5.3.0 and ppxlib 0.34.0.
 
-- The build always uses that local switch: `opam exec` prefers a directory's own switch over the
-  global one. Whatever OCaml the machine has otherwise is neither used nor changed, and there's no
-  need to run `eval $(opam env)`.
-- After the first build, `setup.sh` does nothing unless the lock file has changed, in which case the
-  next build brings the switch back in sync with it.
-- To start over, delete `tools/ppx/pretty_print/_opam` and build again.
+- The build always uses that switch, via `opam exec --switch=ppx_pretty_print`. Your current switch,
+  and whatever OCaml the machine has otherwise, is neither used nor changed, and there's no need to
+  run `eval $(opam env)`.
+- The switch is shared by every clone and git worktree on the machine, so only the first build
+  compiles OCaml. After that, `setup.sh` does nothing unless the lock file has changed, in which
+  case the next build brings the switch back in sync with it. (Checkouts with different lock files
+  therefore re-sync it back and forth; see `tools/ppx/pretty_print/README.md`.)
+- To start over, `opam switch remove ppx_pretty_print` and build again.
 
 The versions are pinned because ReScript only works with a narrow range of them; see
 `tools/ppx/pretty_print/README.md` for why, and for how to change a dependency and regenerate the
@@ -99,8 +101,8 @@ pnpm run check
 ```
 
 Clean up artifacts. This deletes every gitignored file: `node_modules`, `dist`, the ReScript
-compiler's output (`lib/`, `*.res.jsx`, `*.gen.tsx`), and the PPX's `_build` and `_opam` -- so the
-next build compiles OCaml again:
+compiler's output (`lib/`, `*.res.jsx`, `*.gen.tsx`), and the PPX's `_build`. The opam switch lives
+outside the repository, so it survives this:
 
 ```bash
 git clean -fdX

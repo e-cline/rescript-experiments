@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "jsx": "react-jsx",
+    // The base config sets `types: []` to suppress automatic `@types/*`
+    // inclusion; genType's emitted `.gen.tsx` refers to the bare global
+    // `React` namespace (`React.ComponentType<...>`) without importing it
+    // (see @types/react's ambient UMD declaration), so it needs
+    // `@types/react` included even though nothing here writes `import
+    // React from 'react'`.
+    "types": ["react", "react-dom"]
+  },
+  "include": ["src", "tests"]
+}

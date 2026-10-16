@@ -1,0 +1,8 @@
+.greeting {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid #2b6cb0;
+  border-radius: 4px;
+  color: #2b6cb0;
+  font-family: sans-serif;
+}

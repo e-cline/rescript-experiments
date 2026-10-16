@@ -1,0 +1,48 @@
+{
+  "name": "@e-cline/res_common",
+  "version": "0.0.1",
+  "description": "ReScript utilities that have no direct Belt equivalent: array utilities, an ImmutableArray, debug-only assertions, hashing, a lazy sequence type, and isDev/isProd bindings to @e-cline/js_env's constants.",
+  "keywords": [
+    "hash",
+    "immutable",
+    "rescript",
+    "sequence",
+    "utilities"
+  ],
+  "homepage": "https://github.com/e-cline/res-experiments/tree/main/packages/res_common#readme",
+  "bugs": {
+    "url": "https://github.com/e-cline/res-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/res-experiments.git",
+    "directory": "packages/res_common"
+  },
+  "files": [
+    "rescript.json",
+    "src/**/*.res",
+    "src/**/*.resi"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@e-cline/js_env": "^0.0.2"
+  },
+  "devDependencies": {
+    "@rescript/runtime": "catalog:",
+    "rescript": "catalog:",
+    "rescript-vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@rescript/runtime": ">=12.0.0 <13",
+    "rescript": ">=12.0.0 <13"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

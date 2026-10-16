@@ -1,0 +1,45 @@
+packages:
+  - packages/*
+  - packages/*/benchmarks
+  - examples/*
+  - tools/benchmarking
+  - tools/ppx/*
+
+allowBuilds:
+  esbuild: true
+
+catalogs:
+  default:
+    '@changesets/changelog-github': ^1.0.1
+    '@changesets/cli': ^3.0.3
+    '@types/node': ^26.2.0
+    tsx: ^4.23.12
+    typescript: ^7.0.2
+    terser: ^5.50.0
+    mitata: ^1.0.34
+    vite: npm:@voidzero-dev/vite-plus-core@0.2.9
+    vite-plus: 0.2.9
+    rescript: ^12.3.1
+    '@rescript/runtime': ^12.3.1
+    '@rescript/react': ^0.15.0
+    'rescript-webapi': ^0.10.0
+    '@rescript/webapi': 0.1.0-experimental-0781ac8
+    hono: ^4.13.13
+    '@hono/node-server': ^2.1.4
+    'rescript-vitest': ^3.0.1
+    react: ^19.3.0
+    react-dom: ^19.3.0
+    '@types/react': ^19.3.0
+    '@types/react-dom': ^19.3.0
+
+# Vite+ ships its own Vite build. Without the override, packages that depend
+# on `vite` (e.g. through `rescript-vitest`) pull in a second, upstream copy.
+minimumReleaseAgeExclude:
+  - '@e-cline/js_env@0.0.1 || 0.0.2'
+overrides:
+  vite: 'catalog:'
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: '*'

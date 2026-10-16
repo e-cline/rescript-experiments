@@ -1,0 +1,59 @@
+name: Release
+
+# Run by hand from the Actions tab (or `gh workflow run release.yml`), on main,
+# after the versions to publish have been committed. See CONTRIBUTING.md.
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish to npm
+    # Only ever publish from main of the real repository, never a fork.
+    if:
+      github.repository == 'e-cline/res-experiments' && github.ref ==
+      'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      # Push the release tags.
+      contents: write
+      # Authenticate to npm through trusted publishing (OIDC) and sign
+      # provenance attestations; no long-lived npm token is stored.
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check that no changesets are pending
+        run: |
+          pending=$(find .changeset -name '*.md' ! -name README.md)
+          if [ -n "$pending" ]; then
+            echo "::error::Changesets are pending. Run 'pnpm run version-packages' and commit the result before releasing."
+            echo "$pending"
+            exit 1
+          fi
+
+      # Installs Vite+, Node and pnpm, then runs `vp install`.
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version-file: .node-version
+          cache: true
+      # Changesets shells out to `pnpm publish`, so pnpm itself (the version
+      # pinned by `packageManager`) has to be on the PATH.
+      - run: corepack enable
+
+      # The tests compile the workspace's ReScript first, which builds a PPX
+      # written in OCaml.
+      - uses: ./.github/actions/setup-opam
+      - run: vp run test
+
+      # Publishes every package whose current version isn't on npm yet, and
+      # tags each one it publishes.
+      - run: pnpm run release
+        env:
+          NPM_CONFIG_PROVENANCE: true
+      - run: git push --follow-tags

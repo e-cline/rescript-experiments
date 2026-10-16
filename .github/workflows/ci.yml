@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Check, build and test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Installs Vite+, Node and pnpm, then runs `vp install`.
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: ${{ matrix.node }}
+          cache: true
+
+      # The OCaml toolchain the workspace's ReScript PPX is built with.
+      - uses: ./.github/actions/setup-opam
+
+      # The check type-checks TypeScript that imports files the ReScript
+      # compiler generates, so it has to follow the build.
+      - run: vp run build
+      - run: vp run check
+      - run: vp run test

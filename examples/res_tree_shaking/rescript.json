@@ -1,0 +1,16 @@
+{
+  "name": "@e-cline/res_tree_shaking_example",
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.jsx",
+  "namespace": "ResTreeShakingExample",
+  "dependencies": ["@e-cline/res_common"]
+}

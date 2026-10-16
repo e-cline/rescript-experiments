@@ -1,0 +1,49 @@
+{
+  "name": "@e-cline/res_signal_maps",
+  "version": "0.0.1",
+  "description": "A signal-backed sorted map (AtomMap/ComputedMap), authored in ReScript, with diff-driven incremental updates -- built on @e-cline/res_signals and @e-cline/res_b_tree.",
+  "keywords": [
+    "incremental",
+    "reactive",
+    "rescript",
+    "signals",
+    "sorted-map"
+  ],
+  "homepage": "https://github.com/e-cline/res-experiments/tree/main/packages/res_signal_maps#readme",
+  "bugs": {
+    "url": "https://github.com/e-cline/res-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/res-experiments.git",
+    "directory": "packages/res_signal_maps"
+  },
+  "files": [
+    "rescript.json",
+    "src/**/*.res",
+    "src/**/*.resi"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@e-cline/res_b_tree": "workspace:^",
+    "@e-cline/res_signals": "workspace:^"
+  },
+  "devDependencies": {
+    "@rescript/runtime": "catalog:",
+    "rescript": "catalog:",
+    "rescript-vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@rescript/runtime": ">=12.0.0 <13",
+    "rescript": ">=12.0.0 <13"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

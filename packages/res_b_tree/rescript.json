@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/res_b_tree",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.jsx",
+  "namespace": "ResBTree",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": []
+}

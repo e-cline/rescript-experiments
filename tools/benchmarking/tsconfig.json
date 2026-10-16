@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // `res-bench` (cli/) runs on Node, which strips its types: relative
+    // imports name the `.ts` file itself.
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["cli"]
+}

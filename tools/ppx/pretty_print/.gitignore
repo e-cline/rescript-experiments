@@ -1,0 +1,3 @@
+# dune's build directory and the local opam switch (see README.md).
+_build
+_opam

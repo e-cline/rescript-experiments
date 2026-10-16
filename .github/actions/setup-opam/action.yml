@@ -1,0 +1,32 @@
+name: Set up opam
+description: >-
+  Installs opam and restores the cached OCaml toolchain the workspace's ReScript
+  PPX is built with.
+
+# The workspace compiles a ReScript PPX written in OCaml
+# (tools/ppx/pretty_print) before any ReScript, so building or testing needs
+# opam. The PPX's build task creates an opam switch local to that directory
+# from the lock file, which compiles OCaml and takes several minutes, so both
+# the switch and opam's own state are cached until the lock file changes.
+runs:
+  using: composite
+  steps:
+    - name: Install opam
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes opam
+    - name: Cache the OCaml toolchain
+      id: opam-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.opam
+          tools/ppx/pretty_print/_opam
+        key:
+          opam-${{ runner.os }}-${{ runner.arch }}-${{
+          hashFiles('tools/ppx/pretty_print/ppx_pretty_print.opam.locked') }}
+    - name: Initialize opam
+      if: steps.opam-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: opam init --bare --disable-sandboxing --no-setup --yes

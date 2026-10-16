@@ -1,0 +1,27 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "oxc.fmt.disableNestedConfig": true,
+  "files.watcherExclude": {
+    "**/lib/bs/**": true,
+    "**/lib/ocaml/**": true,
+    "**/_build/**": true,
+    "**/_opam/**": true
+  },
+  "search.exclude": {
+    "**/lib/bs/**": true,
+    "**/lib/ocaml/**": true,
+    "**/_build/**": true,
+    "**/_opam/**": true
+  },
+  "[rescript]": {
+    "editor.defaultFormatter": "chenglou92.rescript-vscode"
+  },
+  "ocaml.sandbox": {
+    "kind": "opam",
+    "switch": "${workspaceFolder}/tools/ppx/pretty_print"
+  },
+  "[ocaml]": {
+    "editor.defaultFormatter": "ocamllabs.ocaml-platform"
+  }
+}

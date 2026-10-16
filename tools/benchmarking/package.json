@@ -1,0 +1,22 @@
+{
+  "name": "@e-cline/res_benchmarking",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared support for the workspace's benchmark packages: ReScript bindings to mitata, a seeded PRNG for reproducible inputs, and res-bench, which runs, records and compares benchmarks over several processes.",
+  "license": "MIT",
+  "bin": {
+    "res-bench": "./cli/res-bench.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "@rescript/runtime": "catalog:",
+    "mitata": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

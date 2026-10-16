@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/res_common",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.jsx",
+  "namespace": "ResCommon",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": []
+}

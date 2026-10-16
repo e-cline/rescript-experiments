@@ -1,0 +1,21 @@
+(lang dune 3.8)
+
+(name ppx_pretty_print)
+
+(generate_opam_files true)
+
+(package
+ (name ppx_pretty_print)
+ (synopsis "ReScript PPX that derives pretty-printers for types")
+ (depends
+  ; ppxlib 0.34 is the last release that can still read and write the OCaml
+  ; 4.06 binary AST, which is what ReScript hands to PPXs (0.35 dropped every
+  ; AST older than 4.08). It needs OCaml < 5.4.
+  (ocaml
+   (and
+    (>= 4.14.0)
+    (< 5.4.0)))
+  (ppxlib
+   (and
+    (>= 0.33.0)
+    (< 0.35.0)))))

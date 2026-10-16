@@ -1,0 +1,5 @@
+(library
+ (name ppx_pretty_print)
+ (public_name ppx_pretty_print)
+ (kind ppx_rewriter)
+ (libraries ppxlib))

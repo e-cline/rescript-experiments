@@ -1,0 +1,16 @@
+{
+  "name": "@e-cline/res_b_tree_benchmarks",
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.jsx",
+  "namespace": "ResBTreeBenchmarks",
+  "dependencies": ["@e-cline/res_b_tree", "@e-cline/res_benchmarking"]
+}

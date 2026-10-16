@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "strict": true,
+
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "moduleDetection": "force",
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+
+    "resolveJsonModule": true,
+    "declaration": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    "noEmit": true,
+
+    // No automatic `@types/*` inclusion: a package that needs some lists them
+    // in its own tsconfig.json.
+    "types": []
+  },
+
+  "include": ["src", "tests"]
+}

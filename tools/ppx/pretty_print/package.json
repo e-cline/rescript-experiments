@@ -1,0 +1,20 @@
+{
+  "name": "@e-cline/ppx_pretty_print",
+  "version": "0.0.1",
+  "private": true,
+  "description": "An example ReScript PPX, written in OCaml with ppxlib: `@prettyPrint` on a type declaration derives functions rendering its values as pretty-printed strings.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./src/*": "./src/*"
+  },
+  "dependencies": {
+    "@rescript/runtime": "catalog:"
+  },
+  "devDependencies": {
+    "rescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

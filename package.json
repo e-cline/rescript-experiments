@@ -1,0 +1,57 @@
+{
+  "name": "@e-cline/res-experiments",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Experiments authoring packages in ReScript",
+  "homepage": "https://github.com/e-cline/res-experiments",
+  "bugs": {
+    "url": "https://github.com/e-cline/res-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/res-experiments.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "vp run -r build",
+    "test": "vp run -r test",
+    "bench": "vp run -r bench",
+    "fmt": "vp fmt && rescript format",
+    "check": "vp check && rescript format --check",
+    "prepare": "vp config",
+    "typecheck": "vp run -r typecheck",
+    "rescript:clean": "rescript clean",
+    "changeset": "changeset",
+    "version-packages": "changeset version && pnpm install --lockfile-only",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
+    "@e-cline/res_b_tree": "workspace:*",
+    "@e-cline/res_b_tree_benchmarks": "workspace:*",
+    "@e-cline/res_benchmarking": "workspace:*",
+    "@e-cline/res_common": "workspace:*",
+    "@e-cline/res_http_server_example": "workspace:*",
+    "@e-cline/res_pretty_print_example": "workspace:*",
+    "@e-cline/res_priority_queue": "workspace:*",
+    "@e-cline/res_react_ui_example": "workspace:*",
+    "@e-cline/res_server": "workspace:*",
+    "@e-cline/res_signal_maps": "workspace:*",
+    "@e-cline/res_signal_maps_benchmarks": "workspace:*",
+    "@e-cline/res_signals": "workspace:*",
+    "@e-cline/res_signals_benchmarks": "workspace:*",
+    "@e-cline/res_tree_shaking_example": "workspace:*",
+    "@types/node": "catalog:",
+    "rescript": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@12.8.2"
+}

@@ -122,6 +122,12 @@ are compiled with our root `suffix` and may have no `"type"` field (`rescript-vi
 Node still loads those `.res.js` files as ESM, through the module syntax detection current Node 22
 and 24 releases turn on by default (this repo requires Node `>=22`; CI runs 22.x and 24.x).
 
+The compiled `.res.js`/`.res.jsx` files are committed, not gitignored (genType's `.gen.tsx` still
+is): a `.res` change's effect on the JS a consumer runs then shows up in review. They're marked
+`linguist-generated` in `.gitattributes`, so GitHub collapses them in diffs, and CI fails if
+`vp run build` changes them or writes one that isn't committed. The output is deterministic (no
+paths, versions or timestamps), so a clean build reproduces it byte for byte.
+
 ## Testing directly in ReScript
 
 Every ReScript package here has its tests written directly in ReScript -- for example

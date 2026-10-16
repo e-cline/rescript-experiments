@@ -2,8 +2,9 @@ import {defineConfig} from 'vite-plus';
 
 // `rescript build` writes these next to their `.res`/`.resi` source (see
 // vite.config.base.ts's `makeRescriptLibConfig`): `.res.js`, or `.res.jsx` in a
-// JSX package, plus genType's `.gen.tsx`. All are generated, gitignored, and
-// already formatted by the ReScript compiler / genType, not by us.
+// JSX package, plus genType's `.gen.tsx`. All are generated (the JS is
+// committed; `.gen.tsx` is gitignored) and already formatted by the ReScript
+// compiler / genType, not by us.
 const rescriptGeneratedPatterns = [
   '**/*.res.js',
   '**/*.res.jsx',

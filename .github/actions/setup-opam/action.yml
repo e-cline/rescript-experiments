@@ -16,6 +16,9 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install --yes opam
+    # A local opam switch records its absolute path and can't be moved, so the
+    # key includes the checkout path: renaming the repository changes it, and a
+    # switch restored from the old path would have no working binaries.
     - name: Cache the OCaml toolchain
       id: opam-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -24,7 +27,7 @@ runs:
           ~/.opam
           tools/ppx/pretty_print/_opam
         key:
-          opam-${{ runner.os }}-${{ runner.arch }}-${{
+          opam-${{ runner.os }}-${{ runner.arch }}-${{ github.workspace }}-${{
           hashFiles('tools/ppx/pretty_print/ppx_pretty_print.opam.locked') }}
     - name: Initialize opam
       if: steps.opam-cache.outputs.cache-hit != 'true'

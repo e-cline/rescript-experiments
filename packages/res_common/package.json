@@ -9,15 +9,15 @@
     "sequence",
     "utilities"
   ],
-  "homepage": "https://github.com/e-cline/res-experiments/tree/main/packages/res_common#readme",
+  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/res_common#readme",
   "bugs": {
-    "url": "https://github.com/e-cline/res-experiments/issues"
+    "url": "https://github.com/e-cline/rescript-experiments/issues"
   },
   "license": "MIT",
   "author": "Ethan Cline",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/e-cline/res-experiments.git",
+    "url": "git+https://github.com/e-cline/rescript-experiments.git",
     "directory": "packages/res_common"
   },
   "files": [

@@ -24,7 +24,7 @@ const resTestFileMatch = ['**/*_{test,spec}.res.jsx'];
 // process. Per-package `rescript build`s run in parallel by `vp run -r` raced
 // on those shared dependencies' `lib/` and intermittently failed with
 // "Corrupted compiled interface".
-export const rootResTask = '@e-cline/res-experiments#res';
+export const rootResTask = '@e-cline/rescript-experiments#res';
 
 /** A `run.tasks` entry, as `makeRescriptLibConfig`'s `tasks` option takes. */
 export type RunTask = {

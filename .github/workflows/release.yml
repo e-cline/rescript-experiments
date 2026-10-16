@@ -16,7 +16,7 @@ jobs:
     name: Publish to npm
     # Only ever publish from main of the real repository, never a fork.
     if:
-      github.repository == 'e-cline/res-experiments' && github.ref ==
+      github.repository == 'e-cline/rescript-experiments' && github.ref ==
       'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

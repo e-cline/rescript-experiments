@@ -62,7 +62,7 @@ Two small, unavoidable additions in a ReScript package's own `tsconfig.json`:
 ReScript is compiled by a single task, `res`, declared in the **root** `vite.config.ts` (it runs
 `rescript build` from the repo root, which follows the root `rescript.json`'s `dependencies` to
 build every `packages/*` package). Packages don't declare their own `res` task; their
-`build`/`test`/`typecheck` depend on it as `'@e-cline/res-experiments#res'` (exported as
+`build`/`test`/`typecheck` depend on it as `'@e-cline/rescript-experiments#res'` (exported as
 `rootResTask` from `vite.config.base.ts`). Run it by itself with `vp run -w res`.
 
 This is deliberate. `rescript build` compiles a package's ReScript _dependencies_ (`@rescript/core`,

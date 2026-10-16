@@ -21,15 +21,14 @@ external spawn: (string, array<string>, spawnOptions) => child = "spawn"
 @val @scope("process") external env: dict<string> = "env"
 
 /**
-Runs `script` with Node (and `tsx`, since the compiled ReScript is `.jsx`)
-until it says where it's listening, gives that to `f`, and stops it.
+Runs `script` with Node until it says where it's listening, gives that to `f`, and stops it.
 */
 let withServer = async (script: string, f: string => promise<'result>): 'result => {
   let environment = env->Dict.copy
   // Any free port, so that this doesn't depend on 3000 being available.
   environment->Dict.set("PORT", "0")
   environment->Dict.delete("HOST")
-  let child = spawn(execPath, ["--import", "tsx", script], {env: environment})
+  let child = spawn(execPath, [script], {env: environment})
   let exited = Promise.make((resolve, _reject) => child->onExit(() => resolve()))
   let output = ref("")
   let listening = Promise.make((resolve, reject) => {
@@ -81,7 +80,7 @@ let expected = ("Hello, Ada!\n", 404, [`{"index":0`, `{"index":1`])
 describe("the server's entry points", () => {
   testAsync("src/Main.res starts the server, on this machine only", async t => {
     let (base, result) = await withServer(
-      "src/Main.res.jsx",
+      "src/Main.res.js",
       async base => (base, await exercise(base)),
     )
     t->expect(result)->Expect.toEqual(expected)

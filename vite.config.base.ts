@@ -5,7 +5,9 @@ import {defineConfig} from 'vite-plus';
 const testFileMatch = ['**/*.{test,spec}.?(c|m)[jt]s?(x)'];
 
 // Matches ReScript-compiled test files (e.g. `Point_test.res` -> the
-// `Point_test.res.jsx` `rescript build` writes next to it in `tests/`) for
+// `Point_test.res.js` `rescript build` writes next to it in `tests/`, or
+// `Point_test.res.jsx` in a JSX package -- see `makeRescriptLibConfig`'s `jsx`
+// option) for
 // `makeRescriptLibConfig`'s `test.include`. Deliberately `_test`/`_spec`,
 // not the `.test`/`.spec` dot-infix `testFileMatch` above uses: ReScript
 // derives a file's module name from its filename with only the first
@@ -16,14 +18,16 @@ const testFileMatch = ['**/*.{test,spec}.?(c|m)[jt]s?(x)'];
 // file's name matching the module it tests is the whole point, `_test`
 // side-steps this entirely: `Point_test.res` becomes module `Point_test`,
 // which cannot collide with `Point` no matter what it tests.
-const resTestFileMatch = ['**/*_{test,spec}.res.jsx'];
+const resTestFileMatch = ['**/*_{test,spec}.res.{js,jsx}'];
 
-// Every ReScript package is compiled by the single root-level `res` task (see
-// `vite.config.ts`): `rescript build` run from the workspace root compiles all
-// packages, and the dependencies they share (e.g. `rescript-vitest`), in one
-// process. Per-package `rescript build`s run in parallel by `vp run -r` raced
-// on those shared dependencies' `lib/` and intermittently failed with
-// "Corrupted compiled interface".
+// Every ReScript package without JSX is compiled by the single root-level `res`
+// task (see `vite.config.ts`): `rescript build` run from the workspace root
+// compiles all of them, and the dependencies they share (e.g.
+// `rescript-vitest`), in one process. Per-package `rescript build`s run in
+// parallel by `vp run -r` raced on those shared dependencies' `lib/` and
+// intermittently failed with "Corrupted compiled interface". A package with JSX
+// is its own ReScript build root instead (see `makeRescriptLibConfig`'s `jsx`
+// option), whose `res` task runs after this one.
 export const rootResTask = '@e-cline/rescript-experiments#res';
 
 /** A `run.tasks` entry, as `makeRescriptLibConfig`'s `tasks` option takes. */
@@ -130,11 +134,12 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
  * Layers a dependency on the root-level `res` task (`rescript build`, defined
  * in the root `vite.config.ts`; see {@linkcode rootResTask}) on top of
  * {@linkcode makeLibConfig}, and makes `build`, `test`, and `typecheck`
- * depend on it. The package has no `res` task of its own. That's the whole
- * integration: ReScript's own compiler already emits plain ESM
- * (`*.res.jsx`, via `"suffix": ".res.jsx"` in `rescript.json`) colocated
- * with the `.res` source, so Vite/Vitest resolve it like any other `.js`
- * file with no bundler plugin needed, and genType's `*.gen.tsx` output is
+ * depend on it. The package has no `res` task of its own (unless it uses
+ * JSX -- see the `jsx` option). That's the whole integration: ReScript's own
+ * compiler already emits plain ESM (`*.res.js`, via `"suffix": ".res.js"` in
+ * `rescript.json`; `*.res.jsx` in a JSX package) colocated with the `.res`
+ * source, so Node, Vite, and Vitest load it like any other `.js` file with
+ * no bundler plugin needed, and genType's `*.gen.tsx` output is
  * itself a normal `.tsx` file, so `vp pack`'s `tsgo`-driven `dts` pass and
  * `tsc --noEmit` type-check it like any other TypeScript entry. The
  * package's own `src/index.ts` re-exports from the `.gen.tsx` file(s) it
@@ -143,7 +148,7 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
  * different build shape.
  *
  * A package using this needs `"allowJs": true` in its own `tsconfig.json`
- * (`.gen.tsx` imports the compiled `*.res.jsx` sibling, which has no
+ * (`.gen.tsx` imports the compiled `*.res.js`/`*.res.jsx` sibling, which has no
  * `.d.ts` of its own -- the import resolves to `any`, which is fine because
  * genType's own type annotations in the same file are what consumers
  * actually see) and must list `rescript` (plus any ReScript libraries it
@@ -155,8 +160,9 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
  * exits, and `dependsOn` means "finish before starting," so depending on it
  * would deadlock. Run it in its own terminal alongside `vp run test:watch`
  * / `vp run build:watch` -- Vite/Vitest already watch the whole package
- * directory, so they pick up the `.res.jsx`/`.gen.tsx` files it rewrites on
- * every save without any extra wiring.
+ * directory, so they pick up the `.res.js`/`.gen.tsx` files it rewrites on
+ * every save without any extra wiring. (A JSX package has its own
+ * `res:watch`; see the `jsx` option.)
  *
  * Packages with a TypeScript entry point (`src/index.ts`) must pass
  * `typescriptSurface: true`; the default (`false`) is for packages consumed only
@@ -165,8 +171,9 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
  *
  * Tests can be written directly in ReScript (e.g. with
  * [`rescript-vitest`](https://github.com/cometkim/rescript-vitest)) instead
- * of TypeScript: `test.include` here also matches `*_test.res.jsx` /
- * `*_spec.res.jsx` -- the compiled output of e.g. `Point_test.res` -- so
+ * of TypeScript: `test.include` here also matches `*_test.res.js` /
+ * `*_spec.res.js` (or `.res.jsx`) -- the compiled output of e.g.
+ * `Point_test.res` -- so
  * Vitest picks them up the same way it picks up `.test.ts` files. Name
  * these `<Module>_test.res`, not `<module>.test.res` -- see
  * `resTestFileMatch`'s own comment for why the underscore matters. Nothing
@@ -188,25 +195,61 @@ export function makeRescriptLibConfig(
      */
     typescriptSurface?: boolean;
     /**
+     * Whether the package's ReScript uses JSX. `jsx`, `package-specs`, and
+     * `suffix` are root-only settings in a ReScript monorepo (see
+     * https://rescript-lang.org/docs/manual/build-monorepo-setup): the root
+     * `rescript.json` compiles every package it lists to plain `.res.js`,
+     * with no JSX support. A JSX package therefore isn't listed there; its
+     * own `rescript.json` is a separate build root that sets `"jsx": {...,
+     * "preserve": true}` and `"suffix": ".res.jsx"` (preserved JSX needs a
+     * JSX-aware extension: Vite and tsdown only transform JSX in
+     * `.jsx`/`.tsx` files).
+     *
+     * Pass `true` for those packages. The package then gets its own `res`
+     * task (`rescript build` in the package directory), which `build`,
+     * `test`, and `typecheck` depend on in place of the root one, plus
+     * `res:watch`, and `res:fmt`/`res:check`/`res:clean` for the root
+     * `fmt`/`check`/`rescript:clean` scripts to run (the root-level
+     * `rescript format`/`clean` only cover packages the root config lists).
+     * Its `res` task depends on the root one, so the two never compile a
+     * shared dependency under `node_modules` at the same time. Default:
+     * `false`.
+     */
+    jsx?: boolean;
+    /**
      * Extra `run.tasks` merged over the standard ones (e.g. `start`/`demo`
-     * tasks that run a compiled `*.res.jsx` entry point).
+     * tasks that run a compiled `*.res.js` entry point).
      */
     tasks?: Record<string, RunTask>;
   } = {},
 ): ReturnType<typeof defineConfig> {
   const typescriptSurface = options.typescriptSurface ?? false;
+  const jsx = options.jsx ?? false;
+  // The task that compiles this package's ReScript.
+  const resTask = jsx ? 'res' : rootResTask;
   const noSurface = (verb: string) =>
     `echo "No TypeScript surface to ${verb} -- see the root res task"`;
 
   return defineConfig({
     run: {
       tasks: {
+        ...(jsx && {
+          res: {
+            command: 'rescript build',
+            dependsOn: [rootResTask],
+            cache: false,
+          },
+          'res:watch': {command: 'rescript build -w', cache: false},
+          'res:fmt': {command: 'rescript format', cache: false},
+          'res:check': {command: 'rescript format --check', cache: false},
+          'res:clean': {command: 'rescript clean', cache: false},
+        }),
         build: {
           command: typescriptSurface ? 'vp pack' : noSurface('build'),
           dependsOn: [
             {task: 'build', from: 'dependencies'},
             ...(typescriptSurface ? ['typecheck'] : []),
-            rootResTask,
+            resTask,
           ],
         },
         ...(typescriptSurface && {
@@ -222,16 +265,16 @@ export function makeRescriptLibConfig(
         }),
         test: {
           command: 'vp test run',
-          dependsOn: [{task: 'build', from: 'dependencies'}, rootResTask],
+          dependsOn: [{task: 'build', from: 'dependencies'}, resTask],
         },
         'test:watch': {
           command: 'vp test watch',
-          dependsOn: [{task: 'build', from: 'dependencies'}, rootResTask],
+          dependsOn: [{task: 'build', from: 'dependencies'}, resTask],
           cache: false,
         },
         typecheck: {
           command: typescriptSurface ? 'tsc --noEmit' : noSurface('typecheck'),
-          dependsOn: [{task: 'build', from: 'dependencies'}, rootResTask],
+          dependsOn: [{task: 'build', from: 'dependencies'}, resTask],
           cache: typescriptSurface ? false : undefined,
         },
         ...(typescriptSurface && {

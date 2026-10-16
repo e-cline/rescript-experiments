@@ -101,8 +101,8 @@ pnpm run check
 ```
 
 Clean up artifacts. This deletes every gitignored file: `node_modules`, `dist`, the ReScript
-compiler's output (`lib/`, `*.res.jsx`, `*.gen.tsx`), and the PPX's `_build`. The opam switch lives
-outside the repository, so it survives this:
+compiler's output (`lib/`, `*.res.js`, `*.res.jsx`, `*.gen.tsx`), and the PPX's `_build`. The opam
+switch lives outside the repository, so it survives this:
 
 ```bash
 git clean -fdX

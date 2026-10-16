@@ -3,7 +3,7 @@ Backs `AtomMap.fold` / `ComputedMap.fold` (and the `count`/`sum` convenience wra
 it), modeled on Jane Street's `Incr_map.unordered_fold`.
 
 Unlike the derived-map operations (`MapValues`, `FilterMap`, `Rekey`), this doesn't produce a
-`BTree.t` at all: there's no `MapDiff.t`, and (per `spec`'s own fields) no `historyLength`, since a
+tree at all: there's no `MapDiff.t`, and (per `spec`'s own fields) no `historyLength`, since a
 scalar `'acc` has no natural diff shape for a history buffer to hold. What's shared with the
 derived-map operations is only the replay strategy: on the first computation, or whenever `source`'s
 history can't cover the gap, `spec.add` is folded over every entry in `source`'s current tree from
@@ -11,11 +11,9 @@ scratch; otherwise each diff batch since last time is replayed into the previous
 `spec.add`/`spec.remove`/`spec.update`.
 */
 
-// See `AtomMap.res`'s own comment on these opens: `Signal`/`Computed` are
-// res_signals', `BTree` is res_trees's, each reached through its own
-// namespace.
+// `Signal`/`Computed` are res_signals', reached through its namespace (see
+// `AtomMap.res`'s own comment on this).
 open ResSignals
-open ResTrees
 
 /**
 How a map's entries are folded into an accumulator of type `'acc`: `init` is the accumulator for an
@@ -44,38 +42,43 @@ type spec<'k, 'v, 'acc> = {
   revertToInitWhenEmpty: bool,
 }
 
-let build = (
-  ~name: string,
-  source: Signal.t<BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,
-  spec: spec<'k, 'v, 'acc>,
-): Signal.t<'acc, unit> =>
-  Computed.makeIncremental(~name, (previous, lastComputedEpoch) => {
-    let sourceTree = Signal.get(source)
-    let fromScratch = () =>
-      BTree.reduce(sourceTree, spec.init, (acc, key, value) => spec.add(key, value, acc))
-    let acc = switch previous {
-    | None => fromScratch()
-    | Some(previousAcc) =>
-      switch Signal.getDiffSince(source, lastComputedEpoch) {
-      | Reset => fromScratch()
-      | Diffs(batches) =>
-        batches->Belt.Array.reduce(previousAcc, (acc, batch) =>
-          batch->Belt.Array.reduce(
-            acc,
-            (acc, entry) =>
-              switch entry {
-              | MapDiff.OnlyRight(key, value) => spec.add(key, value, acc)
-              | MapDiff.OnlyLeft(key, value) => spec.remove(key, value, acc)
-              | MapDiff.Different(key, leftValue, rightValue) =>
-                switch spec.update {
-                | Some(update) => update(key, leftValue, rightValue, acc)
-                | None => spec.add(key, rightValue, spec.remove(key, leftValue, acc))
-                }
-              },
+/** The fold for maps built on `Tree`, which only needs to read it. */
+module Make = (Tree: ResTrees.SortedMap.Reads) => {
+  type spec<'k, 'v, 'acc> = spec<'k, 'v, 'acc>
+
+  let build = (
+    ~name: string,
+    source: Signal.t<Tree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,
+    spec: spec<'k, 'v, 'acc>,
+  ): Signal.t<'acc, unit> =>
+    Computed.makeIncremental(~name, (previous, lastComputedEpoch) => {
+      let sourceTree = Signal.get(source)
+      let fromScratch = () =>
+        Tree.reduce(sourceTree, spec.init, (acc, key, value) => spec.add(key, value, acc))
+      let acc = switch previous {
+      | None => fromScratch()
+      | Some(previousAcc) =>
+        switch Signal.getDiffSince(source, lastComputedEpoch) {
+        | Reset => fromScratch()
+        | Diffs(batches) =>
+          batches->Belt.Array.reduce(previousAcc, (acc, batch) =>
+            batch->Belt.Array.reduce(
+              acc,
+              (acc, entry) =>
+                switch entry {
+                | MapDiff.OnlyRight(key, value) => spec.add(key, value, acc)
+                | MapDiff.OnlyLeft(key, value) => spec.remove(key, value, acc)
+                | MapDiff.Different(key, leftValue, rightValue) =>
+                  switch spec.update {
+                  | Some(update) => update(key, leftValue, rightValue, acc)
+                  | None => spec.add(key, rightValue, spec.remove(key, leftValue, acc))
+                  }
+                },
+            )
           )
-        )
+        }
       }
-    }
-    let finalAcc = spec.revertToInitWhenEmpty && BTree.isEmpty(sourceTree) ? spec.init : acc
-    Computed.Value(finalAcc)
-  })
+      let finalAcc = spec.revertToInitWhenEmpty && Tree.isEmpty(sourceTree) ? spec.init : acc
+      Computed.Value(finalAcc)
+    })
+}

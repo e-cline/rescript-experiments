@@ -11,7 +11,7 @@ a list and only applied once every removal in that batch has landed. That
 ordering means a key freed up by one entry's removal is safely available
 to another entry's addition within the same batch (including a
 same-batch "swap" of two entries' output keys), while a genuine collision
-between two still-live entries is reliably caught (via `BTree.has` on
+between two still-live entries is reliably caught (via the tree's `has` on
 each deferred add) rather than one silently overwriting the other.
 
 One deliberate simplification: a same-key value change
@@ -22,7 +22,7 @@ special case and updating in place. The result is identical either way;
 the only difference is that the emitted diff for that change is an
 `OnlyLeft`/`OnlyRight` pair instead of a single `Different` -- a
 reasonable trade against the extra machinery (unpacking `id`'s
-comparator, see `BTree.res`'s comment on `make`) that
+comparator, see `ResTrees.BTree.make`'s comment) that
 detecting it directly would need.
 
 Multiple batches (i.e. several upstream updates made without an
@@ -43,93 +43,93 @@ atomically, make one source write whose diff already contains both
 whole new tree at once).
 */
 
-// See `AtomMap.res`'s own comment on these opens: `Signal`/`Computed` are
-// res_signals', `BTree` is res_trees's, each reached through its own
-// namespace.
+// `Signal`/`Computed` are res_signals', reached through its namespace (see
+// `AtomMap.res`'s own comment on this).
 open ResSignals
-open ResTrees
 
-let buildFromScratch = (
-  ~name: string,
-  ~id: Belt.Id.comparable<'k2, 'id2>,
-  ~maxNodeSize: int,
-  sourceTree: BTree.t<'k, 'v, 'id>,
-  mapFn: ('k, 'v) => ('k2, 'v2),
-): BTree.t<'k2, 'v2, 'id2> => {
-  let result = ref(BTree.make(~id, ~maxNodeSize))
-  BTree.forEach(sourceTree, (key, value) => {
-    let (key2, value2) = mapFn(key, value)
-    if BTree.has(result.contents, key2) {
-      JsError.throwWithMessage(
-        `${name}: mapFn produced the same output key for two different input entries.`,
-      )
-    }
-    result := BTree.set(result.contents, key2, value2)
-  })
-  result.contents
-}
+/** The operation for maps built on `Tree`. */
+module Make = (Tree: MapTree.S) => {
+  module Diff = MapDiff.Make(Tree)
 
-let build = (
-  ~name: string,
-  ~historyLength: int,
-  ~id: Belt.Id.comparable<'k2, 'id2>,
-  source: Signal.t<BTree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,
-  mapFn: ('k, 'v) => ('k2, 'v2),
-): Signal.t<BTree.t<'k2, 'v2, 'id2>, MapDiff.t<'k2, 'v2>> =>
-  Computed.makeIncremental(
-    ~name,
-    ~historyLength,
-    ~computeDiff=(prev, curr, _, _) => Some(MapDiff.ofTrees(prev, curr)),
-    (previous, lastComputedEpoch) => {
-      let sourceTree = Signal.get(source)
-      let fromScratch = () => Computed.Value(
-        buildFromScratch(~name, ~id, ~maxNodeSize=BTree.maxNodeSize(sourceTree), sourceTree, mapFn),
-      )
-      switch previous {
-      | None => fromScratch()
-      | Some(previousTree) =>
-        switch Signal.getDiffSince(source, lastComputedEpoch) {
-        | Reset => fromScratch()
-        | Diffs([]) => Computed.Value(previousTree)
-        | Diffs(batches) =>
-          let diff: MapDiff.t<'k2, 'v2> = []
-          let tree = ref(previousTree)
-          let removeIfPresent = key2 =>
-            switch BTree.get(tree.contents, key2) {
-            | Some(oldValue) =>
-              tree := BTree.remove(tree.contents, key2)
-              Array.push(diff, MapDiff.OnlyLeft(key2, oldValue))
-            | None => ()
-            }
-          batches->Belt.Array.forEach(batch => {
-            // Additions in this batch (genuine new entries, and the "new side" of a
-            // moved entry) are deferred until every removal below has landed -- see
-            // the module comment above.
-            let pendingAdds: array<('k2, 'v2)> = []
-            batch->Belt.Array.forEach(entry =>
-              switch entry {
-              | MapDiff.OnlyRight(key, value) => Array.push(pendingAdds, mapFn(key, value))
-              | MapDiff.OnlyLeft(key, value) =>
-                let (oldKey, _) = mapFn(key, value)
-                removeIfPresent(oldKey)
-              | MapDiff.Different(key, leftValue, rightValue) =>
-                let (oldKey, _) = mapFn(key, leftValue)
-                removeIfPresent(oldKey)
-                Array.push(pendingAdds, mapFn(key, rightValue))
-              }
-            )
-            pendingAdds->Belt.Array.forEach(((key2, value2)) => {
-              if BTree.has(tree.contents, key2) {
-                JsError.throwWithMessage(
-                  `${name}: mapFn produced the same output key for two different input entries.`,
-                )
-              }
-              tree := BTree.set(tree.contents, key2, value2)
-              Array.push(diff, MapDiff.OnlyRight(key2, value2))
-            })
-          })
-          Computed.ValueWithDiff(tree.contents, diff)
-        }
+  let buildFromScratch = (
+    ~name: string,
+    ~id: Belt.Id.comparable<'k2, 'id2>,
+    sourceTree: Tree.t<'k, 'v, 'id>,
+    mapFn: ('k, 'v) => ('k2, 'v2),
+  ): Tree.t<'k2, 'v2, 'id2> => {
+    let result = ref(Tree.emptyLike(sourceTree, ~id))
+    Tree.forEach(sourceTree, (key, value) => {
+      let (key2, value2) = mapFn(key, value)
+      if Tree.has(result.contents, key2) {
+        JsError.throwWithMessage(
+          `${name}: mapFn produced the same output key for two different input entries.`,
+        )
       }
-    },
-  )
+      result := Tree.set(result.contents, key2, value2)
+    })
+    result.contents
+  }
+
+  let build = (
+    ~name: string,
+    ~historyLength: int,
+    ~id: Belt.Id.comparable<'k2, 'id2>,
+    source: Signal.t<Tree.t<'k, 'v, 'id>, MapDiff.t<'k, 'v>>,
+    mapFn: ('k, 'v) => ('k2, 'v2),
+  ): Signal.t<Tree.t<'k2, 'v2, 'id2>, MapDiff.t<'k2, 'v2>> =>
+    Computed.makeIncremental(
+      ~name,
+      ~historyLength,
+      ~computeDiff=(prev, curr, _, _) => Some(Diff.ofTrees(prev, curr)),
+      (previous, lastComputedEpoch) => {
+        let sourceTree = Signal.get(source)
+        let fromScratch = () => Computed.Value(buildFromScratch(~name, ~id, sourceTree, mapFn))
+        switch previous {
+        | None => fromScratch()
+        | Some(previousTree) =>
+          switch Signal.getDiffSince(source, lastComputedEpoch) {
+          | Reset => fromScratch()
+          | Diffs([]) => Computed.Value(previousTree)
+          | Diffs(batches) =>
+            let diff: MapDiff.t<'k2, 'v2> = []
+            let tree = ref(previousTree)
+            let removeIfPresent = key2 =>
+              switch Tree.get(tree.contents, key2) {
+              | Some(oldValue) =>
+                tree := Tree.remove(tree.contents, key2)
+                Array.push(diff, MapDiff.OnlyLeft(key2, oldValue))
+              | None => ()
+              }
+            batches->Belt.Array.forEach(batch => {
+              // Additions in this batch (genuine new entries, and the "new side" of a
+              // moved entry) are deferred until every removal below has landed -- see
+              // the module comment above.
+              let pendingAdds: array<('k2, 'v2)> = []
+              batch->Belt.Array.forEach(entry =>
+                switch entry {
+                | MapDiff.OnlyRight(key, value) => Array.push(pendingAdds, mapFn(key, value))
+                | MapDiff.OnlyLeft(key, value) =>
+                  let (oldKey, _) = mapFn(key, value)
+                  removeIfPresent(oldKey)
+                | MapDiff.Different(key, leftValue, rightValue) =>
+                  let (oldKey, _) = mapFn(key, leftValue)
+                  removeIfPresent(oldKey)
+                  Array.push(pendingAdds, mapFn(key, rightValue))
+                }
+              )
+              pendingAdds->Belt.Array.forEach(((key2, value2)) => {
+                if Tree.has(tree.contents, key2) {
+                  JsError.throwWithMessage(
+                    `${name}: mapFn produced the same output key for two different input entries.`,
+                  )
+                }
+                tree := Tree.set(tree.contents, key2, value2)
+                Array.push(diff, MapDiff.OnlyRight(key2, value2))
+              })
+            })
+            Computed.ValueWithDiff(tree.contents, diff)
+          }
+        }
+      },
+    )
+}

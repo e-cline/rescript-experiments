@@ -1,16 +1,12 @@
 /***
 The diff type recorded by the signal backing `AtomMap`/`ComputedMap`: one entry per key that was
-added, removed, or changed value between two consecutive snapshots of the map's `BTree.t`, exactly
-as `BTree.diff` reports it. Naming mirrors `BTree.diff`'s own callback names
-(`onlyLeft`/`onlyRight`/`different`) rather than a more map-flavored "added"/"removed"/"changed",
-since "left"/"right" is what's meaningful when a derived map's diff (e.g. `AtomMap.mapValues`'s
-result) is itself diffed against a *different* pair of trees than the ones a reader might assume.
+added, removed, or changed value between two consecutive snapshots of the map's tree, exactly as the
+tree's `diff` (`ResTrees.SortedMap.Persistent.diff`) reports it. Naming mirrors `diff`'s own
+callback names (`onlyLeft`/`onlyRight`/`different`) rather than a more map-flavored
+"added"/"removed"/"changed", since "left"/"right" is what's meaningful when a derived map's diff
+(e.g. `AtomMap.mapValues`'s result) is itself diffed against a *different* pair of trees than the
+ones a reader might assume.
 */
-
-// `@e-cline/res_trees`'s own `rescript.json` sets `"namespace": "ResTrees"`,
-// so its modules (`BTree`, `MutableBTree`) aren't visible to another package
-// unqualified without this -- see `AtomMap.res`'s own comment on these opens.
-open ResTrees
 
 /**
 One key's change between an older tree (left) and a newer one (right): `OnlyLeft(key, value)` if
@@ -25,27 +21,33 @@ type entry<'k, 'v> =
 /** The changes between two snapshots of a map: one `entry` per affected key. */
 type t<'k, 'v> = array<entry<'k, 'v>>
 
-/**
-The diff between `left` and `right`, via `BTree.diff` -- cheap for two trees that share structure
-(see `BTree.res`'s own comment on `diff`).
-*/
-let ofTrees = (
-  ~valueEqual: option<('v, 'v) => bool>=?,
-  left: BTree.t<'k, 'v, 'id>,
-  right: BTree.t<'k, 'v, 'id>,
-): t<'k, 'v> => {
-  let entries = []
-  BTree.diff(
-    left,
-    right,
-    ~valueEqual?,
-    ~onlyLeft=(key, value) => Array.push(entries, OnlyLeft(key, value)),
-    ~onlyRight=(key, value) => Array.push(entries, OnlyRight(key, value)),
-    ~different=(key, leftValue, rightValue) =>
-      Array.push(entries, Different(key, leftValue, rightValue)),
-  )
-  entries
+/** `ofTrees` for any persistent tree. */
+module Make = (Tree: ResTrees.SortedMap.Persistent) => {
+  /**
+  The diff between `left` and `right`, via `Tree.diff` -- cheap for two trees that share structure
+  (see `ResTrees.SortedMap.Persistent.diff`).
+  */
+  let ofTrees = (
+    ~valueEqual: option<('v, 'v) => bool>=?,
+    left: Tree.t<'k, 'v, 'id>,
+    right: Tree.t<'k, 'v, 'id>,
+  ): t<'k, 'v> => {
+    let entries = []
+    Tree.diff(
+      left,
+      right,
+      ~valueEqual?,
+      ~onlyLeft=(key, value) => Array.push(entries, OnlyLeft(key, value)),
+      ~onlyRight=(key, value) => Array.push(entries, OnlyRight(key, value)),
+      ~different=(key, leftValue, rightValue) =>
+        Array.push(entries, Different(key, leftValue, rightValue)),
+    )
+    entries
+  }
 }
+
+/** The diff between two `ResTrees.BTree.t`s, the trees `AtomMap`/`ComputedMap` hold. */
+include Make(ResTrees.BTree)
 
 /**
 Default `historyLength` for the signal backing `AtomMap`/`ComputedMap`: enough slack for a chained

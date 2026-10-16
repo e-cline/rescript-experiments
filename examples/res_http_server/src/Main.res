@@ -1,6 +1,6 @@
 /***
 Starts the server on Node. Run with `vp run start` (or, after a build,
-`tsx src/Main.res.jsx`).
+`node src/Main.res.js`).
 
 - `PORT` is the port to listen on, 3000 by default.
 - `HOST` is the address to listen on, `127.0.0.1` by default: this machine

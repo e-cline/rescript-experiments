@@ -1,17 +1,22 @@
 import {defineConfig} from 'vite-plus';
 
 // `rescript build` writes these next to their `.res`/`.resi` source (see
-// vite.config.base.ts's `makeRescriptLibConfig`); both are generated,
-// gitignored, and already formatted by the ReScript compiler / genType, not
-// by us.
-const rescriptGeneratedPatterns = ['**/*.res.jsx', '**/*.gen.tsx'];
+// vite.config.base.ts's `makeRescriptLibConfig`): `.res.js`, or `.res.jsx` in a
+// JSX package, plus genType's `.gen.tsx`. All are generated (the JS is
+// committed; `.gen.tsx` is gitignored) and already formatted by the ReScript
+// compiler / genType, not by us.
+const rescriptGeneratedPatterns = [
+  '**/*.res.js',
+  '**/*.res.jsx',
+  '**/*.gen.tsx',
+];
 
 export default defineConfig({
   run: {
     tasks: {
-      // The one place ReScript is compiled, for the whole workspace.
+      // The one place ReScript is compiled, for every package without JSX.
       // `rescript build` run from here follows the root `rescript.json`'s
-      // `dependencies` (every `packages/*` package) and compiles them,
+      // `dependencies` (every such package) and compiles them to `.res.js`,
       // plus the ReScript dependencies they share (`rescript-vitest`,
       // `@rescript/webapi`, ...), in a single process. Every ReScript
       // package's `build`/`test`/`typecheck` depends on this task by name
@@ -24,11 +29,16 @@ export default defineConfig({
       // change. Run it alone with `vp run -w res`.
       //
       // Not cached: it also writes compiled output for shared dependencies
-      // under `node_modules` (e.g. `rescript-vitest`'s `Vitest.res.jsx`),
+      // under `node_modules` (e.g. `rescript-vitest`'s `Vitest.res.js`),
       // which a cache replay doesn't restore after `clean` + `install` wipe
       // it, leaving tests failing with "Cannot find package
-      // 'rescript-vitest/src/Vitest.res.jsx'". `rescript build` is
+      // 'rescript-vitest/src/Vitest.res.js'". `rescript build` is
       // incremental, so re-running it is cheap.
+      //
+      // Packages with JSX are separate ReScript build roots with their own
+      // `res` task, which depends on this one (`jsx`, `package-specs`, and
+      // `suffix` are root-only settings; see vite.config.base.ts's
+      // `makeRescriptLibConfig`).
       //
       // Depends on building the `@prettyPrint` PPX (tools/ppx/pretty_print,
       // an OCaml program built by dune): `rescript build` runs it on every
@@ -46,6 +56,12 @@ export default defineConfig({
         command: 'rescript build -w',
         cache: false,
       },
+      // Format, check the formatting of, and clean the packages this root
+      // builds. The root `fmt`/`check`/`rescript:clean` scripts run these
+      // with `vp run -r`, which also reaches the JSX packages' own copies.
+      'res:fmt': {command: 'rescript format', cache: false},
+      'res:check': {command: 'rescript format --check', cache: false},
+      'res:clean': {command: 'rescript clean', cache: false},
     },
   },
   // What the pre-commit hook (`.vite-hooks/pre-commit`, which runs

@@ -11,6 +11,7 @@
     }
   ],
   "suffix": ".res.jsx",
+  "jsx": {"version": 4, "preserve": true},
   "namespace": "ResReactUiExample",
   "gentypeconfig": {
     "language": "typescript",

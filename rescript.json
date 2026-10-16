@@ -10,7 +10,6 @@
     "@e-cline/res_signals_benchmarks",
     "@e-cline/res_signal_maps",
     "@e-cline/res_signal_maps_benchmarks",
-    "@e-cline/res_react_ui_example",
     "@e-cline/res_pretty_print_example",
     "@e-cline/res_tree_shaking_example",
     "@e-cline/res_http_server_example",
@@ -22,6 +21,5 @@
       "in-source": true
     }
   ],
-  "suffix": ".res.jsx",
-  "jsx": {"version": 4, "preserve": true}
+  "suffix": ".res.js"
 }

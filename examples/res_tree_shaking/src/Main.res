@@ -1,8 +1,8 @@
 /***
 An ordinary Vite app whose source is written in ReScript, consuming @e-cline/res_common's `Env`
 module as a normal ReScript package dependency (see `rescript.json`). `rescript build` compiles this
-file to plain ESM (`Main.res.jsx`), which Vite bundles like any other JavaScript -- no bundler
-plugin. The compiled file imports `isDev`/`isProd` from `@e-cline/res_common/src/Env.res.jsx`, which
+file to plain ESM (`Main.res.js`), which Vite bundles like any other JavaScript -- no bundler
+plugin. The compiled file imports `isDev`/`isProd` from `@e-cline/res_common/src/Env.res.js`, which
 itself binds to @e-cline/js_env's `IS_DEV`/`IS_PROD`, so building this example for production is the
 real end-to-end test of whether that whole chain (js_env's export condition -> Env.res's binding ->
 this file's `if`) actually gets dead-code-eliminated, not just something asserted from ReScript unit

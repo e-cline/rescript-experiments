@@ -10,7 +10,7 @@
       "in-source": true
     }
   ],
-  "suffix": ".res.jsx",
+  "suffix": ".res.js",
   "namespace": "ResSignalMapsBenchmarks",
   "dependencies": [
     "@e-cline/res_signal_maps",

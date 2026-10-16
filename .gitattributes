@@ -1,1 +1,6 @@
 * text=auto eol=lf
+
+# The ReScript compiler's output, committed next to its `.res` source (see
+# .gitignore). Collapsed in GitHub diffs and left out of language stats.
+*.res.js linguist-generated=true
+*.res.jsx linguist-generated=true

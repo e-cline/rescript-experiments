@@ -22,26 +22,12 @@ module BTree: SortedMapSuite.S = {
   let diff = Some((left, right, ~different) => ResTrees.BTree.diff(left, right, ~different))
 }
 
-module AvlTree: SortedMapSuite.S = {
-  type t<'k, 'v, 'id> = ResTrees.AvlTree.t<'k, 'v, 'id>
-  let name = "AvlTree"
-  let make = ResTrees.AvlTree.make
-  let fromArray = ResTrees.AvlTree.fromArray
-  let get = ResTrees.AvlTree.get
-  let set = ResTrees.AvlTree.set
-  let remove = ResTrees.AvlTree.remove
-  let forEach = ResTrees.AvlTree.forEach
-  let reduce = ResTrees.AvlTree.reduce
-  let toArray = ResTrees.AvlTree.toArray
-  let keysArray = ResTrees.AvlTree.keysArray
-  let getAt = Some(ResTrees.AvlTree.getAt)
-  let indexOf = Some(ResTrees.AvlTree.indexOf)
-  let diff = Some((left, right, ~different) => ResTrees.AvlTree.diff(left, right, ~different))
-}
-
-/** `ChunkTree` and its variants, all of which share its interface. */
-module Chunked = (
-  Tree: ResTrees.ChunkTree.S,
+/**
+Any tree with `SortedMap.S`, the interface `AvlTree` and every `ChunkTree` share. (`BTree` has
+`SortedMap.Persistent`, but its constructors also take a node size, so it is adapted by hand above.)
+*/
+module Adapt = (
+  Tree: ResTrees.SortedMap.S,
   Name: {
     let name: string
   },
@@ -62,8 +48,15 @@ module Chunked = (
   let diff = Some((left, right, ~different) => Tree.diff(left, right, ~different))
 }
 
+module AvlTree = Adapt(
+  ResTrees.AvlTree,
+  {
+    let name = "AvlTree"
+  },
+)
+
 /** With its default leaves of up to 16 entries. */
-module ChunkTree = Chunked(
+module ChunkTree = Adapt(
   ResTrees.ChunkTree,
   {
     let name = "ChunkTree"
@@ -71,7 +64,7 @@ module ChunkTree = Chunked(
 )
 
 /** With leaves of up to 32 entries. */
-module ChunkTree32 = Chunked(
+module ChunkTree32 = Adapt(
   ResTrees.ChunkTree.Make({
     let maxLeafSize = 32
   }),

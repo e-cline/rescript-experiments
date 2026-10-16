@@ -3,7 +3,8 @@
 Persistent sorted maps for ReScript, each with a mutable wrapper, positional access, and a diff that
 skips whatever two trees share.
 
-There are three trees, with the same operations (`BTree` also takes a node size):
+There are three trees, with the same operations (`BTree` also takes a node size), declared once as
+module types in [`src/SortedMap.res`](src/SortedMap.res):
 
 | Module                           | Structure                                     | Reach for it when                                                    |
 | -------------------------------- | --------------------------------------------- | -------------------------------------------------------------------- |
@@ -41,14 +42,20 @@ with a `.resi` that keeps its tree type opaque. Each tree has a directory of its
 with a README, and everything else is implementation, in an `internal/` directory next to the tree
 it belongs to:
 
+- **[`src/SortedMap.res`](src/SortedMap.res)**: the interfaces the trees share, as module types,
+  where every shared operation is documented. `Persistent` is what `BTree`, `AvlTree` and
+  `ChunkTree` all have; `S` adds the `make`/`fromArray` that take only a comparator, which every
+  tree but `BTree` has (its constructors also take an optional node size, and so can't match); and
+  `Mutable` is what every `Mutable` wrapper has. Each `.resi` is an `include` of one of these, plus
+  whatever that tree adds. Code that should work with any tree takes one as a functor argument.
 - **[`src/btree/`](src/btree)**: `BTree` and `MutableBTree`, with `internal/` holding the B+tree's
   node (`Node`), insertion (`Insert`), removal (`Delete`), diff (`Diff`) and array helpers
   (`ArrayOps`).
 - **[`src/avl/`](src/avl)**: `AvlTree` and `MutableAvlTree`.
 - **[`src/chunk/`](src/chunk)**: `ChunkTree` and `MutableChunkTree`.
 - **`tests/`**: the tests for each tree, in `btree/`, `avl/` and `chunk/` to match `src/`, plus
-  [`tests/candidates/Conformance.res`](tests/candidates/Conformance.res), one suite that any tree
-  with `AvlTree`'s interface can be run through.
+  [`tests/candidates/Conformance.res`](tests/candidates/Conformance.res), one suite that any
+  `SortedMap.S` can be run through.
 - **[`benchmarks/`](benchmarks)**: a separate, unpublished package measuring each tree against
   `Belt.Map` and against each other, on a bundled and minified build.
 
@@ -136,8 +143,8 @@ The strongest coverage comes from three techniques, used for all three trees:
   inserted, overwritten and removed again and again.
 - **One conformance suite for every tree.**
   [`tests/candidates/Conformance.res`](tests/candidates/Conformance.res) is a functor over
-  `AvlTree`'s interface holding the above plus diff checks (against a plain comparison, in key
-  order, and counting how many entries a diff compares, to confirm it really skips what is shared).
+  `SortedMap.S` holding the above plus diff checks (against a plain comparison, in key order, and
+  counting how many entries a diff compares, to confirm it really skips what is shared).
   `BTree_structure_test.res` runs it at node sizes 8, 16 and 32, and adds what can only be seen from
   inside: where nodes split, borrow and merge, which arrays an edit reuses, and diffs across runs of
   shared nodes.

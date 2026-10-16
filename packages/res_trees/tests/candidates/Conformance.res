@@ -1,42 +1,10 @@
 /***
-One test suite for any persistent sorted map with `AvlTree`'s interface, so that an experimental
-tree structure can be checked against exactly what the existing ones are held to. Not itself a
-test file: each candidate has a `*_test.res` next to this that applies `Make` to it.
+One test suite for any persistent sorted map with `AvlTree`'s interface, `SortedMap.S`, so that
+an experimental tree structure can be checked against exactly what the existing ones are held to.
+Not itself a test file: each candidate has a `*_test.res` next to this that applies `Make` to it.
 */
 
 open Vitest
-
-/** `AvlTree.resi`, as a module type. */
-module type S = {
-  type t<'k, 'v, 'id>
-  let make: (~id: Belt.Id.comparable<'k, 'id>) => t<'k, 'v, 'id>
-  let fromArray: (~id: Belt.Id.comparable<'k, 'id>, array<('k, 'v)>) => t<'k, 'v, 'id>
-  let get: (t<'k, 'v, 'id>, 'k) => option<'v>
-  let has: (t<'k, 'v, 'id>, 'k) => bool
-  let size: t<'k, 'v, 'id> => int
-  let isEmpty: t<'k, 'v, 'id> => bool
-  let minKey: t<'k, 'v, 'id> => option<'k>
-  let maxKey: t<'k, 'v, 'id> => option<'k>
-  let getAt: (t<'k, 'v, 'id>, int) => option<('k, 'v)>
-  let indexOf: (t<'k, 'v, 'id>, 'k) => option<int>
-  let set: (t<'k, 'v, 'id>, 'k, 'v) => t<'k, 'v, 'id>
-  let remove: (t<'k, 'v, 'id>, 'k) => t<'k, 'v, 'id>
-  let toArray: t<'k, 'v, 'id> => array<('k, 'v)>
-  let keysArray: t<'k, 'v, 'id> => array<'k>
-  let valuesArray: t<'k, 'v, 'id> => array<'v>
-  let forEach: (t<'k, 'v, 'id>, ('k, 'v) => unit) => unit
-  let reduce: (t<'k, 'v, 'id>, 'acc, ('acc, 'k, 'v) => 'acc) => 'acc
-  let diff: (
-    t<'k, 'v, 'id>,
-    t<'k, 'v, 'id>,
-    ~valueEqual: ('v, 'v) => bool=?,
-    ~onlyLeft: ('k, 'v) => unit=?,
-    ~onlyRight: ('k, 'v) => unit=?,
-    ~different: ('k, 'v, 'v) => unit=?,
-  ) => unit
-  let sharedSubtreeCount: (t<'k, 'v, 'id>, t<'k, 'v, 'id>) => int
-  let checkInvariants: t<'k, 'v, 'id> => unit
-}
 
 module type Config = {
   /** Shown in every test's name. */
@@ -49,7 +17,7 @@ module type Config = {
   let maxComparedAfter25Edits: int
 }
 
-module Make = (Tree: S, Config: Config) => {
+module Make = (Tree: SortedMap.S, Config: Config) => {
   let id = TestSupport.intId
   type tree = Tree.t<int, int, TestSupport.IntCmp.identity>
 

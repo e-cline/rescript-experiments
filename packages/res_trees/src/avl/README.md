@@ -27,8 +27,8 @@ ResTrees.AvlTree.diff(
 )
 ```
 
-The API is `BTree`'s without `maxNodeSize`, which means nothing for a tree with one entry per node.
-[`AvlTree.resi`](AvlTree.resi) documents every function.
+The API is `BTree`'s without `maxNodeSize`, which means nothing for a tree with one entry per node:
+`SortedMap.S`, documented in [`SortedMap.res`](../SortedMap.res).
 
 ## Choosing a tree
 

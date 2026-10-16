@@ -1,57 +1,8 @@
 // See `ChunkTree.resi` for what this module promises. Everything is in `internal/`: `ChunkMap`
 // has the operations at any leaf size, `ChunkNode` the node and `ChunkDiff` the diff. `Make`
-// only fixes the leaf size and gives them `AvlTree`'s interface.
+// only fixes the leaf size and gives them `SortedMap.S`, the interface `AvlTree` has too.
 
-module type S = {
-  type t<'k, 'v, 'id>
-
-  let make: (~id: Belt.Id.comparable<'k, 'id>) => t<'k, 'v, 'id>
-
-  let fromArray: (~id: Belt.Id.comparable<'k, 'id>, array<('k, 'v)>) => t<'k, 'v, 'id>
-
-  let get: (t<'k, 'v, 'id>, 'k) => option<'v>
-
-  let has: (t<'k, 'v, 'id>, 'k) => bool
-
-  let size: t<'k, 'v, 'id> => int
-
-  let isEmpty: t<'k, 'v, 'id> => bool
-
-  let minKey: t<'k, 'v, 'id> => option<'k>
-
-  let maxKey: t<'k, 'v, 'id> => option<'k>
-
-  let getAt: (t<'k, 'v, 'id>, int) => option<('k, 'v)>
-
-  let indexOf: (t<'k, 'v, 'id>, 'k) => option<int>
-
-  let set: (t<'k, 'v, 'id>, 'k, 'v) => t<'k, 'v, 'id>
-
-  let remove: (t<'k, 'v, 'id>, 'k) => t<'k, 'v, 'id>
-
-  let toArray: t<'k, 'v, 'id> => array<('k, 'v)>
-
-  let keysArray: t<'k, 'v, 'id> => array<'k>
-
-  let valuesArray: t<'k, 'v, 'id> => array<'v>
-
-  let forEach: (t<'k, 'v, 'id>, ('k, 'v) => unit) => unit
-
-  let reduce: (t<'k, 'v, 'id>, 'acc, ('acc, 'k, 'v) => 'acc) => 'acc
-
-  let diff: (
-    t<'k, 'v, 'id>,
-    t<'k, 'v, 'id>,
-    ~valueEqual: ('v, 'v) => bool=?,
-    ~onlyLeft: ('k, 'v) => unit=?,
-    ~onlyRight: ('k, 'v) => unit=?,
-    ~different: ('k, 'v, 'v) => unit=?,
-  ) => unit
-
-  let sharedSubtreeCount: (t<'k, 'v, 'id>, t<'k, 'v, 'id>) => int
-
-  let checkInvariants: t<'k, 'v, 'id> => unit
-}
+module type S = SortedMap.S
 
 module type Config = {
   let maxLeafSize: int

@@ -29,7 +29,8 @@ ResTrees.ChunkTree.diff(
 ```
 
 Leaves hold up to 16 entries. `ChunkTree.Make({let maxLeafSize = 32})` gives the same tree with
-another maximum (at least 2). [`ChunkTree.resi`](ChunkTree.resi) documents every function.
+another maximum (at least 2). The API is `AvlTree`'s, `SortedMap.S`, documented in
+[`SortedMap.res`](../SortedMap.res).
 
 ## How it measures
 

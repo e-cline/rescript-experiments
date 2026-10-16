@@ -14,8 +14,8 @@ at node sizes 8, 16 and 32. That is against a tree from `fromArray`, whose leave
 tree built by insertion, as the benchmarks' are, it is 166, 318 and 610.
 */
 /**
-`BTree` at a fixed node size, with `AvlTree`'s `make`/`fromArray` (no `maxNodeSize` argument), as
-`Conformance.Make` and `Focused` below need.
+`BTree` at a fixed node size, with `SortedMap.S`'s `make`/`fromArray` (no `maxNodeSize`
+argument), as `Conformance.Make` and `Focused` below need.
 */
 module Sized = (
   Size: {

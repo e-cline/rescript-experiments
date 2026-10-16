@@ -27,9 +27,10 @@ ResTrees.BTree.diff(
 )
 ```
 
-`make` and `fromArray` take an optional `~maxNodeSize` (see below). [`BTree.resi`](BTree.resi)
-documents every function. For how it compares with the other trees, see the
-[package README](../../README.md).
+`make` and `fromArray` take an optional `~maxNodeSize` (see below). The operations every tree shares
+are documented in [`SortedMap.res`](../SortedMap.res) (`BTree` is a `SortedMap.Persistent`), and
+what only `BTree` has in [`BTree.resi`](BTree.resi). For how it compares with the other trees, see
+the [package README](../../README.md).
 
 ## How it works
 

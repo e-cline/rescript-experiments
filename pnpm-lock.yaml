@@ -180,8 +180,8 @@ catalogs:
       specifier: ^12.3.1
       version: 12.3.1
     '@rescript/webapi':
-      specifier: 0.1.0-experimental-0781ac8
-      version: 0.1.0-experimental-0781ac8
+      specifier: 0.1.0-pre-alpha-4542085
+      version: 0.1.0-pre-alpha-4542085
     '@types/node':
       specifier: ^26.2.0
       version: 26.2.0
@@ -309,7 +309,7 @@ importers:
         version: 12.3.1
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
     devDependencies:
       rescript:
         specifier: 'catalog:'
@@ -465,7 +465,7 @@ importers:
         version: 2.1.4(hono@4.13.13)
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
       hono:
         specifier: 'catalog:'
         version: 4.13.13
@@ -1319,8 +1319,8 @@ packages:
   '@rescript/runtime@12.3.1':
     resolution: {integrity: sha512-yTM0iTl6owyA37UEtPAZR0A3G1kFffJWb+UE6+rcG/N2kxYQnuSlNDfVvsry7l8O+o/ME6QE7Zt7efjCDGM3xg==}
 
-  '@rescript/webapi@0.1.0-experimental-0781ac8':
-    resolution: {integrity: sha512-QLp2IT8SSZWBSenB+J0mdsT0wgS6znxWtHJ1V7971jDpYqGjyvW7fKk1NEPjz5LBE6+GTda8NBBqq3R+VYWOhA==}
+  '@rescript/webapi@0.1.0-pre-alpha-4542085':
+    resolution: {integrity: sha512-QCTpIYyXldeF88vh0vAN9alhB0NEhCk+20MDdP1KYMS1IpiWO+1HG/u1PGGA92EgupsX71ZMG1c/WcaT8wzAQQ==}
     peerDependencies:
       rescript: '>=12.0.0 <13'
 
@@ -2824,7 +2824,7 @@ snapshots:
 
   '@rescript/runtime@12.3.1': {}
 
-  '@rescript/webapi@0.1.0-experimental-0781ac8(rescript@12.3.1)':
+  '@rescript/webapi@0.1.0-pre-alpha-4542085(rescript@12.3.1)':
     dependencies:
       rescript: 12.3.1
 

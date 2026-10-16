@@ -19,7 +19,7 @@
   },
   "ocaml.sandbox": {
     "kind": "opam",
-    "switch": "${workspaceFolder}/tools/ppx/pretty_print"
+    "switch": "ppx_pretty_print"
   },
   "[ocaml]": {
     "editor.defaultFormatter": "ocamllabs.ocaml-platform"

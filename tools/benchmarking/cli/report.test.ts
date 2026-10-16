@@ -5,6 +5,7 @@ import {isolated} from './fixtures.ts';
 import {
   change,
   comparison,
+  environmentDifferences,
   formatTime,
   spreadOf,
   summary,
@@ -157,5 +158,30 @@ describe('comparison', () => {
     const text = comparison(base, head);
     assert.ok(text.includes('1 faster, 0 slower, 1 with no change'), text);
     assert.ok(text.includes('Only in base: only in base'), text);
+  });
+});
+
+describe('environmentDifferences', () => {
+  const recording = (budgetMs?: number) =>
+    isolated(
+      [{name: 'a', times: [1]}],
+      budgetMs === undefined ? {} : {budgetMs},
+    );
+
+  it('finds nothing to say about recordings made the same way', () => {
+    assert.deepEqual(
+      environmentDifferences(recording(200), recording(200)),
+      [],
+    );
+  });
+
+  it('notes a different sampling budget', () => {
+    assert.deepEqual(environmentDifferences(recording(200), recording(50)), [
+      'The sampling budget differs: 200 ms (base), 50 ms (head).',
+    ]);
+  });
+
+  it("takes a recording without a budget to have mitata's own", () => {
+    assert.deepEqual(environmentDifferences(recording(), recording(706)), []);
   });
 });

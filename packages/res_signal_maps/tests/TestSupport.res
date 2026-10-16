@@ -32,6 +32,20 @@ module StringCmp = Belt.Id.MakeComparable({
 
 let stringId: Belt.Id.comparable<string, StringCmp.identity> = module(StringCmp)
 
-/** Builds an `int`-keyed `BTree.t` from an array of pairs, for tests that need one directly. */
-let intTree = (entries: array<(int, 'v)>): BTree.t<int, 'v, IntCmp.identity> =>
-  BTree.fromArray(~id=intId, entries)
+/**
+The package's own `AtomMap`/`ComputedMap` as a `SignalMap.Maps`, with a `fromArray` that doesn't take
+a node size, as the other trees' have.
+*/
+module BTreeMaps = {
+  type tree<'k, 'v, 'id> = BTree.t<'k, 'v, 'id>
+  module ComputedMap = ComputedMap
+  module AtomMap = {
+    include AtomMap
+    let fromArray = (~name=?, ~historyLength=?, ~id, entries) =>
+      AtomMap.fromArray(~name?, ~historyLength?, ~id, entries)
+  }
+}
+
+module AvlTreeMaps = SignalMap.Make(AvlTree)
+
+module ChunkTreeMaps = SignalMap.Make(ChunkTree)

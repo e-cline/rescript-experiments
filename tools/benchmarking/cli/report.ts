@@ -331,19 +331,33 @@ export const comparison = (base: Recording, head: Recording): string => {
 };
 
 /**
- * Differences between two recordings' environments that make comparing them
- * questionable, as sentences.
+ * How long a recording's processes sampled each benchmark for, in
+ * milliseconds: 706 for recordings from before `res-bench` set it (see
+ * `Recording`'s `budgetMs`).
+ */
+const budgetOf = (recording: Recording): number => recording.budgetMs ?? 706;
+
+/**
+ * Differences between two recordings' environments, or how they were
+ * measured, that make comparing them questionable, as sentences.
  */
 export const environmentDifferences = (
   base: Recording,
   head: Recording,
 ): string[] => {
   const keys = ['node', 'cpu', 'platform', 'arch', 'mitata'] as const;
-  return keys.flatMap((key) =>
-    base.environment[key] === head.environment[key]
+  return [
+    ...keys.flatMap((key) =>
+      base.environment[key] === head.environment[key]
+        ? []
+        : [
+            `${key} differs: ${base.environment[key]} (base), ${head.environment[key]} (head).`,
+          ],
+    ),
+    ...(budgetOf(base) === budgetOf(head)
       ? []
       : [
-          `${key} differs: ${base.environment[key]} (base), ${head.environment[key]} (head).`,
-        ],
-  );
+          `The sampling budget differs: ${budgetOf(base)} ms (base), ${budgetOf(head)} ms (head).`,
+        ]),
+  ];
 };

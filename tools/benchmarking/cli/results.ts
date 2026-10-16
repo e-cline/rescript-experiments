@@ -75,6 +75,13 @@ export type Recording = {
    * process running all of them.
    */
   isolated: boolean;
+  /**
+   * How long mitata sampled each benchmark for in each process, in
+   * milliseconds of measured time. Absent from recordings made before
+   * `res-bench` set it, which mitata sampled for 706 ms (its 642 ms default,
+   * stretched by 10% for heap statistics).
+   */
+  budgetMs?: number;
   source: Source;
   environment: Environment;
   processes: ProcessResult[];
@@ -190,12 +197,19 @@ const runBundle = async (
 
 /**
  * Runs `bundle` once, in a process of its own, and returns what it measured.
+ * mitata samples each benchmark for `budgetMs` of measured time (and at least
+ * 12 times), or for its own default, 642 ms, if that's `undefined`.
  */
 export const measureProcess = async (
   bundle: string,
   filter: string | null,
+  budgetMs?: number,
 ): Promise<ProcessResult> =>
-  (await runBundle(bundle, filter, {})) as ProcessResult;
+  (await runBundle(
+    bundle,
+    filter,
+    budgetMs === undefined ? {} : {RES_BENCH_BUDGET_MS: String(budgetMs)},
+  )) as ProcessResult;
 
 /** The name of every benchmark `bundle` registers, in the order it does. */
 export const benchmarkNames = async (bundle: string): Promise<string[]> =>

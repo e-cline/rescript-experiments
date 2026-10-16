@@ -2,9 +2,10 @@
 
 A sorted, signal-backed map -- `AtomMap`/`ComputedMap` -- authored in ReScript, extracted from
 [`@e-cline/res_signals`](../res_signals) (which this package depends on for `Atom`/`Computed`/
-`Signal`) and built on [`@e-cline/res_trees`](../res_trees)'s `BTree.t`. Loosely modeled on Jane
-Street's `Incr_map`. `AtomMap`'s derived views (`mapValues`, `filterMap`, `map`, `fold`, ...) update
-incrementally from a diff instead of recomputing from scratch on every change.
+`Signal`) and built on [`@e-cline/res_trees`](../res_trees)'s `BTree.t`, or on any of its other
+trees through `SignalMap.Make`. Loosely modeled on Jane Street's `Incr_map`. `AtomMap`'s derived
+views (`mapValues`, `filterMap`, `map`, `fold`, ...) update incrementally from a diff instead of
+recomputing from scratch on every change.
 
 ## Installing
 
@@ -18,8 +19,9 @@ Add `"@e-cline/res_signal_maps"` to the `dependencies` in your `rescript.json`. 
 under the `ResSignalMaps` namespace (`ResSignalMaps.AtomMap.make`), and your project's
 `rescript build` compiles them along with your own code.
 
-`AtomMap` is built from a `ResTrees.BTree.t`, and its views are `ResSignals` signals, so you'll
-usually want `@e-cline/res_trees` and `@e-cline/res_signals` installed and listed as well.
+`AtomMap` is built from a `ResTrees.BTree.t` (or another `res_trees` tree; see
+[Over another tree](#over-another-tree)), and its views are `ResSignals` signals, so you'll usually
+want `@e-cline/res_trees` and `@e-cline/res_signals` installed and listed as well.
 
 ## `AtomMap` / `ComputedMap`: efficient incremental map updates
 
@@ -66,6 +68,31 @@ pattern -- they just weren't asked for and would each be their own reasonably-si
 `AtomMap`/`ComputedMap` also aren't a `Signal.t` themselves; use `AtomMap.signal`/
 `AtomMap.asComputedMap` to get one explicitly where needed.
 
+## Over another tree
+
+`AtomMap` and `ComputedMap` hold a `BTree.t`, the fastest of `res_trees`' trees to read. For a map
+that is written more than read, `AvlTree` inserts and removes fastest, and `ChunkTree` sits between
+the two (see [its README](../res_trees/README.md)). `SignalMap.Make` gives the same `AtomMap` and
+`ComputedMap` over any tree with `ResTrees.SortedMap.S`, the interface those two share:
+
+```rescript
+module ChunkMaps = SignalMap.Make(ResTrees.ChunkTree)
+
+let prices = ChunkMaps.AtomMap.fromArray(~id=module(IntCmp), [(1, 10.0), (2, 20.0)])
+let total = prices->ChunkMaps.AtomMap.sum((_key, price) => price)
+```
+
+Every operation is documented once, in [`src/SignalMap.res`](src/SignalMap.res): its module types
+`SignalMap.AtomMap` and `SignalMap.ComputedMap` are the interface every such pair has, and the
+package's own `AtomMap.resi` and `ComputedMap.resi` are an `include` of them (with a `fromArray`
+that also takes `BTree`'s node size). Each holds its tree type as `tree`.
+
+A derived map of a `BTree` is built with its source's node size. That's what
+[`src/MapTree.res`](src/MapTree.res) is for: `MapTree.S` is `ResTrees.SortedMap.S` plus constructors
+that build a tree like an existing one, and `SignalMap.MakeComputedMap`/`MakeAtomMap` take one, for
+a tree with settings of its own to carry over. `SignalMap.Make` wraps a `ResTrees.SortedMap.S`,
+which has none.
+
 ## Benchmarks
 
 The benchmarks in [`benchmarks/`](benchmarks) (a separate, unpublished package) measure what a write
@@ -78,10 +105,10 @@ pnpm --filter @e-cline/res_signal_maps_benchmarks exec vp run bench
 ## Design notes
 
 - **No class hierarchy.** ReScript has no inheritance; `AtomMap`/`ComputedMap` share their
-  incremental-update algorithms via free functions in `internal/` that both call, rather than a
-  `SignalMap` base class.
-- **No `Belt.Id.comparable` unpacking.** `map`'s collision detection uses `BTree.has` before each
-  insert instead of sorting entries with a directly-extracted comparator function (see
+  incremental-update algorithms via functors in `internal/` (over the tree, `MapTree.S`) that both
+  call, and `SignalMap`'s module types and functors stand in for a base class.
+- **No `Belt.Id.comparable` unpacking.** `map`'s collision detection uses the tree's `has` before
+  each insert instead of sorting entries with a directly-extracted comparator function (see
   `internal/Rekey.res`), sidestepping the locally-abstract-type dance `Belt.Id`-based comparators
   otherwise need (see the root `RESCRIPT.md`'s gap #11).
 
@@ -98,8 +125,9 @@ separate `Internal` module on the res_signals side for this package to depend on
 
 Cross-package references need the dependency's namespace opened (or qualified) explicitly --
 `@e-cline/res_signals`'s `rescript.json` sets `"namespace": "ResSignals"` and `@e-cline/res_trees`'s
-sets `"namespace": "ResTrees"`, so every file here that reads/writes a `BTree.t` or reaches for
-`Atom`/`Signal`/`Computed` starts with `open ResSignals` and `open ResTrees` (see `AtomMap.res`'s
-own comment on this). Omitting one doesn't fail loudly with an "unknown namespace" error; it fails
-as a plain "the module or file `Atom`/`BTree` can't be found," which is easy to mistake for the
-dependency not being wired up in `rescript.json`/`package.json` at all.
+sets `"namespace": "ResTrees"`, so every file here that reaches for `Atom`/`Signal`/`Computed`
+starts with `open ResSignals`, and every one that names a tree qualifies it (`ResTrees.BTree`,
+`ResTrees.SortedMap`; see `AtomMap.res`'s own comment on this). Omitting one doesn't fail loudly
+with an "unknown namespace" error; it fails as a plain "the module or file `Atom`/`BTree` can't be
+found," which is easy to mistake for the dependency not being wired up in
+`rescript.json`/`package.json` at all.

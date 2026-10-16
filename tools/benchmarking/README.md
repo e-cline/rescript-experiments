@@ -42,9 +42,10 @@ vp run bench:record "n=10000$" --processes 10
 ```
 
 This builds the bundle and runs each benchmark in 5 processes of its own (`--processes` to change
-that), one after another, then prints each benchmark's median time per call. Benchmarks registered
-through `Comparison` come out as a table, an implementation to a column, each time followed by how
-many times the row's fastest it is:
+that), one after another, then prints each benchmark's median time per call. mitata samples each
+benchmark for 642 ms of measured time in each process (`--budget` to change that; see
+[Sampling budget](#sampling-budget)). Benchmarks registered through `Comparison` come out as a
+table, an implementation to a column, each time followed by how many times the row's fastest it is:
 
 ```
                               BTree             AvlTree
@@ -90,9 +91,9 @@ before `Mitata.benchWithSetup` (see "How it works").
 
 Some benchmarks depend less on the code they measure than on what V8 decides to inline, and those
 decisions depend on what else has run. Iterating with a callback is the clearest case: every sorted
-map's `forEach n=1000` takes about 8.3 µs measured alone, and 2.5-4.5 µs after any `get` benchmark
-in the same process. Running other `forEach` benchmarks first doesn't help, and `Belt.Map` behaves
-the same as the trees, so the difference isn't in any tree's code.
+map's `forEach n=1000` took about 8.3 µs measured alone, and 2.5-4.5 µs after any `get` benchmark in
+the same process. Running other `forEach` benchmarks first doesn't help, and `Belt.Map` behaves the
+same as the trees, so the difference isn't in any tree's code.
 
 What differs is whether V8 inlines the callback into the walk that calls it. The same walk and
 callback, outside the harness, take 3.2 µs over 1,000 entries, and 6.5 µs with V8's inlining turned
@@ -104,6 +105,12 @@ In a trace of the slow case, the walk ranked behind them by less than 0.2% and w
 `get` benchmark, the same compilation inlined it. Raising V8's budget
 (`--max-inlined-bytecode-size-cumulative=4000`) makes `AvlTree.forEach` fast alone every time,
 though not `BTree.forEach`, whose walk is recursive and reaches the fast case some other way.
+
+`res-bench` no longer has mitata read heap statistics (see "How it works"), which leaves the walk
+less to compete with, and that alone moves `AvlTree.forEach n=1000`: in 10 processes each, about 8.4
+µs (9 of the 10) with heap statistics, and about 3.5 µs (all 10) without. `BTree.forEach` stayed at
+about 8.3 µs. So recordings from before that change aren't comparable with later ones for this
+benchmark, although nothing in the trees changed.
 
 So for benchmarks like these:
 
@@ -120,6 +127,22 @@ So for benchmarks like these:
 Two ways of hiding this were considered and not taken. Keeping mitata's loop from inlining the
 measured function would add a call to every measurement, which would distort benchmarks that take a
 few nanoseconds. Raising V8's inlining budget would measure V8 as nobody runs it.
+
+### Sampling budget
+
+A process spends most of its time sampling: mitata keeps calling the benchmark until it has at least
+12 samples and 642 ms of measured time, mitata's own default, however quick each call is. `--budget`
+takes another time in milliseconds, which `run`, `compare` and `check` all accept, and a recording
+keeps the budget it was made with.
+
+A shorter budget is quicker, but not just noisier: it measures some benchmarks slower. With 10
+processes each, a 200 ms budget measured `BTree.get n=10000` and `AvlTree.get n=10000` 15-20% slower
+than 642 ms did, every sample of them (their medians too, not only their averages), and several
+others 2-3% slower. 100 ms was no worse than 200 ms. Most benchmarks didn't move. A process that has
+run for longer measures faster, so a short budget measures an earlier, slower state of the process.
+For a quick look, or a `compare` (whose two sides get the same budget), a shorter budget is fine;
+for numbers to keep, use the default, and compare only recordings made with the same budget
+(`res-bench diff` warns when they weren't).
 
 ### `vp run bench:compare`
 
@@ -267,9 +290,11 @@ when the table under it changes.
 
 A benchmark bundle leaves `mitata` external, so `res-bench` starts each process with a module hook
 (`cli/capture/`) that hands the bundle a version of mitata whose `run` prints nothing and writes its
-measurements to a file. The benchmark programs don't need to know about it, which is what lets
-`bench:compare` run bundles built from commits older than `res-bench` itself. Both sides of a
-comparison also run against this package's copy of mitata, so they're measured by the same harness.
+measurements to a file. The hook is installed with `module.registerHooks`, which runs it in the
+process's own thread; `module.register` would start a worker thread for it, about 40 ms on every
+process. The benchmark programs don't need to know about it, which is what lets `bench:compare` run
+bundles built from commits older than `res-bench` itself. Both sides of a comparison also run
+against this package's copy of mitata, so they're measured by the same harness.
 
 To run each benchmark in processes of its own, `res-bench` first runs the bundle once to list the
 benchmarks it registers, measuring nothing, then runs it again for each one with a filter matching
@@ -281,6 +306,12 @@ only that one's name. That is affordable because each such process starts quickl
 - The replacement `run` measures the benchmarks itself, as mitata's own `run` does, one after
   another, but skips what mitata's does first: nearly 4 seconds timing empty functions, which only
   its printed output uses.
+- It measures each benchmark with mitata's `measure`, as a benchmark's own `run` method would, but
+  without heap statistics, which `res-bench` doesn't record. mitata reads them outside the time it
+  measures, but samples 10% longer to make up for them. (Leaving them out also changes what V8
+  inlines into the sampling loop; see
+  [Benchmarks that measure the JIT](#benchmarks-that-measure-the-jit).) Calling `measure` itself is
+  also what lets `--budget` set how long it samples, which a benchmark's `run` method doesn't take.
 
 Bundles built from commits before `benchWithSetup` still build every input in every process, so
 comparing against one of those is much slower unless `--shared` or a narrow `--filter` is given.

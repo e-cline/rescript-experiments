@@ -23,7 +23,7 @@ catalogs:
     '@rescript/runtime': ^12.3.1
     '@rescript/react': ^0.15.0
     'rescript-webapi': ^0.10.0
-    '@rescript/webapi': 0.1.0-experimental-0781ac8
+    '@rescript/webapi': 0.1.0-pre-alpha-4542085
     hono: ^4.13.13
     '@hono/node-server': ^2.1.4
     'rescript-vitest': ^3.0.1

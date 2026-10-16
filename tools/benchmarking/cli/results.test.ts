@@ -102,6 +102,8 @@ describe('errors', () => {
 // with no `node_modules`, as a bundle built from an earlier commit and kept
 // under `.bench/builds/` does.
 describe('capturing a benchmark program', () => {
+  // Short, since these check what's recorded rather than how fast anything is.
+  const budgetMs = 10;
   let directory: string;
   let program: string;
 
@@ -133,7 +135,11 @@ await run(pattern === undefined ? {} : {filter: new RegExp(pattern)});
   });
 
   it('measures only what the filter selects, with its group', async () => {
-    const {benchmarks} = await measureProcess(program, exactly('B.get n=10'));
+    const {benchmarks} = await measureProcess(
+      program,
+      exactly('B.get n=10'),
+      budgetMs,
+    );
     assert.equal(benchmarks.length, 1);
     const [result] = benchmarks;
     assert.ok(result !== undefined && 'avg' in result);
@@ -142,8 +148,24 @@ await run(pattern === undefined ? {} : {filter: new RegExp(pattern)});
     assert.ok(result.avg > 0 && result.samples > 0);
   });
 
+  it('samples for as long as the budget says', async () => {
+    const samplesAt = async (budget: number) => {
+      const [result] = (
+        await measureProcess(program, exactly('A.get n=10'), budget)
+      ).benchmarks;
+      assert.ok(result !== undefined && 'samples' in result);
+      return result.samples;
+    };
+    // mitata takes at least 12 samples, however short the budget.
+    assert.ok((await samplesAt(1)) * 5 < (await samplesAt(50)));
+  });
+
   it('records no group for a benchmark outside one', async () => {
-    const {benchmarks} = await measureProcess(program, exactly('ungrouped'));
+    const {benchmarks} = await measureProcess(
+      program,
+      exactly('ungrouped'),
+      budgetMs,
+    );
     assert.equal(benchmarks[0]?.name, 'ungrouped');
     assert.equal(
       benchmarks[0] !== undefined && 'group' in benchmarks[0]

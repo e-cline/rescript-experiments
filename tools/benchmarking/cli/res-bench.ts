@@ -35,14 +35,21 @@ import {
   save,
 } from './results.ts';
 
+/**
+ * `--budget`'s default, in milliseconds: mitata's own. Shorter budgets measure
+ * some benchmarks slower: at 200 ms, `get n=10000` came out 15-20% slower,
+ * every sample of it, not just the first.
+ */
+const defaultBudgetMs = 642;
+
 const usage = `Usage, from a benchmark package's directory:
 
-  res-bench run [<filter>] [--processes <n>] [--entry <name>] [--shared]
+  res-bench run [<filter>] [--processes <n>] [--budget <ms>] [--entry <name>] [--shared]
       Runs each benchmark in the package's dist/<name>.js in <n> fresh
       processes of its own (default 5), prints each one's median and spread,
       and saves the results.
 
-  res-bench compare <base> [<head>] [--filter <regexp>] [--processes <n>] [--entry <name>] [--shared]
+  res-bench compare <base> [<head>] [--filter <regexp>] [--processes <n>] [--budget <ms>] [--entry <name>] [--shared]
       Builds the package at the git ref <base>, and at <head> (default: the
       working tree's dist/), then runs the two alternately, <n> processes each
       per benchmark (default 5), and prints how each benchmark changed.
@@ -51,7 +58,12 @@ const usage = `Usage, from a benchmark package's directory:
 the packages' own \`bench\` tasks do: quicker if their setup is slow, but
 each benchmark's time then depends on the ones before it.
 
-  res-bench check [--filter <regexp>] [--entry <name>]
+--budget is how long mitata samples each benchmark for in each process, in
+milliseconds of measured time (default ${defaultBudgetMs}, mitata's own).
+Shorter is quicker, but measures some benchmarks slower, so compare only
+recordings made with the same budget.
+
+  res-bench check [--filter <regexp>] [--budget <ms>] [--entry <name>]
       Checks that the package's dist/<name>.js still runs under res-bench:
       lists its benchmarks, and measures one (the first, or the first the
       filter selects) in a process of its own. Saves nothing.
@@ -80,6 +92,7 @@ const {values: options, positionals} = parseArgs({
   allowPositionals: true,
   options: {
     processes: {type: 'string', short: 'n'},
+    budget: {type: 'string'},
     entry: {type: 'string', default: 'bench'},
     filter: {type: 'string'},
     from: {type: 'string'},
@@ -101,6 +114,16 @@ const processCount = (fallback: number): number => {
   return Number.isInteger(count) && count > 0
     ? count
     : fail('--processes takes a positive whole number.');
+};
+
+const budgetMs = (): number => {
+  if (options.budget === undefined) {
+    return defaultBudgetMs;
+  }
+  const budget = Number(options.budget);
+  return Number.isFinite(budget) && budget > 0
+    ? budget
+    : fail('--budget takes a positive number of milliseconds.');
 };
 
 const repoRoot = (): string => git(['rev-parse', '--show-toplevel'], '.');
@@ -162,6 +185,7 @@ const record = (
   entry: options.entry,
   filter,
   isolated: !options.shared,
+  budgetMs: budgetMs(),
   source: build.source,
   environment: environment(),
   processes,
@@ -241,7 +265,7 @@ const measure = async (
         }
         for (const index of order) {
           results[index]!.push(
-            await measureProcess(bundles[index]!, exactly(name)),
+            await measureProcess(bundles[index]!, exactly(name), budgetMs()),
           );
         }
       }
@@ -260,7 +284,9 @@ const measure = async (
     }
     for (const index of order) {
       const started = performance.now();
-      results[index]!.push(await measureProcess(bundles[index]!, filter));
+      results[index]!.push(
+        await measureProcess(bundles[index]!, filter, budgetMs()),
+      );
       done += 1;
       console.log(
         `process ${done}/${total}${builds.length > 1 ? ` (${builds[index]!.name})` : ''}: ${seconds(started)}`,
@@ -348,7 +374,11 @@ const commands: Record<string, () => Promise<void>> = {
           ? `${relative('.', bundle)} registers no benchmarks.`
           : `No benchmark's name matches ${options.filter}.`,
       );
-    const {benchmarks} = await measureProcess(bundle, exactly(name));
+    const {benchmarks} = await measureProcess(
+      bundle,
+      exactly(name),
+      budgetMs(),
+    );
     const result = benchmarks.find((benchmark) => benchmark.name === name);
     if (result === undefined || !('avg' in result)) {
       fail(

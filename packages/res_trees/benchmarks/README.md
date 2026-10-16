@@ -55,8 +55,10 @@ vp run bench:compare main --filter "^BTree\."
 ```
 
 Both run each benchmark alone, 5 times, so a filter is what keeps them short: all 212 benchmarks
-take about 18 minutes to record, and twice that to compare. Both save what they measured, with an
-HTML report of it, under `.bench/` at the repository root. See
+take about 14 minutes to record, and twice that to compare. Most of that is mitata sampling each
+benchmark for 642 ms in each process; `--budget` shortens it, but measures some benchmarks slower
+(see [`tools/benchmarking`](../../../tools/benchmarking#sampling-budget)). Both save what they
+measured, with an HTML report of it, under `.bench/` at the repository root. See
 [`tools/benchmarking`](../../../tools/benchmarking#measuring-over-several-processes-res-bench) for
 their options and how to read their output.
 

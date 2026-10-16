@@ -15,7 +15,7 @@ catalogs:
     '@types/node': ^26.2.0
     tsx: ^4.23.12
     typescript: ^7.0.2
-    terser: ^5.50.0
+    terser: ^5.51.2
     mitata: ^1.0.34
     vite: npm:@voidzero-dev/vite-plus-core@0.2.9
     vite-plus: 0.2.9

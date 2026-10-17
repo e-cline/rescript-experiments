@@ -10,6 +10,7 @@
     "@e-cline/res_signals_benchmarks",
     "@e-cline/res_signal_maps",
     "@e-cline/res_signal_maps_benchmarks",
+    "@e-cline/res_fiber",
     "@e-cline/res_react_ui_example",
     "@e-cline/res_pretty_print_example",
     "@e-cline/res_tree_shaking_example",

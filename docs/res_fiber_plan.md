@@ -6,10 +6,9 @@ renderer, and anything else that implements the host interface). It doesn't use 
 
 ## Status
 
-Phases 0, 1 and 2 are done (`packages/res_fiber`). Where they differ from the plan below:
+Phases 0 to 3 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`).
+Where they differ from the plan below:
 
-- `res_fiber_dom` isn't scaffolded yet. An empty package would only add noise, so it arrives with
-  phase 3.
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
   `TestRenderer.scheduleRender`/`flushSync` for tests about effect timing.
@@ -27,6 +26,13 @@ Phases 0, 1 and 2 are done (`packages/res_fiber`). Where they differ from the pl
   `memoCustomCompareProps`.
 - A memoized component whose props compare equal also checks its context dependencies, so a context
   change reaches it even when propagation wouldn't be needed.
+- The DOM renderer has no separate `Style` or `PropDiff` modules: `DomProps.style` is a
+  `dict<string>`, and `DomHost` does the diffing. Updates in event handlers render synchronously
+  (through `flushSync`) rather than on a separate sync lane, which phase 4's lanes can refine.
+  `DomHost` also restores focus after a commit that moved the focused element. SVG isn't supported
+  yet (elements are created without a namespace).
+- The example app's tests run in jsdom with Vitest rather than as a separate end-to-end script; the
+  app was also checked by hand in a real browser.
 - Effect errors don't stop other effects: the first is kept and rethrown once the phase has run (the
   original JS error, not ReScript's `JsExn` wrapper).
 

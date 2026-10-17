@@ -33,6 +33,8 @@
     "@e-cline/res_benchmarking": "workspace:*",
     "@e-cline/res_common": "workspace:*",
     "@e-cline/res_fiber": "workspace:*",
+    "@e-cline/res_fiber_app_example": "workspace:*",
+    "@e-cline/res_fiber_dom": "workspace:*",
     "@e-cline/res_http_server_example": "workspace:*",
     "@e-cline/res_pretty_print_example": "workspace:*",
     "@e-cline/res_priority_queue": "workspace:*",

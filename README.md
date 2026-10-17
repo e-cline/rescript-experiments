@@ -15,6 +15,7 @@ WARNING: None of this is intended for real production use.
 | [`@e-cline/res_signal_maps`](packages/res_signal_maps)       | A sorted, signal-backed map whose derived views update incrementally. Built on the two packages above.                                               |
 | [`@e-cline/res_server`](packages/res_server)                 | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
 | [`@e-cline/res_fiber`](packages/res_fiber)                   | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
+| [`@e-cline/res_fiber_dom`](packages/res_fiber_dom)           | The DOM renderer for `res_fiber`: render components into a browser page.                                                                             |
 
 These are at version 0.0.x: the APIs are still changing, and any release may break them.
 
@@ -39,17 +40,17 @@ Then list it in your `rescript.json`:
 ```
 
 Each package's modules sit under a namespace named after it (`ResSignals`, `ResTrees`, `ResCommon`,
-`ResSignalMaps`, `ResServer`, `ResFiber`), so `ResSignals.Atom.make` works without an `open`. The
-packages ship as ReScript source, and your project's `rescript build` compiles them along with your
-own code.
+`ResSignalMaps`, `ResServer`, `ResFiber`, `ResFiberDom`), so `ResSignals.Atom.make` works without an
+`open`. The packages ship as ReScript source, and your project's `rescript build` compiles them
+along with your own code.
 
 ## Also in this repository
 
 These aren't published:
 
 - [`examples/`](examples) -- an HTTP server built with `res_server`, a React component written in
-  ReScript and the TypeScript React app consuming it, a tree-shaking check, and a use of the PPX
-  below.
+  ReScript and the TypeScript React app consuming it, a todo app built with `res_fiber`, a
+  tree-shaking check, and a use of the PPX below.
 - [`packages/res_trees/benchmarks`](packages/res_trees/benchmarks),
   [`packages/res_signals/benchmarks`](packages/res_signals/benchmarks) and
   [`packages/res_signal_maps/benchmarks`](packages/res_signal_maps/benchmarks) -- benchmarks for

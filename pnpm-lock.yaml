@@ -194,6 +194,9 @@ catalogs:
     hono:
       specifier: ^4.13.13
       version: 4.13.13
+    jsdom:
+      specifier: ^30.0.1
+      version: 30.0.1
     mitata:
       specifier: ^1.0.34
       version: 1.0.34
@@ -247,6 +250,12 @@ importers:
       '@e-cline/res_fiber':
         specifier: workspace:*
         version: link:packages/res_fiber
+      '@e-cline/res_fiber_app_example':
+        specifier: workspace:*
+        version: link:examples/res_fiber_app
+      '@e-cline/res_fiber_dom':
+        specifier: workspace:*
+        version: link:packages/res_fiber_dom
       '@e-cline/res_http_server_example':
         specifier: workspace:*
         version: link:examples/res_http_server
@@ -295,6 +304,34 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.2.9(@types/node@26.2.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
+
+  examples/res_fiber_app:
+    dependencies:
+      '@e-cline/res_fiber':
+        specifier: workspace:*
+        version: link:../../packages/res_fiber
+      '@e-cline/res_fiber_dom':
+        specifier: workspace:*
+        version: link:../../packages/res_fiber_dom
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.0.1
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.2.0)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(rescript@12.3.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@0.2.9
+        version: '@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
         version: 0.2.9(@types/node@26.2.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
@@ -450,6 +487,25 @@ importers:
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.2.0)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(rescript@12.3.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/res_fiber_dom:
+    dependencies:
+      '@e-cline/res_fiber':
+        specifier: workspace:^
+        version: link:../res_fiber
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.0.1
       rescript:
         specifier: 'catalog:'
         version: 12.3.1
@@ -2374,7 +2430,6 @@ snapshots:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
       lru-cache: 11.5.2
-    optional: true
 
   '@asamuzakjp/dom-selector@8.3.2':
     dependencies:
@@ -2382,7 +2437,6 @@ snapshots:
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.2
-    optional: true
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -2399,7 +2453,6 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.2.1
-    optional: true
 
   '@changesets/apply-release-plan@8.1.1':
     dependencies:
@@ -2526,14 +2579,12 @@ snapshots:
       fast-wrap-ansi: 0.2.2
       sisteransi: 1.0.5
 
-  '@csstools/color-helpers@6.1.1':
-    optional: true
+  '@csstools/color-helpers@6.1.1': {}
 
   '@csstools/css-calc@3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
     dependencies:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
-    optional: true
 
   '@csstools/css-color-parser@4.2.2(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
     dependencies:
@@ -2541,20 +2592,16 @@ snapshots:
       '@csstools/css-calc': 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
-    optional: true
 
   '@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0)':
     dependencies:
       '@csstools/css-tokenizer': 4.0.0
-    optional: true
 
   '@csstools/css-syntax-patches-for-csstree@1.1.12(css-tree@3.2.1)':
     optionalDependencies:
       css-tree: 3.2.1
-    optional: true
 
-  '@csstools/css-tokenizer@4.0.0':
-    optional: true
+  '@csstools/css-tokenizer@4.0.0': {}
 
   '@e-cline/js_env@0.0.2': {}
 
@@ -2636,8 +2683,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@exodus/bytes@1.15.1':
-    optional: true
+  '@exodus/bytes@1.15.1': {}
 
   '@hono/node-server@2.1.4(hono@4.13.13)':
     dependencies:
@@ -3198,7 +3244,6 @@ snapshots:
   bidi-js@1.0.3:
     dependencies:
       require-from-string: 2.0.2
-    optional: true
 
   buffer-from@1.1.2: {}
 
@@ -3214,7 +3259,6 @@ snapshots:
     dependencies:
       mdn-data: 2.27.1
       source-map-js: 1.2.1
-    optional: true
 
   csstype@3.2.3: {}
 
@@ -3224,12 +3268,10 @@ snapshots:
       whatwg-url: 16.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
-    optional: true
 
   dataloader@2.2.3: {}
 
-  decimal.js@10.6.0:
-    optional: true
+  decimal.js@10.6.0: {}
 
   dequal@2.0.3: {}
 
@@ -3237,8 +3279,7 @@ snapshots:
 
   dom-accessibility-api@0.5.16: {}
 
-  entities@8.0.0:
-    optional: true
+  entities@8.0.0: {}
 
   es-module-lexer@2.3.1: {}
 
@@ -3301,14 +3342,12 @@ snapshots:
       '@exodus/bytes': 1.15.1
     transitivePeerDependencies:
       - '@noble/hashes'
-    optional: true
 
   human-id@4.2.2: {}
 
   import-meta-resolve@4.2.0: {}
 
-  is-potential-custom-element-name@1.0.1:
-    optional: true
+  is-potential-custom-element-name@1.0.1: {}
 
   jiti@2.7.0:
     optional: true
@@ -3342,7 +3381,6 @@ snapshots:
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
-    optional: true
 
   jsonc-parser@3.3.1: {}
 
@@ -3400,8 +3438,7 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.33.0
       lightningcss-win32-x64-msvc: 1.33.0
 
-  lru-cache@11.5.2:
-    optional: true
+  lru-cache@11.5.2: {}
 
   lz-string@1.5.0: {}
 
@@ -3409,8 +3446,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  mdn-data@2.27.1:
-    optional: true
+  mdn-data@2.27.1: {}
 
   mitata@1.0.34: {}
 
@@ -3483,7 +3519,6 @@ snapshots:
   parse5@8.0.1:
     dependencies:
       entities: 8.0.0
-    optional: true
 
   pathe@2.0.3: {}
 
@@ -3507,8 +3542,7 @@ snapshots:
       ansi-styles: 5.2.0
       react-is: 17.0.2
 
-  punycode@2.3.1:
-    optional: true
+  punycode@2.3.1: {}
 
   react-dom@19.3.0(react@19.3.0):
     dependencies:
@@ -3519,8 +3553,7 @@ snapshots:
 
   react@19.3.0: {}
 
-  require-from-string@2.0.2:
-    optional: true
+  require-from-string@2.0.2: {}
 
   rescript-vitest@3.0.1(@types/node@26.2.0)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(rescript@12.3.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
@@ -3572,7 +3605,6 @@ snapshots:
   saxes@6.0.0:
     dependencies:
       xmlchars: 2.2.0
-    optional: true
 
   scheduler@0.28.0: {}
 
@@ -3603,8 +3635,7 @@ snapshots:
 
   std-env@4.2.0: {}
 
-  symbol-tree@3.2.4:
-    optional: true
+  symbol-tree@3.2.4: {}
 
   terser@5.50.0:
     dependencies:
@@ -3628,25 +3659,21 @@ snapshots:
 
   tinyrainbow@3.1.1: {}
 
-  tldts-core@7.4.11:
-    optional: true
+  tldts-core@7.4.11: {}
 
   tldts@7.4.11:
     dependencies:
       tldts-core: 7.4.11
-    optional: true
 
   totalist@3.0.1: {}
 
   tough-cookie@6.0.2:
     dependencies:
       tldts: 7.4.11
-    optional: true
 
   tr46@6.0.0:
     dependencies:
       punycode: 2.3.1
-    optional: true
 
   tsx@4.23.12:
     dependencies:
@@ -3679,8 +3706,7 @@ snapshots:
 
   undici-types@8.3.0: {}
 
-  undici@8.10.2:
-    optional: true
+  undici@8.10.2: {}
 
   vite-plus@0.2.9(@types/node@26.2.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
@@ -3788,13 +3814,10 @@ snapshots:
   w3c-xmlserializer@5.0.0:
     dependencies:
       xml-name-validator: 5.0.0
-    optional: true
 
-  webidl-conversions@8.0.1:
-    optional: true
+  webidl-conversions@8.0.1: {}
 
-  whatwg-mimetype@5.0.0:
-    optional: true
+  whatwg-mimetype@5.0.0: {}
 
   whatwg-url@16.0.1:
     dependencies:
@@ -3803,7 +3826,6 @@ snapshots:
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
-    optional: true
 
   whatwg-url@17.1.0:
     dependencies:
@@ -3812,7 +3834,6 @@ snapshots:
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
-    optional: true
 
   why-is-node-running@2.3.0:
     dependencies:
@@ -3821,11 +3842,9 @@ snapshots:
 
   ws@8.21.3: {}
 
-  xml-name-validator@5.0.0:
-    optional: true
+  xml-name-validator@5.0.0: {}
 
-  xmlchars@2.2.0:
-    optional: true
+  xmlchars@2.2.0: {}
 
   yaml@2.9.0: {}
 

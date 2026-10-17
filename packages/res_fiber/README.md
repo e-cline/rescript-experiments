@@ -69,9 +69,10 @@ The JSX module decides which host tags exist and what props they take, so each r
 `ResFiber.Jsx` has no host tags at all: a component written against it can only compose other
 components, and works under any renderer. A `<div>` in such a file is a compile error.
 
-`@@jsxConfig` works per file, so it doesn't need the project's `jsx` setting (which, in this
-repository, belongs to React). ReScript lowers the JSX to function calls either way, even when the
-project sets `"preserve": true`.
+`@@jsxConfig` works per file, so it doesn't need to take over the project's `jsx` setting, though
+the project must turn JSX on (here, the root `rescript.json`'s `"jsx": {"version": 4}`). ReScript
+lowers the JSX to function calls either way, even when the project sets `"preserve": true`, so the
+output is plain `.res.js`.
 
 Hooks follow `@rescript/react`'s names and the usual rules: call them unconditionally, in the same
 order on every render. Breaking the order throws.

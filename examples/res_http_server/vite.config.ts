@@ -4,13 +4,13 @@ export default makeRescriptLibConfig({
   tasks: {
     // Runs the server (on $PORT, default 3000) until interrupted.
     start: {
-      command: 'tsx src/Main.res.jsx',
+      command: 'node src/Main.res.js',
       dependsOn: [rootResTask],
       cache: false,
     },
     // The same server, started from JavaScript (`serve.mjs`).
     'start:js': {
-      command: 'tsx serve.mjs',
+      command: 'node serve.mjs',
       dependsOn: [rootResTask],
       cache: false,
     },

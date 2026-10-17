@@ -3,7 +3,7 @@ import {defineConfig} from 'vite-plus';
 import {rootResTask} from '../../vite.config.base.ts';
 
 // The app's source is ReScript (`src/Main.res`), compiled to
-// `src/Main.res.jsx` by the root-level `res` task (see ../../vite.config.ts);
+// `src/Main.res.js` by the root-level `res` task (see ../../vite.config.ts);
 // Vite bundles that output like any other JavaScript. Only `tests/test.ts`
 // is TypeScript, and it is a Node script run against the built bundle, not
 // part of the app.
@@ -20,7 +20,7 @@ export default defineConfig({
     lib: {
       formats: ['es'],
       // Named explicitly so the bundle is `dist/main.js`, not `dist/Main.res.js`.
-      entry: {main: './src/Main.res.jsx'},
+      entry: {main: './src/Main.res.js'},
     },
   },
   run: {

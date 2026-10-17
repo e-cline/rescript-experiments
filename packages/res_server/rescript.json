@@ -10,7 +10,7 @@
       "in-source": true
     }
   ],
-  "suffix": ".res.jsx",
+  "suffix": ".res.js",
   "namespace": "ResServer",
   "dev-dependencies": ["rescript-vitest"],
   "dependencies": ["@rescript/webapi"]

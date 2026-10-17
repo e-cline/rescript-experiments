@@ -6,7 +6,7 @@
 // as it is. Run with `vp run start:js`.
 import {serve} from '@hono/node-server';
 
-import {app} from './src/Routes.res.jsx';
+import {app} from './src/Routes.res.js';
 
 const port = Number(process.env.PORT ?? 3000);
 // This machine only, unless told otherwise: `@hono/node-server` by itself

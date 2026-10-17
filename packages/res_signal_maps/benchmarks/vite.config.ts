@@ -2,7 +2,7 @@ import {defineConfig} from 'vite-plus';
 
 import {rootResTask} from '../../../vite.config.base.ts';
 
-// The benchmarks are ReScript (`src/Main.res`), compiled to `src/Main.res.jsx`
+// The benchmarks are ReScript (`src/Main.res`), compiled to `src/Main.res.js`
 // by the root-level `res` task (see ../../../vite.config.ts). `build` bundles
 // that output, together with the `@e-cline/res_signal_maps` modules it
 // imports (and the signals, B-tree and `@rescript/runtime` modules those
@@ -24,7 +24,7 @@ export default defineConfig({
     lib: {
       formats: ['es'],
       // Named explicitly so the bundle is `dist/bench.js`, not `dist/Main.res.js`.
-      entry: {bench: './src/Main.res.jsx'},
+      entry: {bench: './src/Main.res.js'},
     },
     rolldownOptions: {
       // The harness is loaded from `node_modules` at run time rather than
@@ -78,11 +78,9 @@ export default defineConfig({
         cache: false,
       },
       // The same benchmarks, run straight from the compiler's output, to see
-      // what bundling and minifying change. Node won't load a `.jsx` file by
-      // itself, hence `tsx`, which transforms each module separately and
-      // doesn't minify.
+      // what bundling and minifying change.
       'bench:unbundled': {
-        command: 'node --expose-gc --import tsx ./src/Main.res.jsx',
+        command: 'node --expose-gc ./src/Main.res.js',
         dependsOn: [rootResTask],
         cache: false,
       },

@@ -10,8 +10,7 @@
   },
   "devDependencies": {
     "rescript": "catalog:",
-    "rescript-vitest": "catalog:",
-    "tsx": "catalog:"
+    "rescript-vitest": "catalog:"
   },
   "engines": {
     "node": ">=22"

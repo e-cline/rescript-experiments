@@ -13,5 +13,5 @@
   "suffix": ".res.jsx",
   "namespace": "ResFiber",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": []
+  "dependencies": ["@e-cline/res_priority_queue"]
 }

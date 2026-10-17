@@ -7,6 +7,7 @@ module type S = {
   let flushSync: (unit => 'a) => 'a
   let flushWork: unit => unit
   let flushPassiveEffects: unit => bool
+  let flushAllWork: unit => unit
 }
 
 @val external queueMicrotask: (unit => unit) => unit = "queueMicrotask"
@@ -19,7 +20,9 @@ let maxNestedRenders = 50
 @get
 external refOf: unknown => Nullable.t<Ref.t<unknown>> = "ref"
 
-module Make = (Host: HostConfig.S): (S with type container = Host.container) => {
+module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
+  S with type container = Host.container
+) => {
   open Fiber
 
   type container = Host.container
@@ -139,9 +142,14 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     fiber.childLanes = childLanes.contents
   }
 
-  // Render phase: the work loop
+  // Render phase: the work loop. One render is in progress at a time, across all of this renderer's
+  // roots. A concurrent render can stop between units of work and continue in a later task; a render
+  // of anything else (another root, or more urgent lanes) throws it away.
 
   let workInProgress: ref<option<Fiber.t>> = ref(None)
+  let workInProgressRoot: ref<option<FiberRoot.t>> = ref(None)
+  let workInProgressRootFiber: ref<option<Fiber.t>> = ref(None)
+  let workInProgressLanes = ref(Lanes.none)
 
   let completeUnitOfWork = (root: FiberRoot.t, unit: Fiber.t) => {
     let completed = ref(unit)
@@ -171,24 +179,63 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     }
   }
 
-  /** Renders the root's pending lanes to completion, returning the finished work-in-progress root. */
-  let renderRoot = (root: FiberRoot.t): Fiber.t => {
-    let renderLanes = root.pendingLanes
-    root.pendingLanes = Lanes.none
-    let finished = Fiber.createWorkInProgress(root.current, root.current.pendingProps)
-    workInProgress := Some(finished)
+  /** Throws away the render in progress, if there is one. */
+  let resetWorkInProgress = () => {
+    if Option.isSome(workInProgressRoot.contents) {
+      // Pops the values of providers the unfinished render was inside.
+      ContextImpl.reset()
+    }
+    workInProgress := None
+    workInProgressRoot := None
+    workInProgressRootFiber := None
+    workInProgressLanes := Lanes.none
+    HookImpl.clearStoreReads()
+  }
+
+  let prepareFreshStack = (root: FiberRoot.t, lanes: Lanes.t) => {
+    resetWorkInProgress()
+    let rootFiber = Fiber.createWorkInProgress(root.current, root.current.pendingProps)
+    workInProgressRoot := Some(root)
+    workInProgressRootFiber := Some(rootFiber)
+    workInProgressLanes := lanes
+    workInProgress := Some(rootFiber)
+  }
+
+  let isRendering = (root: FiberRoot.t, lanes: Lanes.t) =>
+    switch workInProgressRoot.contents {
+    | Some(rendering) => rendering === root && workInProgressLanes.contents == lanes
+    | None => false
+    }
+
+  /**
+  Renders `lanes` of `root`, continuing the render in progress if it's of the same root and lanes
+  (and starting afresh otherwise), until the tree is done or, `~yielding`, the scheduler says to
+  yield. Returns whether the tree is done.
+  */
+  let renderRoot = (root: FiberRoot.t, lanes: Lanes.t, ~yielding: bool): bool => {
+    if !isRendering(root, lanes) {
+      prepareFreshStack(root, lanes)
+    }
     try {
-      while Option.isSome(workInProgress.contents) {
-        performUnitOfWork(root, Option.getUnsafe(workInProgress.contents), renderLanes)
+      while Option.isSome(workInProgress.contents) && !(yielding && Sched.shouldYield()) {
+        performUnitOfWork(root, Option.getUnsafe(workInProgress.contents), lanes)
       }
     } catch {
     | error =>
-      workInProgress := None
       HookImpl.reset()
-      ContextImpl.reset()
-      root.pendingLanes = Lanes.merge(root.pendingLanes, renderLanes)
+      resetWorkInProgress()
       throw(error)
     }
+    Option.isNone(workInProgress.contents)
+  }
+
+  /** Hands over the finished tree of the render that just completed. */
+  let takeFinishedWork = (): Fiber.t => {
+    let finished = Option.getUnsafe(workInProgressRootFiber.contents)
+    workInProgressRoot := None
+    workInProgressRootFiber := None
+    workInProgressLanes := Lanes.none
+    HookImpl.clearStoreReads()
     finished
   }
 
@@ -455,12 +502,18 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     }
   }
 
-  let commitRoot = (root: FiberRoot.t, finished: Fiber.t) => {
+  let commitRoot = (root: FiberRoot.t, finished: Fiber.t, lanes: Lanes.t) => {
     let container = containerOf(root)
     Host.prepareForCommit(container)
     commitMutationEffects(finished)
     Host.resetAfterCommit(container)
     root.current = finished
+
+    // What's left: lanes this render didn't cover, and updates it skipped.
+    root.pendingLanes = Lanes.merge(
+      Lanes.remove(root.pendingLanes, lanes),
+      Lanes.merge(finished.lanes, finished.childLanes),
+    )
     if root.hasPendingElement && finished.memoizedState === Unsafe.toUnknown(root.pendingElement) {
       root.hasPendingElement = false
       root.pendingElement = Element.null
@@ -469,16 +522,64 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     if hasFlag(Int.bitwiseOr(finished.subtreeFlags, finished.flags), Flags.passiveMask) {
       schedulePassiveEffects(finished)
     }
+    root.ensureScheduled()
     HookImpl.rethrowCommitError()
   }
 
-  // Scheduling
+  // Scheduling. Blocking lanes (sync and default) render in a flush: a microtask, or the end of
+  // `flushSync`. Other lanes render in scheduler tasks, yielding between units of work.
 
   let scheduledRoots: array<FiberRoot.t> = []
+  let liveRoots: array<FiberRoot.t> = []
   let isWorking = ref(false)
   let isFlushQueued = ref(false)
 
-  let flushWork = () =>
+  external taskToUnknown: Sched.task => unknown = "%identity"
+  external unknownToTask: unknown => Sched.task = "%identity"
+
+  let cancelTask = (root: FiberRoot.t) => {
+    root.callbackTask->Option.forEach(task => Sched.cancelCallback(unknownToTask(task)))
+    root.callbackTask = None
+    root.callbackLane = Lanes.none
+  }
+
+  let schedulerPriority = (lanes: Lanes.t): Scheduler.priority =>
+    Lanes.intersects(lanes, Lanes.idle) ? Idle : Normal
+
+  /**
+  After an exception escapes a root's render or commit, the root stops trying: it renders again on
+  its next update (whose render also picks up the updates still in the hooks' queues).
+  */
+  let abandon = (root: FiberRoot.t) => {
+    root.pendingLanes = Lanes.none
+    cancelTask(root)
+  }
+
+  let guardRoot = (root: FiberRoot.t, f: unit => unit) =>
+    try f() catch {
+    | error =>
+      abandon(root)
+      throw(error)
+    }
+
+  let checkRenderCount = (root: FiberRoot.t, renders: ref<int>) => {
+    renders := renders.contents + 1
+    if renders.contents > maxNestedRenders {
+      abandon(root)
+      JsError.throwWithMessage(
+        "ResFiber: maximum update depth exceeded. A component keeps updating state while rendering or in a layout effect.",
+      )
+    }
+  }
+
+  /** Renders the root's most urgent lane to completion, and commits it. */
+  let renderAndCommit = (root: FiberRoot.t, lanes: Lanes.t) =>
+    guardRoot(root, () => {
+      renderRoot(root, lanes, ~yielding=false)->ignore
+      commitRoot(root, takeFinishedWork(), lanes)
+    })
+
+  let rec flushWork = () =>
     if !isWorking.contents {
       isWorking := true
       let renders = ref(0)
@@ -488,14 +589,12 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
           root.isScheduled = false
           // The previous commit's effects run before anything renders again.
           flushPassiveEffects()->ignore
-          if root.pendingLanes != Lanes.none {
-            renders := renders.contents + 1
-            if renders.contents > maxNestedRenders {
-              JsError.throwWithMessage(
-                "ResFiber: maximum update depth exceeded. A component keeps updating state while rendering or in a layout effect.",
-              )
-            }
-            commitRoot(root, renderRoot(root))
+          let lanes = Lanes.highestPriority(root.pendingLanes)
+          if Lanes.isBlocking(lanes) && !root.isUnmounted {
+            checkRenderCount(root, renders)
+            renderAndCommit(root, lanes)
+          } else {
+            ensureRootScheduled(root)
           }
         }
         isWorking := false
@@ -508,30 +607,95 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
       }
     }
 
-  let ensureRootScheduled = (root: FiberRoot.t) =>
-    if !root.isScheduled && !root.isUnmounted {
-      root.isScheduled = true
-      scheduledRoots->Array.push(root)
-      if !isWorking.contents && !isFlushQueued.contents {
-        isFlushQueued := true
-        queueMicrotask(() => {
-          isFlushQueued := false
-          flushWork()
-        })
+  and ensureRootScheduled = (root: FiberRoot.t) =>
+    if !root.isUnmounted {
+      let next = Lanes.highestPriority(root.pendingLanes)
+      if next == Lanes.none {
+        cancelTask(root)
+      } else if Lanes.isBlocking(next) {
+        // A concurrent render of this root will be thrown away, and scheduled again afterwards.
+        cancelTask(root)
+        if !root.isScheduled {
+          root.isScheduled = true
+          scheduledRoots->Array.push(root)
+          if !isWorking.contents && !isFlushQueued.contents {
+            isFlushQueued := true
+            queueMicrotask(() => {
+              isFlushQueued := false
+              flushWork()
+            })
+          }
+        }
+      } else if root.callbackLane != next || Option.isNone(root.callbackTask) {
+        cancelTask(root)
+        scheduleConcurrentWork(root, next)
       }
     }
 
-  let flushSync = (f: unit => 'a): 'a => {
-    let previousLane = HookImpl.updateLane.contents
-    HookImpl.updateLane := Lanes.sync
-    let result = try f() catch {
-    | error =>
-      HookImpl.updateLane := previousLane
-      throw(error)
+  and scheduleConcurrentWork = (root: FiberRoot.t, lanes: Lanes.t) => {
+    root.callbackTask = Some(
+      taskToUnknown(
+        Sched.scheduleCallback(schedulerPriority(lanes), () => performConcurrentWork(root)),
+      ),
+    )
+    root.callbackLane = lanes
+  }
+
+  /** A scheduler task: renders the root's most urgent lane until done, or until it's time to yield. */
+  and performConcurrentWork = (root: FiberRoot.t) => {
+    root.callbackTask = None
+    root.callbackLane = Lanes.none
+    let lanes = Lanes.highestPriority(root.pendingLanes)
+    if root.isUnmounted || lanes == Lanes.none {
+      ()
+    } else if Lanes.isBlocking(lanes) {
+      ensureRootScheduled(root)
+    } else {
+      if !isRendering(root, lanes) {
+        flushPassiveEffects()->ignore
+      }
+      guardRoot(root, () => renderConcurrent(root, lanes))
     }
-    HookImpl.updateLane := previousLane
+  }
+
+  and renderConcurrent = (root: FiberRoot.t, lanes: Lanes.t) =>
+    if renderRoot(root, lanes, ~yielding=true) {
+      // A store that changed while the render was paused would leave components showing
+      // different values of it: render again, without yielding.
+      if !HookImpl.storesUnchanged() {
+        prepareFreshStack(root, lanes)
+        renderRoot(root, lanes, ~yielding=false)->ignore
+      }
+      commitRoot(root, takeFinishedWork(), lanes)
+    } else {
+      scheduleConcurrentWork(root, lanes)
+    }
+
+  let flushSync = (f: unit => 'a): 'a => {
+    let result = HookImpl.withLane(Lanes.sync, f)
     flushWork()
     result
+  }
+
+  let maxActRenders = 1000
+
+  let flushAllWork = () => {
+    flushWork()
+    let renders = ref(0)
+    let next = () => liveRoots->Array.find(root => root.pendingLanes != Lanes.none)
+    let root = ref(next())
+    while Option.isSome(root.contents) {
+      let root' = Option.getUnsafe(root.contents)
+      renders := renders.contents + 1
+      if renders.contents > maxActRenders {
+        JsError.throwWithMessage("ResFiber: updates keep scheduling more updates")
+      }
+      cancelTask(root')
+      flushPassiveEffects()->ignore
+      renderAndCommit(root', Lanes.highestPriority(root'.pendingLanes))
+      flushWork()
+      root := next()
+    }
   }
 
   // Roots
@@ -546,11 +710,14 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
       pendingElement: Element.null,
       hasPendingElement: false,
       isScheduled: false,
+      callbackTask: None,
+      callbackLane: Lanes.none,
       isUnmounted: false,
       ensureScheduled: () => (),
     }
     rootFiber.stateNode = Unsafe.toUnknown(root)
     root.ensureScheduled = () => ensureRootScheduled(root)
+    liveRoots->Array.push(root)
     root
   }
 
@@ -567,5 +734,15 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     if !root.isUnmounted {
       flushSync(() => render(root, Element.null))
       root.isUnmounted = true
+      cancelTask(root)
+      if workInProgressRoot.contents === Some(root) {
+        resetWorkInProgress()
+      }
+      switch liveRoots->Array.indexOf(root) {
+      | -1 => ()
+      | index => liveRoots->Array.splice(~start=index, ~remove=1, ~insert=[])
+      }
     }
 }
+
+module Make = (Host: HostConfig.S) => MakeWithScheduler(Host, Scheduler.Default)

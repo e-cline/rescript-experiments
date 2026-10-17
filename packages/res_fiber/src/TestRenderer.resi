@@ -1,5 +1,7 @@
 /***
 A renderer that keeps its nodes in memory, for testing components and the reconciler without a DOM.
+Concurrent work (transitions) runs on `TestScheduler`, so it only happens inside `act` or when a test
+calls `TestScheduler.flushTask`/`flushAll`.
 
 Write the components with `@@jsxConfig({version: 4, module_: "ResFiber.TestJsx"})`. Each renderer
 (`create`) records every host operation it performs, so a test can check not just what's rendered
@@ -41,8 +43,8 @@ returns, but `useEffect`s haven't (they run in a `setTimeout`, or in the next `a
 let flushSync: (unit => 'a) => 'a
 
 /**
-Calls `f`, then renders every update it made and runs every effect, repeatedly, until nothing more
-is pending: wrap updates in this. Throws if effects keep scheduling updates for 100 rounds.
+Calls `f`, then renders every update it made (transitions too, without yielding) and runs every
+effect, repeatedly, until nothing more is pending: wrap updates in this. Throws if effects keep scheduling updates for 100 rounds.
 */
 let act: (unit => unit) => unit
 

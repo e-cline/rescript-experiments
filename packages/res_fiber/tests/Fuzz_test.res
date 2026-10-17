@@ -150,3 +150,90 @@ describe("Fuzz: keyed lists", () => {
     )
   )
 })
+
+/***
+Random interleavings of sync, default and transition updates (each appending a token), with
+transition renders run a slice at a time. Whatever is on screen must be the updates in the order they
+were made, possibly missing some transitions; once everything is flushed it must be all of them.
+*/
+
+let setTokens: ref<(array<string> => array<string>) => unit> = ref(_ => ())
+
+module Tokens = {
+  @jsx.component
+  let make = () => {
+    let (tokens, set) = Hooks.useState(() => [])
+    setTokens := set
+    <>
+      {tokens
+      ->Array.map(token => {
+        // Slow enough that a transition's render spans several slices.
+        TestScheduler.advanceTime(1.0)
+        <b key=token> {TestJsx.string(token)} </b>
+      })
+      ->TestJsx.array}
+    </>
+  }
+}
+
+let shown = renderer =>
+  TestRenderer.toString(renderer)
+  ->String.replaceAll("<b>", "")
+  ->String.split("</b>")
+  ->Array.filter(token => token != "")
+
+/** Whether `part` is `whole` with some elements left out, keeping the order. */
+let isSubsequence = (part: array<string>, whole: array<string>) => {
+  let next = ref(0)
+  whole->Array.forEach(token =>
+    if next.contents < Array.length(part) && part->Array.getUnsafe(next.contents) == token {
+      next := next.contents + 1
+    }
+  )
+  next.contents == Array.length(part)
+}
+
+describe("Fuzz: update order across lanes", () => {
+  [3.0, 11.0, 99.0, 2024.0]->Array.forEach(seed =>
+    test(
+      `seed ${Float.toString(seed)}`,
+      t => {
+        let random = Random.make(seed)
+        let renderer = TestRenderer.create()
+        TestRenderer.render(renderer, <Tokens />)
+        let all = []
+        let urgent = []
+        let append = token => {
+          all->Array.push(token)
+          setTokens.contents(tokens => Array.concat(tokens, [token]))
+        }
+        for step in 1 to 150 {
+          switch Random.intBelow(random, 5) {
+          | 0 => Transition.start(() => append(`t${Int.toString(step)}`))
+          | 1 =>
+            urgent->Array.push(`s${Int.toString(step)}`)
+            TestRenderer.flushSync(() => append(`s${Int.toString(step)}`))
+          | 2 =>
+            // A default update: rendered by the next flush.
+            urgent->Array.push(`d${Int.toString(step)}`)
+            append(`d${Int.toString(step)}`)
+          | 3 => TestScheduler.flushTask()->ignore
+          | _ => TestRenderer.flushSync(() => ())
+          }
+          let screen = shown(renderer)
+          t->expect((step, isSubsequence(screen, all)))->Expect.toEqual((step, true))
+          if Random.intBelow(random, 4) == 0 {
+            // After a flush, every urgent update so far is on screen.
+            TestRenderer.flushSync(() => ())
+            let screen = shown(renderer)
+            t
+            ->expect((step, urgent->Array.filter(token => !(screen->Array.includes(token)))))
+            ->Expect.toEqual((step, []))
+          }
+        }
+        TestRenderer.act(() => ())
+        t->expect(shown(renderer))->Expect.toEqual(all)
+      },
+    )
+  )
+})

@@ -18,10 +18,15 @@ type kind =
   | Memo
   | Effect
   | LayoutEffect
+  | Deferred
 
 type rec hook = {
   kind: kind,
   mutable memoizedState: unknown,
+  /** State hooks: the state the `baseQueue` applies to. */
+  mutable baseState: unknown,
+  /** State hooks: updates a render skipped (lower priority), and every update after them. */
+  mutable baseQueue: unknown,
   mutable queue: unknown,
   mutable next: option<hook>,
 }
@@ -87,6 +92,7 @@ let kindName = (kind: kind) =>
   | Memo => "useMemo/useCallback"
   | Effect => "useEffect"
   | LayoutEffect => "useLayoutEffect"
+  | Deferred => "useDeferredValue"
   }
 
 let checkKind = (hook: hook, kind: kind) =>
@@ -109,7 +115,14 @@ let appendHook = (fiber: Fiber.t, hook: hook) => {
 }
 
 let mountHook = (fiber: Fiber.t, kind: kind): hook => {
-  let hook = {kind, memoizedState: Unsafe.nothing, queue: Unsafe.nothing, next: None}
+  let hook = {
+    kind,
+    memoizedState: Unsafe.nothing,
+    baseState: Unsafe.nothing,
+    baseQueue: Unsafe.nothing,
+    queue: Unsafe.nothing,
+    next: None,
+  }
   appendHook(fiber, hook)
   hook
 }
@@ -145,6 +158,8 @@ let updateHook = (fiber: Fiber.t, kind: kind): hook => {
       let hook = {
         kind,
         memoizedState: current.memoizedState,
+        baseState: current.baseState,
+        baseQueue: current.baseQueue,
         queue: current.queue,
         next: None,
       }
@@ -244,12 +259,14 @@ let bailoutHooks = (current: Fiber.t, workInProgress: Fiber.t, renderLanes: Lane
 // State and reducers
 
 type update<'state, 'action> = {
+  lane: Lanes.t,
   action: 'action,
   mutable hasEagerState: bool,
   mutable eagerState: 'state,
 }
 
 type queue<'state, 'action> = {
+  /** Updates not yet seen by a render. A render moves them to the hook's `baseQueue`. */
   mutable pending: array<update<'state, 'action>>,
   mutable lastRenderedState: 'state,
   mutable lastRenderedReducer: ('state, 'action) => 'state,
@@ -258,13 +275,28 @@ type queue<'state, 'action> = {
 
 external queueToUnknown: queue<'state, 'action> => unknown = "%identity"
 external unknownToQueue: unknown => queue<'state, 'action> = "%identity"
+external updatesToUnknown: array<update<'state, 'action>> => unknown = "%identity"
+external unknownToUpdates: unknown => Nullable.t<array<update<'state, 'action>>> = "%identity"
 
-let dispatch = (fiber: Fiber.t, queue: queue<'state, 'action>, ~eager: bool, action: 'action) => {
-  let update = {action, hasEagerState: false, eagerState: Unsafe.fromUnknown(Unsafe.nothing)}
+let updatesOf = (hook: hook): array<update<'state, 'action>> =>
+  unknownToUpdates(hook.baseQueue)->Nullable.toOption->Option.getOr([])
+
+let dispatch = (fiber: Fiber.t, queue: queue<'state, 'action>, ~eager: bool, action: 'action) =>
   if isRenderPhaseUpdate(fiber) {
     state.didScheduleRenderPhaseUpdate = true
-    queue.pending->Array.push(update)
+    queue.pending->Array.push({
+      lane: Lanes.none,
+      action,
+      hasEagerState: false,
+      eagerState: Unsafe.fromUnknown(Unsafe.nothing),
+    })
   } else {
+    let update = {
+      lane: updateLane.contents,
+      action,
+      hasEagerState: false,
+      eagerState: Unsafe.fromUnknown(Unsafe.nothing),
+    }
     let idle =
       eager &&
       fiber.lanes == Lanes.none &&
@@ -285,9 +317,43 @@ let dispatch = (fiber: Fiber.t, queue: queue<'state, 'action>, ~eager: bool, act
     }
     if !unchanged {
       queue.pending->Array.push(update)
-      FiberRoot.scheduleUpdate(fiber, updateLane.contents)
+      FiberRoot.scheduleUpdate(fiber, update.lane)
     }
   }
+
+let apply = (reducer, state: 'state, update: update<'state, 'action>) =>
+  update.hasEagerState ? update.eagerState : reducer(state, update.action)
+
+/**
+Applies the updates in `renderLanes` to the base state, in order. An update in another lane is
+skipped, and stays in the base queue with everything after it, so that a later render can apply them
+all in their original order on top of the state before the first skipped one. (An update kept only
+because it follows a skipped one gets no lane, so every later render includes it.)
+*/
+let processUpdates = (fiber: Fiber.t, hook: hook, reducer: ('state, 'action) => 'state): 'state => {
+  let result = ref((Unsafe.fromUnknown(hook.baseState): 'state))
+  let newBaseState = ref(result.contents)
+  let newBaseQueue = []
+  updatesOf(hook)->Array.forEach((update: update<'state, 'action>) =>
+    if Lanes.isSubset(state.renderLanes, update.lane) {
+      if Array.length(newBaseQueue) > 0 {
+        newBaseQueue->Array.push({...update, lane: Lanes.none})
+      }
+      result := apply(reducer, result.contents, update)
+    } else {
+      if Array.length(newBaseQueue) == 0 {
+        newBaseState := result.contents
+      }
+      newBaseQueue->Array.push(update)
+      fiber.lanes = Lanes.merge(fiber.lanes, update.lane)
+    }
+  )
+  if Array.length(newBaseQueue) == 0 {
+    newBaseState := result.contents
+  }
+  hook.baseState = Unsafe.toUnknown(newBaseState.contents)
+  hook.baseQueue = updatesToUnknown(newBaseQueue)
+  result.contents
 }
 
 let useReducerWith = (
@@ -300,6 +366,8 @@ let useReducerWith = (
   if isNew {
     let initial = init()
     hook.memoizedState = Unsafe.toUnknown(initial)
+    hook.baseState = Unsafe.toUnknown(initial)
+    hook.baseQueue = updatesToUnknown([])
     let queue = {
       pending: [],
       lastRenderedState: initial,
@@ -312,20 +380,84 @@ let useReducerWith = (
   } else {
     let queue: queue<'state, 'action> = unknownToQueue(hook.queue)
     let previous: 'state = Unsafe.fromUnknown(hook.memoizedState)
-    let next = ref(previous)
-    queue.pending->Array.forEach(update =>
-      next := (update.hasEagerState ? update.eagerState : reducer(next.contents, update.action))
-    )
-    queue.pending = []
-    if !Object.is(next.contents, previous) {
+    let next = switch state.mode {
+    | Rerender =>
+      // Updates made while rendering: apply them all, now.
+      let next =
+        queue.pending->Array.reduce(previous, (state, update) => apply(reducer, state, update))
+      queue.pending = []
+      if Array.length(updatesOf(hook)) == 0 {
+        hook.baseState = Unsafe.toUnknown(next)
+      }
+      next
+    | Mount | Update =>
+      if Array.length(queue.pending) > 0 {
+        // Moved onto the current hook too, so they survive if this render is thrown away.
+        let merged = Array.concat(updatesOf(hook), queue.pending)
+        queue.pending = []
+        hook.baseQueue = updatesToUnknown(merged)
+        state.currentHook->Option.forEach(current => current.baseQueue = updatesToUnknown(merged))
+      }
+      processUpdates(fiber, hook, reducer)
+    }
+    if !Object.is(next, previous) {
       state.didReceiveUpdate = true
     }
-    hook.memoizedState = Unsafe.toUnknown(next.contents)
-    queue.lastRenderedState = next.contents
+    hook.memoizedState = Unsafe.toUnknown(next)
+    queue.lastRenderedState = next
     queue.lastRenderedReducer = reducer
-    (next.contents, queue.dispatch)
+    (next, queue.dispatch)
   }
 }
+
+/** Runs `f` with updates in `lane`. */
+let withLane = (lane: Lanes.t, f: unit => 'a): 'a => {
+  let previous = updateLane.contents
+  updateLane := lane
+  let result = try f() catch {
+  | error =>
+    updateLane := previous
+    throw(error)
+  }
+  updateLane := previous
+  result
+}
+
+/**
+The previous value while an urgent render is in progress (and a transition scheduled to render the
+new one), the new value otherwise.
+*/
+let useDeferredValue = (value: 'value): 'value => {
+  let (fiber, hook, isNew) = nextHook(Deferred)
+  if isNew {
+    hook.memoizedState = Unsafe.toUnknown(value)
+    value
+  } else {
+    let previous: 'value = Unsafe.fromUnknown(hook.memoizedState)
+    if Object.is(previous, value) {
+      value
+    } else if !Lanes.isBlocking(state.renderLanes) {
+      hook.memoizedState = Unsafe.toUnknown(value)
+      state.didReceiveUpdate = true
+      value
+    } else {
+      FiberRoot.scheduleUpdate(fiber, Lanes.transition)
+      previous
+    }
+  }
+}
+
+// External stores: what this render read, to check nothing changed before it commits.
+
+let storeChecks: array<unit => bool> = []
+
+/** Records a store read: `isUnchanged` says whether the store still has what was read. */
+let recordStoreRead = (isUnchanged: unit => bool) => storeChecks->Array.push(isUnchanged)
+
+let storesUnchanged = () => storeChecks->Array.every(isUnchanged => isUnchanged())
+
+let clearStoreReads = () =>
+  storeChecks->Array.splice(~start=0, ~remove=Array.length(storeChecks), ~insert=[])
 
 // Memoization
 

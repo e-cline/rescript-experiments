@@ -6,15 +6,26 @@ renderer, and anything else that implements the host interface). It doesn't use 
 
 ## Status
 
-Phases 0 to 3 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`).
+Phases 0 to 4 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`).
 Where they differ from the plan below:
 
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
   `TestRenderer.scheduleRender`/`flushSync` for tests about effect timing.
-- Scheduling is a microtask per batch, plus `flushSync` and `flushWork`. Passive effects run in a
-  `setTimeout` (or before the next render). `Scheduler.S` comes with phase 4, when there's something
-  to schedule besides "now".
+- Sync and default updates render in a microtask (React renders default updates in a scheduler
+  task), start to finish. Only transitions and idle work go through `Scheduler.S` and yield. Passive
+  effects run in a `setTimeout` (or before the next render).
+- Lanes are simpler than React's: one transition lane (no per-transition lanes or entanglement), and
+  a render handles exactly one lane.
+- Updates made while a concurrent render is paused go straight into the hooks' queues, rather than
+  being held until the render ends as React does. A component rendered after the update sees it a
+  little early; nothing is lost or reordered, which the lane-ordering fuzz test checks.
+- `TestScheduler` keeps its tasks in a sorted array; only `Scheduler.Default` uses
+  `res_priority_queue`, now a dependency of `res_fiber`.
+- `Reconciler.S.flushAllWork` renders every root's pending work, transitions included, without
+  yielding: what the renderers' `act` uses.
+- When an exception escapes a root's render or commit, the root drops its pending lanes and renders
+  again on its next update, instead of retrying (React would unmount it).
 - The `res_common` dependency (for `Debug.debugAssert`) isn't needed yet. Hook-order checks always
   run, since a mismatch would otherwise read one hook's state as another's.
 - Context providers follow `@rescript/react`:

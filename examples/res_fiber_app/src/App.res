@@ -2,8 +2,8 @@
 
 /***
 A todo app on `res_fiber`: the todos live in a reducer (saved to `localStorage` by an effect), the
-current filter reaches the list through context, each item is memoized, and the new-todo input is
-focused through a ref when the app mounts.
+current filter reaches the list through context (switching it is a transition), each item is
+memoized, and the new-todo input is focused through a ref when the app mounts.
 */
 
 open ResFiber.Hooks
@@ -90,7 +90,7 @@ module Filters = {
           key=name
           id={`filter-${name}`}
           ariaPressed={option == filter ? "true" : "false"}
-          onClick={_ => setFilter(_ => option)}
+          onClick={_ => ResFiber.Transition.start(() => setFilter(_ => option))}
         >
           {Jsx.string(name)}
         </button>

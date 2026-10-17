@@ -30,6 +30,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@e-cline/res_priority_queue": "workspace:^"
+  },
   "devDependencies": {
     "@rescript/runtime": "catalog:",
     "rescript": "catalog:",

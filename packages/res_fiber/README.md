@@ -31,7 +31,10 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
 To render into a browser page, use [`@e-cline/res_fiber_dom`](../res_fiber_dom); to read
 `res_signals` atoms and computeds from components,
 [`@e-cline/res_fiber_signals`](../res_fiber_signals). [`benchmarks/`](benchmarks) measures the
-reconciler on lists of up to 10,000 rows.
+reconciler on lists of up to 10,000 rows, and the size of a production bundle: `vp run size`, from
+the repository root, prints it for a counter, an app using the whole API, and
+[the todo app](../../examples/res_fiber_app), minified and compressed (see
+[Bundle size](benchmarks/README.md#bundle-size)).
 
 ## Installing
 

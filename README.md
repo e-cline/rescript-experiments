@@ -53,9 +53,10 @@ These aren't published:
   ReScript and the TypeScript React app consuming it, a todo app built with `res_fiber`, a
   tree-shaking check, and a use of the PPX below.
 - [`packages/res_trees/benchmarks`](packages/res_trees/benchmarks),
-  [`packages/res_signals/benchmarks`](packages/res_signals/benchmarks) and
-  [`packages/res_signal_maps/benchmarks`](packages/res_signal_maps/benchmarks) -- benchmarks for
-  `res_trees`, `res_signals` and `res_signal_maps`, run against a bundled and minified build.
+  [`packages/res_signals/benchmarks`](packages/res_signals/benchmarks),
+  [`packages/res_signal_maps/benchmarks`](packages/res_signal_maps/benchmarks) and
+  [`packages/res_fiber/benchmarks`](packages/res_fiber/benchmarks) -- benchmarks for `res_trees`,
+  `res_signals`, `res_signal_maps` and `res_fiber`, run against a bundled and minified build.
 - [`tools/benchmarking`](tools/benchmarking) -- what benchmark packages share: ReScript bindings to
   mitata and a seeded PRNG.
 - [`tools/ppx/pretty_print`](tools/ppx/pretty_print) -- an example ReScript PPX, written in OCaml,

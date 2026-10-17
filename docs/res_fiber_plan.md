@@ -7,9 +7,9 @@ renderer, and anything else that implements the host interface). It doesn't use 
 ## Status
 
 Phases 0 to 4 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`),
-and so are phase 5's error boundaries, portals and `res_signals` bridge
-(`packages/res_fiber_signals`); the benchmarks are still to do. Where they differ from the plan
-below:
+and so is phase 5: error boundaries, portals, the `res_signals` bridge
+(`packages/res_fiber_signals`) and the benchmarks (`packages/res_fiber/benchmarks`). Where they
+differ from the plan below:
 
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
@@ -58,6 +58,11 @@ below:
   Subscriptions are `EffectBase` effects on `Scheduler.Sync`; `res_signals` has no way to create an
   effect outside the current effect's ownership, so a subscription made while one of the app's own
   signal effects is running belongs to it (documented, not worked around).
+- The benchmarks render into an in-memory host with linked-list children rather than the
+  TestRenderer (whose operation log would dominate), and run transitions on a scheduler that yields
+  every 100 units of work. Their first run found the commit phase quadratic when many siblings move
+  (reversing 10,000 rows took 231 ms): moved children are now placed last first, which made it
+  linear (about 5 ms).
 - Effect errors don't stop other effects: the first is kept and rethrown once the phase has run (the
   original JS error, not ReScript's `JsExn` wrapper).
 

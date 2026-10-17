@@ -459,11 +459,21 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     | None => ()
     }
     if hasFlag(fiber.subtreeFlags, Flags.mutationMask) {
-      forEachChild(fiber, commitMutationEffects)
-    }
-    if hasFlag(fiber.flags, Flags.placement) {
-      commitPlacement(fiber)
-      removeFlag(fiber, Flags.placement)
+      let placed = []
+      forEachChild(fiber, child => {
+        commitMutationEffects(child)
+        if hasFlag(child.flags, Flags.placement) {
+          placed->Array.push(child)
+        }
+      })
+      // The children's own placements come last, last child first: each then finds the sibling it
+      // goes before already in position, rather than searching past every other sibling that is
+      // also moving (which makes reversing a list quadratic).
+      for index in Array.length(placed) - 1 downto 0 {
+        let child = placed->Array.getUnsafe(index)
+        commitPlacement(child)
+        removeFlag(child, Flags.placement)
+      }
     }
     if hasFlag(fiber.flags, Flags.update) {
       commitUpdate(fiber)

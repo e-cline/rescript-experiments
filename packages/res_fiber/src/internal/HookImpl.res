@@ -7,8 +7,8 @@ list (so the state on screen is never mutated by a render that might not commit)
 sets its own state while rendering is called again straight away (a "rerender"), reusing the nodes
 the previous pass built.
 
-Each node records which hook made it, so calling hooks in a different order from one render to the
-next fails with a clear message instead of reading one hook's state as another's.
+Each node records which hook made it, so in development calling hooks in a different order from one
+render to the next fails with a clear message instead of reading one hook's state as another's.
 */
 
 type kind =
@@ -98,8 +98,9 @@ let kindName = (kind: kind) =>
   | Deferred => "useDeferredValue"
   }
 
+/** Development only, as in React: production builds skip the check (and its messages). */
 let checkKind = (hook: hook, kind: kind) =>
-  if hook.kind != kind {
+  if ResCommon.Env.isDev && hook.kind != kind {
     JsError.throwWithMessage(
       `ResFiber: hooks were called in a different order from the previous render (expected ${kindName(
           hook.kind,

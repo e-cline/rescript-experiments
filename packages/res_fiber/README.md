@@ -75,7 +75,8 @@ lowers the JSX to function calls either way, even when the project sets `"preser
 output is plain `.res.js`.
 
 Hooks follow `@rescript/react`'s names and the usual rules: call them unconditionally, in the same
-order on every render. Breaking the order throws.
+order on every render. Breaking the order throws in development (production builds skip the check,
+as React's do).
 
 ### Effects
 

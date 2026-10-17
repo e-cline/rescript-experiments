@@ -67,7 +67,7 @@ function kindName(kind) {
 }
 
 function checkKind(hook, kind) {
-  if (hook.kind !== kind) {
+  if (Env$ResCommon.isDev && hook.kind !== kind) {
     return Stdlib_JsError.throwWithMessage(`ResFiber: hooks were called in a different order from the previous render (expected ` + kindName(hook.kind) + `, got ` + kindName(kind) + `). Hooks must be called unconditionally, in the same order on every render.`);
   }
 }

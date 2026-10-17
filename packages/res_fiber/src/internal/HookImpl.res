@@ -16,6 +16,8 @@ type kind =
   | Reducer
   | Ref
   | Memo
+  | Effect
+  | LayoutEffect
 
 type rec hook = {
   kind: kind,
@@ -83,6 +85,8 @@ let kindName = (kind: kind) =>
   | Reducer => "useReducer"
   | Ref => "useRef"
   | Memo => "useMemo/useCallback"
+  | Effect => "useEffect"
+  | LayoutEffect => "useLayoutEffect"
   }
 
 let checkKind = (hook: hook, kind: kind) =>
@@ -193,6 +197,8 @@ let renderWithHooks = (
   state.workInProgressHook = None
   state.mode = hasCurrentHooks ? Update : Mount
   workInProgress.memoizedState = Unsafe.nothing
+  workInProgress.updateQueue = Unsafe.nothing
+  workInProgress.dependencies = None
 
   let children = ref(component(props))
   let rerenders = ref(0)
@@ -207,6 +213,8 @@ let renderWithHooks = (
     state.currentHook = None
     state.workInProgressHook = None
     state.mode = Rerender
+    workInProgress.updateQueue = Unsafe.nothing
+    workInProgress.dependencies = None
     children := component(props)
   }
 
@@ -223,9 +231,15 @@ let renderWithHooks = (
   children.contents
 }
 
-/** For a component that rendered the same as last time: leave its lanes as handled. */
-let bailoutHooks = (current: Fiber.t, renderLanes: Lanes.t) =>
+/**
+For a component that rendered the same as last time: keep its committed effects (none of them is
+due) and leave its lanes as handled.
+*/
+let bailoutHooks = (current: Fiber.t, workInProgress: Fiber.t, renderLanes: Lanes.t) => {
+  workInProgress.updateQueue = current.updateQueue
+  Fiber.removeFlag(workInProgress, Int.bitwiseOr(Fiber.Flags.passive, Fiber.Flags.layout))
   current.lanes = Lanes.remove(current.lanes, renderLanes)
+}
 
 // State and reducers
 
@@ -357,3 +371,117 @@ let useRef = (initial: 'value): Ref.t<'value> => {
     Unsafe.fromUnknown(hook.memoizedState)
   }
 }
+
+// Context
+
+let useContext = (context: ContextImpl.t<'value>): 'value =>
+  ContextImpl.read(renderingFiber(), context)
+
+// Effects
+
+type effectKind =
+  | Passive
+  | Layout
+
+/** Shared by an effect's successive renders: the cleanup from the last time it ran. */
+type effectInstance = {mutable destroy: option<unit => unit>}
+
+type effect = {
+  effectKind: effectKind,
+  /** Whether it's due: its dependencies changed (or it's new). */
+  hasEffect: bool,
+  create: unit => option<unit => unit>,
+  deps: option<array<unknown>>,
+  inst: effectInstance,
+}
+
+external effectToUnknown: effect => unknown = "%identity"
+external unknownToEffect: unknown => effect = "%identity"
+external effectsToUnknown: array<effect> => unknown = "%identity"
+external unknownToEffects: unknown => Nullable.t<array<effect>> = "%identity"
+
+/** The effects a function component's last render declared, in order. */
+let effectsOf = (fiber: Fiber.t): array<effect> =>
+  switch Nullable.toOption(unknownToEffects(fiber.updateQueue)) {
+  | Some(effects) => effects
+  | None => []
+  }
+
+let useEffectWith = (
+  ~effectKind: effectKind,
+  create: unit => option<unit => unit>,
+  deps: option<array<unknown>>,
+) => {
+  let (fiber, hook, isNew) = nextHook(effectKind == Passive ? Effect : LayoutEffect)
+  // Compare with what's on screen (not an earlier pass of a rerender).
+  let previous = isNew
+    ? None
+    : state.currentHook->Option.map(current => unknownToEffect(current.memoizedState))
+  let (inst, hasEffect) = switch previous {
+  | Some(previous) => (previous.inst, !depsEqual(previous.deps, deps))
+  | None => ({destroy: None}, true)
+  }
+  let effect = {effectKind, hasEffect, create, deps, inst}
+  hook.memoizedState = effectToUnknown(effect)
+  switch Nullable.toOption(unknownToEffects(fiber.updateQueue)) {
+  | Some(effects) => effects->Array.push(effect)
+  | None => fiber.updateQueue = effectsToUnknown([effect])
+  }
+  if hasEffect {
+    Fiber.addFlag(fiber, effectKind == Passive ? Fiber.Flags.passive : Fiber.Flags.layout)
+  }
+}
+
+// Running effects, from the commit phase. An exception from one effect doesn't stop the others:
+// the first is kept, and rethrown once the phase is over.
+
+/** The first exception from an effect: a JS value as thrown, or a ReScript exception. */
+type caught =
+  | Thrown(JsExn.t)
+  | Exception(exn)
+
+let commitError: ref<option<caught>> = ref(None)
+
+let guard = (f: unit => unit) =>
+  try f() catch {
+  | JsExn(thrown) =>
+    if Option.isNone(commitError.contents) {
+      commitError := Some(Thrown(thrown))
+    }
+  | error =>
+    if Option.isNone(commitError.contents) {
+      commitError := Some(Exception(error))
+    }
+  }
+
+let rethrowCommitError = () =>
+  switch commitError.contents {
+  | Some(caught) =>
+    commitError := None
+    switch caught {
+    | Thrown(thrown) => JsExn.throw(thrown)
+    | Exception(error) => throw(error)
+    }
+  | None => ()
+  }
+
+/** Runs the cleanups of `fiber`'s effects of `effectKind`: the due ones, or with `~all`, every one. */
+let commitEffectsUnmount = (fiber: Fiber.t, ~effectKind: effectKind, ~all: bool) =>
+  effectsOf(fiber)->Array.forEach(effect =>
+    if effect.effectKind == effectKind && (all || effect.hasEffect) {
+      switch effect.inst.destroy {
+      | Some(destroy) =>
+        effect.inst.destroy = None
+        guard(destroy)
+      | None => ()
+      }
+    }
+  )
+
+/** Runs `fiber`'s due effects of `effectKind`, keeping their cleanups. */
+let commitEffectsMount = (fiber: Fiber.t, ~effectKind: effectKind) =>
+  effectsOf(fiber)->Array.forEach(effect =>
+    if effect.effectKind == effectKind && effect.hasEffect {
+      guard(() => effect.inst.destroy = effect.create())
+    }
+  )

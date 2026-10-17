@@ -22,9 +22,12 @@ module type S = {
   type props
   /** What `prepareUpdate` works out for `commitUpdate` to apply. */
   type updatePayload
+  /** What a host element's `ref` prop receives: the type in its `Jsx.Elements.props`. */
+  type publicInstance
 
   let instanceToNode: instance => node
   let textToNode: textInstance => node
+  let getPublicInstance: instance => publicInstance
 
   let createInstance: (~tag: string, ~props: props, ~container: container) => instance
   let createTextInstance: (string, ~container: container) => textInstance

@@ -14,8 +14,8 @@ but that the reconciler did no more than it had to:
 - `text "old" -> "new"`: a text node changed.
 */
 
-/** A rendered node: a host element, or text (whose `tag` is `"#text"`). */
-type instance
+/** A rendered node: a host element, or text (whose `tag` is `"#text"`). A `ref` receives one. */
+type instance = TestJsx.node
 
 /** A test renderer with one root. */
 type t
@@ -28,7 +28,22 @@ let render: (t, Element.t) => unit
 /** Removes everything rendered. */
 let unmount: t => unit
 
-/** Calls `f`, then renders every update it made before returning: wrap updates in this. */
+/**
+Schedules a render of `element`, as a real renderer's `render` does: it happens in a microtask, or
+in an enclosing `flushSync`. For tests about timing; `render` is the usual way.
+*/
+let scheduleRender: (t, Element.t) => unit
+
+/**
+Calls `f`, then renders what it scheduled: the host is updated and layout effects have run when it
+returns, but `useEffect`s haven't (they run in a `setTimeout`, or in the next `act`).
+*/
+let flushSync: (unit => 'a) => 'a
+
+/**
+Calls `f`, then renders every update it made and runs every effect, repeatedly, until nothing more
+is pending: wrap updates in this. Throws if effects keep scheduling updates for 100 rounds.
+*/
 let act: (unit => unit) => unit
 
 /**

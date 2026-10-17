@@ -62,18 +62,23 @@ let updateHostRoot = (current: option<Fiber.t>, workInProgress: Fiber.t) => {
 let updateFunctionComponent = (
   current: option<Fiber.t>,
   workInProgress: Fiber.t,
+  component: unknown => Element.t,
   renderLanes: Lanes.t,
 ) => {
+  switch current {
+  | Some(current) if ContextImpl.hasChanged(current) => HookImpl.state.didReceiveUpdate = true
+  | _ => ()
+  }
   let children = HookImpl.renderWithHooks(
     current,
     workInProgress,
-    toComponent(workInProgress.elementType),
+    component,
     workInProgress.pendingProps,
     renderLanes,
   )
   switch current {
   | Some(current) if !HookImpl.state.didReceiveUpdate =>
-    HookImpl.bailoutHooks(current, renderLanes)
+    HookImpl.bailoutHooks(current, workInProgress, renderLanes)
     bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
   | _ =>
     ChildReconciler.reconcileChildren(current, workInProgress, children)
@@ -81,9 +86,62 @@ let updateFunctionComponent = (
   }
 }
 
+/**
+A memoized component whose props compare equal skips rendering, unless it has an update of its own
+(then it renders, but its old output is reused if its state ends up unchanged).
+*/
+let updateMemoComponent = (
+  current: option<Fiber.t>,
+  workInProgress: Fiber.t,
+  ~hasUpdate: bool,
+  renderLanes: Lanes.t,
+) => {
+  let inner = Marker.memoInner(workInProgress.elementType)
+  switch current {
+  | Some(current)
+    if Marker.memoCompare(workInProgress.elementType)(
+      current.memoizedProps,
+      workInProgress.pendingProps,
+    ) =>
+    // Keep the old props record, so the next comparison starts from the same identity.
+    workInProgress.pendingProps = current.memoizedProps
+    HookImpl.state.didReceiveUpdate = false
+    if hasUpdate || ContextImpl.hasChanged(current) {
+      updateFunctionComponent(Some(current), workInProgress, inner, renderLanes)
+    } else {
+      bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
+    }
+  | _ => updateFunctionComponent(current, workInProgress, inner, renderLanes)
+  }
+}
+
+let updateContextProvider = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes) => {
+  let context = ContextImpl.ofProvider(workInProgress)
+  let props = ContextImpl.propsOf(workInProgress.pendingProps)
+  ContextImpl.push(context, props.value)
+  let unchanged = switch current {
+  | Some(current) =>
+    let previous = ContextImpl.propsOf(current.memoizedProps)
+    if Object.is(previous.value, props.value) {
+      previous.children === props.children
+    } else {
+      ContextImpl.propagateChange(workInProgress, context, renderLanes)
+      false
+    }
+  | None => false
+  }
+  if unchanged {
+    bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
+  } else {
+    ChildReconciler.reconcileChildren(current, workInProgress, props.children)
+    workInProgress.child
+  }
+}
+
 let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes: Lanes.t): option<
   Fiber.t,
 > => {
+  let hasUpdate = Lanes.intersects(workInProgress.lanes, renderLanes)
   let bailout = switch current {
   | Some(current) =>
     if current.memoizedProps !== workInProgress.pendingProps {
@@ -91,19 +149,34 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
       false
     } else {
       HookImpl.state.didReceiveUpdate = false
-      !Lanes.intersects(workInProgress.lanes, renderLanes)
+      !hasUpdate
     }
   | None =>
     HookImpl.state.didReceiveUpdate = false
     false
   }
   if bailout {
+    // A provider still provides its value to whatever below does render (`completeWork` pops it).
+    if workInProgress.tag == ContextProvider {
+      ContextImpl.push(
+        ContextImpl.ofProvider(workInProgress),
+        ContextImpl.propsOf(workInProgress.memoizedProps).value,
+      )
+    }
     bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
   } else {
     workInProgress.lanes = Lanes.none
     switch workInProgress.tag {
     | HostRoot => updateHostRoot(current, workInProgress)
-    | FunctionComponent => updateFunctionComponent(current, workInProgress, renderLanes)
+    | FunctionComponent =>
+      updateFunctionComponent(
+        current,
+        workInProgress,
+        toComponent(workInProgress.elementType),
+        renderLanes,
+      )
+    | MemoComponent => updateMemoComponent(current, workInProgress, ~hasUpdate, renderLanes)
+    | ContextProvider => updateContextProvider(current, workInProgress, renderLanes)
     | HostComponent =>
       ChildReconciler.reconcileChildren(
         current,

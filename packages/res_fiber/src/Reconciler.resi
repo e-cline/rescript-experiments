@@ -7,6 +7,10 @@ work-in-progress tree; the commit phase then applies the changes it recorded to 
 once. Updates are batched: every update made in the same task renders once, in a microtask, unless
 `flushSync` renders it sooner.
 
+After each commit, layout effects (`useLayoutEffect`) and refs run synchronously; passive effects
+(`useEffect`) run later, every cleanup before any effect, children before parents. An update made in a
+layout effect renders before the commit's caller regains control.
+
 An exception thrown while rendering leaves what's on screen as it was and propagates out of whatever
 started the render (`flushSync`, `flushWork`, or the microtask). Updates that render was processing
 are lost.
@@ -34,6 +38,14 @@ module type S = {
 
   /** Renders every pending update now. */
   let flushWork: unit => unit
+
+  /**
+  Runs the last commit's `useEffect` cleanups and effects now, if they haven't run yet, returning
+  whether there were any. They otherwise run in a `setTimeout` after the commit, or before the next
+  render, whichever is first. Tests call this (through their renderer's `act`) to see effects
+  synchronously.
+  */
+  let flushPassiveEffects: unit => bool
 }
 
 module Make: (Host: HostConfig.S) => (S with type container = Host.container)

@@ -16,6 +16,11 @@ type tag =
   | HostText
   | FunctionComponent
   | Fragment
+  | ContextProvider
+  | MemoComponent
+
+/** A context a function component read while rendering, and the value it read. */
+type dependency = {context: unknown, memoizedValue: unknown}
 
 type rec t = {
   mutable tag: tag,
@@ -40,8 +45,10 @@ type rec t = {
   mutable deletions: option<array<t>>,
   /** Function component: its first hook. Root: the rendered element. */
   mutable memoizedState: unknown,
-  /** Host component: the update payload for commit. */
+  /** Host component: the update payload for commit. Function component: its effects. */
   mutable updateQueue: unknown,
+  /** Function component: the contexts it read in its last render. */
+  mutable dependencies: option<array<dependency>>,
   mutable lanes: Lanes.t,
   mutable childLanes: Lanes.t,
 }
@@ -51,8 +58,21 @@ module Flags = {
   let placement = 2
   let update = 4
   let childDeletion = 16
-  let mutationMask = Int.bitwiseOr(Int.bitwiseOr(placement, update), childDeletion)
+  /** A function component has a `useEffect` to run. */
+  let passive = 32
+  /** A function component has a `useLayoutEffect` to run. */
+  let layout = 64
+  /** A host component's `ref` prop needs attaching (and the old one detaching). */
+  let ref = 128
+
+  let union = flags => flags->Array.reduce(none, Int.bitwiseOr)
+  let mutationMask = union([placement, update, childDeletion, layout, ref])
+  let layoutMask = union([layout, ref])
+  let passiveMask = union([passive, childDeletion])
 }
+
+/** A fiber that renders a function with hooks. */
+let isFunctionLike = (fiber: t) => fiber.tag == FunctionComponent || fiber.tag == MemoComponent
 
 let hasFlag = (flags: int, flag: int): bool => Int.bitwiseAnd(flags, flag) != 0
 let addFlag = (fiber: t, flag: int) => fiber.flags = Int.bitwiseOr(fiber.flags, flag)
@@ -76,6 +96,7 @@ let make = (~tag: tag, ~key: Nullable.t<string>, ~pendingProps: unknown): t => {
   deletions: None,
   memoizedState: Unsafe.nothing,
   updateQueue: Unsafe.nothing,
+  dependencies: None,
   lanes: Lanes.none,
   childLanes: Lanes.none,
 }
@@ -108,6 +129,7 @@ let createWorkInProgress = (current: t, pendingProps: unknown): t => {
   workInProgress.memoizedProps = current.memoizedProps
   workInProgress.memoizedState = current.memoizedState
   workInProgress.updateQueue = current.updateQueue
+  workInProgress.dependencies = current.dependencies
   workInProgress.sibling = current.sibling
   workInProgress.index = current.index
   workInProgress

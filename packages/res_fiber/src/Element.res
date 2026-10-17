@@ -4,6 +4,8 @@ type kind =
   | Host
   | Component
   | Fragment
+  | Provider
+  | Memo
 
 type node = {
   kind: kind,

@@ -8,8 +8,8 @@ renderer, and anything else that implements the host interface). It doesn't use 
 
 Phases 0 to 4 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`),
 and so is phase 5: error boundaries, portals, the `res_signals` bridge
-(`packages/res_fiber_signals`) and the benchmarks (`packages/res_fiber/benchmarks`). Where they
-differ from the plan below:
+(`packages/res_fiber_signals`) and the benchmarks (`packages/res_fiber/benchmarks`). Phase 6
+(Suspense) was added afterwards; stage (a) is done. Where they differ from the plan below:
 
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
@@ -516,8 +516,32 @@ commit or PR on its own.
 - A benchmark package (`res_fiber/benchmarks`, on `tools/benchmarking`) covering mounting, updating
   and reordering a list of 1k–10k rows on the TestRenderer.
 
-Out of scope: class components, Suspense and `use`, server rendering and hydration, StrictMode
-double-invoking, DevTools integration.
+**Phase 6 -- Suspense** (added after phase 5)
+
+Suspending builds on what error boundaries already do: an exception thrown while rendering is
+caught, the context stack is unwound to the nearest boundary, and the boundary renders again.
+
+- **(a) `use` and `<Suspense fallback>`.** `Hooks.use(promise)` returns a fulfilled promise's value,
+  throws a rejected one's reason (which reaches an `ErrorBoundary`), and otherwise throws
+  `Suspended(promise)`. A render keeps no hook state when it's thrown away, so the promise's status
+  is recorded on the promise itself, and callers pass the same promise every render (made outside
+  the component, or cached). The nearest `Suspense` boundary catches `Suspended`, renders its
+  fallback in the same render, and renders its children again once the promise settles. A fallback
+  that suspends goes to the next boundary up; with no boundary, suspending is an error. Showing the
+  fallback on an update unmounts the children (their state is lost) until (b).
+- **(b) Hide instead of unmount.** Children that suspend after they've been shown stay mounted but
+  hidden, so their state survives: an offscreen fiber around them, and `hideInstance`/
+  `unhideInstance` (and the text versions) in `HostConfig.S`: `display: none` in the DOM, a flag in
+  the test renderer.
+- **(c) Transitions keep the old screen.** When a transition's render suspends inside a boundary
+  that's already showing its children, nothing commits: the screen keeps the previous state, the
+  transition stays pending (`useTransition`'s `isPending` stays `true`), and it renders again when
+  the promise settles.
+
+Tests drive it with `TestScheduler` and promises the test resolves.
+
+Out of scope: class components, server rendering and hydration (and so streaming Suspense),
+`SuspenseList`, a built-in cache for promises, StrictMode double-invoking, DevTools integration.
 
 ## Risks and open decisions
 

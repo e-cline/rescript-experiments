@@ -8,6 +8,7 @@ type kind =
   | Memo
   | ErrorBoundary
   | Portal
+  | Suspense
 
 type node = {
   kind: kind,

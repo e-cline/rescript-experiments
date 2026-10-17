@@ -1,7 +1,7 @@
 /***
 Properties on a component function that mark it as something other than a plain component: a
-context's provider (`Context.provider`), a memoized component (`Memo.memo`) or an error boundary
-(`ErrorBoundary.make`). `JsxCore.jsx` reads
+context's provider (`Context.provider`), a memoized component (`Memo.memo`), an error boundary
+(`ErrorBoundary.make`) or a suspense boundary (`Suspense.make`). `JsxCore.jsx` reads
 the mark to pick the element's kind, and the reconciler reads the rest.
 */
 
@@ -20,11 +20,13 @@ the mark to pick the element's kind, and the reconciler reads the rest.
 let providerKind = "provider"
 let memoKind = "memo"
 let errorBoundaryKind = "errorBoundary"
+let suspenseKind = "suspense"
 
 let kindOf = (component: unknown): Element.kind =>
   switch Nullable.toOption(kind(component)) {
   | Some(kind) if kind == providerKind => Provider
   | Some(kind) if kind == memoKind => Memo
   | Some(kind) if kind == errorBoundaryKind => ErrorBoundary
+  | Some(kind) if kind == suspenseKind => Suspense
   | _ => Component
   }

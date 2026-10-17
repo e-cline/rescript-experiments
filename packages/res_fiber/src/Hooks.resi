@@ -101,3 +101,11 @@ and a transition renders the component again with the new one. For keeping an ex
 page (results for a search box's text, say) from slowing down the part that must respond at once.
 */
 let useDeferredValue: 'value => 'value
+
+/**
+What `promise` resolved to. Before it settles, the component suspends: the nearest `Suspense`
+boundary shows its fallback, and renders the component again once it has. A rejected promise throws
+its error. Pass the same promise every render. Unlike the other hooks, this one may be called
+conditionally. See `Suspense`.
+*/
+let use: promise<'value> => 'value

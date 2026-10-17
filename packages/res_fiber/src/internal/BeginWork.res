@@ -221,6 +221,13 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
       )
       workInProgress.child
     | ErrorBoundaryComponent => updateErrorBoundary(current, workInProgress)
+    | SuspenseComponent =>
+      ChildReconciler.reconcileChildren(
+        current,
+        workInProgress,
+        SuspenseImpl.childrenOf(workInProgress),
+      )
+      workInProgress.child
     | HostPortal =>
       ChildReconciler.reconcilePortalChildren(
         current,

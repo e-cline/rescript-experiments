@@ -21,6 +21,7 @@ type tag =
   | ErrorBoundaryComponent
   /** `stateNode` is the container its children render into. */
   | HostPortal
+  | SuspenseComponent
 
 /** A context a function component read while rendering, and the value it read. */
 type dependency = {context: unknown, memoizedValue: unknown}
@@ -67,7 +68,10 @@ module Flags = {
   let layout = 64
   /** A host component's `ref` prop needs attaching (and the old one detaching). */
   let ref = 128
-  /** An error boundary that caught an error in this render (so it doesn't catch another). */
+  /**
+  An error or suspense boundary that caught in this render (so it shows its fallback, and doesn't
+  catch again).
+  */
   let didCapture = 256
 
   let union = flags => flags->Array.reduce(none, Int.bitwiseOr)

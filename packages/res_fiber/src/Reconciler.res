@@ -127,7 +127,8 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     | MemoComponent
     | Fragment
     | ErrorBoundaryComponent
-    | HostPortal => ()
+    | HostPortal
+    | SuspenseComponent => ()
     }
 
   /**
@@ -228,21 +229,55 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   the boundary (dropping the half-rendered fibers between, and the context values they provided)
   and renders it again showing the error. Returns whether there was one.
   */
-  let handleRenderError = (error: exn): bool =>
-    switch currentFiber.contents->Option.flatMap(fiber =>
-      ErrorBoundaryImpl.find(fiber, ~skipCaptured=true)
-    ) {
+  let renderAgainWithFallback = (boundary: Fiber.t) => {
+    ContextImpl.unwindTo(boundary)
+    addFlag(boundary, Flags.didCapture)
+    // Forget what the abandoned children recorded; the fallback is reconciled against what's on
+    // screen (`current.child`) afresh.
+    removeFlag(boundary, Flags.childDeletion)
+    boundary.deletions = None
+    workInProgress := Some(boundary)
+  }
+
+  let noSuspenseBoundary = () =>
+    try JsError.throwWithMessage(
+      "ResFiber: a component suspended (Hooks.use on a promise that hasn't settled) with no <Suspense> boundary above it",
+    ) catch {
+    | error => error
+    }
+
+  /** Sends `error` to the nearest error boundary. Returns it if there's none. */
+  let catchError = (thrower: Fiber.t, error: exn): option<exn> =>
+    switch ErrorBoundaryImpl.find(thrower, ~skipCaptured=true) {
     | Some(boundary) =>
-      ContextImpl.unwindTo(boundary)
       ErrorBoundaryImpl.capture(boundary, error)
-      addFlag(boundary, Flags.didCapture)
-      // Forget what the abandoned children recorded; the fallback is reconciled against what's on
-      // screen (`current.child`) afresh.
-      removeFlag(boundary, Flags.childDeletion)
-      boundary.deletions = None
-      workInProgress := Some(boundary)
-      true
-    | None => false
+      renderAgainWithFallback(boundary)
+      None
+    | None => Some(error)
+    }
+
+  /**
+  For an exception from rendering `currentFiber`: a suspension goes to the nearest `Suspense`
+  boundary, which renders its fallback now and its children again once the promise settles; an
+  error goes to the nearest error boundary, which renders again showing it. Either way the
+  half-rendered fibers in between are dropped, with the context values they provided. Returns the
+  exception to rethrow, if no boundary took it.
+  */
+  let handleRenderError = (error: exn): option<exn> =>
+    switch currentFiber.contents {
+    | None => Some(error)
+    | Some(thrower) =>
+      switch error {
+      | SuspenseImpl.Suspended(promise) =>
+        switch SuspenseImpl.find(thrower) {
+        | Some(boundary) =>
+          SuspenseImpl.retryWhenSettled(boundary, promise)
+          renderAgainWithFallback(boundary)
+          None
+        | None => catchError(thrower, noSuspenseBoundary())
+        }
+      | _ => catchError(thrower, error)
+      }
     }
 
   /**
@@ -258,9 +293,11 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       try performUnitOfWork(root, Option.getUnsafe(workInProgress.contents), lanes) catch {
       | error =>
         HookImpl.reset()
-        if !handleRenderError(error) {
+        switch handleRenderError(error) {
+        | Some(uncaught) =>
           resetWorkInProgress()
-          HookImpl.rethrow(error)
+          HookImpl.rethrow(uncaught)
+        | None => ()
         }
       }
     }
@@ -410,7 +447,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
           ~remove=Some(node => Host.removeChildFromContainer(container, node)),
         )
       )
-    | HostRoot | Fragment | ContextProvider | ErrorBoundaryComponent =>
+    | HostRoot | Fragment | ContextProvider | ErrorBoundaryComponent | SuspenseComponent =>
       forEachChild(fiber, child => commitDeletionEffects(child, ~remove))
     }
 

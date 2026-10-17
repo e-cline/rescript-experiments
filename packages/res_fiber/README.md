@@ -10,6 +10,8 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
   keyed and unkeyed lists.
 - React's child reconciliation: nodes are reused by key and type, and moves, insertions and removals
   touch only what changed.
+- React's key warnings in development builds: two children with the same key, and children without a
+  key in a `Jsx.array` list.
 - `useState`, `useReducer`, `useReducerWithMapState`, `useRef`, `useMemo0`–`5`, `useCallback0`–`5`.
 - `useEffect` and `useLayoutEffect` (each with `0`–`5` dependency variants), with React's ordering:
   layout effects in the commit, passive effects after it, every cleanup before any effect.
@@ -202,8 +204,9 @@ Renderer.flushSync(() => Renderer.render(root, element))
 ```
 
 It also provides a JSX module: `include ResFiber.JsxCore` plus an `Elements` submodule whose `props`
-record is the renderer's host props, built on `JsxCore.hostJsx`. `TestJsx` and `TestRenderer` are a
-complete example.
+record is the renderer's host props, built on `JsxCore.hostJsx` (and `JsxCore.hostJsxs` for
+`Elements.jsxs`, which marks written-out children so they aren't warned about for having no keys).
+`TestJsx` and `TestRenderer` are a complete example.
 
 ## How it works
 

@@ -26,9 +26,9 @@ module Elements = {
   }
 
   let jsx: (string, props) => element = JsxCore.hostJsx
-  let jsxs: (string, props) => element = JsxCore.hostJsx
+  let jsxs: (string, props) => element = JsxCore.hostJsxs
   let jsxKeyed: (string, props, ~key: string=?, unit) => element = JsxCore.hostJsxKeyed
-  let jsxsKeyed: (string, props, ~key: string=?, unit) => element = JsxCore.hostJsxKeyed
+  let jsxsKeyed: (string, props, ~key: string=?, unit) => element = JsxCore.hostJsxsKeyed
 
   external someElement: element => option<element> = "%identity"
 }

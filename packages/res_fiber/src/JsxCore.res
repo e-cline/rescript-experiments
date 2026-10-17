@@ -36,10 +36,28 @@ let make = (component: component<'props>, props: 'props, key: Nullable.t<string>
   })
 }
 
+@get external rawChildren: 'props => unknown = "children"
+
+// The transform calls `jsxs` only for two or more children, written out: `children` is the array it
+// built. A development build records it, so the reconciler doesn't warn that they have no keys.
+let markStaticChildren = (props: 'props) =>
+  if ResCommon.Env.isDev {
+    let children = rawChildren(props)
+    if Array.isArray(children) {
+      KeyWarnings.markStatic(Unsafe.fromUnknown(children))
+    }
+  }
+
 let jsx = (component, props) => make(component, props, Nullable.null)
-let jsxs = jsx
+let jsxs = (component, props) => {
+  markStaticChildren(props)
+  jsx(component, props)
+}
 let jsxKeyed = (component, props, ~key=?, ()) => make(component, props, toKey(key))
-let jsxsKeyed = jsxKeyed
+let jsxsKeyed = (component, props, ~key=?, ()) => {
+  markStaticChildren(props)
+  jsxKeyed(component, props, ~key?, ())
+}
 
 external array: array<element> => element = "%identity"
 let null = Element.null
@@ -58,3 +76,11 @@ let makeHost = (tag: string, props: 'props, key: Nullable.t<string>): element =>
 
 let hostJsx = (tag, props) => makeHost(tag, props, Nullable.null)
 let hostJsxKeyed = (tag, props, ~key=?, ()) => makeHost(tag, props, toKey(key))
+let hostJsxs = (tag, props) => {
+  markStaticChildren(props)
+  hostJsx(tag, props)
+}
+let hostJsxsKeyed = (tag, props, ~key=?, ()) => {
+  markStaticChildren(props)
+  hostJsxKeyed(tag, props, ~key?, ())
+}

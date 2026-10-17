@@ -12,9 +12,9 @@ module Elements = {
   type props = DomProps.props
 
   let jsx: (string, props) => element = ResFiber.JsxCore.hostJsx
-  let jsxs: (string, props) => element = ResFiber.JsxCore.hostJsx
+  let jsxs: (string, props) => element = ResFiber.JsxCore.hostJsxs
   let jsxKeyed: (string, props, ~key: string=?, unit) => element = ResFiber.JsxCore.hostJsxKeyed
-  let jsxsKeyed: (string, props, ~key: string=?, unit) => element = ResFiber.JsxCore.hostJsxKeyed
+  let jsxsKeyed: (string, props, ~key: string=?, unit) => element = ResFiber.JsxCore.hostJsxsKeyed
 
   external someElement: element => option<element> = "%identity"
 }

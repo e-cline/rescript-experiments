@@ -11,4 +11,6 @@ order. Includes `useState`, `useReducer`, `useRef`, `useMemo*`, `useCallback*`, 
 `useLayoutEffect*`, `useContext` with `Context`, `Memo.memo`, `useSyncExternalStore`, host `ref`
 props, `ErrorBoundary`, `Portal`, `Suspense` with `Hooks.use` (hiding shown content behind the
 fallback, and keeping the previous screen in transitions), and an in-memory `TestRenderer` that logs
-every host operation.
+every host operation. Development builds warn (through `console.error`) about two children with the
+same key, and about children without a key in a list built with `Jsx.array`; production builds drop
+the checks.

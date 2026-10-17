@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/res_fiber_signals",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "ResFiberSignals",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": ["@e-cline/res_fiber", "@e-cline/res_signals"]
+}

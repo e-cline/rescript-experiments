@@ -1,0 +1,23 @@
+{
+  "name": "@e-cline/res_fiber_benchmarks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Benchmarks for @e-cline/res_fiber, run against a Rolldown-bundled, Terser-minified build.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@e-cline/res_benchmarking": "workspace:*",
+    "@e-cline/res_fiber": "workspace:*",
+    "@rescript/runtime": "catalog:",
+    "mitata": "catalog:"
+  },
+  "devDependencies": {
+    "rescript": "catalog:",
+    "terser": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

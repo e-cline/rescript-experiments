@@ -1,3 +1,6 @@
 import {makeRescriptLibConfig} from '../../vite.config.base.ts';
 
-export default makeRescriptLibConfig({typescriptSurface: true, jsx: true});
+export default makeRescriptLibConfig({
+  typescriptSurface: true,
+  preserveJsx: true,
+});

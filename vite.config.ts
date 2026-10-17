@@ -2,7 +2,7 @@ import {defineConfig} from 'vite-plus';
 
 // `rescript build` writes these next to their `.res`/`.resi` source (see
 // vite.config.base.ts's `makeRescriptLibConfig`): `.res.js`, or `.res.jsx` in a
-// JSX package, plus genType's `.gen.tsx`. All are generated (the JS is
+// package with preserved JSX, plus genType's `.gen.tsx`. All are generated (the JS is
 // committed; `.gen.tsx` is gitignored) and already formatted by the ReScript
 // compiler / genType, not by us.
 const rescriptGeneratedPatterns = [
@@ -14,9 +14,10 @@ const rescriptGeneratedPatterns = [
 export default defineConfig({
   run: {
     tasks: {
-      // The one place ReScript is compiled, for every package without JSX.
-      // `rescript build` run from here follows the root `rescript.json`'s
-      // `dependencies` (every such package) and compiles them to `.res.js`,
+      // The one place ReScript is compiled, for every package but those with
+      // preserved JSX. `rescript build` run from here follows the root
+      // `rescript.json`'s `dependencies` (every such package) and compiles
+      // them to `.res.js` (any JSX lowered to function calls),
       // plus the ReScript dependencies they share (`rescript-vitest`,
       // `@rescript/webapi`, ...), in a single process. Every ReScript
       // package's `build`/`test`/`typecheck` depends on this task by name
@@ -35,7 +36,7 @@ export default defineConfig({
       // 'rescript-vitest/src/Vitest.res.js'". `rescript build` is
       // incremental, so re-running it is cheap.
       //
-      // Packages with JSX are separate ReScript build roots with their own
+      // Packages with preserved JSX are separate ReScript build roots with their own
       // `res` task, which depends on this one (`jsx`, `package-specs`, and
       // `suffix` are root-only settings; see vite.config.base.ts's
       // `makeRescriptLibConfig`).
@@ -58,7 +59,7 @@ export default defineConfig({
       },
       // Format, check the formatting of, and clean the packages this root
       // builds. The root `fmt`/`check`/`rescript:clean` scripts run these
-      // with `vp run -r`, which also reaches the JSX packages' own copies.
+      // with `vp run -r`, which also reaches the preserved-JSX packages' own copies.
       'res:fmt': {command: 'rescript format', cache: false},
       'res:check': {command: 'rescript format --check', cache: false},
       'res:clean': {command: 'rescript clean', cache: false},

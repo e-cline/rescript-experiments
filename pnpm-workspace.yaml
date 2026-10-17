@@ -27,6 +27,7 @@ catalogs:
     hono: ^4.13.13
     '@hono/node-server': ^2.1.4
     'rescript-vitest': ^3.0.1
+    jsdom: ^30.0.1
     react: ^19.3.0
     react-dom: ^19.3.0
     '@types/react': ^19.3.0

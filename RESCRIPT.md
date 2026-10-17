@@ -28,14 +28,17 @@ already does most of the work:
   source. Every package here is `"type": "module"`, so plain `.js` is ESM to Node, Vite and Vitest
   alike, and Node runs the output directly (`res_pretty_print`'s `demo` task is just
   `node src/Demo.res.js`) -- **no bundler plugin is needed at all** for the compiled output itself.
-- A package with JSX in its `.res` files (`@jsx.component` components; here only `res_react_ui`)
-  compiles to `.res.jsx` instead. Its `rescript.json` sets
-  `"jsx": {"version": 4, "preserve": true}`, so the JSX stays JSX in the output instead of being
-  lowered to `JsxRuntime.jsx` calls, and Vite (oxc) and tsdown only transform JSX in `.jsx`/`.tsx`
-  files -- a `.js` containing `<div>` is a syntax error to them. Node can't run `.jsx` directly (use
-  `tsx`). Because `jsx`, `package-specs` and `suffix` are root-only settings in a ReScript monorepo
-  (see "Two ReScript build roots" below), such a package is its own ReScript build root rather than
-  a dependency of the repo-root `rescript.json`.
+- JSX in `.res` files compiles to `.res.js` too: the root `rescript.json` sets
+  `"jsx": {"version": 4}` without `preserve`, so it's lowered to function calls
+  (`JsxRuntime.jsx(...)` for React, or a custom module's `Jsx.jsx(...)`, as `res_fiber`'s per-file
+  `@@jsxConfig` uses).
+- A package that wants its JSX preserved in the output (here only `res_react_ui`) compiles to
+  `.res.jsx` instead. Its `rescript.json` sets `"jsx": {"version": 4, "preserve": true}`, so the JSX
+  stays JSX in the output instead of being lowered to `JsxRuntime.jsx` calls, and Vite (oxc) and
+  tsdown only transform JSX in `.jsx`/`.tsx` files -- a `.js` containing `<div>` is a syntax error
+  to them. Node can't run `.jsx` directly (use `tsx`). Because `jsx`, `package-specs` and `suffix`
+  are root-only settings in a ReScript monorepo (see "Two ReScript build roots" below), such a
+  package is its own ReScript build root rather than a dependency of the repo-root `rescript.json`.
 - [genType](https://rescript-lang.org/docs/manual/typescript-integration) (built into the compiler
   since ReScript 10.1, configured via `rescript.json`'s `gentypeconfig`) emits a `*.gen.tsx` file
   for every module with a `@genType`-annotated export. That file is itself ordinary TypeScript -- it
@@ -97,23 +100,25 @@ lists with the _root's_ values, ignoring the package's own (including a `suffix`
 `node_modules` (`rescript-vitest`'s own config says `.mjs`; it's compiled to `.res.js` here). So one
 `rescript build` can emit `.res.js` or `.res.jsx`, never both. To support both:
 
-- The repo-root `rescript.json` has `"suffix": ".res.js"` and no `jsx`, and lists every package
-  without JSX. The root `res` task builds them.
-- A package with JSX is left out of the root's `dependencies` (and out of the root `package.json`'s
-  `devDependencies`, which exist only so the root build can resolve its `dependencies`). Its own
-  `rescript.json` sets `jsx` and `"suffix": ".res.jsx"` and, with no root listing it, is a build
-  root of its own. `makeRescriptLibConfig({jsx: true})` gives it its own `res` task
-  (`rescript build` in the package directory), which `build`/`test`/`typecheck` depend on in place
-  of the root one. That task depends on the root `res` task, so the two never compile a shared
-  dependency under `node_modules` at once. It also gets `res:watch`, and `res:fmt`/`res:check`/
-  `res:clean`, which the root `fmt`/`check`/`rescript:clean` scripts run with `vp run -r` alongside
-  the root's own copies (a root-level `rescript format`/`clean` only reaches the packages the root
-  config lists).
+- The repo-root `rescript.json` has `"suffix": ".res.js"` and `"jsx": {"version": 4}` without
+  `preserve`, and lists every other package. The root `res` task builds them. (Leaving `jsx` out
+  entirely isn't an option: `res_fiber`'s per-file `@@jsxConfig` fails with "JSX support is not
+  enabled" unless the project turns JSX on.)
+- A package with preserved JSX is left out of the root's `dependencies` (and out of the root
+  `package.json`'s `devDependencies`, which exist only so the root build can resolve its
+  `dependencies`). Its own `rescript.json` sets `"jsx": {"version": 4, "preserve": true}` and
+  `"suffix": ".res.jsx"` and, with no root listing it, is a build root of its own.
+  `makeRescriptLibConfig({preserveJsx: true})` gives it its own `res` task (`rescript build` in the
+  package directory), which `build`/`test`/`typecheck` depend on in place of the root one. That task
+  depends on the root `res` task, so the two never compile a shared dependency under `node_modules`
+  at once. It also gets `res:watch`, and `res:fmt`/`res:check`/ `res:clean`, which the root
+  `fmt`/`check`/`rescript:clean` scripts run with `vp run -r` alongside the root's own copies (a
+  root-level `rescript format`/`clean` only reaches the packages the root config lists).
 
 Every package still declares its `suffix` in its own `rescript.json` (genType reads it from there;
-see gap #17), so the root's and a package's `suffix` must agree. The catch: if a JSX package ever
-depends on another ReScript package from this workspace, its build compiles that dependency again
-with `.res.jsx`, next to the root build's `.res.js` output.
+see gap #17), so the root's and a package's `suffix` must agree. The catch: if a preserved-JSX
+package ever depends on another ReScript package from this workspace, its build compiles that
+dependency again with `.res.jsx`, next to the root build's `.res.js` output.
 
 `.res.js` rather than `.res.mjs`: `.mjs` is always ESM regardless of the nearest `package.json`,
 while `.js` is ESM only under `"type": "module"`. Every package here sets that, so `.mjs` buys
@@ -141,11 +146,11 @@ Two things needed fixing to make it fit this repo's conventions, both now in `vi
 `makeRescriptLibConfig`:
 
 - **Vitest's default `test.include` doesn't match ReScript's compiled test output.**
-  `rescript.json`'s `"suffix": ".res.js"` (`.res.jsx` in a JSX package; either way visually distinct
-  from hand-written JS) means a ReScript test file compiles to e.g. `BTree_test.res.js`, not
-  `BTree_test.js` -- Vitest's default `**/*.{test,spec}.?(c|m)[jt]s?(x)` glob requires the extension
-  to follow `.test`/`.spec` directly, with nothing in between. Fixed with a second `include`
-  pattern, `**/*_{test,spec}.res.{js,jsx}`.
+  `rescript.json`'s `"suffix": ".res.js"` (`.res.jsx` with preserved JSX; either way visually
+  distinct from hand-written JS) means a ReScript test file compiles to e.g. `BTree_test.res.js`,
+  not `BTree_test.js` -- Vitest's default `**/*.{test,spec}.?(c|m)[jt]s?(x)` glob requires the
+  extension to follow `.test`/`.spec` directly, with nothing in between. Fixed with a second
+  `include` pattern, `**/*_{test,spec}.res.{js,jsx}`.
 - **`rescript build` mirrors compiled test files into its own `lib/bs/` build cache**, and the new
   include pattern above matches that mirrored copy too, so every ReScript test would otherwise run
   _twice_. Fixed by excluding `lib/**` in `test.exclude` -- `rescript-vitest`'s own repository needs

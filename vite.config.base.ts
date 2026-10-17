@@ -6,8 +6,8 @@ const testFileMatch = ['**/*.{test,spec}.?(c|m)[jt]s?(x)'];
 
 // Matches ReScript-compiled test files (e.g. `Point_test.res` -> the
 // `Point_test.res.js` `rescript build` writes next to it in `tests/`, or
-// `Point_test.res.jsx` in a JSX package -- see `makeRescriptLibConfig`'s `jsx`
-// option) for
+// `Point_test.res.jsx` in a package with preserved JSX -- see
+// `makeRescriptLibConfig`'s `preserveJsx` option) for
 // `makeRescriptLibConfig`'s `test.include`. Deliberately `_test`/`_spec`,
 // not the `.test`/`.spec` dot-infix `testFileMatch` above uses: ReScript
 // derives a file's module name from its filename with only the first
@@ -20,14 +20,15 @@ const testFileMatch = ['**/*.{test,spec}.?(c|m)[jt]s?(x)'];
 // which cannot collide with `Point` no matter what it tests.
 const resTestFileMatch = ['**/*_{test,spec}.res.{js,jsx}'];
 
-// Every ReScript package without JSX is compiled by the single root-level `res`
-// task (see `vite.config.ts`): `rescript build` run from the workspace root
-// compiles all of them, and the dependencies they share (e.g.
-// `rescript-vitest`), in one process. Per-package `rescript build`s run in
-// parallel by `vp run -r` raced on those shared dependencies' `lib/` and
-// intermittently failed with "Corrupted compiled interface". A package with JSX
-// is its own ReScript build root instead (see `makeRescriptLibConfig`'s `jsx`
-// option), whose `res` task runs after this one.
+// Every ReScript package is compiled by the single root-level `res` task (see
+// `vite.config.ts`): `rescript build` run from the workspace root compiles all
+// of them, and the dependencies they share (e.g. `rescript-vitest`), in one
+// process. Per-package `rescript build`s run in parallel by `vp run -r` raced
+// on those shared dependencies' `lib/` and intermittently failed with
+// "Corrupted compiled interface". The exception is a package whose JSX must be
+// preserved in the output: it is its own ReScript build root (see
+// `makeRescriptLibConfig`'s `preserveJsx` option), whose `res` task runs after
+// this one.
 export const rootResTask = '@e-cline/rescript-experiments#res';
 
 /** A `run.tasks` entry, as `makeRescriptLibConfig`'s `tasks` option takes. */
@@ -134,10 +135,11 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
  * Layers a dependency on the root-level `res` task (`rescript build`, defined
  * in the root `vite.config.ts`; see {@linkcode rootResTask}) on top of
  * {@linkcode makeLibConfig}, and makes `build`, `test`, and `typecheck`
- * depend on it. The package has no `res` task of its own (unless it uses
- * JSX -- see the `jsx` option). That's the whole integration: ReScript's own
- * compiler already emits plain ESM (`*.res.js`, via `"suffix": ".res.js"` in
- * `rescript.json`; `*.res.jsx` in a JSX package) colocated with the `.res`
+ * depend on it. The package has no `res` task of its own (unless its JSX is
+ * preserved -- see the `preserveJsx` option). That's the whole integration:
+ * ReScript's own compiler already emits plain ESM (`*.res.js`, via
+ * `"suffix": ".res.js"` in `rescript.json`, with any JSX lowered to function
+ * calls; `*.res.jsx` with `preserveJsx`) colocated with the `.res`
  * source, so Node, Vite, and Vitest load it like any other `.js` file with
  * no bundler plugin needed, and genType's `*.gen.tsx` output is
  * itself a normal `.tsx` file, so `vp pack`'s `tsgo`-driven `dts` pass and
@@ -161,8 +163,8 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
  * would deadlock. Run it in its own terminal alongside `vp run test:watch`
  * / `vp run build:watch` -- Vite/Vitest already watch the whole package
  * directory, so they pick up the `.res.js`/`.gen.tsx` files it rewrites on
- * every save without any extra wiring. (A JSX package has its own
- * `res:watch`; see the `jsx` option.)
+ * every save without any extra wiring. (A `preserveJsx` package has its own
+ * `res:watch`.)
  *
  * Packages with a TypeScript entry point (`src/index.ts`) must pass
  * `typescriptSurface: true`; the default (`false`) is for packages consumed only
@@ -195,15 +197,17 @@ export function makeRescriptLibConfig(
      */
     typescriptSurface?: boolean;
     /**
-     * Whether the package's ReScript uses JSX. `jsx`, `package-specs`, and
-     * `suffix` are root-only settings in a ReScript monorepo (see
+     * Whether the package's JSX is preserved in its compiled output. `jsx`,
+     * `package-specs`, and `suffix` are root-only settings in a ReScript
+     * monorepo (see
      * https://rescript-lang.org/docs/manual/build-monorepo-setup): the root
      * `rescript.json` compiles every package it lists to plain `.res.js`,
-     * with no JSX support. A JSX package therefore isn't listed there; its
-     * own `rescript.json` is a separate build root that sets `"jsx": {...,
-     * "preserve": true}` and `"suffix": ".res.jsx"` (preserved JSX needs a
-     * JSX-aware extension: Vite and tsdown only transform JSX in
-     * `.jsx`/`.tsx` files).
+     * lowering any JSX to function calls (`"jsx": {"version": 4}`, without
+     * `preserve`). A package that wants `<div>` kept in its output therefore
+     * isn't listed there; its own `rescript.json` is a separate build root
+     * that sets `"jsx": {..., "preserve": true}` and `"suffix": ".res.jsx"`
+     * (preserved JSX needs a JSX-aware extension: Vite and tsdown only
+     * transform JSX in `.jsx`/`.tsx` files).
      *
      * Pass `true` for those packages. The package then gets its own `res`
      * task (`rescript build` in the package directory), which `build`,
@@ -215,25 +219,30 @@ export function makeRescriptLibConfig(
      * shared dependency under `node_modules` at the same time. Default:
      * `false`.
      */
-    jsx?: boolean;
+    preserveJsx?: boolean;
     /**
      * Extra `run.tasks` merged over the standard ones (e.g. `start`/`demo`
      * tasks that run a compiled `*.res.js` entry point).
      */
     tasks?: Record<string, RunTask>;
+    /**
+     * Where the tests run: Vitest's default `node`, or `jsdom` for tests
+     * that render into a document. Default: `node`.
+     */
+    testEnvironment?: 'node' | 'jsdom';
   } = {},
 ): ReturnType<typeof defineConfig> {
   const typescriptSurface = options.typescriptSurface ?? false;
-  const jsx = options.jsx ?? false;
+  const preserveJsx = options.preserveJsx ?? false;
   // The task that compiles this package's ReScript.
-  const resTask = jsx ? 'res' : rootResTask;
+  const resTask = preserveJsx ? 'res' : rootResTask;
   const noSurface = (verb: string) =>
     `echo "No TypeScript surface to ${verb} -- see the root res task"`;
 
   return defineConfig({
     run: {
       tasks: {
-        ...(jsx && {
+        ...(preserveJsx && {
           res: {
             command: 'rescript build',
             dependsOn: [rootResTask],
@@ -319,6 +328,7 @@ export function makeRescriptLibConfig(
       // default rather than adding to it, so they're repeated here.
       exclude: ['**/node_modules/**', '**/.git/**', 'lib/**'],
       passWithNoTests: true,
+      environment: options.testEnvironment ?? 'node',
       typecheck: {
         enabled: typescriptSurface,
         include: [...testFileMatch],

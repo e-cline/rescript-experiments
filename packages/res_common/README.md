@@ -61,8 +61,8 @@ direct equivalent, and only hand-write something where it doesn't.
   `Belt.Array.zip`/`Belt.Array.zipBy`, and `groupBy`/`uniqueBy` are built on
   `Belt.Map.String`/`Belt.MutableSet.String` rather than a hand-rolled hash table.
 - **Belt has no string/structural hashing implementation and no lazy sequence type**
-  (`Belt.Id.hashable(~hash, ~eq)` is a _slot_ you plug a hash function into, not an implementation)
-  -- confirmed by checking `@rescript/runtime`'s actual module list before writing
+  (`Belt.Id.hashable(~hash, ~eq)` is a _slot_ you plug a hash function into, not an
+  implementation) -- confirmed by checking `@rescript/runtime`'s actual module list before writing
   `Hash`/`Sequence`, rather than assuming. Each of those fills a genuine gap, not a re-wrap.
 - **`Hash.res` binds `Math.imul` directly** (`@val external imul: (int, int) => int = "Math.imul"`),
   since the murmur3 algorithm specifically depends on 32-bit-truncated multiplication and
@@ -77,9 +77,9 @@ direct equivalent, and only hand-write something where it doesn't.
 
 - hand-written-loop technique, for the same benchmarked reason -- see `ArrayOps.res`'s own header
   comment) rather than making `res_common` a dependency of `res_trees` (or vice versa) to share it.
-  `res_trees` already shipped, was already benchmarked as a whole, and its `ArrayOps` is `internal/`
-  -- not exposed, not meant to be a public dependency target -- so reaching into it from a new
-  package would mean either exposing it publicly (churn to an already-finished package, for a
+  `res_trees` already shipped, was already benchmarked as a whole, and its `ArrayOps` is
+  `internal/` -- not exposed, not meant to be a public dependency target -- so reaching into it from
+  a new package would mean either exposing it publicly (churn to an already-finished package, for a
   benefit that amounts to a few dozen lines) or depending on `res_trees` as a whole just to get its
   array helpers. Duplicating a small, self-contained, already-correct algorithm is the smaller
   footprint here.
@@ -113,10 +113,10 @@ through ReScript's own cross-package module resolution to `@e-cline/js_env` (whi
 ReScript package), since the ReScript compiler (unlike a JS bundler) has to pick one concrete module
 per import at compile time. `Env.res` instead binds directly to the plain string package specifier
 with `@module("@e-cline/js_env") external isDev: bool = "IS_DEV"`, an ordinary JS import that a
-bundler's export-condition resolution (and then its dead-code elimination) still applies to normally
--- confirmed end-to-end by [`examples/res_tree_shaking`](../../examples/res_tree_shaking), which
-builds a small app through this module and asserts the `isDev`-only branch is actually gone from the
-production bundle. `Env.jsEnv` exposes `@e-cline/js_env`'s `env` (`'dev' | 'prod'`) as a
+bundler's export-condition resolution (and then its dead-code elimination) still applies to
+normally -- confirmed end-to-end by [`examples/res_tree_shaking`](../../examples/res_tree_shaking),
+which builds a small app through this module and asserts the `isDev`-only branch is actually gone
+from the production bundle. `Env.jsEnv` exposes `@e-cline/js_env`'s `env` (`'dev' | 'prod'`) as a
 `Development | Production` variant for use with `switch`; its cases are backed by those strings
 (`@as("dev")`/`@as("prod")`), so it's bound straight to `env` with no runtime mapping, and the same
 example confirms a `switch` on it tree-shakes too.

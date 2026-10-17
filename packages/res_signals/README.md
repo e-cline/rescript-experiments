@@ -119,11 +119,11 @@ of `markDirty`/`ensureFresh` for the full reasoning, and `Computed_test.res` for
 directly (a diamond graph recomputing its shared descendant exactly once per change; a computed
 whose value doesn't change not triggering its own consumers).
 
-A computed is only _live_ -- registered with the signals it reads, and so reachable by that marking
--- while an effect (directly, or through other computeds) is consuming it. One that nothing consumes
-is _idle_: its sources hold no reference to it, so there's nothing to dispose, and dropping it is
-enough for it to be garbage collected. Reading an idle computed still gives a current value; it just
-has to check its sources' epochs itself, having not been told whether they changed.
+A computed is only _live_ -- registered with the signals it reads, and so reachable by that
+marking -- while an effect (directly, or through other computeds) is consuming it. One that nothing
+consumes is _idle_: its sources hold no reference to it, so there's nothing to dispose, and dropping
+it is enough for it to be garbage collected. Reading an idle computed still gives a current value;
+it just has to check its sources' epochs itself, having not been told whether they changed.
 
 Tracking a read, and adding or removing a dependency, each take constant time, however many
 dependencies or consumers are involved; a computation that reads the same signals in the same order

@@ -102,7 +102,7 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
       ],
       format: ['es'],
       dts: {
-        tsgo: true,
+        tsgo: {},
       },
       minify: false,
       unbundle: true,
@@ -262,7 +262,7 @@ export function makeRescriptLibConfig(
         ],
         format: ['es' as const],
         dts: {
-          tsgo: true,
+          tsgo: {},
         },
         minify: false,
         unbundle: true,

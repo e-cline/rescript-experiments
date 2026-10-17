@@ -171,8 +171,8 @@ with `pnpm --filter <package> exec vp run <task>`).
   `examples/res_react_ui`).
 - **Write tests directly in ReScript, ideally with Vitest**: done, via `rescript-vitest` -- see
   "Testing directly in ReScript" above.
-- **Bundle a ReScript package so its types are consumable by both TS and ReScript consumers**: done
-  -- `res_math` was consumed by `res_shapes` (ReScript) and by `examples/res-consumer` (TS)
+- **Bundle a ReScript package so its types are consumable by both TS and ReScript consumers**:
+  done -- `res_math` was consumed by `res_shapes` (ReScript) and by `examples/res-consumer` (TS)
   simultaneously _(removed)_.
 - **Import/depend on another ReScript package and consume its types**: done (`res_priority_queue` →
   `res_common`, and `res_signal_maps` → `res_trees` and `res_signals`). The removed `res_shapes` →
@@ -290,8 +290,8 @@ none of them are things you'd guess from the official docs, so they're worth cal
    `__exportAll` helper pulled from its own `_virtual/_rolldown/runtime.js` chunk -- true regardless
    of `unbundle`/bundled output, and true for any namespace-style re-export, not just genType's.
    Switched `res_math`/`res_shapes` to flat re-exports
-   (`export {make, distance, ...} from './Point.gen'`) instead, which need no runtime object at all
-   -- at the cost of the `Point.` grouping (`import {make} from '@e-cline/res_math'` instead of
+   (`export {make, distance, ...} from './Point.gen'`) instead, which need no runtime object at
+   all -- at the cost of the `Point.` grouping (`import {make} from '@e-cline/res_math'` instead of
    `import {Point} from '@e-cline/res_math'; Point.make(...)`).
 9. **Not every ReScript package needs genType, and skipping it changes the build wiring, not just
    the annotations.** `res_trees` is meant to be consumed only from other ReScript code, so it has
@@ -305,8 +305,8 @@ none of them are things you'd guess from the official docs, so they're worth cal
 10. **ReScript's `int` wraps at 32 bits; plain JS numbers don't.** Writing a Lehmer/Park-Miller PRNG
     (`seed * 48271 mod 2147483647`, used in `res_trees`'s oracle stress test to shuffle a
     reproducible test order) in `int` silently wrapped around mid-calculation once `seed` grew past
-    roughly 2^31 / 48271, producing negative "random" values and, downstream, negative array indices
-    -- caught only because the resulting shuffled array visibly had holes in it when logged.
+    roughly 2^31 / 48271, producing negative "random" values and, downstream, negative array
+    indices -- caught only because the resulting shuffled array visibly had holes in it when logged.
     ReScript's `int` matches OCaml's 32-bit-wrapping semantics, not JS's 53-bit-safe doubles; the
     fix was doing the multiply-then-mod in `float` (an exact JS double up to 2**53) and converting
     back with `Int.toFloat`/`Float.toInt` only at the boundaries. Also encountered along the way:

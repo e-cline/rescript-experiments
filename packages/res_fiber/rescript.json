@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/res_fiber",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.jsx",
+  "namespace": "ResFiber",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": ["@e-cline/res_priority_queue"]
+}

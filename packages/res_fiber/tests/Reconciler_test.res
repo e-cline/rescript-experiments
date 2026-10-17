@@ -297,7 +297,8 @@ describe("Reconciler: edge cases", () => {
       <ul id="list">
         {TestJsx.array([
           TestJsx.array(inner->Array.map(item => <li key=item id=item />)),
-          <li id="end" />,
+          // Keyed, or the list would get a (development build) missing-key warning.
+          <li key="end" id="end" />,
         ])}
       </ul>
     let renderer = rendered(view(["a", "b"]))

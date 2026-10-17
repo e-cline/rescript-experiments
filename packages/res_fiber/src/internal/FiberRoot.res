@@ -8,6 +8,11 @@ type t = {
   mutable current: Fiber.t,
   /** Lanes with work to do somewhere in the tree. */
   mutable pendingLanes: Lanes.t,
+  /**
+  Pending lanes whose render suspended (a transition waiting for a promise, keeping the screen as it
+  was): not rendered again until the promise settles or another update arrives.
+  */
+  mutable suspendedLanes: Lanes.t,
   /** The element passed to the latest `render`, until a commit has rendered it. */
   mutable pendingElement: Element.t,
   mutable hasPendingElement: bool,
@@ -22,6 +27,10 @@ type t = {
 }
 
 external ofStateNode: unknown => t = "%identity"
+
+/** The lane to render next: the most urgent pending one that isn't waiting on a promise. */
+let nextLanes = (root: t): Lanes.t =>
+  Lanes.highestPriority(Lanes.remove(root.pendingLanes, root.suspendedLanes))
 
 /** The root a `HostRoot` fiber belongs to. */
 let ofFiber = (fiber: Fiber.t): t => ofStateNode(fiber.stateNode)
@@ -59,6 +68,9 @@ let scheduleUpdate = (fiber: Fiber.t, lane: Lanes.t) => {
     let root = ofFiber(node.contents)
     if !root.isUnmounted {
       root.pendingLanes = Lanes.merge(root.pendingLanes, lane)
+
+      // A new update might be what a suspended render was waiting for: try them all again.
+      root.suspendedLanes = Lanes.none
       root.ensureScheduled()
     }
   }

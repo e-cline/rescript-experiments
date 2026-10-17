@@ -390,3 +390,135 @@ describe("Suspense: children already shown", () => {
     },
   )
 })
+
+/** Lets promise callbacks run, without rendering anything (`settle` would, through `act`). */
+let tick = () => Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ignore)
+
+/** One deferred per query, made on first request. */
+let results: dict<deferred<string>> = Dict.make()
+let resultFor = query =>
+  switch results->Dict.get(query) {
+  | Some(result) => result
+  | None =>
+    let result = deferred()
+    results->Dict.set(query, result)
+    result
+  }
+
+let startSearch: ref<(unit => unit) => unit> = ref(_ => ())
+let setQuery: ref<(string => string) => unit> = ref(_ => ())
+
+module Search = {
+  @jsx.component
+  let make = () => {
+    let (isPending, startTransition) = Hooks.useTransition()
+    let (query, set) = Hooks.useState(() => "a")
+    startSearch := startTransition
+    setQuery := set
+    <>
+      <p id="status"> {TestJsx.string(isPending ? "pending" : "idle")} </p>
+      <Suspense fallback=loading>
+        <Reads promise={resultFor(query).promise} id="result" />
+      </Suspense>
+    </>
+  }
+}
+
+let shows = (~status, ~result) =>
+  `<p id="status">${status}</p>${switch result {
+    | Some(result) => `<span id="result">${result}</span>`
+    | None => `<i id="loading">loading</i>`
+    }}`
+
+/** Search, showing the result for "a". */
+let mountSearch = async () => {
+  results->Dict.keysToArray->Array.forEach(key => results->Dict.delete(key))
+  resultFor("a").resolve("result a")
+  let renderer = TestRenderer.create()
+  TestRenderer.render(renderer, <Search />)
+  await settle()
+  renderer
+}
+
+let search = query =>
+  TestRenderer.flushSync(() => startSearch.contents(() => setQuery.contents(_ => query)))
+
+describe("Suspense in transitions", () => {
+  testAsync("keeps the previous screen while it waits, then shows the new one", async t => {
+    let renderer = await mountSearch()
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(shows(~status="idle", ~result=Some("result a")))
+    search("b")
+    TestScheduler.flushAll()
+    // The transition suspended: nothing committed, and nothing keeps retrying.
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(shows(~status="pending", ~result=Some("result a")))
+    t->expect(TestScheduler.hasPendingTasks())->Expect.toBe(false)
+    resultFor("b").resolve("result b")
+    await tick()
+    TestScheduler.flushAll()
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(shows(~status="idle", ~result=Some("result b")))
+  })
+
+  testAsync("an urgent update shows the fallback instead", async t => {
+    let renderer = await mountSearch()
+    TestRenderer.flushSync(() => setQuery.contents(_ => "c"))
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(shows(~status="idle", ~result=None))
+  })
+
+  testAsync("another update tries again", async t => {
+    let renderer = await mountSearch()
+    search("b")
+    TestScheduler.flushAll()
+    // "a" again: its result is known, so this transition can finish.
+    search("a")
+    TestScheduler.flushAll()
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(shows(~status="idle", ~result=Some("result a")))
+  })
+
+  testAsync("act with a suspended transition returns, keeping the screen", async t => {
+    let renderer = await mountSearch()
+    TestRenderer.act(() => startSearch.contents(() => setQuery.contents(_ => "e")))
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(shows(~status="pending", ~result=Some("result a")))
+  })
+
+  test("a boundary appearing in a transition shows its fallback", t => {
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, <b id="old" />)
+    let data = deferred()
+    Transition.start(
+      () =>
+        TestRenderer.scheduleRender(
+          renderer,
+          <Suspense fallback=loading>
+            <Reads promise=data.promise id="data" />
+          </Suspense>,
+        ),
+    )
+    TestScheduler.flushAll()
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="loading">loading</i>`)
+  })
+
+  testAsync("with no boundary, a transition waits rather than failing", async t => {
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, <b id="old" />)
+    let data = deferred()
+    Transition.start(
+      () => TestRenderer.scheduleRender(renderer, <Reads promise=data.promise id="data" />),
+    )
+    TestScheduler.flushAll()
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<b id="old"></b>`)
+    data.resolve("new")
+    await tick()
+    TestScheduler.flushAll()
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<span id="data">new</span>`)
+  })
+})

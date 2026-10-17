@@ -150,8 +150,8 @@ module Profile = {
 boundary shows its fallback, and renders its children again once it has; a rejection goes to the
 nearest `ErrorBoundary`. Pass the same promise every render, since a render that suspends is thrown
 away. Children that suspend after being shown stay mounted behind the fallback, hidden, keeping
-their state. For now a transition that suspends shows the fallback too (see the plan's phase 6 for
-what comes next).
+their state. In a transition, a boundary showing its children doesn't fall back at all: the screen
+keeps its previous state (and `useTransition`'s `isPending` stays `true`) until the data arrives.
 
 ### Portals
 

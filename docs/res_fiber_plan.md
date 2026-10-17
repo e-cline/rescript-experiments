@@ -9,7 +9,7 @@ renderer, and anything else that implements the host interface). It doesn't use 
 Phases 0 to 4 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`),
 and so is phase 5: error boundaries, portals, the `res_signals` bridge
 (`packages/res_fiber_signals`) and the benchmarks (`packages/res_fiber/benchmarks`). Phase 6
-(Suspense) was added afterwards; stages (a) and (b) are done. Where they differ from the plan below:
+(Suspense) was added afterwards, and is done too. Where they differ from the plan below:
 
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
@@ -66,6 +66,10 @@ and so is phase 5: error boundaries, portals, the `res_signals` bridge
 - Suspense's hidden children (stage b) keep their effects and refs connected while hidden, and
   portal content inside them isn't hidden; React disconnects layout effects and refs, and hides
   portals. Updates inside hidden children don't render until they're shown again.
+- A transition that suspends with no `Suspense` boundary above waits (keeping the screen) rather
+  than failing; urgent updates still fail without a boundary. A suspended transition's lanes are set
+  aside until its promise settles or any update arrives (React tracks which lanes were pinged more
+  finely).
 - Effect errors don't stop other effects: the first is kept and rethrown once the phase has run (the
   original JS error, not ReScript's `JsExn` wrapper).
 

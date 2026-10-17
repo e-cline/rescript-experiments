@@ -1,0 +1,60 @@
+/***
+A renderer that keeps its nodes in memory, for testing components and the reconciler without a DOM.
+
+Write the components with `@@jsxConfig({version: 4, module_: "ResFiber.TestJsx"})`. Each renderer
+(`create`) records every host operation it performs, so a test can check not just what's rendered
+but that the reconciler did no more than it had to:
+
+- `create div#a` / `create "text"`: a new node (`#a` is its `id` prop).
+- `append li#c to ul#list` / `insert li#c before li#a` / `remove li#b`: an attached node moved,
+  inserted or removed. `root` is the container. Building a new subtree before it's attached isn't
+  logged; attaching it is.
+- `update div#a {className, title}`: props shown in `toString` changed (handler changes aren't
+  logged).
+- `text "old" -> "new"`: a text node changed.
+*/
+
+/** A rendered node: a host element, or text (whose `tag` is `"#text"`). */
+type instance
+
+/** A test renderer with one root. */
+type t
+
+let create: unit => t
+
+/** Renders `element`, replacing what was rendered before, and returns once it's on screen. */
+let render: (t, Element.t) => unit
+
+/** Removes everything rendered. */
+let unmount: t => unit
+
+/** Calls `f`, then renders every update it made before returning: wrap updates in this. */
+let act: (unit => unit) => unit
+
+/**
+What's rendered, as markup: `<ul id="list"><li>a</li></ul>`. Attributes are the props of
+`TestJsx.Elements.props` other than handlers and `children`, sorted by name.
+*/
+let toString: t => string
+
+/** The host operations performed since `create` or the last `clearOps`. */
+let ops: t => array<string>
+
+let clearOps: t => unit
+
+/** The first host element, in document order, whose `id` prop is `id`. */
+let findById: (t, string) => option<instance>
+
+/** Calls the `onClick` of the element with `id`, inside `act`. Throws if there isn't one. */
+let click: (t, string) => unit
+
+/** Calls the `onInput` of the element with `id` with `value`, inside `act`. Throws if there isn't one. */
+let input: (t, string, string) => unit
+
+/** A number unique to `instance` within its renderer: equal numbers mean the same node. */
+let uid: instance => int
+
+let tag: instance => string
+let props: instance => TestJsx.Elements.props
+let text: instance => string
+let children: instance => array<instance>

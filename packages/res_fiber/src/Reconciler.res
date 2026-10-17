@@ -6,12 +6,18 @@ module type S = {
   let unmount: root => unit
   let flushSync: (unit => 'a) => 'a
   let flushWork: unit => unit
+  let flushPassiveEffects: unit => bool
 }
 
 @val external queueMicrotask: (unit => unit) => unit = "queueMicrotask"
+@val external setTimeout: (unit => unit, int) => unit = "setTimeout"
 
 /** How many renders in a row one `flushWork` allows before deciding updates will never settle. */
 let maxNestedRenders = 50
+
+/** A host element's `ref` prop. */
+@get
+external refOf: unknown => Nullable.t<Ref.t<unknown>> = "ref"
 
 module Make = (Host: HostConfig.S): (S with type container = Host.container) => {
   open Fiber
@@ -35,6 +41,16 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
       : Host.instanceToNode(toInstance(fiber.stateNode))
 
   let containerOf = (root: FiberRoot.t) => toContainer(root.container)
+
+  /** Calls `f` on each child of `fiber`, in order. */
+  let forEachChild = (fiber: Fiber.t, f: Fiber.t => unit) => {
+    let child = ref(fiber.child)
+    while Option.isSome(child.contents) {
+      let c = Option.getUnsafe(child.contents)
+      f(c)
+      child := c.sibling
+    }
+  }
 
   // Render phase: completing fibers
 
@@ -71,12 +87,18 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
             addFlag(workInProgress, Flags.update)
           | None => ()
           }
+          if refOf(current.memoizedProps) !== refOf(workInProgress.memoizedProps) {
+            addFlag(workInProgress, Flags.ref)
+          }
         }
       | None =>
         let instance = Host.createInstance(~tag, ~props=newProps, ~container=containerOf(root))
         appendAllChildren(instance, workInProgress.child)
         workInProgress.stateNode = Unsafe.toUnknown(instance)
         Host.finalizeInitialChildren(instance, ~tag, ~props=newProps)
+        if !Nullable.isNullable(refOf(workInProgress.memoizedProps)) {
+          addFlag(workInProgress, Flags.ref)
+        }
       }
     | HostText =>
       let text = toString(workInProgress.memoizedProps)
@@ -90,7 +112,8 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
           Host.createTextInstance(text, ~container=containerOf(root)),
         )
       }
-    | HostRoot | FunctionComponent | Fragment => ()
+    | ContextProvider => ContextImpl.pop()
+    | HostRoot | FunctionComponent | MemoComponent | Fragment => ()
     }
 
   /**
@@ -105,16 +128,13 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     }
     let subtreeFlags = ref(Flags.none)
     let childLanes = ref(Lanes.none)
-    let child = ref(fiber.child)
-    while Option.isSome(child.contents) {
-      let c = Option.getUnsafe(child.contents)
+    forEachChild(fiber, c => {
       childLanes := Lanes.merge(childLanes.contents, Lanes.merge(c.lanes, c.childLanes))
       if !didBailout {
         subtreeFlags := Int.bitwiseOr(subtreeFlags.contents, Int.bitwiseOr(c.subtreeFlags, c.flags))
       }
       c.parent = Some(fiber)
-      child := c.sibling
-    }
+    })
     fiber.subtreeFlags = subtreeFlags.contents
     fiber.childLanes = childLanes.contents
   }
@@ -165,13 +185,30 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     | error =>
       workInProgress := None
       HookImpl.reset()
+      ContextImpl.reset()
       root.pendingLanes = Lanes.merge(root.pendingLanes, renderLanes)
       throw(error)
     }
     finished
   }
 
-  // Commit phase
+  // Commit phase: refs
+
+  let setRef = (props: unknown, value: unknown) =>
+    switch Nullable.toOption(refOf(props)) {
+    | Some(ref) => ref.current = value
+    | None => ()
+    }
+
+  let attachRef = (fiber: Fiber.t) =>
+    setRef(
+      fiber.memoizedProps,
+      Unsafe.toUnknown(Host.getPublicInstance(toInstance(fiber.stateNode))),
+    )
+
+  let detachRef = (props: unknown) => setRef(props, Unsafe.nothing)
+
+  // Commit phase: mutation
 
   let getHostParentFiber = (fiber: Fiber.t): Fiber.t => {
     let parent = ref(fiber.parent)
@@ -234,12 +271,7 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
       | None => append(hostNode(fiber))
       }
     } else {
-      let child = ref(fiber.child)
-      while Option.isSome(child.contents) {
-        let c = Option.getUnsafe(child.contents)
-        insertOrAppend(c, ~before, ~insert, ~append)
-        child := c.sibling
-      }
+      forEachChild(fiber, child => insertOrAppend(child, ~before, ~insert, ~append))
     }
 
   let commitPlacement = (fiber: Fiber.t) => {
@@ -265,38 +297,41 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     }
   }
 
-  /** Removes the top-level host nodes of `fiber`'s subtree from their host parent. */
-  let rec removeHostNodes = (fiber: Fiber.t, ~remove: Host.node => unit) =>
-    if isHost(fiber) {
-      remove(hostNode(fiber))
-    } else {
-      let child = ref(fiber.child)
-      while Option.isSome(child.contents) {
-        let c = Option.getUnsafe(child.contents)
-        removeHostNodes(c, ~remove)
-        child := c.sibling
-      }
+  /**
+  Unmounts a deleted subtree's layout effects and refs, and removes its top-level host nodes from
+  the host parent (`~remove`). Nested host nodes go with their ancestor, so below a host node
+  `~remove` is `None`. Passive effects are cleaned up later, with the rest of the passive phase.
+  */
+  let rec commitDeletionEffects = (fiber: Fiber.t, ~remove: option<Host.node => unit>) =>
+    switch fiber.tag {
+    | HostComponent =>
+      detachRef(fiber.memoizedProps)
+      forEachChild(fiber, child => commitDeletionEffects(child, ~remove=None))
+      remove->Option.forEach(remove => remove(hostNode(fiber)))
+    | HostText => remove->Option.forEach(remove => remove(hostNode(fiber)))
+    | FunctionComponent | MemoComponent =>
+      HookImpl.commitEffectsUnmount(fiber, ~effectKind=Layout, ~all=true)
+      forEachChild(fiber, child => commitDeletionEffects(child, ~remove))
+    | HostRoot | Fragment | ContextProvider =>
+      forEachChild(fiber, child => commitDeletionEffects(child, ~remove))
     }
-
-  let detach = (fiber: Fiber.t) => {
-    fiber.parent = None
-    switch fiber.alternate {
-    | Some(alternate) => alternate.parent = None
-    | None => ()
-    }
-  }
 
   let commitDeletion = (returnFiber: Fiber.t, deleted: Fiber.t) => {
     let hostParent = isHostParent(returnFiber) ? returnFiber : getHostParentFiber(returnFiber)
-    switch hostParent.tag {
+    let remove = switch hostParent.tag {
     | HostRoot =>
       let container = containerOf(FiberRoot.ofFiber(hostParent))
-      removeHostNodes(deleted, ~remove=node => Host.removeChildFromContainer(container, node))
+      node => Host.removeChildFromContainer(container, node)
     | _ =>
       let instance = toInstance(hostParent.stateNode)
-      removeHostNodes(deleted, ~remove=node => Host.removeChild(instance, node))
+      node => Host.removeChild(instance, node)
     }
-    detach(deleted)
+    commitDeletionEffects(deleted, ~remove=Some(remove))
+    deleted.parent = None
+    switch deleted.alternate {
+    | Some(alternate) => alternate.parent = None
+    | None => ()
+    }
   }
 
   let commitUpdate = (fiber: Fiber.t) =>
@@ -320,19 +355,13 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     }
 
   let rec commitMutationEffects = (fiber: Fiber.t) => {
+    // `deletions` stays set for the passive phase, which cleans up the deleted effects.
     switch fiber.deletions {
-    | Some(deletions) =>
-      deletions->Array.forEach(deleted => commitDeletion(fiber, deleted))
-      fiber.deletions = None
+    | Some(deletions) => deletions->Array.forEach(deleted => commitDeletion(fiber, deleted))
     | None => ()
     }
     if hasFlag(fiber.subtreeFlags, Flags.mutationMask) {
-      let child = ref(fiber.child)
-      while Option.isSome(child.contents) {
-        let c = Option.getUnsafe(child.contents)
-        commitMutationEffects(c)
-        child := c.sibling
-      }
+      forEachChild(fiber, commitMutationEffects)
     }
     if hasFlag(fiber.flags, Flags.placement) {
       commitPlacement(fiber)
@@ -340,6 +369,89 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
     }
     if hasFlag(fiber.flags, Flags.update) {
       commitUpdate(fiber)
+    }
+    if isFunctionLike(fiber) && hasFlag(fiber.flags, Flags.layout) {
+      HookImpl.commitEffectsUnmount(fiber, ~effectKind=Layout, ~all=false)
+    }
+    if fiber.tag == HostComponent && hasFlag(fiber.flags, Flags.ref) {
+      switch fiber.alternate {
+      | Some(current) => detachRef(current.memoizedProps)
+      | None => ()
+      }
+    }
+  }
+
+  // Commit phase: layout (children before parents, with the new tree in place)
+
+  let rec commitLayoutEffects = (fiber: Fiber.t) => {
+    if hasFlag(fiber.subtreeFlags, Flags.layoutMask) {
+      forEachChild(fiber, commitLayoutEffects)
+    }
+    if isFunctionLike(fiber) && hasFlag(fiber.flags, Flags.layout) {
+      HookImpl.commitEffectsMount(fiber, ~effectKind=Layout)
+    } else if fiber.tag == HostComponent && hasFlag(fiber.flags, Flags.ref) {
+      attachRef(fiber)
+    }
+  }
+
+  // Passive phase: after the commit, every cleanup first, then every effect
+
+  let rec commitPassiveUnmountInsideDeletedTree = (fiber: Fiber.t) => {
+    if isFunctionLike(fiber) {
+      HookImpl.commitEffectsUnmount(fiber, ~effectKind=Passive, ~all=true)
+    }
+    forEachChild(fiber, commitPassiveUnmountInsideDeletedTree)
+  }
+
+  let rec commitPassiveUnmountEffects = (fiber: Fiber.t) => {
+    switch fiber.deletions {
+    | Some(deletions) =>
+      deletions->Array.forEach(commitPassiveUnmountInsideDeletedTree)
+      fiber.deletions = None
+    | None => ()
+    }
+    if hasFlag(fiber.subtreeFlags, Flags.passiveMask) {
+      forEachChild(fiber, commitPassiveUnmountEffects)
+    }
+    if isFunctionLike(fiber) && hasFlag(fiber.flags, Flags.passive) {
+      HookImpl.commitEffectsUnmount(fiber, ~effectKind=Passive, ~all=false)
+    }
+  }
+
+  let rec commitPassiveMountEffects = (fiber: Fiber.t) => {
+    if hasFlag(fiber.subtreeFlags, Flags.passive) {
+      forEachChild(fiber, commitPassiveMountEffects)
+    }
+    if isFunctionLike(fiber) && hasFlag(fiber.flags, Flags.passive) {
+      HookImpl.commitEffectsMount(fiber, ~effectKind=Passive)
+    }
+  }
+
+  /** The last commit's tree, while its passive effects haven't run. */
+  let pendingPassive: ref<option<Fiber.t>> = ref(None)
+  let isPassiveFlushScheduled = ref(false)
+
+  let flushPassiveEffects = () =>
+    switch pendingPassive.contents {
+    | None => false
+    | Some(finished) =>
+      pendingPassive := None
+      commitPassiveUnmountEffects(finished)
+      commitPassiveMountEffects(finished)
+      HookImpl.rethrowCommitError()
+      true
+    }
+
+  let schedulePassiveEffects = (finished: Fiber.t) => {
+    pendingPassive := Some(finished)
+
+    // After the browser has had a chance to paint; any render first flushes them anyway.
+    if !isPassiveFlushScheduled.contents {
+      isPassiveFlushScheduled := true
+      setTimeout(() => {
+        isPassiveFlushScheduled := false
+        flushPassiveEffects()->ignore
+      }, 0)
     }
   }
 
@@ -353,6 +465,11 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
       root.hasPendingElement = false
       root.pendingElement = Element.null
     }
+    commitLayoutEffects(finished)
+    if hasFlag(Int.bitwiseOr(finished.subtreeFlags, finished.flags), Flags.passiveMask) {
+      schedulePassiveEffects(finished)
+    }
+    HookImpl.rethrowCommitError()
   }
 
   // Scheduling
@@ -369,11 +486,13 @@ module Make = (Host: HostConfig.S): (S with type container = Host.container) => 
         while Array.length(scheduledRoots) > 0 {
           let root = scheduledRoots->Array.shift->Option.getUnsafe
           root.isScheduled = false
+          // The previous commit's effects run before anything renders again.
+          flushPassiveEffects()->ignore
           if root.pendingLanes != Lanes.none {
             renders := renders.contents + 1
             if renders.contents > maxNestedRenders {
               JsError.throwWithMessage(
-                "ResFiber: maximum update depth exceeded. A component keeps updating state while rendering.",
+                "ResFiber: maximum update depth exceeded. A component keeps updating state while rendering or in a layout effect.",
               )
             }
             commitRoot(root, renderRoot(root))

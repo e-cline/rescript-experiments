@@ -18,6 +18,10 @@ type kind =
   | Component
   /** `<> ... </>`: its children with no node of its own. */
   | Fragment
+  /** A context provider: `elementType` is the context's `Context.provider`. */
+  | Provider
+  /** A component wrapped by `Memo.memo`: `elementType` is the wrapper. */
+  | Memo
 
 /**
 An element that isn't text or a list. `props` is the record the JSX transform built (for host and

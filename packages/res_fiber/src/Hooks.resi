@@ -42,3 +42,48 @@ let useCallback2: ('f, ('a, 'b)) => 'f
 let useCallback3: ('f, ('a, 'b, 'c)) => 'f
 let useCallback4: ('f, ('a, 'b, 'c, 'd)) => 'f
 let useCallback5: ('f, ('a, 'b, 'c, 'd, 'e)) => 'f
+
+/**
+Runs `effect` after the commit that first renders the component, and again after every commit where
+`deps` changed, after the previous run's cleanup (the function `effect` returned, if any). The last
+cleanup runs when the component is removed. Effects run after the browser can paint, so they don't
+delay showing the update. `useEffect` (no deps) runs after every commit.
+*/
+let useEffect: (unit => option<unit => unit>) => unit
+let useEffect0: (unit => option<unit => unit>) => unit
+let useEffect1: (unit => option<unit => unit>, array<'a>) => unit
+let useEffect2: (unit => option<unit => unit>, ('a, 'b)) => unit
+let useEffect3: (unit => option<unit => unit>, ('a, 'b, 'c)) => unit
+let useEffect4: (unit => option<unit => unit>, ('a, 'b, 'c, 'd)) => unit
+let useEffect5: (unit => option<unit => unit>, ('a, 'b, 'c, 'd, 'e)) => unit
+
+/**
+Like the `useEffect` family, but runs synchronously right after the host is updated, before the
+commit returns: for reading layout or adjusting it before anything is shown. An update made here
+renders before control returns.
+*/
+let useLayoutEffect: (unit => option<unit => unit>) => unit
+let useLayoutEffect0: (unit => option<unit => unit>) => unit
+let useLayoutEffect1: (unit => option<unit => unit>, array<'a>) => unit
+let useLayoutEffect2: (unit => option<unit => unit>, ('a, 'b)) => unit
+let useLayoutEffect3: (unit => option<unit => unit>, ('a, 'b, 'c)) => unit
+let useLayoutEffect4: (unit => option<unit => unit>, ('a, 'b, 'c, 'd)) => unit
+let useLayoutEffect5: (unit => option<unit => unit>, ('a, 'b, 'c, 'd, 'e)) => unit
+
+/**
+The value of the nearest `Context.provider` above, or the context's default. The component renders
+again when that value changes. Unlike the other hooks, this one may be called conditionally.
+*/
+let useContext: Context.t<'value> => 'value
+
+/**
+A value read from a store outside the tree. `getSnapshot` returns the current value (the same value,
+by `Object.is`, until the store changes); `subscribe` registers a listener for changes and returns a
+function that unregisters it. The component renders again whenever the snapshot changes.
+`subscribe` is called again whenever its identity changes, so define it outside the component or
+memoize it.
+*/
+let useSyncExternalStore: (
+  ~subscribe: (unit => unit) => unit => unit,
+  ~getSnapshot: unit => 'snapshot,
+) => 'snapshot

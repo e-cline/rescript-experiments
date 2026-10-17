@@ -29,7 +29,7 @@ let toKey = (key: option<string>): Nullable.t<string> =>
 let make = (component: component<'props>, props: 'props, key: Nullable.t<string>): element => {
   let elementType = componentToUnknown(component)
   Element.fromNode({
-    kind: elementType === fragmentType ? Fragment : Component,
+    kind: elementType === fragmentType ? Fragment : Marker.kindOf(elementType),
     elementType,
     key,
     props: Unsafe.toUnknown(props),

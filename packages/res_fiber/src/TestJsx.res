@@ -2,11 +2,15 @@
 The JSX module for `TestRenderer`: `@@jsxConfig({version: 4, module_: "ResFiber.TestJsx"})`.
 
 `JsxCore`, plus host tags whose props are a small fixed set: enough to tell nodes apart (`id`), show
-changes (`className`, `title`, `value`, `checked`), and drive interactions (`onClick`, `onInput`)
-from a test. Any tag name works. (No `.resi`: this is `JsxCore` plus `Elements`.)
+changes (`className`, `title`, `value`, `checked`), drive interactions (`onClick`, `onInput`) from a
+test, and receive the node (`ref`). Any tag name works. (No `.resi`: this is `JsxCore` plus
+`Elements`.)
 */
 
 include JsxCore
+
+/** A node the test renderer created: what a `ref` receives. See `TestRenderer`. */
+type node
 
 module Elements = {
   type props = {
@@ -17,6 +21,7 @@ module Elements = {
     checked?: bool,
     onClick?: unit => unit,
     onInput?: string => unit,
+    ref?: Ref.t<Nullable.t<node>>,
     children?: element,
   }
 

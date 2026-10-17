@@ -2,8 +2,12 @@
 
 /***
 Random keyed-list updates: each step renders a random selection and order of keys (with holes that
-render nothing), then checks the output, that every surviving key kept its node, and that exactly
-the added keys were created and the dropped ones removed.
+render nothing) and a random theme, then checks the output, that every surviving key kept its node,
+that exactly the added keys were created and the dropped ones removed, and that every mounted
+component's effects are mounted exactly once.
+
+Half the keys render through a memoized component that reads the theme from context, so a theme
+change only reaches them through context propagation.
 */
 
 open Vitest
@@ -26,26 +30,59 @@ let pool = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 /** Keys after "e" render through a component, the rest as host elements: each key's type is fixed. */
 let viaComponent = key => key > "e"
 
-module Item = {
-  @jsx.component
-  let make = (~name: string) => <li id=name> {TestJsx.string(name)} </li>
+module Theme = {
+  let context = Context.make("none")
+  module Provider = {
+    let make = Context.provider(context)
+  }
 }
 
-let view = (slots: array<option<string>>) =>
-  <ul id="list">
-    {slots
-    ->Array.map(slot =>
-      switch slot {
-      | Some(key) if viaComponent(key) => <Item key name=key />
-      | Some(key) => <li key id=key> {TestJsx.string(key)} </li>
-      | None => TestJsx.null
-      }
-    )
-    ->TestJsx.array}
-  </ul>
+/** How many `Item`s have their effect (and layout effect) mounted. */
+let liveEffects = ref(0)
+let liveLayoutEffects = ref(0)
 
-let expected = (keys: array<string>) =>
-  `<ul id="list">${keys->Array.map(key => `<li id="${key}">${key}</li>`)->Array.join("")}</ul>`
+module Item = {
+  @jsx.component
+  let make = Memo.memo((~name: string) => {
+    let theme = Hooks.useContext(Theme.context)
+    Hooks.useEffect0(() => {
+      liveEffects := liveEffects.contents + 1
+      Some(() => liveEffects := liveEffects.contents - 1)
+    })
+    Hooks.useLayoutEffect0(() => {
+      liveLayoutEffects := liveLayoutEffects.contents + 1
+      Some(() => liveLayoutEffects := liveLayoutEffects.contents - 1)
+    })
+    <li id=name title=theme> {TestJsx.string(name)} </li>
+  })
+}
+
+module List = {
+  @jsx.component
+  let make = Memo.memo((~slots: array<option<string>>, ~theme: string) =>
+    <ul id="list">
+      {slots
+      ->Array.map(slot =>
+        switch slot {
+        | Some(key) if viaComponent(key) => <Item key name=key />
+        | Some(key) => <li key id=key title=theme> {TestJsx.string(key)} </li>
+        | None => TestJsx.null
+        }
+      )
+      ->TestJsx.array}
+    </ul>
+  )
+}
+
+let view = (slots: array<option<string>>, ~theme: string) =>
+  <Theme.Provider value=theme>
+    <List slots theme />
+  </Theme.Provider>
+
+let expected = (keys: array<string>, ~theme: string) =>
+  `<ul id="list">${keys
+    ->Array.map(key => `<li id="${key}" title="${theme}">${key}</li>`)
+    ->Array.join("")}</ul>`
 
 /** A random selection of keys in a random order, with random holes. */
 let randomSlots = (random: Random.t): array<option<string>> => {
@@ -72,14 +109,21 @@ describe("Fuzz: keyed lists", () => {
         let renderer = TestRenderer.create()
         let uids: dict<int> = Dict.make()
         let previous = ref([])
+        liveEffects := 0
+        liveLayoutEffects := 0
         for _ in 1 to 200 {
           let slots = randomSlots(random)
           let keys = slots->Array.filterMap(slot => slot)
+          let theme = Random.bool(random) ? "dark" : "light"
           TestRenderer.clearOps(renderer)
-          TestRenderer.render(renderer, view(slots))
+          TestRenderer.render(renderer, view(slots, ~theme))
           let ops = TestRenderer.ops(renderer)
 
-          t->expect(TestRenderer.toString(renderer))->Expect.toBe(expected(keys))
+          t->expect(TestRenderer.toString(renderer))->Expect.toBe(expected(keys, ~theme))
+          let components = keys->Array.filter(viaComponent)->Array.length
+          t
+          ->expect((liveEffects.contents, liveLayoutEffects.contents))
+          ->Expect.toEqual((components, components))
 
           let added = keys->Array.filter(key => !(previous.contents->Array.includes(key)))
           let removed = previous.contents->Array.filter(key => !(keys->Array.includes(key)))
@@ -100,6 +144,8 @@ describe("Fuzz: keyed lists", () => {
           )
           previous := keys
         }
+        TestRenderer.unmount(renderer)
+        t->expect((liveEffects.contents, liveLayoutEffects.contents))->Expect.toEqual((0, 0))
       },
     )
   )

@@ -11,12 +11,15 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
 - React's child reconciliation: nodes are reused by key and type, and moves, insertions and removals
   touch only what changed.
 - `useState`, `useReducer`, `useReducerWithMapState`, `useRef`, `useMemo0`–`5`, `useCallback0`–`5`.
+- `useEffect` and `useLayoutEffect` (each with `0`–`5` dependency variants), with React's ordering:
+  layout effects in the commit, passive effects after it, every cleanup before any effect.
+- `ref` props on host elements, `Context` with `useContext`, `Memo.memo`, and
+  `useSyncExternalStore`.
 - Automatic batching (updates in one task render once, in a microtask), `flushSync`, setting state
   while rendering, skipping components whose props and state didn't change.
 - `TestRenderer`: an in-memory renderer that logs every host operation.
 
-Not yet: effects, context, `memo`, refs on host elements, a DOM renderer, concurrent rendering,
-error boundaries.
+Not yet: a DOM renderer, concurrent rendering, error boundaries.
 
 ## Installing
 
@@ -58,6 +61,45 @@ project sets `"preserve": true`.
 Hooks follow `@rescript/react`'s names and the usual rules: call them unconditionally, in the same
 order on every render. Breaking the order throws.
 
+### Effects
+
+`useLayoutEffect` runs synchronously once the host is updated, before the commit returns (an update
+it makes renders straight away). `useEffect` runs afterwards: in a `setTimeout`, or before the next
+render, whichever comes first. Within each kind, children run before parents, and every cleanup due
+in a commit runs before any effect. An exception from an effect doesn't stop the others; the first
+one is rethrown once they've all run.
+
+### Context
+
+```rescript
+module Theme = {
+  let context = ResFiber.Context.make("light")
+  module Provider = {
+    let make = ResFiber.Context.provider(context)
+  }
+}
+
+<Theme.Provider value="dark"> <Toolbar /> </Theme.Provider>
+// inside Toolbar, or anything below it:
+let theme = ResFiber.Hooks.useContext(Theme.context)
+```
+
+A consumer renders again when its provider's value changes, even past components that skipped
+rendering.
+
+### Memo
+
+```rescript
+module Row = {
+  @jsx.component
+  let make = ResFiber.Memo.memo((~label: string) => ...)
+}
+```
+
+`Memo.memo` compares props field by field with `Object.is`. For a custom comparison, shadow `make`
+with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@jsx.component` only accepts a
+one-argument wrapper.
+
 ## Testing with `TestRenderer`
 
 ```rescript
@@ -69,7 +111,10 @@ renderer->ResFiber.TestRenderer.ops // ["create \"Clicks: 0\"", ..., "text \"Cli
 ```
 
 `ops` lists the host operations performed (`create`, `append`, `insert ... before`, `remove`,
-`update`, `text`), so a test can check that an update did no more than it had to.
+`update`, `text`), so a test can check that an update did no more than it had to. `render`, `click`,
+`input` and `unmount` run inside `act`, which also runs effects (and renders any updates they make)
+before returning. To observe timing, `scheduleRender` and `flushSync` render without running
+`useEffect`s.
 
 ## Writing a renderer
 
@@ -95,7 +140,8 @@ complete example.
 - **Rendering** walks the tree from the root, skipping subtrees with no pending updates, renders
   components, and diffs their output against the current children. New host nodes are built
   off-screen, bottom up.
-- **Committing** applies the recorded insertions, moves, updates and removals to the host in one go.
+- **Committing** applies the recorded insertions, moves, updates and removals to the host in one go,
+  then attaches refs and runs layout effects; passive effects follow later.
 
 An exception thrown while rendering leaves the screen as it was and propagates to whatever started
 the render. The updates that render was processing are lost.

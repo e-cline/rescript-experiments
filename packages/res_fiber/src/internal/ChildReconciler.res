@@ -15,6 +15,8 @@ let tagOfKind = (kind: Element.kind): Fiber.tag =>
   | Host => HostComponent
   | Component => FunctionComponent
   | Fragment => Fragment
+  | Provider => ContextProvider
+  | Memo => MemoComponent
   }
 
 let createFiberFromText = (text: string): Fiber.t =>
@@ -43,7 +45,7 @@ let sameType = (fiber: Fiber.t, node: Element.node): bool =>
 let pendingPropsOf = (node: Element.node): unknown =>
   switch node.kind {
   | Fragment => Unsafe.toUnknown(Element.childrenOf(node.props))
-  | Host | Component => node.props
+  | Host | Component | Provider | Memo => node.props
   }
 
 /** A work-in-progress copy of `fiber` with new props, as the only child so far. */

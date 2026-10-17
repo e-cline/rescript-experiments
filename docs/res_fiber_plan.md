@@ -6,18 +6,29 @@ renderer, and anything else that implements the host interface). It doesn't use 
 
 ## Status
 
-Phases 0 and 1 are done (`packages/res_fiber`). Where they differ from the plan below:
+Phases 0, 1 and 2 are done (`packages/res_fiber`). Where they differ from the plan below:
 
 - `res_fiber_dom` isn't scaffolded yet. An empty package would only add noise, so it arrives with
   phase 3.
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
-  `<>` can't take a key), `TestJsx` (the test renderer's JSX module) and `useReducerWithMapState`.
-- Scheduling is a microtask per batch, plus `flushSync` and `flushWork`. `Scheduler.S` comes with
-  phase 4, when there's something to schedule besides "now".
-- The keyed-list part of the fuzz test landed in phase 1, since it tests the child reconciler. Phase
-  2 extends it.
+  `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
+  `TestRenderer.scheduleRender`/`flushSync` for tests about effect timing.
+- Scheduling is a microtask per batch, plus `flushSync` and `flushWork`. Passive effects run in a
+  `setTimeout` (or before the next render). `Scheduler.S` comes with phase 4, when there's something
+  to schedule besides "now".
 - The `res_common` dependency (for `Debug.debugAssert`) isn't needed yet. Hook-order checks always
   run, since a mismatch would otherwise read one hook's state as another's.
+- Context providers follow `@rescript/react`:
+  `module Provider = { let make = Context.provider(context) }` needs no `props` type, so the plan's
+  `MakeProvider` functor wasn't needed. Provider and memo components are plain functions marked with
+  hidden properties, which `jsx` reads to pick the element's kind.
+- `Memo.memoCustomComparison` can't wrap a `@jsx.component` definition directly (the JSX PPX accepts
+  only one-argument wrappers), so it's applied by shadowing `make`, as with `@rescript/react`'s
+  `memoCustomCompareProps`.
+- A memoized component whose props compare equal also checks its context dependencies, so a context
+  change reaches it even when propagation wouldn't be needed.
+- Effect errors don't stop other effects: the first is kept and rethrown once the phase has run (the
+  original JS error, not ReScript's `JsExn` wrapper).
 
 ## What was verified before writing this
 

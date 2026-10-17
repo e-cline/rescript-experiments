@@ -18,7 +18,7 @@ catalogs:
     terser: ^5.50.0
     mitata: ^1.0.34
     vite: npm:@voidzero-dev/vite-plus-core@0.2.9
-    vite-plus: 0.2.9
+    vite-plus: 1.2.0
     rescript: ^12.3.1
     '@rescript/runtime': ^12.3.1
     '@rescript/react': ^0.15.0

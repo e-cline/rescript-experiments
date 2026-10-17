@@ -215,6 +215,9 @@ let reconcileChildrenArray = (
   currentFirstChild: option<Fiber.t>,
   newChildren: array<Element.t>,
 ): option<Fiber.t> => {
+  if ResCommon.Env.isDev {
+    KeyWarnings.check(returnFiber, newChildren)
+  }
   let length = Array.length(newChildren)
   let first = ref(None)
   let previous = ref(None)

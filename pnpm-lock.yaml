@@ -490,6 +490,9 @@ importers:
 
   packages/res_fiber:
     dependencies:
+      '@e-cline/res_common':
+        specifier: workspace:^
+        version: link:../res_common
       '@e-cline/res_priority_queue':
         specifier: workspace:^
         version: link:../res_priority_queue

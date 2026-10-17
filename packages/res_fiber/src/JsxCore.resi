@@ -26,7 +26,10 @@ external component: componentLike<'props, element> => component<'props> = "%iden
 /** An element for `component` with `props`. */
 let jsx: (component<'props>, 'props) => element
 
-/** The same as `jsx`; the transform calls this one when there are several children. */
+/**
+The same as `jsx`; the transform calls this one when there are several children. In a development
+build it records that they were written out, not built as a list, so they don't need keys.
+*/
 let jsxs: (component<'props>, 'props) => element
 
 /** `jsx`, with a key. */
@@ -35,7 +38,11 @@ let jsxKeyed: (component<'props>, 'props, ~key: string=?, unit) => element
 /** `jsxs`, with a key. */
 let jsxsKeyed: (component<'props>, 'props, ~key: string=?, unit) => element
 
-/** A list of elements, as one element. Give each a `key` when the list can change. */
+/**
+A list of elements, as one element. Give each a `key` when the list can change: in a development
+build, the reconciler warns about a list of more than one element where some have none, and about
+two children with the same key.
+*/
 external array: array<element> => element = "%identity"
 
 /** Renders nothing. */
@@ -71,3 +78,9 @@ let hostJsx: (string, 'props) => element
 
 /** `hostJsx`, with a key: what a renderer's `Elements.jsxKeyed` is. */
 let hostJsxKeyed: (string, 'props, ~key: string=?, unit) => element
+
+/** `hostJsx` for several children: what a renderer's `Elements.jsxs` is (see `jsxs`). */
+let hostJsxs: (string, 'props) => element
+
+/** `hostJsxs`, with a key: what a renderer's `Elements.jsxsKeyed` is. */
+let hostJsxsKeyed: (string, 'props, ~key: string=?, unit) => element

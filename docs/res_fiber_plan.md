@@ -28,8 +28,15 @@ and so is phase 5: error boundaries, portals, the `res_signals` bridge
   yielding: what the renderers' `act` uses.
 - When an exception escapes a root's render or commit, the root drops its pending lanes and renders
   again on its next update, instead of retrying (React would unmount it).
-- The `res_common` dependency (for `Debug.debugAssert`) isn't needed yet. Hook-order checks always
-  run, since a mismatch would otherwise read one hook's state as another's.
+- `res_common` is a dependency for `Env.isDev`, which gates the key warnings below; nothing uses
+  `Debug.debugAssert` yet. Hook-order checks always run, since a mismatch would otherwise read one
+  hook's state as another's.
+- Key warnings (development builds only, through `console.error` as React's): two children with the
+  same key in any list, and children without a key in a list of more than one built at runtime. The
+  JSX transform passes written-out children to `jsxs` wrapped in `Jsx.array`, so they look like any
+  other list; `jsxs` (and a renderer's `Elements.jsxs`, which is `JsxCore.hostJsxs`) records them as
+  static so they aren't checked for missing keys. Each list warns at most once per kind per render,
+  naming the duplicate key, the host element and the component that rendered it.
 - Context providers follow `@rescript/react`:
   `module Provider = { let make = Context.provider(context) }` needs no `props` type, so the plan's
   `MakeProvider` functor wasn't needed. Provider and memo components are plain functions marked with

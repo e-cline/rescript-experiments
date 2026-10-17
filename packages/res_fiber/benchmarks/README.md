@@ -110,18 +110,19 @@ add to an app's production bundle:
 
 | Bytes                                                                   | minified |   gzip | brotli |
 | ----------------------------------------------------------------------- | -------: | -----: | -----: |
-| [`size/Counter.res`](size/Counter.res): one `useState` and a `<button>` |   32,788 | 10,487 |  9,494 |
-| [`size/FullApi.res`](size/FullApi.res): every hook and component, once  |   36,921 | 11,933 | 10,826 |
-| [the todo app](../../../examples/res_fiber_app)                         |   36,813 | 12,008 | 10,839 |
+| [`size/Counter.res`](size/Counter.res): one `useState` and a `<button>` |   27,410 |  9,599 |  8,743 |
+| [`size/FullApi.res`](size/FullApi.res): every hook and component, once  |   31,247 | 11,059 | 10,063 |
+| [the todo app](../../../examples/res_fiber_app)                         |   31,241 | 11,079 | 10,042 |
 
-Measured at a1d88a5, 2026-10-17. Each app is bundled on its own by Vite in production mode, into one
+Measured at 2142807, 2026-10-17. Each app is bundled on its own by Vite in production mode, into one
 ES module, and minified by Terser (top-level mangling, 3 compress passes) until another run stops
 shrinking it; then compressed with gzip (level 9) and brotli (quality 11). The script,
 [`size/size.ts`](size/size.ts), also fails if a bundle includes development-only code (the key
-warnings, behind `ResCommon.Env.isDev`): a production build resolves `@e-cline/js_env` to constants
-that let the minifier drop it.
+warnings, behind `ResCommon.Env.isDev`) or a full error message (production builds throw codes): a
+production build resolves `@e-cline/js_env` to constants that let the minifier drop them.
 
-The counter already carries most of the code: using the whole API adds about 4 KB (1.4 KB gzipped).
+The counter already carries most of the code: using the whole API adds about 3.8 KB (1.5 KB
+gzipped).
 
 ## Reading the results
 

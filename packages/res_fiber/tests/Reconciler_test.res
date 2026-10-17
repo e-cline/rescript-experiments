@@ -161,7 +161,8 @@ describe("Reconciler: keyed children", () => {
       "moving the last to the front moves the others",
       ["a", "b", "c"],
       ["c", "a", "b"],
-      ["append li#a to ul#list", "append li#b to ul#list"],
+      // Moved nodes are placed last first, each before the one after it.
+      ["append li#b to ul#list", "insert li#a before li#b"],
     ),
     (
       "moving the first to the end moves only it",
@@ -186,7 +187,7 @@ describe("Reconciler: keyed children", () => {
       "reversing",
       ["a", "b", "c"],
       ["c", "b", "a"],
-      ["append li#b to ul#list", "append li#a to ul#list"],
+      ["append li#a to ul#list", "insert li#b before li#a"],
     ),
   ]
 

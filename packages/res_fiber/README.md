@@ -25,7 +25,10 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
 - `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
   through concurrent renders.
 
-To render into a browser page, use [`@e-cline/res_fiber_dom`](../res_fiber_dom).
+To render into a browser page, use [`@e-cline/res_fiber_dom`](../res_fiber_dom); to read
+`res_signals` atoms and computeds from components,
+[`@e-cline/res_fiber_signals`](../res_fiber_signals). [`benchmarks/`](benchmarks) measures the
+reconciler on lists of up to 10,000 rows.
 
 ## Installing
 

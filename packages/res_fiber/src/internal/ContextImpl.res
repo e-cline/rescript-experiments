@@ -34,7 +34,7 @@ let push = (context: t<unknown>, value: unknown, ~provider: Fiber.t) => {
 let pop = () =>
   switch stack->Array.pop {
   | Some((context, previous, _)) => context.currentValue = previous
-  | None => JsError.throwWithMessage("ResFiber: context stack underflow")
+  | None => Errors.fail(10, ResCommon.Env.isDev ? "ResFiber: context stack underflow" : "")
   }
 
 /** Whether `fiber` is `ancestor` or below it in the tree being rendered. */

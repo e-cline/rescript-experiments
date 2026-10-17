@@ -8,8 +8,11 @@ external componentToUnknown: component<'props> => unknown = "%identity"
 type fragmentProps = {children?: element}
 
 let jsxFragment: component<fragmentProps> = _ =>
-  JsError.throwWithMessage(
-    "ResFiber: jsxFragment is a marker for <>...</>, not a component to call",
+  Errors.fail(
+    11,
+    ResCommon.Env.isDev
+      ? "ResFiber: jsxFragment is a marker for <>...</>, not a component to call"
+      : "",
   )
 
 let fragmentType = componentToUnknown(jsxFragment)

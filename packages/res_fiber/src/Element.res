@@ -50,5 +50,6 @@ let classify = (element: t): view =>
       Node(asNode(element))
     }
   | #undefined | #boolean => Empty
-  | _ => JsError.throwWithMessage(`ResFiber: ${stringify(element)} is not an element`)
+  | _ =>
+    Errors.fail(12, ResCommon.Env.isDev ? `ResFiber: ${stringify(element)} is not an element` : "")
   }

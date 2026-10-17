@@ -79,8 +79,11 @@ let renderingFiber = (): Fiber.t =>
   switch state.fiber {
   | Some(fiber) => fiber
   | None =>
-    JsError.throwWithMessage(
-      "ResFiber: hooks can only be called while a function component is rendering",
+    Errors.fail(
+      1,
+      ResCommon.Env.isDev
+        ? "ResFiber: hooks can only be called while a function component is rendering"
+        : "",
     )
   }
 
@@ -150,8 +153,11 @@ let updateHook = (fiber: Fiber.t, kind: kind): hook => {
   | None =>
     switch nextCurrentHook {
     | None =>
-      JsError.throwWithMessage(
-        "ResFiber: rendered more hooks than during the previous render. Hooks must be called unconditionally.",
+      Errors.fail(
+        2,
+        ResCommon.Env.isDev
+          ? "ResFiber: rendered more hooks than during the previous render. Hooks must be called unconditionally."
+          : "",
       )
     | Some(current) =>
       checkKind(current, kind)
@@ -220,8 +226,11 @@ let renderWithHooks = (
   while state.didScheduleRenderPhaseUpdate {
     rerenders := rerenders.contents + 1
     if rerenders.contents > maxRerenders {
-      JsError.throwWithMessage(
-        "ResFiber: too many re-renders. A component is setting its own state on every render.",
+      Errors.fail(
+        4,
+        ResCommon.Env.isDev
+          ? "ResFiber: too many re-renders. A component is setting its own state on every render."
+          : "",
       )
     }
     state.didScheduleRenderPhaseUpdate = false
@@ -239,8 +248,11 @@ let renderWithHooks = (
   }
   reset()
   if didRenderTooFewHooks {
-    JsError.throwWithMessage(
-      "ResFiber: rendered fewer hooks than during the previous render. Hooks must be called unconditionally.",
+    Errors.fail(
+      3,
+      ResCommon.Env.isDev
+        ? "ResFiber: rendered fewer hooks than during the previous render. Hooks must be called unconditionally."
+        : "",
     )
   }
   children.contents

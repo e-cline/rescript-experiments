@@ -179,6 +179,28 @@ module Row = {
 with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@jsx.component` only accepts a
 one-argument wrapper.
 
+## Error codes
+
+In development, misusing the library throws an error that says what went wrong. Production builds
+leave the messages out, throwing `ResFiber error <code>` instead:
+
+| Code | Development message                                                                                          |
+| ---: | ------------------------------------------------------------------------------------------------------------ |
+|    1 | Hooks can only be called while a function component is rendering.                                            |
+|    2 | Rendered more hooks than during the previous render.                                                         |
+|    3 | Rendered fewer hooks than during the previous render.                                                        |
+|    4 | Too many re-renders: a component is setting its own state on every render.                                   |
+|    5 | Maximum update depth exceeded: a component keeps updating state while rendering or in a layout effect.       |
+|    6 | Updates keep scheduling more updates (from `act`, or `TestRenderer`).                                        |
+|    7 | Can't render into a root that was unmounted.                                                                 |
+|    8 | A component suspended (`Hooks.use` on a promise that hasn't settled) with no `<Suspense>` boundary above it. |
+|    9 | A host node has no host parent (a bug in ResFiber or the renderer).                                          |
+|   10 | Context stack underflow (a bug in ResFiber).                                                                 |
+|   11 | `jsxFragment` is a marker for `<>...</>`, not a component to call.                                           |
+|   12 | A value that isn't an element was rendered.                                                                  |
+
+Codes don't change once published: a new error gets the next number.
+
 ## Testing with `TestRenderer`
 
 ```rescript

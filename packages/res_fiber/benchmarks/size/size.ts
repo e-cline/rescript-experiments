@@ -89,7 +89,8 @@ const devWarnings = ['two children with the same key', 'should have a unique'];
 
 /**
  * Checks that development-only code, such as the key warnings (`KeyWarnings`,
- * behind `ResCommon.Env.isDev`), was left out of the production bundle.
+ * behind `ResCommon.Env.isDev`) and the full error messages (`Errors`, which
+ * production builds replace with codes), was left out of the production bundle.
  */
 function checkNoDevCode(entry: Entry, code: string) {
   const consoleCalls = code.match(/\bconsole\./g)?.length ?? 0;
@@ -105,6 +106,15 @@ function checkNoDevCode(entry: Entry, code: string) {
       `${entry.name}: the minified bundle includes the warning "${warning}"`,
     );
   }
+  // Every error message starts with "ResFiber: "; their codes replace them.
+  assert.ok(
+    !code.includes('ResFiber: '),
+    `${entry.name}: the minified bundle includes a development error message`,
+  );
+  assert.ok(
+    code.includes('ResFiber error '),
+    `${entry.name}: the minified bundle has no production error message`,
+  );
 }
 
 const rows: string[][] = [];

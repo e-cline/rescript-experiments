@@ -253,8 +253,11 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   }
 
   let noSuspenseBoundary = () =>
-    try JsError.throwWithMessage(
-      "ResFiber: a component suspended (Hooks.use on a promise that hasn't settled) with no <Suspense> boundary above it",
+    try Errors.fail(
+      8,
+      ResCommon.Env.isDev
+        ? "ResFiber: a component suspended (Hooks.use on a promise that hasn't settled) with no <Suspense> boundary above it"
+        : "",
     ) catch {
     | error => error
     }
@@ -380,7 +383,8 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       switch parent.contents {
       | Some(p) if isHostParent(p) => found := Some(p)
       | Some(p) => parent := p.parent
-      | None => JsError.throwWithMessage("ResFiber: a host node has no host parent")
+      | None =>
+        Errors.fail(9, ResCommon.Env.isDev ? "ResFiber: a host node has no host parent" : "")
       }
     }
     Option.getUnsafe(found.contents)
@@ -737,8 +741,11 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     renders := renders.contents + 1
     if renders.contents > maxNestedRenders {
       abandon(root)
-      JsError.throwWithMessage(
-        "ResFiber: maximum update depth exceeded. A component keeps updating state while rendering or in a layout effect.",
+      Errors.fail(
+        5,
+        ResCommon.Env.isDev
+          ? "ResFiber: maximum update depth exceeded. A component keeps updating state while rendering or in a layout effect."
+          : "",
       )
     }
   }
@@ -901,7 +908,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       let root' = Option.getUnsafe(root.contents)
       renders := renders.contents + 1
       if renders.contents > maxActRenders {
-        JsError.throwWithMessage("ResFiber: updates keep scheduling more updates")
+        Errors.fail(6, ResCommon.Env.isDev ? "ResFiber: updates keep scheduling more updates" : "")
       }
       cancelTask(root')
       flushPassiveEffects()->ignore
@@ -937,7 +944,10 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
 
   let render = (root: root, element: Element.t) => {
     if root.isUnmounted {
-      JsError.throwWithMessage("ResFiber: can't render into a root that was unmounted")
+      Errors.fail(
+        7,
+        ResCommon.Env.isDev ? "ResFiber: can't render into a root that was unmounted" : "",
+      )
     }
     root.pendingElement = element
     root.hasPendingElement = true

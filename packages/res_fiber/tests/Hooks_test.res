@@ -377,3 +377,150 @@ describe("Errors while rendering", () => {
     ->Expect.toBe(`<div id="root" title="new"><span id="ok">ok</span></div>`)
   })
 })
+
+describe("Hooks: more cases", () => {
+  test("setting state while rendering works on updates too (deriving state from props)", t => {
+    module Changes = {
+      @jsx.component
+      let make = (~value: int) => {
+        let (previous, setPrevious) = Hooks.useState(() => value)
+        let (changes, setChanges) = Hooks.useState(() => 0)
+        if value != previous {
+          setPrevious(_ => value)
+          setChanges(c => c + 1)
+        }
+        <i id="changes"> {TestJsx.int(changes)} </i>
+      }
+    }
+    let renderer = rendered(<Changes value=1 />)
+    [2, 2, 3]->Array.forEach(value => TestRenderer.render(renderer, <Changes value />))
+    t->expect(textOf(renderer, "changes"))->Expect.toBe("2")
+  })
+
+  test("a flushSync that throws doesn't leave its sync priority behind", t => {
+    Renders.reset()
+    let renderer = rendered(<Counter name="c" />)
+    t
+    ->expect(
+      () =>
+        TestRenderer.flushSync(
+          () => {
+            setFromOutside(c => c + 1)
+            JsError.throwWithMessage("boom")
+          },
+        ),
+    )
+    ->Expect.toThrow(~message="boom")
+    // A later update gets the default lane, so it renders separately from the sync one.
+    setFromOutside(c => c + 10)
+    TestRenderer.flushSync(() => ())
+    t->expect(textOf(renderer, "c"))->Expect.toBe("11")
+    t->expect(Renders.get("c"))->Expect.toBe(3)
+  })
+
+  test("TestRenderer.input calls onInput", t => {
+    module Field = {
+      @jsx.component
+      let make = () => {
+        let (text, setText) = Hooks.useState(() => "")
+        <input id="field" value=text onInput={value => setText(_ => value)} />
+      }
+    }
+    let renderer = rendered(<Field />)
+    TestRenderer.input(renderer, "field", "typed")
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(`<input id="field" value="typed"></input>`)
+  })
+})
+
+/** How many times each hook variant ran (or, for callbacks, changed identity). */
+let runs: dict<int> = Dict.make()
+let bump = name => runs->Dict.set(name, runs->Dict.get(name)->Option.getOr(0) + 1)
+let callbacks: dict<unknown> = Dict.make()
+external toUnknown: 'a => unknown = "%identity"
+let seeCallback = (name, f) =>
+  if callbacks->Dict.get(name) !== Some(toUnknown(f)) {
+    callbacks->Dict.set(name, toUnknown(f))
+    bump(name)
+  }
+
+module EveryArity = {
+  @jsx.component
+  let make = (~a: int, ~b: int, ~c: int, ~d: int, ~e: int) => {
+    let effect = name =>
+      () => {
+        bump(name)
+        None
+      }
+    Hooks.useEffect(effect("useEffect"))
+    Hooks.useEffect0(effect("useEffect0"))
+    Hooks.useEffect1(effect("useEffect1"), [a])
+    Hooks.useEffect2(effect("useEffect2"), (a, b))
+    Hooks.useEffect3(effect("useEffect3"), (a, b, c))
+    Hooks.useEffect4(effect("useEffect4"), (a, b, c, d))
+    Hooks.useEffect5(effect("useEffect5"), (a, b, c, d, e))
+    Hooks.useLayoutEffect(effect("useLayoutEffect"))
+    Hooks.useLayoutEffect0(effect("useLayoutEffect0"))
+    Hooks.useLayoutEffect1(effect("useLayoutEffect1"), [a])
+    Hooks.useLayoutEffect2(effect("useLayoutEffect2"), (a, b))
+    Hooks.useLayoutEffect3(effect("useLayoutEffect3"), (a, b, c))
+    Hooks.useLayoutEffect4(effect("useLayoutEffect4"), (a, b, c, d))
+    Hooks.useLayoutEffect5(effect("useLayoutEffect5"), (a, b, c, d, e))
+    let memo = name => () => bump(name)
+    Hooks.useMemo0(memo("useMemo0"))
+    Hooks.useMemo1(memo("useMemo1"), [a])
+    Hooks.useMemo2(memo("useMemo2"), (a, b))
+    Hooks.useMemo3(memo("useMemo3"), (a, b, c))
+    Hooks.useMemo4(memo("useMemo4"), (a, b, c, d))
+    Hooks.useMemo5(memo("useMemo5"), (a, b, c, d, e))
+    seeCallback("useCallback0", Hooks.useCallback0(() => a))
+    seeCallback("useCallback1", Hooks.useCallback1(() => a, [a]))
+    seeCallback("useCallback2", Hooks.useCallback2(() => a, (a, b)))
+    seeCallback("useCallback3", Hooks.useCallback3(() => a, (a, b, c)))
+    seeCallback("useCallback4", Hooks.useCallback4(() => a, (a, b, c, d)))
+    seeCallback("useCallback5", Hooks.useCallback5(() => a, (a, b, c, d, e)))
+    TestJsx.null
+  }
+}
+
+describe("Hooks: every dependency-list arity", () => {
+  test("reruns exactly when one of its own dependencies changes", t => {
+    runs->Dict.keysToArray->Array.forEach(key => runs->Dict.delete(key))
+    let renderer = TestRenderer.create()
+    // Mount; then change only the fifth dependency; then the first.
+    TestRenderer.render(renderer, <EveryArity a=0 b=0 c=0 d=0 e=0 />)
+    TestRenderer.render(renderer, <EveryArity a=0 b=0 c=0 d=0 e=1 />)
+    TestRenderer.render(renderer, <EveryArity a=1 b=0 c=0 d=0 e=1 />)
+    let expected = name =>
+      switch name->String.slice(~start=String.length(name) - 1) {
+      | "0" => 1
+      | "5" => 3
+      | "1" | "2" | "3" | "4" => 2
+      | _ => 3 // no dependencies: every commit
+      }
+    ["useEffect", "useLayoutEffect", "useMemo", "useCallback"]->Array.forEach(
+      family =>
+        ["", "0", "1", "2", "3", "4", "5"]->Array.forEach(
+          arity => {
+            let name = family ++ arity
+            if !((family == "useMemo" || family == "useCallback") && arity == "") {
+              t->expect((name, runs->Dict.get(name)))->Expect.toEqual((name, Some(expected(name))))
+            }
+          },
+        ),
+    )
+  })
+
+  test("the layout variants run in the commit, the others after it", t => {
+    runs->Dict.keysToArray->Array.forEach(key => runs->Dict.delete(key))
+    let renderer = TestRenderer.create()
+    TestRenderer.flushSync(
+      () => TestRenderer.scheduleRender(renderer, <EveryArity a=0 b=0 c=0 d=0 e=0 />),
+    )
+    t->expect(runs->Dict.get("useLayoutEffect5"))->Expect.toEqual(Some(1))
+    t->expect(runs->Dict.get("useEffect5"))->Expect.toEqual(None)
+    TestRenderer.act(() => ())
+    t->expect(runs->Dict.get("useEffect5"))->Expect.toEqual(Some(1))
+  })
+})

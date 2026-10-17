@@ -70,6 +70,13 @@ and so is phase 5: error boundaries, portals, the `res_signals` bridge
   than failing; urgent updates still fail without a boundary. A suspended transition's lanes are set
   aside until its promise settles or any update arrives (React tracks which lanes were pinged more
   finely).
+- One render is in progress at a time across a renderer's roots. A root's transition task that finds
+  another root's render paused (at the same or higher priority) waits for it to finish instead of
+  throwing it away: a yielding render schedules a new task rather than keeping its place in the
+  queue as React's does, so taking over would leave two roots restarting each other forever. Urgent
+  work on another root still throws a paused render away.
+- An exception that escapes one root's render or commit doesn't strand other roots: the roots the
+  flush hadn't reached get a flush of their own.
 - Effect errors don't stop other effects: the first is kept and rethrown once the phase has run (the
   original JS error, not ReScript's `JsExn` wrapper).
 

@@ -769,9 +769,11 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     if !isWorking.contents {
       isWorking := true
       let renders = ref(0)
+      let working = ref(None)
       try {
         while Array.length(scheduledRoots) > 0 {
           let root = scheduledRoots->Array.shift->Option.getUnsafe
+          working := Some(root)
           root.isScheduled = false
           // The previous commit's effects run before anything renders again.
           flushPassiveEffects()->ignore
@@ -787,10 +789,23 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       } catch {
       | error =>
         isWorking := false
-        scheduledRoots->Array.forEach(root => root.isScheduled = false)
-        scheduledRoots->Array.splice(~start=0, ~remove=Array.length(scheduledRoots), ~insert=[])
+        // The roots this flush didn't reach, and the one that failed if it still has work (a root
+        // whose render failed has dropped its own), get a flush of their own.
+        working.contents->Option.forEach(ensureRootScheduled)
+        if Array.length(scheduledRoots) > 0 {
+          requestFlush()
+        }
         throw(error)
       }
+    }
+
+  and requestFlush = () =>
+    if !isWorking.contents && !isFlushQueued.contents {
+      isFlushQueued := true
+      queueMicrotask(() => {
+        isFlushQueued := false
+        flushWork()
+      })
     }
 
   and ensureRootScheduled = (root: FiberRoot.t) =>
@@ -804,13 +819,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
         if !root.isScheduled {
           root.isScheduled = true
           scheduledRoots->Array.push(root)
-          if !isWorking.contents && !isFlushQueued.contents {
-            isFlushQueued := true
-            queueMicrotask(() => {
-              isFlushQueued := false
-              flushWork()
-            })
-          }
+          requestFlush()
         }
       } else if root.callbackLane != next || Option.isNone(root.callbackTask) {
         cancelTask(root)
@@ -836,6 +845,11 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       ()
     } else if Lanes.isBlocking(lanes) {
       ensureRootScheduled(root)
+    } else if isPausedForAnotherRoot(root, lanes) {
+      // Another root's render (at least as urgent) is partway through: let it finish first. Taking
+      // over would throw it away, and if each root's task did that to the other, neither would
+      // ever finish.
+      scheduleConcurrentWork(root, lanes)
     } else {
       if !isRendering(root, lanes) {
         flushPassiveEffects()->ignore
@@ -843,6 +857,13 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       guardRoot(root, () => renderConcurrent(root, lanes))
     }
   }
+
+  and isPausedForAnotherRoot = (root: FiberRoot.t, lanes: Lanes.t) =>
+    switch workInProgressRoot.contents {
+    // A lower lane is more urgent.
+    | Some(other) => other !== root && workInProgressLanes.contents <= lanes
+    | None => false
+    }
 
   and renderConcurrent = (root: FiberRoot.t, lanes: Lanes.t) =>
     switch renderRoot(root, lanes, ~yielding=true) {

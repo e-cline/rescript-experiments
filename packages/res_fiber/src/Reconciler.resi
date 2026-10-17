@@ -9,8 +9,9 @@ applies the changes it recorded to the host, all at once.
 Sync and default updates are batched: every one made in the same task renders once, in a microtask
 (or at the end of `flushSync`), without stopping. Transitions (`Transition.start`) render in
 scheduler tasks, yielding whenever the scheduler says the time slice is up, and continuing in the
-next task. An update to a more urgent lane, or to another root, throws a paused render away; it
-starts again once the urgent work is committed. Updates a render skips (lower priority) are kept, and
+next task. An update to a more urgent lane, or urgent work on another root, throws a paused render
+away; it starts again once the urgent work is committed. Another root's transition waits for a
+paused one to finish, rather than taking turns with it. Updates a render skips (lower priority) are kept, and
 applied later in their original order.
 
 After each commit, layout effects (`useLayoutEffect`) and refs run synchronously; passive effects

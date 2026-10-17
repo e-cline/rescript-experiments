@@ -348,3 +348,88 @@ describe("useSyncExternalStore", () => {
     TestRenderer.unmount(renderer)
   })
 })
+
+describe("useSyncExternalStore: more cases", () => {
+  module Quiet = {
+    let value = ref(0)
+    let subscribe = _ => () => ()
+    let getSnapshot = () => value.contents
+  }
+
+  test("a change after the commit but before subscribing is caught", t => {
+    module Changer = {
+      @jsx.component
+      let make = () => {
+        // An earlier sibling's effect runs before the reader subscribes.
+        Hooks.useEffect0(
+          () => {
+            Quiet.value := 5
+            None
+          },
+        )
+        TestJsx.null
+      }
+    }
+    module Reader = {
+      @jsx.component
+      let make = () =>
+        <i id="value">
+          {TestJsx.int(
+            Hooks.useSyncExternalStore(~subscribe=Quiet.subscribe, ~getSnapshot=Quiet.getSnapshot),
+          )}
+        </i>
+    }
+    Quiet.value := 0
+    let renderer = TestRenderer.create()
+    TestRenderer.render(
+      renderer,
+      <>
+        <Changer />
+        <Reader />
+      </>,
+    )
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="value">5</i>`)
+  })
+
+  test("a change during the commit is caught before the commit returns", t => {
+    module ChangesInLayout = {
+      @jsx.component
+      let make = () => {
+        // A child's layout effect runs before its parent's.
+        Hooks.useLayoutEffect0(
+          () => {
+            Quiet.value := 7
+            None
+          },
+        )
+        TestJsx.null
+      }
+    }
+    module Reader = {
+      @jsx.component
+      let make = (~children: TestJsx.element) => {
+        let value = Hooks.useSyncExternalStore(
+          ~subscribe=Quiet.subscribe,
+          ~getSnapshot=Quiet.getSnapshot,
+        )
+        <i id="value">
+          {TestJsx.int(value)}
+          children
+        </i>
+      }
+    }
+    Quiet.value := 0
+    let renderer = TestRenderer.create()
+    // No `act`: passive effects don't run, so only the layout-time check can catch it.
+    TestRenderer.flushSync(
+      () =>
+        TestRenderer.scheduleRender(
+          renderer,
+          <Reader>
+            <ChangesInLayout />
+          </Reader>,
+        ),
+    )
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="value">7</i>`)
+  })
+})

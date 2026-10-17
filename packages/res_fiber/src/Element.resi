@@ -26,6 +26,8 @@ type kind =
   | ErrorBoundary
   /** `Portal.create`: its children, rendered into another container (`elementType`). */
   | Portal
+  /** A `Suspense` boundary: `elementType` is `Suspense.make`. */
+  | Suspense
 
 /**
 An element that isn't text or a list. `props` is the record the JSX transform built (for host and

@@ -22,6 +22,7 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
   in their original order.
 - `ErrorBoundary`, catching errors from rendering and effects below it, and `Portal`, rendering
   children into another container.
+- `Suspense` and `Hooks.use(promise)`: a fallback while components below wait for a promise.
 - `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
   through concurrent renders.
 
@@ -131,6 +132,25 @@ renders its fallback instead (in the same render, so nothing from the failed sub
 exception from an effect below shows the fallback in a render straight after. `reset` renders the
 children again. An error in a fallback goes to the next boundary up; with no boundary, it propagates
 as before.
+
+### Suspense
+
+```rescript
+let user = fetchUser(id) // made once, outside the component (or cached)
+
+module Profile = {
+  @jsx.component
+  let make = () => <h1> {Jsx.string(ResFiber.Hooks.use(user).name)} </h1>
+}
+
+<ResFiber.Suspense fallback={<Spinner />}> <Profile /> </ResFiber.Suspense>
+```
+
+`Hooks.use(promise)` returns what the promise resolved to. Until it settles, the nearest `Suspense`
+boundary shows its fallback, and renders its children again once it has; a rejection goes to the
+nearest `ErrorBoundary`. Pass the same promise every render, since a render that suspends is thrown
+away. For now, children that suspend after being shown are unmounted while the fallback shows, and a
+transition that suspends shows the fallback too (see the plan's phase 6 for what comes next).
 
 ### Portals
 

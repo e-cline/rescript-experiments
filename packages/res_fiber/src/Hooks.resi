@@ -87,3 +87,17 @@ let useSyncExternalStore: (
   ~subscribe: (unit => unit) => unit => unit,
   ~getSnapshot: unit => 'snapshot,
 ) => 'snapshot
+
+/**
+`(isPending, startTransition)`. `startTransition(f)` is `Transition.start(f)`, plus `isPending`:
+`true` from an urgent render straight away, until the transition's render commits. `startTransition`
+keeps its identity.
+*/
+let useTransition: unit => (bool, (unit => unit) => unit)
+
+/**
+`value`, a step behind when it changes in an urgent render: that render returns the previous value,
+and a transition renders the component again with the new one. For keeping an expensive part of the
+page (results for a search box's text, say) from slowing down the part that must respond at once.
+*/
+let useDeferredValue: 'value => 'value

@@ -16,14 +16,14 @@ let maxActRounds = 100
 
 let act = f => {
   f()
-  Renderer.flushWork()
+  Renderer.flushAllWork()
   let rounds = ref(0)
   while Renderer.flushPassiveEffects() {
     rounds := rounds.contents + 1
     if rounds.contents > maxActRounds {
       JsError.throwWithMessage("ResFiberDom: effects keep scheduling updates")
     }
-    Renderer.flushWork()
+    Renderer.flushAllWork()
   }
 }
 

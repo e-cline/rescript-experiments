@@ -252,3 +252,23 @@ describe("Refs and focus", () => {
     t->expect(Dom.activeElement(Dom.document) === Nullable.make(a))->Expect.toBe(true)
   })
 })
+
+describe("Transitions in the page", () => {
+  testAsync("a transition from an event renders in a later task", async t => {
+    module Tabs = {
+      @jsx.component
+      let make = () => {
+        let (tab, setTab) = Hooks.useState(() => "home")
+        <button id="tab" onClick={_ => ResFiber.Transition.start(() => setTab(_ => "settings"))}>
+          {Jsx.string(tab)}
+        </button>
+      }
+    }
+    let (container, _) = mount(<Tabs />)
+    let button = find(container, "#tab")
+    Dom.click(button)
+    t->expect(Dom.textContent(button))->Expect.toBe("home")
+    await Promise.make((resolve, _) => setTimeout(() => resolve(), 20)->ignore)
+    t->expect(Dom.textContent(button))->Expect.toBe("settings")
+  })
+})

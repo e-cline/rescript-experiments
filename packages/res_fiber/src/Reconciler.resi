@@ -1,11 +1,17 @@
 /***
 The reconciler, for one host: `Reconciler.Make(Host)` is a renderer's whole API for rendering.
 
-Rendering works like React's: an update marks the fiber it was made on, and the root is scheduled.
-A render walks the tree from the root, skipping subtrees with nothing to do, and builds a
-work-in-progress tree; the commit phase then applies the changes it recorded to the host, all at
-once. Updates are batched: every update made in the same task renders once, in a microtask, unless
-`flushSync` renders it sooner.
+Rendering works like React's: an update marks the fiber it was made on with a lane (its priority),
+and the root is scheduled. A render handles one lane: it walks the tree from the root, skipping
+subtrees with nothing to do in that lane, and builds a work-in-progress tree; the commit phase then
+applies the changes it recorded to the host, all at once.
+
+Sync and default updates are batched: every one made in the same task renders once, in a microtask
+(or at the end of `flushSync`), without stopping. Transitions (`Transition.start`) render in
+scheduler tasks, yielding whenever the scheduler says the time slice is up, and continuing in the
+next task. An update to a more urgent lane, or to another root, throws a paused render away; it
+starts again once the urgent work is committed. Updates a render skips (lower priority) are kept, and
+applied later in their original order.
 
 After each commit, layout effects (`useLayoutEffect`) and refs run synchronously; passive effects
 (`useEffect`) run later, every cleanup before any effect, children before parents. An update made in a
@@ -46,6 +52,17 @@ module type S = {
   synchronously.
   */
   let flushPassiveEffects: unit => bool
+
+  /**
+  Renders every pending update of every root now, transitions included, without yielding. For
+  tests (their renderer's `act`), which want to see the end state without driving the scheduler.
+  */
+  let flushAllWork: unit => unit
 }
 
+/** The reconciler for `Host`, scheduling concurrent work with `Sched`. */
+module MakeWithScheduler: (Host: HostConfig.S, Sched: Scheduler.S) =>
+(S with type container = Host.container)
+
+/** `MakeWithScheduler(Host, Scheduler.Default)`. */
 module Make: (Host: HostConfig.S) => (S with type container = Host.container)

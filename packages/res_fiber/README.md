@@ -17,9 +17,13 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
   `useSyncExternalStore`.
 - Automatic batching (updates in one task render once, in a microtask), `flushSync`, setting state
   while rendering, skipping components whose props and state didn't change.
-- `TestRenderer`: an in-memory renderer that logs every host operation.
+- Concurrent rendering: `Transition.start`, `useTransition` and `useDeferredValue`. Transitions
+  render in time slices, more urgent updates interrupt them, and skipped updates are applied later
+  in their original order.
+- `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
+  through concurrent renders.
 
-Not yet: concurrent rendering, error boundaries.
+Not yet: error boundaries.
 
 To render into a browser page, use [`@e-cline/res_fiber_dom`](../res_fiber_dom).
 
@@ -89,6 +93,26 @@ let theme = ResFiber.Hooks.useContext(Theme.context)
 A consumer renders again when its provider's value changes, even past components that skipped
 rendering.
 
+### Transitions
+
+```rescript
+let (isPending, startTransition) = ResFiber.Hooks.useTransition()
+// in a handler:
+startTransition(() => setResults(_ => search(query)))
+```
+
+Each update has a lane: `flushSync` and event handlers (in `res_fiber_dom`) are sync, updates in
+`Transition.start` are transitions, and everything else is default. Sync and default updates render
+in a microtask, start to finish. A transition renders in scheduler tasks, stopping every 5 ms (by
+default) to let the browser handle input; an urgent update arriving meanwhile throws the unfinished
+render away, renders on its own (skipping the transition's updates), and the transition then starts
+again. `useDeferredValue(value)` shows the previous value during urgent renders and catches up in a
+transition. A store read with `useSyncExternalStore` that changed while a transition was paused
+makes it render again, without stopping, so no commit mixes old and new values.
+
+The scheduler is pluggable: `Reconciler.MakeWithScheduler(Host, Sched)` takes any `Scheduler.S`;
+`Reconciler.Make(Host)` uses `Scheduler.Default`.
+
 ### Memo
 
 ```rescript
@@ -114,9 +138,10 @@ renderer->ResFiber.TestRenderer.ops // ["create \"Clicks: 0\"", ..., "text \"Cli
 
 `ops` lists the host operations performed (`create`, `append`, `insert ... before`, `remove`,
 `update`, `text`), so a test can check that an update did no more than it had to. `render`, `click`,
-`input` and `unmount` run inside `act`, which also runs effects (and renders any updates they make)
-before returning. To observe timing, `scheduleRender` and `flushSync` render without running
-`useEffect`s.
+`input` and `unmount` run inside `act`, which renders everything pending (transitions included) and
+runs effects before returning. To observe timing, `scheduleRender` and `flushSync` render without
+running `useEffect`s, and transitions wait on `TestScheduler`: `flushTask` runs one time slice,
+`flushAll` the rest, and a component can call `TestScheduler.advanceTime` to take time to render.
 
 ## Writing a renderer
 
@@ -139,9 +164,10 @@ complete example.
   (`Element.classify` tells them apart).
 - **Fibers** form two trees: `current` (on screen) and the work-in-progress tree a render builds
   from it, reusing each fiber's `alternate`.
-- **Rendering** walks the tree from the root, skipping subtrees with no pending updates, renders
-  components, and diffs their output against the current children. New host nodes are built
-  off-screen, bottom up.
+- **Rendering** walks the tree from the root, skipping subtrees with no pending updates in the lane
+  being rendered, renders components, and diffs their output against the current children. New host
+  nodes are built off-screen, bottom up. A concurrent render can stop between fibers and pick up
+  where it left off.
 - **Committing** applies the recorded insertions, moves, updates and removals to the host in one go,
   then attaches refs and runs layout effects; passive effects follow later.
 

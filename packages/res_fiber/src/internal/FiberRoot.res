@@ -11,7 +11,11 @@ type t = {
   /** The element passed to the latest `render`, until a commit has rendered it. */
   mutable pendingElement: Element.t,
   mutable hasPendingElement: bool,
+  /** Whether it's queued for blocking (sync or default) work in the next flush. */
   mutable isScheduled: bool,
+  /** The scheduler task that will render its concurrent work, and the lane it renders. */
+  mutable callbackTask: option<unknown>,
+  mutable callbackLane: Lanes.t,
   mutable isUnmounted: bool,
   /** Set by the renderer that created the root: arranges for its pending lanes to be rendered. */
   mutable ensureScheduled: unit => unit,

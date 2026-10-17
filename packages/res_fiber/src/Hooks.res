@@ -57,7 +57,11 @@ type store<'snapshot> = {
 
 let useSyncExternalStore = (~subscribe, ~getSnapshot) => {
   let value = getSnapshot()
-  let (_, forceRender) = useReducer((count, ()) => count + 1, 0)
+  // Lets a render that paused partway check the store didn't change meanwhile.
+  HookImpl.recordStoreRead(() => Object.is(getSnapshot(), value))
+  let (_, dispatch) = useReducer((count, ()) => count + 1, 0)
+  // A store change renders at once, so it can't be seen half-applied.
+  let forceRender = () => HookImpl.withLane(Lanes.sync, dispatch)
   let store = useRef({value, getSnapshot})
   let changed = () => !Object.is(store.current.getSnapshot(), store.current.value)
   // Keep the latest snapshot for the subscription to compare with, and catch a change made between
@@ -84,3 +88,17 @@ let useSyncExternalStore = (~subscribe, ~getSnapshot) => {
   }, [subscribe])
   value
 }
+
+let useTransition = () => {
+  let (isPending, setPending) = useState(() => false)
+  let start = useCallback1(f => {
+    setPending(_ => true)
+    Transition.start(() => {
+      setPending(_ => false)
+      f()
+    })
+  }, [setPending])
+  (isPending, start)
+}
+
+let useDeferredValue = HookImpl.useDeferredValue

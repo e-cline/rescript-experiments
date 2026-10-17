@@ -5,7 +5,7 @@ A todo app written with [`@e-cline/res_fiber`](../../packages/res_fiber) and
 library:
 
 - the todos in `useReducerWithMapState`, loaded from `localStorage` and saved back by a `useEffect`;
-- the current filter passed to the list through `Context`;
+- the current filter passed to the list through `Context`, and switched in a `Transition.start`;
 - each item wrapped in `Memo.memo`, with the reducer's stable `dispatch`, so toggling one todo
   renders only that one;
 - the new-todo input controlled by `useState`, and focused on mount through a `ref` and an effect.

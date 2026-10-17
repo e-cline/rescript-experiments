@@ -51,8 +51,8 @@ AtomMap.setValue(prices, 3, 5.0) // only key 3's mapFn runs; total updates incre
   strategy, with bookkeeping for entries crossing the filter boundary (`internal/FilterMap.res`).
 - **`map`** -- can change a key's identity, not just its value; modeled on `Incr_map.rekey`, using a
   remove-then-deferred-add strategy within each diff batch so a same-batch key swap doesn't trip
-  over itself, and a genuine collision throws instead of silently overwriting (`internal/Rekey.res`
-  -- see its own comment on what counts as "the same batch").
+  over itself, and a genuine collision throws instead of silently overwriting
+  (`internal/Rekey.res` -- see its own comment on what counts as "the same batch").
 - **`fold`** / **`count`** / **`sum`** -- an incrementally-maintained accumulator, modeled on
   `Incr_map.unordered_fold` (`internal/Fold.res`).
 

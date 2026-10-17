@@ -50,6 +50,7 @@
     "@e-cline/res_trees": "workspace:*",
     "@e-cline/res_trees_benchmarks": "workspace:*",
     "@types/node": "catalog:",
+    "jsdom": "catalog:",
     "rescript": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

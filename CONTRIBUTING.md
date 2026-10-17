@@ -137,9 +137,9 @@ A pull request that changes a published package needs a
 pnpm changeset
 ```
 
-Pick the packages affected and a bump for each (patch, minor or major), and write a one-line summary
--- it becomes the changelog entry. Commit the file it creates under `.changeset/` with your change.
-Changes to examples, tests, docs or tooling don't need one.
+Pick the packages affected and a bump for each (patch, minor or major), and write a one-line
+summary -- it becomes the changelog entry. Commit the file it creates under `.changeset/` with your
+change. Changes to examples, tests, docs or tooling don't need one.
 
 ## Releasing
 

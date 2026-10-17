@@ -247,3 +247,52 @@ describe("Memo", () => {
     t->expect(Memo.shallowEqual({"a": [1]}, {"a": [1]}))->Expect.toBe(false)
   })
 })
+
+module Language = {
+  let context = Context.make("en")
+  module Provider = {
+    let make = Context.provider(context)
+  }
+}
+
+describe("Context and Memo: more cases", () => {
+  test("a component reading two contexts renders again for either", t => {
+    Renders.reset()
+    module Both = {
+      @jsx.component
+      let make = Memo.memo(
+        () => {
+          Renders.record("both")
+          let theme = Hooks.useContext(Theme.context)
+          let language = Hooks.useContext(Language.context)
+          <span id="both"> {TestJsx.string(`${theme} ${language}`)} </span>
+        },
+      )
+    }
+    let child = <Both />
+    let view = (~theme, ~language) =>
+      <Theme.Provider value=theme>
+        <Language.Provider value=language> child </Language.Provider>
+      </Theme.Provider>
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, view(~theme="dark", ~language="en"))
+    TestRenderer.render(renderer, view(~theme="dark", ~language="fr"))
+    t->expect(textOf(renderer, "both"))->Expect.toBe("dark fr")
+    TestRenderer.render(renderer, view(~theme="light", ~language="fr"))
+    t->expect(textOf(renderer, "both"))->Expect.toBe("light fr")
+    TestRenderer.render(renderer, view(~theme="light", ~language="fr"))
+    t->expect(Renders.get("both"))->Expect.toBe(3)
+  })
+
+  test("shallowEqual: different sets of fields aren't equal", t => {
+    let fields = pairs => Dict.fromArray(pairs)
+    t
+    ->expect(Memo.shallowEqual(fields([("a", 1)]), fields([("a", 1), ("b", 2)])))
+    ->Expect.toBe(false)
+    t
+    ->expect(Memo.shallowEqual(fields([("a", 1), ("b", 2)]), fields([("a", 1), ("c", 2)])))
+    ->Expect.toBe(false)
+    let same = {"a": [1]}
+    t->expect(Memo.shallowEqual(same, same))->Expect.toBe(true)
+  })
+})

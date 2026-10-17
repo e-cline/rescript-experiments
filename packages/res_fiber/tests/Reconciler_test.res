@@ -269,3 +269,114 @@ describe("Reconciler: keyed children", () => {
     ->Expect.toBe(`<div id="root"><i id="b1"></i><i id="b2"></i><i id="a1"></i><i id="a2"></i></div>`)
   })
 })
+
+external asElement: 'a => TestJsx.element = "%identity"
+
+module Nothing = {
+  @jsx.component
+  let make = () => TestJsx.null
+}
+
+describe("Reconciler: edge cases", () => {
+  test("a new node goes before the next host node, past a component that renders nothing", t => {
+    let view = (~withB) =>
+      <ul id="list">
+        <li id="a" />
+        {withB ? <li id="b" /> : TestJsx.null}
+        <Nothing />
+        <li id="c" />
+      </ul>
+    let renderer = rendered(view(~withB=false))
+    t
+    ->expect(opsForUpdate(renderer, view(~withB=true)))
+    ->Expect.toEqual(["create li#b", "insert li#b before li#c"])
+  })
+
+  test("nested lists are matched by position, and their keyed items move within them", t => {
+    let view = inner =>
+      <ul id="list">
+        {TestJsx.array([
+          TestJsx.array(inner->Array.map(item => <li key=item id=item />)),
+          <li id="end" />,
+        ])}
+      </ul>
+    let renderer = rendered(view(["a", "b"]))
+    let (a, b, end) = (uidOf(renderer, "a"), uidOf(renderer, "b"), uidOf(renderer, "end"))
+    t
+    ->expect(opsForUpdate(renderer, view(["b", "a", "c"])))
+    ->Expect.toEqual(["create li#c", "insert li#c before li#end", "insert li#a before li#c"])
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(`<ul id="list"><li id="b"></li><li id="a"></li><li id="c"></li><li id="end"></li></ul>`)
+    t
+    ->expect((uidOf(renderer, "a"), uidOf(renderer, "b"), uidOf(renderer, "end")))
+    ->Expect.toEqual((a, b, end))
+  })
+
+  test("text between keyed items is kept by position when the items move", t => {
+    let view = order =>
+      <p id="p">
+        {TestJsx.array(
+          order->Array.map(
+            item => item == "text" ? TestJsx.string("text") : <b key=item id=item />,
+          ),
+        )}
+      </p>
+    let renderer = rendered(view(["a", "text", "b"]))
+    let ops = opsForUpdate(renderer, view(["b", "text", "a"]))
+    t->expect(ops->Array.some(op => op->String.startsWith("create")))->Expect.toBe(false)
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(`<p id="p"><b id="b"></b>text<b id="a"></b></p>`)
+  })
+
+  test("a keyed item that changes type is replaced where it was", t => {
+    let renderer = rendered(
+      <ul id="list">
+        <li key="a" id="a" />
+        <li key="b" id="b" />
+      </ul>,
+    )
+    t
+    ->expect(
+      opsForUpdate(
+        renderer,
+        <ul id="list">
+          <i key="a" id="a" />
+          <li key="b" id="b" />
+        </ul>,
+      ),
+    )
+    ->Expect.toEqual(["create i#a", "remove li#a", "insert i#a before li#b"])
+  })
+
+  test("a child that isn't an element is an error", t => {
+    t
+    ->expect(() => rendered(<div id="d"> {asElement(() => ())} </div>))
+    ->Expect.toThrow(~message="is not an element")
+  })
+
+  test("an unmounted root can't render, and unmounting it again does nothing", t => {
+    let renderer = rendered(<div id="d" />)
+    TestRenderer.unmount(renderer)
+    TestRenderer.unmount(renderer)
+    t
+    ->expect(() => TestRenderer.render(renderer, <div id="d" />))
+    ->Expect.toThrow(~message="can't render into a root that was unmounted")
+  })
+
+  testAsync("an error rendering one root doesn't strand another root's update", async t => {
+    module Throws = {
+      @jsx.component
+      let make = () => JsError.throwWithMessage("root A failed")
+    }
+    let a = rendered(<div id="a" />)
+    let b = rendered(<div id="b" title="old" />)
+    TestRenderer.scheduleRender(a, <Throws />)
+    TestRenderer.scheduleRender(b, <div id="b" title="new" />)
+    t->expect(() => TestRenderer.flushSync(() => ()))->Expect.toThrow(~message="root A failed")
+    // Root B renders in a flush of its own, without needing another update.
+    await Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ignore)
+    t->expect(TestRenderer.toString(b))->Expect.toBe(`<div id="b" title="new"></div>`)
+  })
+})

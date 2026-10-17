@@ -216,3 +216,131 @@ describe("useSyncExternalStore in a paused render", () => {
     ->Expect.toBe(`<i id="r1">2</i><i id="r2">2</i><i id="r3">2</i>`)
   })
 })
+
+module Theme = {
+  let context = Context.make("light")
+  module Provider = {
+    let make = Context.provider(context)
+  }
+}
+
+let setLabelCount: ref<(int => int) => unit> = ref(_ => ())
+
+module Label = {
+  @jsx.component
+  let make = () => {
+    let (count, set) = Hooks.useState(() => 0)
+    setLabelCount := set
+    <u id="label">
+      {TestJsx.string(`${Hooks.useContext(Theme.context)} ${Int.toString(count)}`)}
+    </u>
+  }
+}
+
+let list = (prefix, text) =>
+  <ul id=prefix>
+    <Slow name={prefix ++ "1"} text />
+    <Slow name={prefix ++ "2"} text />
+    <Slow name={prefix ++ "3"} text />
+    <Slow name={prefix ++ "4"} text />
+  </ul>
+
+describe("Transitions: more cases", () => {
+  test("a render thrown away inside a provider doesn't leak the provider's value", t => {
+    let renderer = TestRenderer.create()
+    let view = text => <>
+      <Theme.Provider value="dark">
+        <Slow name="one" text />
+        <Slow name="two" text />
+        <Slow name="three" text />
+        <Slow name="four" text />
+      </Theme.Provider>
+      <Label />
+    </>
+    TestRenderer.render(renderer, view("a"))
+    Transition.start(() => TestRenderer.scheduleRender(renderer, view("b")))
+    // Paused partway through the provider's children.
+    TestScheduler.flushTask()->ignore
+    TestRenderer.flushSync(() => setLabelCount.contents(c => c + 1))
+    t
+    ->expect(
+      TestRenderer.findById(renderer, "label")->Option.map(
+        label => TestRenderer.children(label)->Array.map(TestRenderer.text),
+      ),
+    )
+    ->Expect.toEqual(Some(["light 1"]))
+    TestScheduler.flushAll()
+  })
+
+  test("two roots' transitions both finish, the one partway through first", t => {
+    let first = TestRenderer.create()
+    let second = TestRenderer.create()
+    TestRenderer.render(first, list("a", "old"))
+    TestRenderer.render(second, list("b", "old"))
+    Log.clear()
+    Transition.start(
+      () => {
+        TestRenderer.scheduleRender(first, list("a", "new"))
+        TestRenderer.scheduleRender(second, list("b", "new"))
+      },
+    )
+    TestScheduler.flushTask()->ignore
+    t->expect(Log.take())->Expect.toEqual(["a1", "a2", "a3"])
+    TestScheduler.flushAll()
+    // The first root's render carried on where it stopped; the second waited for it.
+    t->expect(Log.take())->Expect.toEqual(["a4", "b1", "b2", "b3", "b4"])
+    t->expect(TestRenderer.toString(first)->String.includes("old"))->Expect.toBe(false)
+    t->expect(TestRenderer.toString(second)->String.includes("old"))->Expect.toBe(false)
+  })
+
+  test("urgent work on another root throws a paused render away", t => {
+    let first = TestRenderer.create()
+    let second = TestRenderer.create()
+    TestRenderer.render(first, list("a", "old"))
+    TestRenderer.render(second, <i id="other" />)
+    Log.clear()
+    Transition.start(() => TestRenderer.scheduleRender(first, list("a", "new")))
+    TestScheduler.flushTask()->ignore
+    TestRenderer.flushSync(
+      () => TestRenderer.scheduleRender(second, <i id="other" title="urgent" />),
+    )
+    Log.clear()
+    TestScheduler.flushAll()
+    // Started again from the top.
+    t->expect(Log.take())->Expect.toEqual(["a1", "a2", "a3", "a4"])
+    t->expect(TestRenderer.toString(first)->String.includes("old"))->Expect.toBe(false)
+  })
+
+  testAsync("a transition's task that finds urgent work waiting lets it render first", async t => {
+    let renderer = mountApp()
+    Transition.start(() => setText.contents(_ => "b"))
+    // A default update: it renders in a microtask, which hasn't run yet.
+    setCount.contents(c => c + 1)
+    TestScheduler.flushTask()->ignore
+    t->expect(Log.take())->Expect.toEqual([])
+    await Promise.resolve()
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(shows("a", ~count=1))
+    TestScheduler.flushAll()
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(shows("b", ~count=1))
+  })
+})
+
+describe("useDeferredValue: more cases", () => {
+  test("an unchanged value schedules no transition", t => {
+    let setOther = ref(_ => ())
+    module Deferred = {
+      @jsx.component
+      let make = () => {
+        let (other, set) = Hooks.useState(() => 0)
+        setOther := set
+        let deferred = Hooks.useDeferredValue("same")
+        <p id="d"> {TestJsx.string(`${deferred} ${Int.toString(other)}`)} </p>
+      }
+    }
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, <Deferred />)
+    TestRenderer.flushSync(() => setOther.contents(n => n + 1))
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<p id="d">same 1</p>`)
+    t->expect(TestScheduler.hasPendingTasks())->Expect.toBe(false)
+  })
+})

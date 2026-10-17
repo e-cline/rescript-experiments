@@ -120,3 +120,40 @@ describe("Todo app", () => {
     Client.unmount(root)
   })
 })
+
+@val @scope("localStorage") external setItem: (string, string) => unit = "setItem"
+
+describe("Todo app: more cases", () => {
+  beforeEach(() => clearStorage())
+
+  test("starts empty, and keeps working, when the saved todos are unreadable", t => {
+    setItem("corrupt", "{not json")
+    let (container, root) = mount(~storageKey="corrupt")
+    t->expect(titles(container))->Expect.toEqual([])
+    add(container, "fresh start")
+    t->expect(titles(container))->Expect.toEqual(["fresh start"])
+    Client.unmount(root)
+  })
+
+  test("the input keeps focus after adding a todo", t => {
+    let (container, root) = mount(~storageKey="focus-after")
+    let input = find(container, "#new-todo")
+    add(container, "one")
+    add(container, "two")
+    t->expect(Dom.activeElement(Dom.document) === Nullable.make(input))->Expect.toBe(true)
+    Client.unmount(root)
+  })
+
+  test("a todo added while a filter hides it shows once the filter allows", t => {
+    let (container, root) = mount(~storageKey="filtered-add")
+    add(container, "done already")
+    click(container, "#toggle-1")
+    click(container, "#filter-completed")
+    add(container, "still to do")
+    t->expect(titles(container))->Expect.toEqual(["done already"])
+    t->expect(remaining(container))->Expect.toBe("1 item left")
+    click(container, "#filter-active")
+    t->expect(titles(container))->Expect.toEqual(["still to do"])
+    Client.unmount(root)
+  })
+})

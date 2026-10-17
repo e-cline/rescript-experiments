@@ -325,3 +325,105 @@ describe("Suspense in the page", () => {
     t->expect(Dom.textContent(content))->Expect.toBe("second")
   })
 })
+
+describe("More DOM cases", () => {
+  test("a controlled checkbox the component doesn't change stays as its prop", t => {
+    let seen = ref(None)
+    let (container, _) = mount(
+      <input
+        id="c"
+        type_="checkbox"
+        checked=false
+        onChange={event => seen := Some(Dom.Event.targetChecked(event))}
+      />,
+    )
+    let box = find(container, "#c")
+    Dom.click(box)
+    // The handler saw the click's change, and the box went back to its prop.
+    t->expect(seen.contents)->Expect.toEqual(Some(true))
+    t->expect(toBool(Dom.getProperty(box, "checked")))->Expect.toBe(false)
+  })
+
+  test("onDoubleClick listens for dblclick", t => {
+    let clicks = ref(0)
+    let (container, _) = mount(<button id="b" onDoubleClick={_ => clicks := clicks.contents + 1} />)
+    Dom.dispatchEvent(find(container, "#b"), Dom.Event.make("dblclick", {bubbles: true}))
+    t->expect(clicks.contents)->Expect.toBe(1)
+  })
+
+  test("renamed attributes: autoFocus, readOnly, tabIndex, colSpan", t => {
+    let (container, _) = mount(
+      <div>
+        <input id="i" autoFocus=true readOnly=true tabIndex=3 />
+        <table>
+          <tbody>
+            <tr>
+              <td id="cell" colSpan=2 />
+            </tr>
+          </tbody>
+        </table>
+      </div>,
+    )
+    let input = find(container, "#i")
+    t
+    ->expect(
+      ["autofocus", "readonly", "tabindex"]->Array.map(
+        name => Dom.getAttribute(input, name)->Nullable.toOption,
+      ),
+    )
+    ->Expect.toEqual([Some(""), Some(""), Some("3")])
+    t
+    ->expect(Dom.getAttribute(find(container, "#cell"), "colspan"))
+    ->Expect.toEqual(Nullable.make("2"))
+  })
+
+  test("removing the value prop empties the input", t => {
+    let (container, root) = mount(<input id="i" value="text" onInput={_ => ()} />)
+    rerender(root, <input id="i" />)
+    t->expect(valueOf(find(container, "#i")))->Expect.toBe("")
+  })
+
+  test("a node is inserted at the top level before the next one", t => {
+    let view = (~middle) => <>
+      <p id="a" />
+      {middle ? <p id="b" /> : Jsx.null}
+      <p id="c" />
+    </>
+    let (container, root) = mount(view(~middle=false))
+    let c = find(container, "#c")
+    rerender(root, view(~middle=true))
+    t->expect(Dom.innerHTML(container))->Expect.toBe(`<p id="a"></p><p id="b"></p><p id="c"></p>`)
+    t->expect(find(container, "#c") === c)->Expect.toBe(true)
+  })
+
+  testAsync("Suspense hides text nodes and elements, and shows them as they were", async t => {
+    let wait = () => Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ignore)
+    let first = Promise.resolve("first")
+    let second = ref(None)
+    let next = Promise.make((resolve, _) => second := Some(resolve))
+    module Reads = {
+      @jsx.component
+      let make = (~promise: promise<string>) => Jsx.string(Hooks.use(promise))
+    }
+    let view = promise =>
+      <ResFiber.Suspense fallback={Jsx.string("loading")}>
+        <b id="plain" />
+        <Reads promise />
+      </ResFiber.Suspense>
+    let (container, root) = mount(view(first))
+    await wait()
+    Client.act(() => ())
+    t->expect(Dom.textContent(container))->Expect.toBe("first")
+    rerender(root, view(next))
+    // The text is emptied (text nodes have no style), the element hidden.
+    t->expect(Dom.textContent(container))->Expect.toBe("loading")
+    t->expect(Dom.getStyle(Dom.style(find(container, "#plain")), "display"))->Expect.toBe("none")
+    second.contents->Option.forEach(resolve => resolve("second"))
+    await wait()
+    Client.act(() => ())
+    t->expect(Dom.textContent(container))->Expect.toBe("second")
+    t
+    ->expect(Dom.getAttribute(find(container, "#plain"), "style"))
+    ->Expect.toEqual(Nullable.make(""))
+  })
+})

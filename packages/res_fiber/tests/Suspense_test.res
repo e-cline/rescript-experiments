@@ -522,3 +522,26 @@ describe("Suspense in transitions", () => {
     t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<span id="data">new</span>`)
   })
 })
+
+describe("Suspense: hidden content and portals", () => {
+  testAsync("a portal's content inside hidden children stays where it is", async t => {
+    let first = (await known("first")).promise
+    let renderer = TestRenderer.create()
+    let modal = TestRenderer.createTarget(renderer, "modal")
+    let view = promise =>
+      <Suspense fallback=loading>
+        <Reads promise id="data" />
+        {TestRenderer.portal(modal, <b id="dialog" />)}
+      </Suspense>
+    TestRenderer.render(renderer, view(first))
+    let next = deferred()
+    TestRenderer.render(renderer, view(next.promise))
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="loading">loading</i>`)
+    // Not hidden (React would hide it): portal content is left alone.
+    t->expect(TestRenderer.targetToString(modal))->Expect.toBe(`<b id="dialog"></b>`)
+    next.resolve("second")
+    await settle()
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<span id="data">second</span>`)
+    t->expect(TestRenderer.targetToString(modal))->Expect.toBe(`<b id="dialog"></b>`)
+  })
+})

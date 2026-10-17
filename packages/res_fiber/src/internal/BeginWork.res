@@ -118,7 +118,7 @@ let updateMemoComponent = (
 let updateContextProvider = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes) => {
   let context = ContextImpl.ofProvider(workInProgress)
   let props = ContextImpl.propsOf(workInProgress.pendingProps)
-  ContextImpl.push(context, props.value)
+  ContextImpl.push(context, props.value, ~provider=workInProgress)
   let unchanged = switch current {
   | Some(current) =>
     let previous = ContextImpl.propsOf(current.memoizedProps)
@@ -138,6 +138,33 @@ let updateContextProvider = (current: option<Fiber.t>, workInProgress: Fiber.t, 
   }
 }
 
+/**
+Renders the children, or the fallback while there's an error to show: one just caught (in this
+render, or from an effect) or still showing from before, unless `reset` was called since.
+*/
+let updateErrorBoundary = (current: option<Fiber.t>, workInProgress: Fiber.t) => {
+  let props = ErrorBoundaryImpl.propsOf(workInProgress.pendingProps)
+  let instance = ErrorBoundaryImpl.instanceOf(workInProgress)
+  let previous = ErrorBoundaryImpl.stateOf(workInProgress, instance)
+  let state: ErrorBoundaryImpl.state = switch instance.pendingError {
+  | Some(error) =>
+    instance.pendingError = None
+    {error: Some(error), generation: instance.generation}
+  | None if previous.generation != instance.generation => {
+      error: None,
+      generation: instance.generation,
+    }
+  | None => previous
+  }
+  workInProgress.memoizedState = ErrorBoundaryImpl.stateToUnknown(state)
+  let children = switch state.error {
+  | Some(error) => props.fallback(~error, ~reset=instance.reset)
+  | None => props.children
+  }
+  ChildReconciler.reconcileChildren(current, workInProgress, children)
+  workInProgress.child
+}
+
 let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes: Lanes.t): option<
   Fiber.t,
 > => {
@@ -149,7 +176,8 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
       false
     } else {
       HookImpl.state.didReceiveUpdate = false
-      !hasUpdate
+      // A boundary that just caught an error renders again whatever its props.
+      !hasUpdate && !Fiber.hasFlag(workInProgress.flags, Fiber.Flags.didCapture)
     }
   | None =>
     HookImpl.state.didReceiveUpdate = false
@@ -161,6 +189,7 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
       ContextImpl.push(
         ContextImpl.ofProvider(workInProgress),
         ContextImpl.propsOf(workInProgress.memoizedProps).value,
+        ~provider=workInProgress,
       )
     }
     bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
@@ -189,6 +218,14 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
         current,
         workInProgress,
         toElement(workInProgress.pendingProps),
+      )
+      workInProgress.child
+    | ErrorBoundaryComponent => updateErrorBoundary(current, workInProgress)
+    | HostPortal =>
+      ChildReconciler.reconcilePortalChildren(
+        current,
+        workInProgress,
+        Element.childrenOf(workInProgress.pendingProps),
       )
       workInProgress.child
     | HostText => None

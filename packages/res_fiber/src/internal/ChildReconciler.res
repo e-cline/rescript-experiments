@@ -17,6 +17,8 @@ let tagOfKind = (kind: Element.kind): Fiber.tag =>
   | Fragment => Fragment
   | Provider => ContextProvider
   | Memo => MemoComponent
+  | ErrorBoundary => ErrorBoundaryComponent
+  | Portal => HostPortal
   }
 
 let createFiberFromText = (text: string): Fiber.t =>
@@ -32,6 +34,9 @@ let createFiberFromNode = (node: Element.node): Fiber.t =>
   | kind =>
     let fiber = Fiber.make(~tag=tagOfKind(kind), ~key=node.key, ~pendingProps=node.props)
     fiber.elementType = node.elementType
+    if kind == Portal {
+      fiber.stateNode = node.elementType
+    }
     fiber
   }
 
@@ -45,7 +50,7 @@ let sameType = (fiber: Fiber.t, node: Element.node): bool =>
 let pendingPropsOf = (node: Element.node): unknown =>
   switch node.kind {
   | Fragment => Unsafe.toUnknown(Element.childrenOf(node.props))
-  | Host | Component | Provider | Memo => node.props
+  | Host | Component | Provider | Memo | ErrorBoundary | Portal => node.props
   }
 
 /** A work-in-progress copy of `fiber` with new props, as the only child so far. */
@@ -368,3 +373,19 @@ let reconcileChildren = (
   | None => reconcileChildFibers(~track=false, workInProgress, None, nextChildren)
   | Some(current) => reconcileChildFibers(~track=true, workInProgress, current.child, nextChildren)
   }
+
+/**
+Like `reconcileChildren`, but tracks placements even when the portal is new: its children go in its
+own container, so the host parent's `appendAllChildren` skips them and each is placed on its own.
+*/
+let reconcilePortalChildren = (
+  current: option<Fiber.t>,
+  workInProgress: Fiber.t,
+  nextChildren: Element.t,
+) =>
+  workInProgress.child = reconcileChildFibers(
+    ~track=true,
+    workInProgress,
+    current->Option.flatMap(current => current.child),
+    nextChildren,
+  )

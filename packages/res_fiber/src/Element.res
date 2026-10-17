@@ -6,6 +6,8 @@ type kind =
   | Fragment
   | Provider
   | Memo
+  | ErrorBoundary
+  | Portal
 
 type node = {
   kind: kind,

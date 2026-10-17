@@ -59,7 +59,21 @@ let ops: t => array<string>
 
 let clearOps: t => unit
 
-/** The first host element, in document order, whose `id` prop is `id`. */
+/**
+A separate container for `portal`s to render into, named `name` in the operation log (the root's
+container is `root`).
+*/
+type target
+
+let createTarget: (t, string) => target
+
+/** `children`, rendered into `target`: see `Portal`. */
+let portal: (target, Element.t) => Element.t
+
+/** What's rendered into `target`, as `toString` writes it. */
+let targetToString: target => string
+
+/** The first host element, in document order, whose `id` prop is `id` (the root, then targets). */
 let findById: (t, string) => option<instance>
 
 /** Calls the `onClick` of the element with `id`, inside `act`. Throws if there isn't one. */

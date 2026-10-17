@@ -23,18 +23,41 @@ external toUnknown: t<'value> => unknown = "%identity"
 external fromUnknown: unknown => t<unknown> = "%identity"
 external propsOf: unknown => providerProps<unknown> = "%identity"
 
-/** Each entry is a context and the value to restore when its provider completes. */
-let stack: array<(t<unknown>, unknown)> = []
+/** Each entry is a context, the value to restore when its provider completes, and the provider. */
+let stack: array<(t<unknown>, unknown, Fiber.t)> = []
 
-let push = (context: t<unknown>, value: unknown) => {
-  stack->Array.push((context, context.currentValue))
+let push = (context: t<unknown>, value: unknown, ~provider: Fiber.t) => {
+  stack->Array.push((context, context.currentValue, provider))
   context.currentValue = value
 }
 
 let pop = () =>
   switch stack->Array.pop {
-  | Some((context, previous)) => context.currentValue = previous
+  | Some((context, previous, _)) => context.currentValue = previous
   | None => JsError.throwWithMessage("ResFiber: context stack underflow")
+  }
+
+/** Whether `fiber` is `ancestor` or below it in the tree being rendered. */
+let isWithin = (fiber: Fiber.t, ancestor: Fiber.t) => {
+  let node = ref(Some(fiber))
+  let found = ref(false)
+  while !found.contents && Option.isSome(node.contents) {
+    let current = Option.getUnsafe(node.contents)
+    found := current === ancestor
+    node := current.parent
+  }
+  found.contents
+}
+
+/** Pops the values of the providers within `ancestor`, whose render an error cut short. */
+let unwindTo = (ancestor: Fiber.t) =>
+  while (
+    switch stack->Array.at(-1) {
+    | Some((_, _, provider)) => isWithin(provider, ancestor)
+    | None => false
+    }
+  ) {
+    pop()
   }
 
 /** Restores every context's value, after a render that threw partway. */

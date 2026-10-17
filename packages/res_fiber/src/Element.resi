@@ -22,6 +22,10 @@ type kind =
   | Provider
   /** A component wrapped by `Memo.memo`: `elementType` is the wrapper. */
   | Memo
+  /** An `ErrorBoundary`: `elementType` is `ErrorBoundary.make`. */
+  | ErrorBoundary
+  /** `Portal.create`: its children, rendered into another container (`elementType`). */
+  | Portal
 
 /**
 An element that isn't text or a list. `props` is the record the JSX transform built (for host and

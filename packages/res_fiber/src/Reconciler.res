@@ -269,12 +269,17 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     | None => Some(error)
     }
 
+  /** A transition's render that suspended, and the promise it waits for: it won't commit. */
+  let suspendedOn: ref<option<promise<unknown>>> = ref(None)
+
   /**
-  For an exception from rendering `currentFiber`: a suspension goes to the nearest `Suspense`
-  boundary, which renders its fallback now and its children again once the promise settles; an
-  error goes to the nearest error boundary, which renders again showing it. Either way the
-  half-rendered fibers in between are dropped, with the context values they provided. Returns the
-  exception to rethrow, if no boundary took it.
+  For an exception from rendering `currentFiber`. A suspension goes to the nearest `Suspense`
+  boundary, which renders its fallback now and its children again once the promise settles; but in
+  a transition, if that boundary is showing its children (or there's no boundary), the whole render
+  is abandoned instead, so the screen keeps its previous state until the promise settles. An error
+  goes to the nearest error boundary, which renders again showing it. Either way the half-rendered
+  fibers in between are dropped, with the context values they provided. Returns the exception to
+  rethrow, if no boundary took it.
   */
   let handleRenderError = (error: exn): option<exn> =>
     switch currentFiber.contents {
@@ -282,7 +287,18 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     | Some(thrower) =>
       switch error {
       | SuspenseImpl.Suspended(promise) =>
-        switch SuspenseImpl.find(thrower) {
+        let boundary = SuspenseImpl.find(thrower)
+        let keepScreen =
+          !Lanes.isBlocking(workInProgressLanes.contents) &&
+          switch boundary {
+          | Some(boundary) => SuspenseImpl.isShowingChildren(boundary.alternate)
+          | None => true
+          }
+        switch boundary {
+        | _ if keepScreen =>
+          suspendedOn := Some(promise)
+          workInProgress := None
+          None
         | Some(boundary) =>
           SuspenseImpl.retryWhenSettled(boundary, promise)
           renderAgainWithFallback(boundary)
@@ -293,12 +309,18 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       }
     }
 
+  type renderOutcome =
+    | RenderCompleted
+    | RenderYielded
+    /** A transition's render was abandoned, to wait for the promise. */
+    | RenderSuspended(promise<unknown>)
+
   /**
   Renders `lanes` of `root`, continuing the render in progress if it's of the same root and lanes
   (and starting afresh otherwise), until the tree is done or, `~yielding`, the scheduler says to
   yield. Returns whether the tree is done.
   */
-  let renderRoot = (root: FiberRoot.t, lanes: Lanes.t, ~yielding: bool): bool => {
+  let renderRoot = (root: FiberRoot.t, lanes: Lanes.t, ~yielding: bool): renderOutcome => {
     if !isRendering(root, lanes) {
       prepareFreshStack(root, lanes)
     }
@@ -314,7 +336,13 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
         }
       }
     }
-    Option.isNone(workInProgress.contents)
+    switch suspendedOn.contents {
+    | Some(promise) =>
+      suspendedOn := None
+      resetWorkInProgress()
+      RenderSuspended(promise)
+    | None => Option.isNone(workInProgress.contents) ? RenderCompleted : RenderYielded
+    }
   }
 
   /** Hands over the finished tree of the render that just completed. */
@@ -694,6 +722,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   */
   let abandon = (root: FiberRoot.t) => {
     root.pendingLanes = Lanes.none
+    root.suspendedLanes = Lanes.none
     cancelTask(root)
   }
 
@@ -714,12 +743,27 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     }
   }
 
-  /** Renders the root's most urgent lane to completion, and commits it. */
+  /**
+  Leaves `lanes` pending but out of the running until `promise` settles (or another update arrives):
+  rendering them again before then would only suspend again.
+  */
+  let waitFor = (root: FiberRoot.t, lanes: Lanes.t, promise: promise<unknown>) => {
+    root.suspendedLanes = Lanes.merge(root.suspendedLanes, lanes)
+    let ping = _ => {
+      root.suspendedLanes = Lanes.remove(root.suspendedLanes, lanes)
+      root.ensureScheduled()
+    }
+    SuspenseImpl.onSettled(promise, ping, ping)
+  }
+
+  /** Renders the root's most urgent lane to completion, and commits it (unless it suspended). */
   let renderAndCommit = (root: FiberRoot.t, lanes: Lanes.t) =>
-    guardRoot(root, () => {
-      renderRoot(root, lanes, ~yielding=false)->ignore
-      commitRoot(root, takeFinishedWork(), lanes)
-    })
+    guardRoot(root, () =>
+      switch renderRoot(root, lanes, ~yielding=false) {
+      | RenderSuspended(promise) => waitFor(root, lanes, promise)
+      | RenderCompleted | RenderYielded => commitRoot(root, takeFinishedWork(), lanes)
+      }
+    )
 
   let rec flushWork = () =>
     if !isWorking.contents {
@@ -731,7 +775,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
           root.isScheduled = false
           // The previous commit's effects run before anything renders again.
           flushPassiveEffects()->ignore
-          let lanes = Lanes.highestPriority(root.pendingLanes)
+          let lanes = FiberRoot.nextLanes(root)
           if Lanes.isBlocking(lanes) && !root.isUnmounted {
             checkRenderCount(root, renders)
             renderAndCommit(root, lanes)
@@ -751,7 +795,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
 
   and ensureRootScheduled = (root: FiberRoot.t) =>
     if !root.isUnmounted {
-      let next = Lanes.highestPriority(root.pendingLanes)
+      let next = FiberRoot.nextLanes(root)
       if next == Lanes.none {
         cancelTask(root)
       } else if Lanes.isBlocking(next) {
@@ -787,7 +831,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   and performConcurrentWork = (root: FiberRoot.t) => {
     root.callbackTask = None
     root.callbackLane = Lanes.none
-    let lanes = Lanes.highestPriority(root.pendingLanes)
+    let lanes = FiberRoot.nextLanes(root)
     if root.isUnmounted || lanes == Lanes.none {
       ()
     } else if Lanes.isBlocking(lanes) {
@@ -801,16 +845,22 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   }
 
   and renderConcurrent = (root: FiberRoot.t, lanes: Lanes.t) =>
-    if renderRoot(root, lanes, ~yielding=true) {
+    switch renderRoot(root, lanes, ~yielding=true) {
+    | RenderCompleted =>
       // A store that changed while the render was paused would leave components showing
       // different values of it: render again, without yielding.
-      if !HookImpl.storesUnchanged() {
+      let outcome = if HookImpl.storesUnchanged() {
+        RenderCompleted
+      } else {
         prepareFreshStack(root, lanes)
-        renderRoot(root, lanes, ~yielding=false)->ignore
+        renderRoot(root, lanes, ~yielding=false)
       }
-      commitRoot(root, takeFinishedWork(), lanes)
-    } else {
-      scheduleConcurrentWork(root, lanes)
+      switch outcome {
+      | RenderSuspended(promise) => waitFor(root, lanes, promise)
+      | RenderCompleted | RenderYielded => commitRoot(root, takeFinishedWork(), lanes)
+      }
+    | RenderYielded => scheduleConcurrentWork(root, lanes)
+    | RenderSuspended(promise) => waitFor(root, lanes, promise)
     }
 
   let flushSync = (f: unit => 'a): 'a => {
@@ -824,7 +874,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   let flushAllWork = () => {
     flushWork()
     let renders = ref(0)
-    let next = () => liveRoots->Array.find(root => root.pendingLanes != Lanes.none)
+    let next = () => liveRoots->Array.find(root => FiberRoot.nextLanes(root) != Lanes.none)
     let root = ref(next())
     while Option.isSome(root.contents) {
       let root' = Option.getUnsafe(root.contents)
@@ -834,7 +884,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       }
       cancelTask(root')
       flushPassiveEffects()->ignore
-      renderAndCommit(root', Lanes.highestPriority(root'.pendingLanes))
+      renderAndCommit(root', FiberRoot.nextLanes(root'))
       flushWork()
       root := next()
     }
@@ -849,6 +899,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       container: Unsafe.toUnknown(container),
       current: rootFiber,
       pendingLanes: Lanes.none,
+      suspendedLanes: Lanes.none,
       pendingElement: Element.null,
       hasPendingElement: false,
       isScheduled: false,

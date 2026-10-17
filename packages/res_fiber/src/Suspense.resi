@@ -29,8 +29,12 @@ Children that suspend after they've been shown aren't unmounted: they stay mount
 host's `hideInstance`: `display: none` in the DOM), with their state, until they can render again.
 Their effects stay as they were meanwhile, and updates to them wait until they're shown. (Unlike
 React, which disconnects hidden children's layout effects and refs, and hides portal content too.)
-For now a suspending transition shows the fallback as well; a later stage of the plan keeps the
-previous screen instead.
+In a transition (`Transition.start`, `useTransition`), a boundary that's showing its children
+doesn't switch to its fallback: the transition's render is abandoned and the screen keeps its
+previous state (`useTransition`'s `isPending` stays `true`) until the promise settles, when the
+transition renders again, or another update arrives. Urgent updates, and boundaries that appear in
+the transition, show the fallback as usual. A transition that suspends with no boundary above waits
+the same way, instead of failing.
 */
 
 type props = {fallback: Element.t, children: Element.t}

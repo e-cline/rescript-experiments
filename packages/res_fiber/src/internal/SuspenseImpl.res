@@ -125,3 +125,10 @@ let childrenOf = (current: option<Fiber.t>, fiber: Fiber.t): Element.t => {
       : fallbackFragment(props.fallback)
   }
 }
+
+/** Whether the boundary on screen (`current`) is showing its children, rather than its fallback. */
+let isShowingChildren = (current: option<Fiber.t>) =>
+  switch current->Option.flatMap(current => current.child) {
+  | Some(child) => child.tag == OffscreenComponent && !isHiddenProps(child.memoizedProps)
+  | None => false
+  }

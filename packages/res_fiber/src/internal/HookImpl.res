@@ -567,33 +567,33 @@ let useEffectWith = (
 // Running effects, from the commit phase. An exception from one effect doesn't stop the others:
 // the first is kept, and rethrown once the phase is over.
 
-/** The first exception from an effect: a JS value as thrown, or a ReScript exception. */
-type caught =
-  | Thrown(JsExn.t)
-  | Exception(exn)
+/**
+Throws `error` again: the original JS value for a JS exception (which `catch` wraps in `JsExn`), so
+callers see the error that was thrown.
+*/
+let rethrow = (error: exn) =>
+  switch error {
+  | JsExn(thrown) => JsExn.throw(thrown)
+  | _ => throw(error)
+  }
 
-let commitError: ref<option<caught>> = ref(None)
+/** The first exception from an effect that no error boundary took. */
+let commitError: ref<option<exn>> = ref(None)
 
-let guard = (f: unit => unit) =>
+/** Runs one of `fiber`'s effects, sending an exception to its error boundary if it has one. */
+let guard = (fiber: Fiber.t, f: unit => unit) =>
   try f() catch {
-  | JsExn(thrown) =>
-    if Option.isNone(commitError.contents) {
-      commitError := Some(Thrown(thrown))
-    }
   | error =>
-    if Option.isNone(commitError.contents) {
-      commitError := Some(Exception(error))
+    if !ErrorBoundaryImpl.captureFromEffect(fiber, error) && Option.isNone(commitError.contents) {
+      commitError := Some(error)
     }
   }
 
 let rethrowCommitError = () =>
   switch commitError.contents {
-  | Some(caught) =>
+  | Some(error) =>
     commitError := None
-    switch caught {
-    | Thrown(thrown) => JsExn.throw(thrown)
-    | Exception(error) => throw(error)
-    }
+    rethrow(error)
   | None => ()
   }
 
@@ -604,7 +604,7 @@ let commitEffectsUnmount = (fiber: Fiber.t, ~effectKind: effectKind, ~all: bool)
       switch effect.inst.destroy {
       | Some(destroy) =>
         effect.inst.destroy = None
-        guard(destroy)
+        guard(fiber, destroy)
       | None => ()
       }
     }
@@ -614,6 +614,6 @@ let commitEffectsUnmount = (fiber: Fiber.t, ~effectKind: effectKind, ~all: bool)
 let commitEffectsMount = (fiber: Fiber.t, ~effectKind: effectKind) =>
   effectsOf(fiber)->Array.forEach(effect =>
     if effect.effectKind == effectKind && effect.hasEffect {
-      guard(() => effect.inst.destroy = effect.create())
+      guard(fiber, () => effect.inst.destroy = effect.create())
     }
   )

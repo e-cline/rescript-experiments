@@ -18,6 +18,9 @@ type tag =
   | Fragment
   | ContextProvider
   | MemoComponent
+  | ErrorBoundaryComponent
+  /** `stateNode` is the container its children render into. */
+  | HostPortal
 
 /** A context a function component read while rendering, and the value it read. */
 type dependency = {context: unknown, memoizedValue: unknown}
@@ -64,6 +67,8 @@ module Flags = {
   let layout = 64
   /** A host component's `ref` prop needs attaching (and the old one detaching). */
   let ref = 128
+  /** An error boundary that caught an error in this render (so it doesn't catch another). */
+  let didCapture = 256
 
   let union = flags => flags->Array.reduce(none, Int.bitwiseOr)
   let mutationMask = union([placement, update, childDeletion, layout, ref])

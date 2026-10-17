@@ -6,4 +6,4 @@ New package: the DOM renderer for `@e-cline/res_fiber`. `Client.createRoot`/`ren
 components into the page through `ResFiberDom.Jsx`, whose host tags take `DomProps.props`
 (attributes, `value`/`checked` as properties, a `style` dict, `on*` listeners, `ref`). Updates made
 in event handlers render before the event returns, controlled inputs keep their prop's value, and
-focus survives reorders.
+focus survives reorders. `Portal` renders children into another element.

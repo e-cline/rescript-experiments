@@ -20,10 +20,10 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
 - Concurrent rendering: `Transition.start`, `useTransition` and `useDeferredValue`. Transitions
   render in time slices, more urgent updates interrupt them, and skipped updates are applied later
   in their original order.
+- `ErrorBoundary`, catching errors from rendering and effects below it, and `Portal`, rendering
+  children into another container.
 - `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
   through concurrent renders.
-
-Not yet: error boundaries.
 
 To render into a browser page, use [`@e-cline/res_fiber_dom`](../res_fiber_dom).
 
@@ -112,6 +112,29 @@ makes it render again, without stopping, so no commit mixes old and new values.
 
 The scheduler is pluggable: `Reconciler.MakeWithScheduler(Host, Sched)` takes any `Scheduler.S`;
 `Reconciler.Make(Host)` uses `Scheduler.Default`.
+
+### Error boundaries
+
+```rescript
+<ResFiber.ErrorBoundary
+  fallback={(~error, ~reset) =>
+    <ErrorPanel message={ResFiber.ErrorBoundary.message(error)} onRetry=reset />}>
+  <Dashboard />
+</ResFiber.ErrorBoundary>
+```
+
+An exception thrown while a component below renders stops rendering at the nearest boundary, which
+renders its fallback instead (in the same render, so nothing from the failed subtree commits). An
+exception from an effect below shows the fallback in a render straight after. `reset` renders the
+children again. An error in a fallback goes to the next boundary up; with no boundary, it propagates
+as before.
+
+### Portals
+
+`Portal.create(~container, children)` renders `children` into another container of the same renderer
+while they stay in place in the tree: context, error boundaries and effects behave as if they were
+where the portal is. Renderers wrap it with their container type: `TestRenderer.portal` (with
+`TestRenderer.createTarget`) and `ResFiberDom.Portal`.
 
 ### Memo
 

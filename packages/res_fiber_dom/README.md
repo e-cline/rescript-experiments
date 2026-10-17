@@ -39,6 +39,9 @@ switch ResFiberDom.Dom.document->ResFiberDom.Dom.body->ResFiberDom.Dom.querySele
 
 - **`Jsx`**: the JSX module (`@@jsxConfig` names it). Host tags take `DomProps.props`.
 - **`Client`**: `createRoot`, `render`, `unmount`, `flushSync`, and `act` for tests.
+- **`Portal`**: `<Portal container> ... </Portal>` renders its children into another element. DOM
+  events there bubble through the DOM (to `container`'s ancestors), not through the component tree
+  as in React.
 - **`Dom`**: the small set of DOM bindings the renderer and components need (elements, events,
   `Event.targetValue`, ...).
 

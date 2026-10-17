@@ -272,3 +272,25 @@ describe("Transitions in the page", () => {
     t->expect(Dom.textContent(button))->Expect.toBe("settings")
   })
 })
+
+describe("Portals", () => {
+  test("render into another element, handle events, and leave with their owner", t => {
+    let layer = makeContainer()
+    let clicks = ref(0)
+    let view = (~open_) =>
+      <main id="main">
+        {open_
+          ? <Portal container=layer>
+              <button id="in-portal" onClick={_ => clicks := clicks.contents + 1} />
+            </Portal>
+          : Jsx.null}
+      </main>
+    let (container, root) = mount(view(~open_=true))
+    t->expect(Dom.innerHTML(container))->Expect.toBe(`<main id="main"></main>`)
+    t->expect(Dom.innerHTML(layer))->Expect.toBe(`<button id="in-portal"></button>`)
+    Dom.click(find(layer, "#in-portal"))
+    t->expect(clicks.contents)->Expect.toBe(1)
+    rerender(root, view(~open_=false))
+    t->expect(Dom.innerHTML(layer))->Expect.toBe("")
+  })
+})

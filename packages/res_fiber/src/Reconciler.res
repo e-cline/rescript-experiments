@@ -36,7 +36,8 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   external toString: unknown => string = "%identity"
 
   let isHost = (fiber: Fiber.t) => fiber.tag == HostComponent || fiber.tag == HostText
-  let isHostParent = (fiber: Fiber.t) => fiber.tag == HostComponent || fiber.tag == HostRoot
+  let isHostParent = (fiber: Fiber.t) =>
+    fiber.tag == HostComponent || fiber.tag == HostRoot || fiber.tag == HostPortal
 
   let hostNode = (fiber: Fiber.t): Host.node =>
     fiber.tag == HostText
@@ -44,6 +45,10 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       : Host.instanceToNode(toInstance(fiber.stateNode))
 
   let containerOf = (root: FiberRoot.t) => toContainer(root.container)
+
+  /** The container a root or portal fiber's children go in. */
+  let containerOfParent = (fiber: Fiber.t) =>
+    fiber.tag == HostPortal ? toContainer(fiber.stateNode) : containerOf(FiberRoot.ofFiber(fiber))
 
   /** Calls `f` on each child of `fiber`, in order. */
   let forEachChild = (fiber: Fiber.t, f: Fiber.t => unit) => {
@@ -64,7 +69,8 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       let fiber = Option.getUnsafe(child.contents)
       if isHost(fiber) {
         Host.appendInitialChild(parent, hostNode(fiber))
-      } else {
+      } else if fiber.tag != HostPortal {
+        // A portal's children go in its own container.
         appendAllChildren(parent, fiber.child)
       }
       child := fiber.sibling
@@ -116,7 +122,12 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
         )
       }
     | ContextProvider => ContextImpl.pop()
-    | HostRoot | FunctionComponent | MemoComponent | Fragment => ()
+    | HostRoot
+    | FunctionComponent
+    | MemoComponent
+    | Fragment
+    | ErrorBoundaryComponent
+    | HostPortal => ()
     }
 
   /**
@@ -151,11 +162,15 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   let workInProgressRootFiber: ref<option<Fiber.t>> = ref(None)
   let workInProgressLanes = ref(Lanes.none)
 
+  /** The fiber being begun or completed: where an exception came from. */
+  let currentFiber: ref<option<Fiber.t>> = ref(None)
+
   let completeUnitOfWork = (root: FiberRoot.t, unit: Fiber.t) => {
     let completed = ref(unit)
     let climbing = ref(true)
     while climbing.contents {
       let fiber = completed.contents
+      currentFiber := Some(fiber)
       completeWork(root, fiber.alternate, fiber)
       bubbleProperties(fiber)
       switch (fiber.sibling, fiber.parent) {
@@ -171,6 +186,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   }
 
   let performUnitOfWork = (root: FiberRoot.t, unit: Fiber.t, renderLanes: Lanes.t) => {
+    currentFiber := Some(unit)
     let next = BeginWork.beginWork(unit.alternate, unit, renderLanes)
     unit.memoizedProps = unit.pendingProps
     switch next {
@@ -208,6 +224,28 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     }
 
   /**
+  For an exception from rendering `currentFiber`: if there's an error boundary above it, unwinds to
+  the boundary (dropping the half-rendered fibers between, and the context values they provided)
+  and renders it again showing the error. Returns whether there was one.
+  */
+  let handleRenderError = (error: exn): bool =>
+    switch currentFiber.contents->Option.flatMap(fiber =>
+      ErrorBoundaryImpl.find(fiber, ~skipCaptured=true)
+    ) {
+    | Some(boundary) =>
+      ContextImpl.unwindTo(boundary)
+      ErrorBoundaryImpl.capture(boundary, error)
+      addFlag(boundary, Flags.didCapture)
+      // Forget what the abandoned children recorded; the fallback is reconciled against what's on
+      // screen (`current.child`) afresh.
+      removeFlag(boundary, Flags.childDeletion)
+      boundary.deletions = None
+      workInProgress := Some(boundary)
+      true
+    | None => false
+    }
+
+  /**
   Renders `lanes` of `root`, continuing the render in progress if it's of the same root and lanes
   (and starting afresh otherwise), until the tree is done or, `~yielding`, the scheduler says to
   yield. Returns whether the tree is done.
@@ -216,15 +254,15 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     if !isRendering(root, lanes) {
       prepareFreshStack(root, lanes)
     }
-    try {
-      while Option.isSome(workInProgress.contents) && !(yielding && Sched.shouldYield()) {
-        performUnitOfWork(root, Option.getUnsafe(workInProgress.contents), lanes)
+    while Option.isSome(workInProgress.contents) && !(yielding && Sched.shouldYield()) {
+      try performUnitOfWork(root, Option.getUnsafe(workInProgress.contents), lanes) catch {
+      | error =>
+        HookImpl.reset()
+        if !handleRenderError(error) {
+          resetWorkInProgress()
+          HookImpl.rethrow(error)
+        }
       }
-    } catch {
-    | error =>
-      HookImpl.reset()
-      resetWorkInProgress()
-      throw(error)
     }
     Option.isNone(workInProgress.contents)
   }
@@ -293,7 +331,8 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
         // Descend to the sibling's first host node, unless that part of the tree is moving too.
         let descending = ref(true)
         while descending.contents && !isHost(node.contents) {
-          if hasFlag(node.contents.flags, Flags.placement) {
+          // A moving subtree isn't in position yet, and a portal's nodes are somewhere else.
+          if hasFlag(node.contents.flags, Flags.placement) || node.contents.tag == HostPortal {
             descending := false
           } else {
             switch node.contents.child {
@@ -312,7 +351,10 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   }
 
   let rec insertOrAppend = (fiber: Fiber.t, ~before: option<Host.node>, ~insert, ~append) =>
-    if isHost(fiber) {
+    if fiber.tag == HostPortal {
+      // Its children are placed into its own container, each on its own.
+      ()
+    } else if isHost(fiber) {
       switch before {
       | Some(before) => insert(hostNode(fiber), before)
       | None => append(hostNode(fiber))
@@ -325,8 +367,8 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     let parent = getHostParentFiber(fiber)
     let before = getHostSibling(fiber)
     switch parent.tag {
-    | HostRoot =>
-      let container = containerOf(FiberRoot.ofFiber(parent))
+    | HostRoot | HostPortal =>
+      let container = containerOfParent(parent)
       insertOrAppend(
         fiber,
         ~before,
@@ -359,15 +401,24 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     | FunctionComponent | MemoComponent =>
       HookImpl.commitEffectsUnmount(fiber, ~effectKind=Layout, ~all=true)
       forEachChild(fiber, child => commitDeletionEffects(child, ~remove))
-    | HostRoot | Fragment | ContextProvider =>
+    | HostPortal =>
+      // Its children are in its own container.
+      let container = toContainer(fiber.stateNode)
+      forEachChild(fiber, child =>
+        commitDeletionEffects(
+          child,
+          ~remove=Some(node => Host.removeChildFromContainer(container, node)),
+        )
+      )
+    | HostRoot | Fragment | ContextProvider | ErrorBoundaryComponent =>
       forEachChild(fiber, child => commitDeletionEffects(child, ~remove))
     }
 
   let commitDeletion = (returnFiber: Fiber.t, deleted: Fiber.t) => {
     let hostParent = isHostParent(returnFiber) ? returnFiber : getHostParentFiber(returnFiber)
     let remove = switch hostParent.tag {
-    | HostRoot =>
-      let container = containerOf(FiberRoot.ofFiber(hostParent))
+    | HostRoot | HostPortal =>
+      let container = containerOfParent(hostParent)
       node => Host.removeChildFromContainer(container, node)
     | _ =>
       let instance = toInstance(hostParent.stateNode)

@@ -6,10 +6,16 @@ type rec node = {
   mutable props: TestJsx.Elements.props,
   mutable text: string,
   mutable children: array<node>,
-  owner: container,
+  owner: log,
 }
+/** A root's container, or a portal target: named in the log. */
 and container = {
+  name: string,
   mutable rootChildren: array<node>,
+  log: log,
+}
+/** Shared by a renderer's root and its portal targets. */
+and log = {
   mutable ops: array<string>,
   mutable nextUid: int,
 }
@@ -69,23 +75,23 @@ module Host = {
   let textToNode = (instance: instance): node => instance
   let getPublicInstance = toPublic
 
-  let log = (container: container, op: string) => container.ops->Array.push(op)
+  let record = (log: log, op: string) => log.ops->Array.push(op)
 
   let make = (container: container, ~tag, ~props, ~text) => {
-    let uid = container.nextUid
-    container.nextUid = uid + 1
-    {uid, tag, props, text, children: [], owner: container}
+    let uid = container.log.nextUid
+    container.log.nextUid = uid + 1
+    {uid, tag, props, text, children: [], owner: container.log}
   }
 
   let createInstance = (~tag, ~props, ~container) => {
     let instance = make(container, ~tag, ~props, ~text="")
-    log(container, `create ${describe(instance)}`)
+    record(container.log, `create ${describe(instance)}`)
     instance
   }
 
   let createTextInstance = (text, ~container) => {
     let instance = make(container, ~tag=textTag, ~props={}, ~text)
-    log(container, `create ${describe(instance)}`)
+    record(container.log, `create ${describe(instance)}`)
     instance
   }
 
@@ -112,45 +118,45 @@ module Host = {
   let commitUpdate = (instance: instance, changed, ~tag as _, ~oldProps as _, ~newProps) => {
     instance.props = newProps
     if Array.length(changed) > 0 {
-      log(instance.owner, `update ${describe(instance)} {${changed->Array.join(", ")}}`)
+      record(instance.owner, `update ${describe(instance)} {${changed->Array.join(", ")}}`)
     }
   }
 
   let commitTextUpdate = (instance: instance, ~oldText, ~newText) => {
     instance.text = newText
-    log(instance.owner, `text "${oldText}" -> "${newText}"`)
+    record(instance.owner, `text "${oldText}" -> "${newText}"`)
   }
 
   let appendChild = (parent: instance, child: node) => {
     removeFrom(parent.children, child)
     parent.children->Array.push(child)
-    log(parent.owner, `append ${describe(child)} to ${describe(parent)}`)
+    record(parent.owner, `append ${describe(child)} to ${describe(parent)}`)
   }
 
   let insertBefore = (parent: instance, child: node, ~before: node) => {
     insertInto(parent.children, child, ~before)
-    log(parent.owner, `insert ${describe(child)} before ${describe(before)}`)
+    record(parent.owner, `insert ${describe(child)} before ${describe(before)}`)
   }
 
   let removeChild = (parent: instance, child: node) => {
     removeFrom(parent.children, child)
-    log(parent.owner, `remove ${describe(child)}`)
+    record(parent.owner, `remove ${describe(child)}`)
   }
 
   let appendChildToContainer = (container: container, child: node) => {
     removeFrom(container.rootChildren, child)
     container.rootChildren->Array.push(child)
-    log(container, `append ${describe(child)} to root`)
+    record(container.log, `append ${describe(child)} to ${container.name}`)
   }
 
   let insertInContainerBefore = (container: container, child: node, ~before: node) => {
     insertInto(container.rootChildren, child, ~before)
-    log(container, `insert ${describe(child)} before ${describe(before)}`)
+    record(container.log, `insert ${describe(child)} before ${describe(before)}`)
   }
 
   let removeChildFromContainer = (container: container, child: node) => {
     removeFrom(container.rootChildren, child)
-    log(container, `remove ${describe(child)}`)
+    record(container.log, `remove ${describe(child)}`)
   }
 
   let prepareForCommit = (_: container) => ()
@@ -159,12 +165,22 @@ module Host = {
 
 module Renderer = Reconciler.MakeWithScheduler(Host, TestScheduler)
 
-type t = {container: container, root: Renderer.root}
+type t = {container: container, root: Renderer.root, targets: array<container>}
 
 let create = () => {
-  let container = {rootChildren: [], ops: [], nextUid: 0}
-  {container, root: Renderer.createRoot(container)}
+  let container = {name: "root", rootChildren: [], log: {ops: [], nextUid: 0}}
+  {container, root: Renderer.createRoot(container), targets: []}
 }
+
+type target = container
+
+let createTarget = (renderer, name) => {
+  let target = {name, rootChildren: [], log: renderer.container.log}
+  renderer.targets->Array.push(target)
+  target
+}
+
+let portal = (target: target, children) => Portal.create(~container=target, children)
 
 let maxActRounds = 100
 
@@ -201,11 +217,16 @@ let rec nodeToString = (node: node) =>
     `<${node.tag}${attributes}>${children}</${node.tag}>`
   }
 
-let toString = renderer => renderer.container.rootChildren->Array.map(nodeToString)->Array.join("")
+let containerToString = (container: container) =>
+  container.rootChildren->Array.map(nodeToString)->Array.join("")
 
-let ops = renderer => renderer.container.ops->Array.copy
+let toString = renderer => containerToString(renderer.container)
 
-let clearOps = renderer => renderer.container.ops = []
+let targetToString = containerToString
+
+let ops = renderer => renderer.container.log.ops->Array.copy
+
+let clearOps = renderer => renderer.container.log.ops = []
 
 let findById = (renderer, id) => {
   let rec find = (nodes: array<node>) =>
@@ -215,7 +236,14 @@ let findById = (renderer, id) => {
       | None => node.props.id == Some(id) ? Some(toPublic(node)) : find(node.children)
       }
     )
-  find(renderer.container.rootChildren)
+  [renderer.container]
+  ->Array.concat(renderer.targets)
+  ->Array.reduce(None, (found, container) =>
+    switch found {
+    | Some(_) => found
+    | None => find(container.rootChildren)
+    }
+  )
 }
 
 let findExn = (renderer, id) =>

@@ -6,8 +6,9 @@ renderer, and anything else that implements the host interface). It doesn't use 
 
 ## Status
 
-Phases 0 to 4 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`).
-Where they differ from the plan below:
+Phases 0 to 4 are done (`packages/res_fiber`, `packages/res_fiber_dom`, `examples/res_fiber_app`),
+and so are phase 5's error boundaries and portals; the `res_signals` bridge and the benchmarks are
+still to do. Where they differ from the plan below:
 
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
@@ -44,6 +45,13 @@ Where they differ from the plan below:
   yet (elements are created without a namespace).
 - The example app's tests run in jsdom with Vitest rather than as a separate end-to-end script; the
   app was also checked by hand in a real browser.
+- `ErrorBoundary` takes `fallback: (~error: exn, ~reset: unit => unit) => element` (labelled, so a
+  call site reads clearly). Its state survives renders that are thrown away: `reset` bumps a
+  generation number on the boundary's instance rather than clearing a flag.
+- Errors in `useEffect` cleanups of removed components aren't caught by boundaries (the components
+  have left the tree when those run); React does catch them.
+- Portals are `Portal.create(~container, children)` in the core, wrapped per renderer. DOM events in
+  a portal bubble through the DOM, not the component tree.
 - Effect errors don't stop other effects: the first is kept and rethrown once the phase has run (the
   original JS error, not ReScript's `JsExn` wrapper).
 

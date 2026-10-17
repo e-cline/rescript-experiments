@@ -20,6 +20,7 @@ let tagOfKind = (kind: Element.kind): Fiber.tag =>
   | ErrorBoundary => ErrorBoundaryComponent
   | Portal => HostPortal
   | Suspense => SuspenseComponent
+  | Offscreen => OffscreenComponent
   }
 
 let createFiberFromText = (text: string): Fiber.t =>
@@ -51,7 +52,7 @@ let sameType = (fiber: Fiber.t, node: Element.node): bool =>
 let pendingPropsOf = (node: Element.node): unknown =>
   switch node.kind {
   | Fragment => Unsafe.toUnknown(Element.childrenOf(node.props))
-  | Host | Component | Provider | Memo | ErrorBoundary | Portal | Suspense => node.props
+  | Host | Component | Provider | Memo | ErrorBoundary | Portal | Suspense | Offscreen => node.props
   }
 
 /** A work-in-progress copy of `fiber` with new props, as the only child so far. */

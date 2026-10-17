@@ -28,6 +28,11 @@ type kind =
   | Portal
   /** A `Suspense` boundary: `elementType` is `Suspense.make`. */
   | Suspense
+  /**
+  Internal to `Suspense`: its children, which stay mounted (and hidden) while it shows its fallback.
+  `props` is `{mode, children}`.
+  */
+  | Offscreen
 
 /**
 An element that isn't text or a list. `props` is the record the JSX transform built (for host and

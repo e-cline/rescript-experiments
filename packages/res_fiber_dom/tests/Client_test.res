@@ -294,3 +294,34 @@ describe("Portals", () => {
     t->expect(Dom.innerHTML(layer))->Expect.toBe("")
   })
 })
+
+describe("Suspense in the page", () => {
+  testAsync("hides shown content with display: none, and restores its own display", async t => {
+    let first = Promise.resolve("first")
+    let second = ref(None)
+    let next = Promise.make((resolve, _) => second := Some(resolve))
+    module Reads = {
+      @jsx.component
+      let make = (~promise: promise<string>) =>
+        <p id="content" style={dict{"display": "flex"}}> {Jsx.string(Hooks.use(promise))} </p>
+    }
+    let view = promise =>
+      <ResFiber.Suspense fallback={<i id="loading" />}>
+        <Reads promise />
+      </ResFiber.Suspense>
+    let wait = () => Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ignore)
+    let (container, root) = mount(view(first))
+    await wait()
+    Client.act(() => ())
+    let content = find(container, "#content")
+    rerender(root, view(next))
+    t->expect(Dom.getStyle(Dom.style(content), "display"))->Expect.toBe("none")
+    t->expect(Dom.querySelector(container, "#loading")->Nullable.isNullable)->Expect.toBe(false)
+    second.contents->Option.forEach(resolve => resolve("second"))
+    await wait()
+    Client.act(() => ())
+    t->expect(find(container, "#content") === content)->Expect.toBe(true)
+    t->expect(Dom.getStyle(Dom.style(content), "display"))->Expect.toBe("flex")
+    t->expect(Dom.textContent(content))->Expect.toBe("second")
+  })
+})

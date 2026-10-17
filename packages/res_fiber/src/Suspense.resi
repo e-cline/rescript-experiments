@@ -25,9 +25,12 @@ while rendering would be a new one each time, and never finish. A promise suspen
 it's used even if it has already resolved, since its result can only be read asynchronously; after
 that, `use` returns the result straight away.
 
-For now, children that suspend after they've been shown are unmounted while the fallback shows, so
-their state is lost; and a suspending transition shows the fallback too. Both change in later
-stages of the plan.
+Children that suspend after they've been shown aren't unmounted: they stay mounted, hidden (the
+host's `hideInstance`: `display: none` in the DOM), with their state, until they can render again.
+Their effects stay as they were meanwhile, and updates to them wait until they're shown. (Unlike
+React, which disconnects hidden children's layout effects and refs, and hides portal content too.)
+For now a suspending transition shows the fallback as well; a later stage of the plan keeps the
+previous screen instead.
 */
 
 type props = {fallback: Element.t, children: Element.t}

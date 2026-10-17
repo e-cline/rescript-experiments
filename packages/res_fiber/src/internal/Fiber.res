@@ -22,6 +22,8 @@ type tag =
   /** `stateNode` is the container its children render into. */
   | HostPortal
   | SuspenseComponent
+  /** A `Suspense` boundary's children: rendered when visible, kept as they were when hidden. */
+  | OffscreenComponent
 
 /** A context a function component read while rendering, and the value it read. */
 type dependency = {context: unknown, memoizedValue: unknown}
@@ -73,9 +75,11 @@ module Flags = {
   catch again).
   */
   let didCapture = 256
+  /** An offscreen fiber whose children go from hidden to visible, or back. */
+  let visibility = 512
 
   let union = flags => flags->Array.reduce(none, Int.bitwiseOr)
-  let mutationMask = union([placement, update, childDeletion, layout, ref])
+  let mutationMask = union([placement, update, childDeletion, layout, ref, visibility])
   let layoutMask = union([layout, ref])
   let passiveMask = union([passive, childDeletion])
 }

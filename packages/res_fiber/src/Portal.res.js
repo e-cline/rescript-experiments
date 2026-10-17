@@ -4,7 +4,7 @@
 function create(container, key, children) {
   return {
     kind: "Portal",
-    elementType: container,
+    type: container,
     key: key !== undefined ? key : null,
     props: {
       children: children

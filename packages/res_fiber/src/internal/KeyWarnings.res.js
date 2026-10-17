@@ -17,7 +17,7 @@ let warn = {
 };
 
 function componentName(fiber) {
-  let make = fiber.tag === "MemoComponent" ? fiber.elementType.$$fiberMemoInner : fiber.elementType;
+  let make = fiber.tag === "MemoComponent" ? fiber.type.$$fiberMemoInner : fiber.type;
   return make.name.replaceAll("$", ".");
 }
 
@@ -30,13 +30,13 @@ function owner(_fiber) {
     if (Fiber$ResFiber.isFunctionLike(fiber)) {
       return componentName(fiber);
     }
-    _fiber = fiber.parent;
+    _fiber = fiber.p;
     continue;
   };
 }
 
 function describe(returnFiber) {
-  let host = returnFiber.tag === "HostComponent" ? ` in <` + returnFiber.elementType + `>` : "";
+  let host = returnFiber.tag === "HostComponent" ? ` in <` + returnFiber.type + `>` : "";
   let name = owner(returnFiber);
   let owner$1 = name !== undefined ? ` rendered by ` + name : "";
   return host + owner$1;

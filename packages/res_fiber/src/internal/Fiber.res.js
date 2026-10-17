@@ -55,64 +55,64 @@ function hasFlag(flags, flag) {
 }
 
 function addFlag(fiber, flag) {
-  fiber.flags = fiber.flags | flag;
+  fiber.f = fiber.f | flag;
 }
 
 function removeFlag(fiber, flag) {
-  fiber.flags = fiber.flags & ~flag;
+  fiber.f = fiber.f & ~flag;
 }
 
 function make(tag, key, pendingProps) {
   return {
     tag: tag,
     key: key,
-    elementType: null,
-    pendingProps: pendingProps,
-    memoizedProps: null,
-    stateNode: null,
-    parent: undefined,
-    child: undefined,
-    sibling: undefined,
-    index: 0,
-    alternate: undefined,
-    flags: 0,
-    subtreeFlags: 0,
-    deletions: undefined,
-    memoizedState: null,
-    updateQueue: null,
-    dependencies: undefined,
-    lanes: Lanes$ResFiber.none,
-    childLanes: Lanes$ResFiber.none
+    type: null,
+    pp: pendingProps,
+    mp: null,
+    sn: null,
+    p: undefined,
+    c: undefined,
+    s: undefined,
+    i: 0,
+    alt: undefined,
+    f: 0,
+    sf: 0,
+    del: undefined,
+    ms: null,
+    uq: null,
+    dep: undefined,
+    l: Lanes$ResFiber.none,
+    cl: Lanes$ResFiber.none
   };
 }
 
 function createWorkInProgress(current, pendingProps) {
-  let workInProgress = current.alternate;
+  let workInProgress = current.alt;
   let workInProgress$1;
   if (workInProgress !== undefined) {
-    workInProgress.pendingProps = pendingProps;
-    workInProgress.elementType = current.elementType;
-    workInProgress.flags = 0;
-    workInProgress.subtreeFlags = 0;
-    workInProgress.deletions = undefined;
+    workInProgress.pp = pendingProps;
+    workInProgress.type = current.type;
+    workInProgress.f = 0;
+    workInProgress.sf = 0;
+    workInProgress.del = undefined;
     workInProgress$1 = workInProgress;
   } else {
     let workInProgress$2 = make(current.tag, current.key, pendingProps);
-    workInProgress$2.elementType = current.elementType;
-    workInProgress$2.stateNode = current.stateNode;
-    workInProgress$2.alternate = current;
-    current.alternate = workInProgress$2;
+    workInProgress$2.type = current.type;
+    workInProgress$2.sn = current.sn;
+    workInProgress$2.alt = current;
+    current.alt = workInProgress$2;
     workInProgress$1 = workInProgress$2;
   }
-  workInProgress$1.lanes = current.lanes;
-  workInProgress$1.childLanes = current.childLanes;
-  workInProgress$1.child = current.child;
-  workInProgress$1.memoizedProps = current.memoizedProps;
-  workInProgress$1.memoizedState = current.memoizedState;
-  workInProgress$1.updateQueue = current.updateQueue;
-  workInProgress$1.dependencies = current.dependencies;
-  workInProgress$1.sibling = current.sibling;
-  workInProgress$1.index = current.index;
+  workInProgress$1.l = current.l;
+  workInProgress$1.cl = current.cl;
+  workInProgress$1.c = current.c;
+  workInProgress$1.mp = current.mp;
+  workInProgress$1.ms = current.ms;
+  workInProgress$1.uq = current.uq;
+  workInProgress$1.dep = current.dep;
+  workInProgress$1.s = current.s;
+  workInProgress$1.i = current.i;
   return workInProgress$1;
 }
 

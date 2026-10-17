@@ -53,14 +53,14 @@ function use(promise) {
 }
 
 function find(fiber) {
-  let node = fiber.parent;
+  let node = fiber.p;
   let found;
   while (Stdlib_Option.isNone(found) && Stdlib_Option.isSome(node)) {
     let candidate = node;
-    if (candidate.tag === "SuspenseComponent" && !Fiber$ResFiber.hasFlag(candidate.flags, Fiber$ResFiber.Flags.didCapture)) {
+    if (candidate.tag === "SuspenseComponent" && !Fiber$ResFiber.hasFlag(candidate.f, Fiber$ResFiber.Flags.didCapture)) {
       found = candidate;
     } else {
-      node = candidate.parent;
+      node = candidate.p;
     }
   };
   return found;
@@ -82,7 +82,7 @@ function isHiddenProps(props) {
 function offscreen(mode, children) {
   return {
     kind: "Offscreen",
-    elementType: null,
+    type: null,
     key: "children",
     props: {
       mode: mode,
@@ -94,7 +94,7 @@ function offscreen(mode, children) {
 function fallbackFragment(fallback) {
   return {
     kind: "Fragment",
-    elementType: null,
+    type: null,
     key: "fallback",
     props: {
       children: fallback
@@ -103,11 +103,11 @@ function fallbackFragment(fallback) {
 }
 
 function childrenOf(current, fiber) {
-  let props = fiber.pendingProps;
-  if (!Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.didCapture)) {
+  let props = fiber.pp;
+  if (!Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.didCapture)) {
     return offscreen(visible, props.children);
   }
-  let child = Stdlib_Option.flatMap(current, current => current.child);
+  let child = Stdlib_Option.flatMap(current, current => current.c);
   let hasShownChildren = child !== undefined ? child.tag === "OffscreenComponent" : false;
   if (hasShownChildren) {
     return [
@@ -120,9 +120,9 @@ function childrenOf(current, fiber) {
 }
 
 function isShowingChildren(current) {
-  let child = Stdlib_Option.flatMap(current, current => current.child);
+  let child = Stdlib_Option.flatMap(current, current => current.c);
   if (child !== undefined && child.tag === "OffscreenComponent") {
-    return child.memoizedProps.mode !== hidden;
+    return child.mp.mode !== hidden;
   } else {
     return false;
   }

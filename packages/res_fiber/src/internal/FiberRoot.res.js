@@ -4,27 +4,27 @@ import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Lanes$ResFiber from "./Lanes.res.js";
 
 function nextLanes(root) {
-  return Lanes$ResFiber.highestPriority(Lanes$ResFiber.remove(root.pendingLanes, root.suspendedLanes));
+  return Lanes$ResFiber.highestPriority(Lanes$ResFiber.remove(root.pl, root.sl));
 }
 
 function ofFiber(fiber) {
-  return fiber.stateNode;
+  return fiber.sn;
 }
 
 function markLanes(fiber, lane) {
-  fiber.lanes = Lanes$ResFiber.merge(fiber.lanes, lane);
-  let alternate = fiber.alternate;
+  fiber.l = Lanes$ResFiber.merge(fiber.l, lane);
+  let alternate = fiber.alt;
   if (alternate !== undefined) {
-    alternate.lanes = Lanes$ResFiber.merge(alternate.lanes, lane);
+    alternate.l = Lanes$ResFiber.merge(alternate.l, lane);
     return;
   }
 }
 
 function markChildLanes(fiber, lane) {
-  fiber.childLanes = Lanes$ResFiber.merge(fiber.childLanes, lane);
-  let alternate = fiber.alternate;
+  fiber.cl = Lanes$ResFiber.merge(fiber.cl, lane);
+  let alternate = fiber.alt;
   if (alternate !== undefined) {
-    alternate.childLanes = Lanes$ResFiber.merge(alternate.childLanes, lane);
+    alternate.cl = Lanes$ResFiber.merge(alternate.cl, lane);
     return;
   }
 }
@@ -32,19 +32,19 @@ function markChildLanes(fiber, lane) {
 function scheduleUpdate(fiber, lane) {
   markLanes(fiber, lane);
   let node = fiber;
-  while (Stdlib_Option.isSome(node.parent)) {
-    let parent = node.parent;
+  while (Stdlib_Option.isSome(node.p)) {
+    let parent = node.p;
     markChildLanes(parent, lane);
     node = parent;
   };
   if (node.tag !== "HostRoot") {
     return;
   }
-  let root = node.stateNode;
-  if (!root.isUnmounted) {
-    root.pendingLanes = Lanes$ResFiber.merge(root.pendingLanes, lane);
-    root.suspendedLanes = Lanes$ResFiber.none;
-    return root.ensureScheduled();
+  let root = node.sn;
+  if (!root.um) {
+    root.pl = Lanes$ResFiber.merge(root.pl, lane);
+    root.sl = Lanes$ResFiber.none;
+    return root.es();
   }
 }
 

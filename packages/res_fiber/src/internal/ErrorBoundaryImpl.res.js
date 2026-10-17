@@ -7,28 +7,28 @@ import * as Unsafe$ResFiber from "./Unsafe.res.js";
 import * as FiberRoot$ResFiber from "./FiberRoot.res.js";
 
 function instanceOf(fiber) {
-  if (!Unsafe$ResFiber.isNothing(fiber.stateNode)) {
-    return fiber.stateNode;
+  if (!Unsafe$ResFiber.isNothing(fiber.sn)) {
+    return fiber.sn;
   }
   let instance = {
-    generation: 0,
-    pendingError: undefined,
-    reset: () => {}
+    g: 0,
+    pe: undefined,
+    r: () => {}
   };
-  instance.reset = () => {
-    instance.generation = instance.generation + 1 | 0;
+  instance.r = () => {
+    instance.g = instance.g + 1 | 0;
     FiberRoot$ResFiber.scheduleUpdate(fiber, Lanes$ResFiber.defaultLane);
   };
-  fiber.stateNode = instance;
+  fiber.sn = instance;
   return instance;
 }
 
 function stateOf(fiber, instance) {
-  let state = fiber.memoizedState;
+  let state = fiber.ms;
   if (state == null) {
     return {
-      error: undefined,
-      generation: instance.generation
+      e: undefined,
+      g: instance.g
     };
   } else {
     return state;
@@ -37,21 +37,21 @@ function stateOf(fiber, instance) {
 
 function capture(boundary, error) {
   let instance = instanceOf(boundary);
-  boundary.memoizedState = {
-    error: error,
-    generation: instance.generation
+  boundary.ms = {
+    e: error,
+    g: instance.g
   };
 }
 
 function find(fiber, skipCaptured) {
-  let node = fiber.parent;
+  let node = fiber.p;
   let found;
   while (Stdlib_Option.isNone(found) && Stdlib_Option.isSome(node)) {
     let candidate = node;
-    if (candidate.tag === "ErrorBoundaryComponent" && !(skipCaptured && Fiber$ResFiber.hasFlag(candidate.flags, Fiber$ResFiber.Flags.didCapture))) {
+    if (candidate.tag === "ErrorBoundaryComponent" && !(skipCaptured && Fiber$ResFiber.hasFlag(candidate.f, Fiber$ResFiber.Flags.didCapture))) {
       found = candidate;
     } else {
-      node = candidate.parent;
+      node = candidate.p;
     }
   };
   return found;
@@ -60,7 +60,7 @@ function find(fiber, skipCaptured) {
 function captureFromEffect(fiber, error) {
   let boundary = find(fiber, false);
   if (boundary !== undefined) {
-    instanceOf(boundary).pendingError = error;
+    instanceOf(boundary).pe = error;
     FiberRoot$ResFiber.scheduleUpdate(boundary, Lanes$ResFiber.sync);
     return true;
   } else {

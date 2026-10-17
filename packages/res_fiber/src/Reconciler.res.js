@@ -34,24 +34,24 @@ function MakeWithScheduler(Host) {
     };
     let hostNode = fiber => {
       if (fiber.tag === "HostText") {
-        return Host.textToNode(fiber.stateNode);
+        return Host.textToNode(fiber.sn);
       } else {
-        return Host.instanceToNode(fiber.stateNode);
+        return Host.instanceToNode(fiber.sn);
       }
     };
     let containerOfParent = fiber => {
       if (fiber.tag === "HostPortal") {
-        return fiber.stateNode;
+        return fiber.sn;
       } else {
-        return FiberRoot$ResFiber.ofFiber(fiber).container;
+        return FiberRoot$ResFiber.ofFiber(fiber).con;
       }
     };
     let forEachChild = (fiber, f) => {
-      let child = fiber.child;
+      let child = fiber.c;
       while (Stdlib_Option.isSome(child)) {
         let c = child;
         f(c);
-        child = c.sibling;
+        child = c.s;
       };
     };
     let appendAllChildren = (parent, first) => {
@@ -61,57 +61,57 @@ function MakeWithScheduler(Host) {
         if (isHost(fiber)) {
           Host.appendInitialChild(parent, hostNode(fiber));
         } else if (fiber.tag !== "HostPortal") {
-          appendAllChildren(parent, fiber.child);
+          appendAllChildren(parent, fiber.c);
         }
-        child = fiber.sibling;
+        child = fiber.s;
       };
     };
     let completeWork = (root, current, workInProgress) => {
       let match = workInProgress.tag;
       switch (match) {
         case "HostComponent" :
-          let tag = workInProgress.elementType;
-          let newProps = workInProgress.memoizedProps;
+          let tag = workInProgress.type;
+          let newProps = workInProgress.mp;
           if (current !== undefined) {
-            if (current.memoizedProps === workInProgress.memoizedProps) {
+            if (current.mp === workInProgress.mp) {
               return;
             }
-            let payload = Host.prepareUpdate(workInProgress.stateNode, tag, current.memoizedProps, newProps);
+            let payload = Host.prepareUpdate(workInProgress.sn, tag, current.mp, newProps);
             if (payload !== undefined) {
-              workInProgress.updateQueue = Primitive_option.valFromOption(payload);
+              workInProgress.uq = Primitive_option.valFromOption(payload);
               Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.update);
             }
-            if (current.memoizedProps.ref !== workInProgress.memoizedProps.ref) {
+            if (current.mp.ref !== workInProgress.mp.ref) {
               return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.ref);
             } else {
               return;
             }
           }
-          let instance = Host.createInstance(tag, newProps, root.container);
-          appendAllChildren(instance, workInProgress.child);
-          workInProgress.stateNode = instance;
+          let instance = Host.createInstance(tag, newProps, root.con);
+          appendAllChildren(instance, workInProgress.c);
+          workInProgress.sn = instance;
           Host.finalizeInitialChildren(instance, tag, newProps);
-          if (!(workInProgress.memoizedProps.ref == null)) {
+          if (!(workInProgress.mp.ref == null)) {
             return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.ref);
           } else {
             return;
           }
         case "HostText" :
-          let text = workInProgress.memoizedProps;
+          let text = workInProgress.mp;
           if (current !== undefined) {
-            if (current.memoizedProps !== text) {
+            if (current.mp !== text) {
               return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.update);
             } else {
               return;
             }
           } else {
-            workInProgress.stateNode = Host.createTextInstance(text, root.container);
+            workInProgress.sn = Host.createTextInstance(text, root.con);
             return;
           }
         case "ContextProvider" :
           return ContextImpl$ResFiber.pop();
         case "OffscreenComponent" :
-          if (current !== undefined && SuspenseImpl$ResFiber.isHiddenProps(current.memoizedProps) !== SuspenseImpl$ResFiber.isHiddenProps(workInProgress.memoizedProps)) {
+          if (current !== undefined && SuspenseImpl$ResFiber.isHiddenProps(current.mp) !== SuspenseImpl$ResFiber.isHiddenProps(workInProgress.mp)) {
             return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.visibility);
           } else {
             return;
@@ -121,8 +121,8 @@ function MakeWithScheduler(Host) {
       }
     };
     let bubbleProperties = fiber => {
-      let current = fiber.alternate;
-      let didBailout = current !== undefined ? current.child === fiber.child : false;
+      let current = fiber.alt;
+      let didBailout = current !== undefined ? current.c === fiber.c : false;
       let subtreeFlags = {
         contents: Fiber$ResFiber.Flags.none
       };
@@ -130,14 +130,14 @@ function MakeWithScheduler(Host) {
         contents: Lanes$ResFiber.none
       };
       forEachChild(fiber, c => {
-        childLanes.contents = Lanes$ResFiber.merge(childLanes.contents, Lanes$ResFiber.merge(c.lanes, c.childLanes));
+        childLanes.contents = Lanes$ResFiber.merge(childLanes.contents, Lanes$ResFiber.merge(c.l, c.cl));
         if (!didBailout) {
-          subtreeFlags.contents = subtreeFlags.contents | c.subtreeFlags | c.flags;
+          subtreeFlags.contents = subtreeFlags.contents | c.sf | c.f;
         }
-        c.parent = fiber;
+        c.p = fiber;
       });
-      fiber.subtreeFlags = subtreeFlags.contents;
-      fiber.childLanes = fiber.tag === "OffscreenComponent" && SuspenseImpl$ResFiber.isHiddenProps(fiber.memoizedProps) ? Lanes$ResFiber.none : childLanes.contents;
+      fiber.sf = subtreeFlags.contents;
+      fiber.cl = fiber.tag === "OffscreenComponent" && SuspenseImpl$ResFiber.isHiddenProps(fiber.mp) ? Lanes$ResFiber.none : childLanes.contents;
     };
     let workInProgress = {
       contents: undefined
@@ -156,8 +156,8 @@ function MakeWithScheduler(Host) {
     };
     let performUnitOfWork = (root, unit, renderLanes) => {
       currentFiber.contents = unit;
-      let next = BeginWork$ResFiber.beginWork(unit.alternate, unit, renderLanes);
-      unit.memoizedProps = unit.pendingProps;
+      let next = BeginWork$ResFiber.beginWork(unit.alt, unit, renderLanes);
+      unit.mp = unit.pp;
       if (next !== undefined) {
         workInProgress.contents = next;
         return;
@@ -167,10 +167,10 @@ function MakeWithScheduler(Host) {
         while (climbing) {
           let fiber = completed;
           currentFiber.contents = fiber;
-          completeWork(root, fiber.alternate, fiber);
+          completeWork(root, fiber.alt, fiber);
           bubbleProperties(fiber);
-          let match = fiber.sibling;
-          let match$1 = fiber.parent;
+          let match = fiber.s;
+          let match$1 = fiber.p;
           if (match !== undefined) {
             workInProgress.contents = match;
             climbing = false;
@@ -196,7 +196,7 @@ function MakeWithScheduler(Host) {
     };
     let prepareFreshStack = (root, lanes) => {
       resetWorkInProgress();
-      let rootFiber = Fiber$ResFiber.createWorkInProgress(root.current, root.current.pendingProps);
+      let rootFiber = Fiber$ResFiber.createWorkInProgress(root.cur, root.cur.pp);
       workInProgressRoot.contents = root;
       workInProgressRootFiber.contents = rootFiber;
       workInProgressLanes.contents = lanes;
@@ -214,7 +214,7 @@ function MakeWithScheduler(Host) {
       ContextImpl$ResFiber.unwindTo(boundary);
       Fiber$ResFiber.addFlag(boundary, Fiber$ResFiber.Flags.didCapture);
       Fiber$ResFiber.removeFlag(boundary, Fiber$ResFiber.Flags.childDeletion);
-      boundary.deletions = undefined;
+      boundary.del = undefined;
       workInProgress.contents = boundary;
     };
     let noSuspenseBoundary = () => {
@@ -248,7 +248,7 @@ function MakeWithScheduler(Host) {
       let promise = error._1;
       let boundary = SuspenseImpl$ResFiber.find(thrower);
       let keepScreen = !Lanes$ResFiber.isBlocking(workInProgressLanes.contents) && (
-        boundary !== undefined ? SuspenseImpl$ResFiber.isShowingChildren(boundary.alternate) : true
+        boundary !== undefined ? SuspenseImpl$ResFiber.isShowingChildren(boundary.alt) : true
       );
       if (keepScreen) {
         suspendedOn.contents = promise;
@@ -309,7 +309,7 @@ function MakeWithScheduler(Host) {
       }
     };
     let getHostParentFiber = fiber => {
-      let parent = fiber.parent;
+      let parent = fiber.p;
       let found;
       while (Stdlib_Option.isNone(found)) {
         let p = parent;
@@ -317,7 +317,7 @@ function MakeWithScheduler(Host) {
           if (isHostParent(p)) {
             found = p;
           } else {
-            parent = p.parent;
+            parent = p.p;
           }
         } else {
           Errors$ResFiber.fail(9, Env$ResCommon.isDev ? "ResFiber: a host node has no host parent" : "");
@@ -330,8 +330,8 @@ function MakeWithScheduler(Host) {
       let result;
       let searching = true;
       while (searching) {
-        while (searching && Stdlib_Option.isNone(node.sibling)) {
-          let parent = node.parent;
+        while (searching && Stdlib_Option.isNone(node.s)) {
+          let parent = node.p;
           if (parent !== undefined && !isHostParent(parent)) {
             node = parent;
           } else {
@@ -339,14 +339,14 @@ function MakeWithScheduler(Host) {
           }
         };
         if (searching) {
-          let sibling = node.sibling;
+          let sibling = node.s;
           node = sibling;
           let descending = true;
           while (descending && !isHost(node)) {
-            if (Fiber$ResFiber.hasFlag(node.flags, Fiber$ResFiber.Flags.placement) || node.tag === "HostPortal") {
+            if (Fiber$ResFiber.hasFlag(node.f, Fiber$ResFiber.Flags.placement) || node.tag === "HostPortal") {
               descending = false;
             } else {
-              let child = node.child;
+              let child = node.c;
               if (child !== undefined) {
                 node = child;
               } else {
@@ -354,7 +354,7 @@ function MakeWithScheduler(Host) {
               }
             }
           };
-          if (isHost(node) && !Fiber$ResFiber.hasFlag(node.flags, Fiber$ResFiber.Flags.placement)) {
+          if (isHost(node) && !Fiber$ResFiber.hasFlag(node.f, Fiber$ResFiber.Flags.placement)) {
             result = Primitive_option.some(hostNode(node));
             searching = false;
           }
@@ -384,7 +384,7 @@ function MakeWithScheduler(Host) {
         case "HostPortal" :
           break;
         default:
-          let instance = parent.stateNode;
+          let instance = parent.sn;
           return insertOrAppend(fiber, before, (node, before) => Host.insertBefore(instance, node, before), node => Host.appendChild(instance, node));
       }
       let container = containerOfParent(parent);
@@ -394,7 +394,7 @@ function MakeWithScheduler(Host) {
       let match = fiber.tag;
       switch (match) {
         case "HostComponent" :
-          setRef(fiber.memoizedProps, null);
+          setRef(fiber.mp, null);
           forEachChild(fiber, child => commitDeletionEffects(child, undefined));
           return Stdlib_Option.forEach(remove, remove => remove(hostNode(fiber)));
         case "HostText" :
@@ -403,7 +403,7 @@ function MakeWithScheduler(Host) {
         case "MemoComponent" :
           break;
         case "HostPortal" :
-          let container = fiber.stateNode;
+          let container = fiber.sn;
           return forEachChild(fiber, child => commitDeletionEffects(child, node => Host.removeChildFromContainer(container, node)));
         default:
           return forEachChild(fiber, child => commitDeletionEffects(child, remove));
@@ -413,19 +413,19 @@ function MakeWithScheduler(Host) {
     };
     let commitUpdate = fiber => {
       let match = fiber.tag;
-      let match$1 = fiber.alternate;
+      let match$1 = fiber.alt;
       switch (match) {
         case "HostComponent" :
           if (match$1 !== undefined) {
-            Host.commitUpdate(fiber.stateNode, fiber.updateQueue, fiber.elementType, match$1.memoizedProps, fiber.memoizedProps);
-            fiber.updateQueue = null;
+            Host.commitUpdate(fiber.sn, fiber.uq, fiber.type, match$1.mp, fiber.mp);
+            fiber.uq = null;
             return;
           } else {
             return;
           }
         case "HostText" :
           if (match$1 !== undefined) {
-            return Host.commitTextUpdate(fiber.stateNode, match$1.memoizedProps, fiber.memoizedProps);
+            return Host.commitTextUpdate(fiber.sn, match$1.mp, fiber.mp);
           } else {
             return;
           }
@@ -438,20 +438,20 @@ function MakeWithScheduler(Host) {
       switch (match) {
         case "HostComponent" :
           if (hide) {
-            return Host.hideInstance(fiber.stateNode);
+            return Host.hideInstance(fiber.sn);
           } else {
-            return Host.unhideInstance(fiber.stateNode, fiber.memoizedProps);
+            return Host.unhideInstance(fiber.sn, fiber.mp);
           }
         case "HostText" :
           if (hide) {
-            return Host.hideTextInstance(fiber.stateNode);
+            return Host.hideTextInstance(fiber.sn);
           } else {
-            return Host.unhideTextInstance(fiber.stateNode, fiber.memoizedProps);
+            return Host.unhideTextInstance(fiber.sn, fiber.mp);
           }
         case "HostPortal" :
           return;
         case "OffscreenComponent" :
-          if (SuspenseImpl$ResFiber.isHiddenProps(fiber.memoizedProps)) {
+          if (SuspenseImpl$ResFiber.isHiddenProps(fiber.mp)) {
             return;
           }
           break;
@@ -459,7 +459,7 @@ function MakeWithScheduler(Host) {
       forEachChild(fiber, child => setVisibility(child, hide));
     };
     let commitMutationEffects = fiber => {
-      let deletions = fiber.deletions;
+      let deletions = fiber.del;
       if (deletions !== undefined) {
         deletions.forEach(deleted => {
           let hostParent = isHostParent(fiber) ? fiber : getHostParentFiber(fiber);
@@ -472,7 +472,7 @@ function MakeWithScheduler(Host) {
               exit = 1;
               break;
             default:
-              let instance = hostParent.stateNode;
+              let instance = hostParent.sn;
               remove = node => Host.removeChild(instance, node);
           }
           if (exit === 1) {
@@ -480,19 +480,19 @@ function MakeWithScheduler(Host) {
             remove = node => Host.removeChildFromContainer(container, node);
           }
           commitDeletionEffects(deleted, remove);
-          deleted.parent = undefined;
-          let alternate = deleted.alternate;
+          deleted.p = undefined;
+          let alternate = deleted.alt;
           if (alternate !== undefined) {
-            alternate.parent = undefined;
+            alternate.p = undefined;
             return;
           }
         });
       }
-      if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.mutationMask)) {
+      if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.mutationMask)) {
         let placed = [];
         forEachChild(fiber, child => {
           commitMutationEffects(child);
-          if (Fiber$ResFiber.hasFlag(child.flags, Fiber$ResFiber.Flags.placement)) {
+          if (Fiber$ResFiber.hasFlag(child.f, Fiber$ResFiber.Flags.placement)) {
             placed.push(child);
             return;
           }
@@ -503,32 +503,32 @@ function MakeWithScheduler(Host) {
           Fiber$ResFiber.removeFlag(child, Fiber$ResFiber.Flags.placement);
         }
       }
-      if (Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.update)) {
+      if (Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.update)) {
         commitUpdate(fiber);
       }
-      if (fiber.tag === "OffscreenComponent" && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.visibility)) {
-        let hide = SuspenseImpl$ResFiber.isHiddenProps(fiber.memoizedProps);
+      if (fiber.tag === "OffscreenComponent" && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.visibility)) {
+        let hide = SuspenseImpl$ResFiber.isHiddenProps(fiber.mp);
         forEachChild(fiber, child => setVisibility(child, hide));
       }
-      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.layout)) {
+      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.layout)) {
         HookImpl$ResFiber.commitEffectsUnmount(fiber, "Layout", false);
       }
-      if (!(fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.ref))) {
+      if (!(fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.ref))) {
         return;
       }
-      let current = fiber.alternate;
+      let current = fiber.alt;
       if (current !== undefined) {
-        return setRef(current.memoizedProps, null);
+        return setRef(current.mp, null);
       }
     };
     let commitLayoutEffects = fiber => {
-      if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.layoutMask)) {
+      if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.layoutMask)) {
         forEachChild(fiber, commitLayoutEffects);
       }
-      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.layout)) {
+      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.layout)) {
         return HookImpl$ResFiber.commitEffectsMount(fiber, "Layout");
-      } else if (fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.ref)) {
-        return setRef(fiber.memoizedProps, Host.getPublicInstance(fiber.stateNode));
+      } else if (fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.ref)) {
+        return setRef(fiber.mp, Host.getPublicInstance(fiber.sn));
       } else {
         return;
       }
@@ -540,23 +540,23 @@ function MakeWithScheduler(Host) {
       forEachChild(fiber, commitPassiveUnmountInsideDeletedTree);
     };
     let commitPassiveUnmountEffects = fiber => {
-      let deletions = fiber.deletions;
+      let deletions = fiber.del;
       if (deletions !== undefined) {
         deletions.forEach(commitPassiveUnmountInsideDeletedTree);
-        fiber.deletions = undefined;
+        fiber.del = undefined;
       }
-      if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.passiveMask)) {
+      if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.passiveMask)) {
         forEachChild(fiber, commitPassiveUnmountEffects);
       }
-      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.passive)) {
+      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.passive)) {
         return HookImpl$ResFiber.commitEffectsUnmount(fiber, "Passive", false);
       }
     };
     let commitPassiveMountEffects = fiber => {
-      if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.passive)) {
+      if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.passive)) {
         forEachChild(fiber, commitPassiveMountEffects);
       }
-      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.passive)) {
+      if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.passive)) {
         return HookImpl$ResFiber.commitEffectsMount(fiber, "Passive");
       }
     };
@@ -590,21 +590,21 @@ function MakeWithScheduler(Host) {
       }
     };
     let commitRoot = (root, finished, lanes) => {
-      let container = root.container;
+      let container = root.con;
       Host.prepareForCommit(container);
       commitMutationEffects(finished);
       Host.resetAfterCommit(container);
-      root.current = finished;
-      root.pendingLanes = Lanes$ResFiber.merge(Lanes$ResFiber.remove(root.pendingLanes, lanes), Lanes$ResFiber.merge(finished.lanes, finished.childLanes));
-      if (root.hasPendingElement && finished.memoizedState === root.pendingElement) {
-        root.hasPendingElement = false;
-        root.pendingElement = null;
+      root.cur = finished;
+      root.pl = Lanes$ResFiber.merge(Lanes$ResFiber.remove(root.pl, lanes), Lanes$ResFiber.merge(finished.l, finished.cl));
+      if (root.hpe && finished.ms === root.pe) {
+        root.hpe = false;
+        root.pe = null;
       }
       commitLayoutEffects(finished);
-      if (Fiber$ResFiber.hasFlag(finished.subtreeFlags | finished.flags, Fiber$ResFiber.Flags.passiveMask)) {
+      if (Fiber$ResFiber.hasFlag(finished.sf | finished.f, Fiber$ResFiber.Flags.passiveMask)) {
         schedulePassiveEffects(finished);
       }
-      root.ensureScheduled();
+      root.es();
       HookImpl$ResFiber.rethrowCommitError();
     };
     let scheduledRoots = [];
@@ -616,9 +616,9 @@ function MakeWithScheduler(Host) {
       contents: false
     };
     let cancelTask = root => {
-      Stdlib_Option.forEach(root.callbackTask, task => Sched.cancelCallback(task));
-      root.callbackTask = undefined;
-      root.callbackLane = Lanes$ResFiber.none;
+      Stdlib_Option.forEach(root.task, task => Sched.cancelCallback(task));
+      root.task = undefined;
+      root.tl = Lanes$ResFiber.none;
     };
     let schedulerPriority = lanes => {
       if (Lanes$ResFiber.intersects(lanes, Lanes$ResFiber.idle)) {
@@ -628,8 +628,8 @@ function MakeWithScheduler(Host) {
       }
     };
     let abandon = root => {
-      root.pendingLanes = Lanes$ResFiber.none;
-      root.suspendedLanes = Lanes$ResFiber.none;
+      root.pl = Lanes$ResFiber.none;
+      root.sl = Lanes$ResFiber.none;
       cancelTask(root);
     };
     let guardRoot = (root, f) => {
@@ -648,10 +648,10 @@ function MakeWithScheduler(Host) {
       }
     };
     let waitFor = (root, lanes, promise) => {
-      root.suspendedLanes = Lanes$ResFiber.merge(root.suspendedLanes, lanes);
+      root.sl = Lanes$ResFiber.merge(root.sl, lanes);
       let ping = param => {
-        root.suspendedLanes = Lanes$ResFiber.remove(root.suspendedLanes, lanes);
-        root.ensureScheduled();
+        root.sl = Lanes$ResFiber.remove(root.sl, lanes);
+        root.es();
       };
       promise.then(ping, ping);
     };
@@ -676,10 +676,10 @@ function MakeWithScheduler(Host) {
         while (scheduledRoots.length !== 0) {
           let root = scheduledRoots.shift();
           working = root;
-          root.isScheduled = false;
+          root.sch = false;
           flushPassiveEffects();
           let lanes = FiberRoot$ResFiber.nextLanes(root);
-          if (Lanes$ResFiber.isBlocking(lanes) && !root.isUnmounted) {
+          if (Lanes$ResFiber.isBlocking(lanes) && !root.um) {
             checkRenderCount(root, renders);
             renderAndCommit(root, lanes);
           } else {
@@ -708,7 +708,7 @@ function MakeWithScheduler(Host) {
       }
     };
     let ensureRootScheduled = root => {
-      if (root.isUnmounted) {
+      if (root.um) {
         return;
       }
       let next = FiberRoot$ResFiber.nextLanes(root);
@@ -716,14 +716,14 @@ function MakeWithScheduler(Host) {
         return cancelTask(root);
       } else if (Lanes$ResFiber.isBlocking(next)) {
         cancelTask(root);
-        if (!root.isScheduled) {
-          root.isScheduled = true;
+        if (!root.sch) {
+          root.sch = true;
           scheduledRoots.push(root);
           return requestFlush();
         } else {
           return;
         }
-      } else if (root.callbackLane !== next || Stdlib_Option.isNone(root.callbackTask)) {
+      } else if (root.tl !== next || Stdlib_Option.isNone(root.task)) {
         cancelTask(root);
         return scheduleConcurrentWork(root, next);
       } else {
@@ -731,11 +731,11 @@ function MakeWithScheduler(Host) {
       }
     };
     let scheduleConcurrentWork = (root, lanes) => {
-      root.callbackTask = Primitive_option.some(Sched.scheduleCallback(schedulerPriority(lanes), () => {
-        root.callbackTask = undefined;
-        root.callbackLane = Lanes$ResFiber.none;
+      root.task = Primitive_option.some(Sched.scheduleCallback(schedulerPriority(lanes), () => {
+        root.task = undefined;
+        root.tl = Lanes$ResFiber.none;
         let lanes = FiberRoot$ResFiber.nextLanes(root);
-        if (root.isUnmounted || lanes === Lanes$ResFiber.none) {
+        if (root.um || lanes === Lanes$ResFiber.none) {
           return;
         } else if (Lanes$ResFiber.isBlocking(lanes)) {
           return ensureRootScheduled(root);
@@ -762,7 +762,7 @@ function MakeWithScheduler(Host) {
           });
         }
       }));
-      root.callbackLane = lanes;
+      root.tl = lanes;
     };
     let isPausedForAnotherRoot = (root, lanes) => {
       let other = workInProgressRoot.contents;
@@ -797,39 +797,39 @@ function MakeWithScheduler(Host) {
     };
     let createRoot = container => {
       let rootFiber = Fiber$ResFiber.make("HostRoot", null, null);
-      rootFiber.memoizedState = null;
+      rootFiber.ms = null;
       let root = {
-        container: container,
-        current: rootFiber,
-        pendingLanes: Lanes$ResFiber.none,
-        suspendedLanes: Lanes$ResFiber.none,
-        pendingElement: null,
-        hasPendingElement: false,
-        isScheduled: false,
-        callbackTask: undefined,
-        callbackLane: Lanes$ResFiber.none,
-        isUnmounted: false,
-        ensureScheduled: () => {}
+        con: container,
+        cur: rootFiber,
+        pl: Lanes$ResFiber.none,
+        sl: Lanes$ResFiber.none,
+        pe: null,
+        hpe: false,
+        sch: false,
+        task: undefined,
+        tl: Lanes$ResFiber.none,
+        um: false,
+        es: () => {}
       };
-      rootFiber.stateNode = root;
-      root.ensureScheduled = () => ensureRootScheduled(root);
+      rootFiber.sn = root;
+      root.es = () => ensureRootScheduled(root);
       liveRoots.push(root);
       return root;
     };
     let render = (root, element) => {
-      if (root.isUnmounted) {
+      if (root.um) {
         Errors$ResFiber.fail(7, Env$ResCommon.isDev ? "ResFiber: can't render into a root that was unmounted" : "");
       }
-      root.pendingElement = element;
-      root.hasPendingElement = true;
-      FiberRoot$ResFiber.scheduleUpdate(root.current, HookImpl$ResFiber.updateLane.contents);
+      root.pe = element;
+      root.hpe = true;
+      FiberRoot$ResFiber.scheduleUpdate(root.cur, HookImpl$ResFiber.updateLane.contents);
     };
     let unmount = root => {
-      if (root.isUnmounted) {
+      if (root.um) {
         return;
       }
       flushSync(() => render(root, null));
-      root.isUnmounted = true;
+      root.um = true;
       cancelTask(root);
       if (workInProgressRoot.contents === root) {
         resetWorkInProgress();
@@ -869,24 +869,24 @@ function Make(Host) {
   };
   let hostNode = fiber => {
     if (fiber.tag === "HostText") {
-      return Host.textToNode(fiber.stateNode);
+      return Host.textToNode(fiber.sn);
     } else {
-      return Host.instanceToNode(fiber.stateNode);
+      return Host.instanceToNode(fiber.sn);
     }
   };
   let containerOfParent = fiber => {
     if (fiber.tag === "HostPortal") {
-      return fiber.stateNode;
+      return fiber.sn;
     } else {
-      return FiberRoot$ResFiber.ofFiber(fiber).container;
+      return FiberRoot$ResFiber.ofFiber(fiber).con;
     }
   };
   let forEachChild = (fiber, f) => {
-    let child = fiber.child;
+    let child = fiber.c;
     while (Stdlib_Option.isSome(child)) {
       let c = child;
       f(c);
-      child = c.sibling;
+      child = c.s;
     };
   };
   let appendAllChildren = (parent, first) => {
@@ -896,57 +896,57 @@ function Make(Host) {
       if (isHost(fiber)) {
         Host.appendInitialChild(parent, hostNode(fiber));
       } else if (fiber.tag !== "HostPortal") {
-        appendAllChildren(parent, fiber.child);
+        appendAllChildren(parent, fiber.c);
       }
-      child = fiber.sibling;
+      child = fiber.s;
     };
   };
   let completeWork = (root, current, workInProgress) => {
     let match = workInProgress.tag;
     switch (match) {
       case "HostComponent" :
-        let tag = workInProgress.elementType;
-        let newProps = workInProgress.memoizedProps;
+        let tag = workInProgress.type;
+        let newProps = workInProgress.mp;
         if (current !== undefined) {
-          if (current.memoizedProps === workInProgress.memoizedProps) {
+          if (current.mp === workInProgress.mp) {
             return;
           }
-          let payload = Host.prepareUpdate(workInProgress.stateNode, tag, current.memoizedProps, newProps);
+          let payload = Host.prepareUpdate(workInProgress.sn, tag, current.mp, newProps);
           if (payload !== undefined) {
-            workInProgress.updateQueue = Primitive_option.valFromOption(payload);
+            workInProgress.uq = Primitive_option.valFromOption(payload);
             Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.update);
           }
-          if (current.memoizedProps.ref !== workInProgress.memoizedProps.ref) {
+          if (current.mp.ref !== workInProgress.mp.ref) {
             return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.ref);
           } else {
             return;
           }
         }
-        let instance = Host.createInstance(tag, newProps, root.container);
-        appendAllChildren(instance, workInProgress.child);
-        workInProgress.stateNode = instance;
+        let instance = Host.createInstance(tag, newProps, root.con);
+        appendAllChildren(instance, workInProgress.c);
+        workInProgress.sn = instance;
         Host.finalizeInitialChildren(instance, tag, newProps);
-        if (!(workInProgress.memoizedProps.ref == null)) {
+        if (!(workInProgress.mp.ref == null)) {
           return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.ref);
         } else {
           return;
         }
       case "HostText" :
-        let text = workInProgress.memoizedProps;
+        let text = workInProgress.mp;
         if (current !== undefined) {
-          if (current.memoizedProps !== text) {
+          if (current.mp !== text) {
             return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.update);
           } else {
             return;
           }
         } else {
-          workInProgress.stateNode = Host.createTextInstance(text, root.container);
+          workInProgress.sn = Host.createTextInstance(text, root.con);
           return;
         }
       case "ContextProvider" :
         return ContextImpl$ResFiber.pop();
       case "OffscreenComponent" :
-        if (current !== undefined && SuspenseImpl$ResFiber.isHiddenProps(current.memoizedProps) !== SuspenseImpl$ResFiber.isHiddenProps(workInProgress.memoizedProps)) {
+        if (current !== undefined && SuspenseImpl$ResFiber.isHiddenProps(current.mp) !== SuspenseImpl$ResFiber.isHiddenProps(workInProgress.mp)) {
           return Fiber$ResFiber.addFlag(workInProgress, Fiber$ResFiber.Flags.visibility);
         } else {
           return;
@@ -956,8 +956,8 @@ function Make(Host) {
     }
   };
   let bubbleProperties = fiber => {
-    let current = fiber.alternate;
-    let didBailout = current !== undefined ? current.child === fiber.child : false;
+    let current = fiber.alt;
+    let didBailout = current !== undefined ? current.c === fiber.c : false;
     let subtreeFlags = {
       contents: Fiber$ResFiber.Flags.none
     };
@@ -965,14 +965,14 @@ function Make(Host) {
       contents: Lanes$ResFiber.none
     };
     forEachChild(fiber, c => {
-      childLanes.contents = Lanes$ResFiber.merge(childLanes.contents, Lanes$ResFiber.merge(c.lanes, c.childLanes));
+      childLanes.contents = Lanes$ResFiber.merge(childLanes.contents, Lanes$ResFiber.merge(c.l, c.cl));
       if (!didBailout) {
-        subtreeFlags.contents = subtreeFlags.contents | c.subtreeFlags | c.flags;
+        subtreeFlags.contents = subtreeFlags.contents | c.sf | c.f;
       }
-      c.parent = fiber;
+      c.p = fiber;
     });
-    fiber.subtreeFlags = subtreeFlags.contents;
-    fiber.childLanes = fiber.tag === "OffscreenComponent" && SuspenseImpl$ResFiber.isHiddenProps(fiber.memoizedProps) ? Lanes$ResFiber.none : childLanes.contents;
+    fiber.sf = subtreeFlags.contents;
+    fiber.cl = fiber.tag === "OffscreenComponent" && SuspenseImpl$ResFiber.isHiddenProps(fiber.mp) ? Lanes$ResFiber.none : childLanes.contents;
   };
   let workInProgress = {
     contents: undefined
@@ -991,8 +991,8 @@ function Make(Host) {
   };
   let performUnitOfWork = (root, unit, renderLanes) => {
     currentFiber.contents = unit;
-    let next = BeginWork$ResFiber.beginWork(unit.alternate, unit, renderLanes);
-    unit.memoizedProps = unit.pendingProps;
+    let next = BeginWork$ResFiber.beginWork(unit.alt, unit, renderLanes);
+    unit.mp = unit.pp;
     if (next !== undefined) {
       workInProgress.contents = next;
       return;
@@ -1002,10 +1002,10 @@ function Make(Host) {
       while (climbing) {
         let fiber = completed;
         currentFiber.contents = fiber;
-        completeWork(root, fiber.alternate, fiber);
+        completeWork(root, fiber.alt, fiber);
         bubbleProperties(fiber);
-        let match = fiber.sibling;
-        let match$1 = fiber.parent;
+        let match = fiber.s;
+        let match$1 = fiber.p;
         if (match !== undefined) {
           workInProgress.contents = match;
           climbing = false;
@@ -1031,7 +1031,7 @@ function Make(Host) {
   };
   let prepareFreshStack = (root, lanes) => {
     resetWorkInProgress();
-    let rootFiber = Fiber$ResFiber.createWorkInProgress(root.current, root.current.pendingProps);
+    let rootFiber = Fiber$ResFiber.createWorkInProgress(root.cur, root.cur.pp);
     workInProgressRoot.contents = root;
     workInProgressRootFiber.contents = rootFiber;
     workInProgressLanes.contents = lanes;
@@ -1049,7 +1049,7 @@ function Make(Host) {
     ContextImpl$ResFiber.unwindTo(boundary);
     Fiber$ResFiber.addFlag(boundary, Fiber$ResFiber.Flags.didCapture);
     Fiber$ResFiber.removeFlag(boundary, Fiber$ResFiber.Flags.childDeletion);
-    boundary.deletions = undefined;
+    boundary.del = undefined;
     workInProgress.contents = boundary;
   };
   let noSuspenseBoundary = () => {
@@ -1083,7 +1083,7 @@ function Make(Host) {
     let promise = error._1;
     let boundary = SuspenseImpl$ResFiber.find(thrower);
     let keepScreen = !Lanes$ResFiber.isBlocking(workInProgressLanes.contents) && (
-      boundary !== undefined ? SuspenseImpl$ResFiber.isShowingChildren(boundary.alternate) : true
+      boundary !== undefined ? SuspenseImpl$ResFiber.isShowingChildren(boundary.alt) : true
     );
     if (keepScreen) {
       suspendedOn.contents = promise;
@@ -1146,7 +1146,7 @@ function Make(Host) {
     }
   };
   let getHostParentFiber = fiber => {
-    let parent = fiber.parent;
+    let parent = fiber.p;
     let found;
     while (Stdlib_Option.isNone(found)) {
       let p = parent;
@@ -1154,7 +1154,7 @@ function Make(Host) {
         if (isHostParent(p)) {
           found = p;
         } else {
-          parent = p.parent;
+          parent = p.p;
         }
       } else {
         Errors$ResFiber.fail(9, Env$ResCommon.isDev ? "ResFiber: a host node has no host parent" : "");
@@ -1167,8 +1167,8 @@ function Make(Host) {
     let result;
     let searching = true;
     while (searching) {
-      while (searching && Stdlib_Option.isNone(node.sibling)) {
-        let parent = node.parent;
+      while (searching && Stdlib_Option.isNone(node.s)) {
+        let parent = node.p;
         if (parent !== undefined && !isHostParent(parent)) {
           node = parent;
         } else {
@@ -1176,14 +1176,14 @@ function Make(Host) {
         }
       };
       if (searching) {
-        let sibling = node.sibling;
+        let sibling = node.s;
         node = sibling;
         let descending = true;
         while (descending && !isHost(node)) {
-          if (Fiber$ResFiber.hasFlag(node.flags, Fiber$ResFiber.Flags.placement) || node.tag === "HostPortal") {
+          if (Fiber$ResFiber.hasFlag(node.f, Fiber$ResFiber.Flags.placement) || node.tag === "HostPortal") {
             descending = false;
           } else {
-            let child = node.child;
+            let child = node.c;
             if (child !== undefined) {
               node = child;
             } else {
@@ -1191,7 +1191,7 @@ function Make(Host) {
             }
           }
         };
-        if (isHost(node) && !Fiber$ResFiber.hasFlag(node.flags, Fiber$ResFiber.Flags.placement)) {
+        if (isHost(node) && !Fiber$ResFiber.hasFlag(node.f, Fiber$ResFiber.Flags.placement)) {
           result = Primitive_option.some(hostNode(node));
           searching = false;
         }
@@ -1221,7 +1221,7 @@ function Make(Host) {
       case "HostPortal" :
         break;
       default:
-        let instance = parent.stateNode;
+        let instance = parent.sn;
         return insertOrAppend(fiber, before, (node, before) => Host.insertBefore(instance, node, before), node => Host.appendChild(instance, node));
     }
     let container = containerOfParent(parent);
@@ -1231,7 +1231,7 @@ function Make(Host) {
     let match = fiber.tag;
     switch (match) {
       case "HostComponent" :
-        setRef(fiber.memoizedProps, null);
+        setRef(fiber.mp, null);
         forEachChild(fiber, child => commitDeletionEffects(child, undefined));
         return Stdlib_Option.forEach(remove, remove => remove(hostNode(fiber)));
       case "HostText" :
@@ -1240,7 +1240,7 @@ function Make(Host) {
       case "MemoComponent" :
         break;
       case "HostPortal" :
-        let container = fiber.stateNode;
+        let container = fiber.sn;
         return forEachChild(fiber, child => commitDeletionEffects(child, node => Host.removeChildFromContainer(container, node)));
       default:
         return forEachChild(fiber, child => commitDeletionEffects(child, remove));
@@ -1250,19 +1250,19 @@ function Make(Host) {
   };
   let commitUpdate = fiber => {
     let match = fiber.tag;
-    let match$1 = fiber.alternate;
+    let match$1 = fiber.alt;
     switch (match) {
       case "HostComponent" :
         if (match$1 !== undefined) {
-          Host.commitUpdate(fiber.stateNode, fiber.updateQueue, fiber.elementType, match$1.memoizedProps, fiber.memoizedProps);
-          fiber.updateQueue = null;
+          Host.commitUpdate(fiber.sn, fiber.uq, fiber.type, match$1.mp, fiber.mp);
+          fiber.uq = null;
           return;
         } else {
           return;
         }
       case "HostText" :
         if (match$1 !== undefined) {
-          return Host.commitTextUpdate(fiber.stateNode, match$1.memoizedProps, fiber.memoizedProps);
+          return Host.commitTextUpdate(fiber.sn, match$1.mp, fiber.mp);
         } else {
           return;
         }
@@ -1275,20 +1275,20 @@ function Make(Host) {
     switch (match) {
       case "HostComponent" :
         if (hide) {
-          return Host.hideInstance(fiber.stateNode);
+          return Host.hideInstance(fiber.sn);
         } else {
-          return Host.unhideInstance(fiber.stateNode, fiber.memoizedProps);
+          return Host.unhideInstance(fiber.sn, fiber.mp);
         }
       case "HostText" :
         if (hide) {
-          return Host.hideTextInstance(fiber.stateNode);
+          return Host.hideTextInstance(fiber.sn);
         } else {
-          return Host.unhideTextInstance(fiber.stateNode, fiber.memoizedProps);
+          return Host.unhideTextInstance(fiber.sn, fiber.mp);
         }
       case "HostPortal" :
         return;
       case "OffscreenComponent" :
-        if (SuspenseImpl$ResFiber.isHiddenProps(fiber.memoizedProps)) {
+        if (SuspenseImpl$ResFiber.isHiddenProps(fiber.mp)) {
           return;
         }
         break;
@@ -1296,7 +1296,7 @@ function Make(Host) {
     forEachChild(fiber, child => setVisibility(child, hide));
   };
   let commitMutationEffects = fiber => {
-    let deletions = fiber.deletions;
+    let deletions = fiber.del;
     if (deletions !== undefined) {
       deletions.forEach(deleted => {
         let hostParent = isHostParent(fiber) ? fiber : getHostParentFiber(fiber);
@@ -1309,7 +1309,7 @@ function Make(Host) {
             exit = 1;
             break;
           default:
-            let instance = hostParent.stateNode;
+            let instance = hostParent.sn;
             remove = node => Host.removeChild(instance, node);
         }
         if (exit === 1) {
@@ -1317,19 +1317,19 @@ function Make(Host) {
           remove = node => Host.removeChildFromContainer(container, node);
         }
         commitDeletionEffects(deleted, remove);
-        deleted.parent = undefined;
-        let alternate = deleted.alternate;
+        deleted.p = undefined;
+        let alternate = deleted.alt;
         if (alternate !== undefined) {
-          alternate.parent = undefined;
+          alternate.p = undefined;
           return;
         }
       });
     }
-    if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.mutationMask)) {
+    if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.mutationMask)) {
       let placed = [];
       forEachChild(fiber, child => {
         commitMutationEffects(child);
-        if (Fiber$ResFiber.hasFlag(child.flags, Fiber$ResFiber.Flags.placement)) {
+        if (Fiber$ResFiber.hasFlag(child.f, Fiber$ResFiber.Flags.placement)) {
           placed.push(child);
           return;
         }
@@ -1340,32 +1340,32 @@ function Make(Host) {
         Fiber$ResFiber.removeFlag(child, Fiber$ResFiber.Flags.placement);
       }
     }
-    if (Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.update)) {
+    if (Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.update)) {
       commitUpdate(fiber);
     }
-    if (fiber.tag === "OffscreenComponent" && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.visibility)) {
-      let hide = SuspenseImpl$ResFiber.isHiddenProps(fiber.memoizedProps);
+    if (fiber.tag === "OffscreenComponent" && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.visibility)) {
+      let hide = SuspenseImpl$ResFiber.isHiddenProps(fiber.mp);
       forEachChild(fiber, child => setVisibility(child, hide));
     }
-    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.layout)) {
+    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.layout)) {
       HookImpl$ResFiber.commitEffectsUnmount(fiber, "Layout", false);
     }
-    if (!(fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.ref))) {
+    if (!(fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.ref))) {
       return;
     }
-    let current = fiber.alternate;
+    let current = fiber.alt;
     if (current !== undefined) {
-      return setRef(current.memoizedProps, null);
+      return setRef(current.mp, null);
     }
   };
   let commitLayoutEffects = fiber => {
-    if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.layoutMask)) {
+    if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.layoutMask)) {
       forEachChild(fiber, commitLayoutEffects);
     }
-    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.layout)) {
+    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.layout)) {
       return HookImpl$ResFiber.commitEffectsMount(fiber, "Layout");
-    } else if (fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.ref)) {
-      return setRef(fiber.memoizedProps, Host.getPublicInstance(fiber.stateNode));
+    } else if (fiber.tag === "HostComponent" && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.ref)) {
+      return setRef(fiber.mp, Host.getPublicInstance(fiber.sn));
     } else {
       return;
     }
@@ -1377,23 +1377,23 @@ function Make(Host) {
     forEachChild(fiber, commitPassiveUnmountInsideDeletedTree);
   };
   let commitPassiveUnmountEffects = fiber => {
-    let deletions = fiber.deletions;
+    let deletions = fiber.del;
     if (deletions !== undefined) {
       deletions.forEach(commitPassiveUnmountInsideDeletedTree);
-      fiber.deletions = undefined;
+      fiber.del = undefined;
     }
-    if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.passiveMask)) {
+    if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.passiveMask)) {
       forEachChild(fiber, commitPassiveUnmountEffects);
     }
-    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.passive)) {
+    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.passive)) {
       return HookImpl$ResFiber.commitEffectsUnmount(fiber, "Passive", false);
     }
   };
   let commitPassiveMountEffects = fiber => {
-    if (Fiber$ResFiber.hasFlag(fiber.subtreeFlags, Fiber$ResFiber.Flags.passive)) {
+    if (Fiber$ResFiber.hasFlag(fiber.sf, Fiber$ResFiber.Flags.passive)) {
       forEachChild(fiber, commitPassiveMountEffects);
     }
-    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.flags, Fiber$ResFiber.Flags.passive)) {
+    if (Fiber$ResFiber.isFunctionLike(fiber) && Fiber$ResFiber.hasFlag(fiber.f, Fiber$ResFiber.Flags.passive)) {
       return HookImpl$ResFiber.commitEffectsMount(fiber, "Passive");
     }
   };
@@ -1427,21 +1427,21 @@ function Make(Host) {
     }
   };
   let commitRoot = (root, finished, lanes) => {
-    let container = root.container;
+    let container = root.con;
     Host.prepareForCommit(container);
     commitMutationEffects(finished);
     Host.resetAfterCommit(container);
-    root.current = finished;
-    root.pendingLanes = Lanes$ResFiber.merge(Lanes$ResFiber.remove(root.pendingLanes, lanes), Lanes$ResFiber.merge(finished.lanes, finished.childLanes));
-    if (root.hasPendingElement && finished.memoizedState === root.pendingElement) {
-      root.hasPendingElement = false;
-      root.pendingElement = null;
+    root.cur = finished;
+    root.pl = Lanes$ResFiber.merge(Lanes$ResFiber.remove(root.pl, lanes), Lanes$ResFiber.merge(finished.l, finished.cl));
+    if (root.hpe && finished.ms === root.pe) {
+      root.hpe = false;
+      root.pe = null;
     }
     commitLayoutEffects(finished);
-    if (Fiber$ResFiber.hasFlag(finished.subtreeFlags | finished.flags, Fiber$ResFiber.Flags.passiveMask)) {
+    if (Fiber$ResFiber.hasFlag(finished.sf | finished.f, Fiber$ResFiber.Flags.passiveMask)) {
       schedulePassiveEffects(finished);
     }
-    root.ensureScheduled();
+    root.es();
     HookImpl$ResFiber.rethrowCommitError();
   };
   let scheduledRoots = [];
@@ -1453,9 +1453,9 @@ function Make(Host) {
     contents: false
   };
   let cancelTask = root => {
-    Stdlib_Option.forEach(root.callbackTask, task => Scheduler$ResFiber.Default.cancelCallback(task));
-    root.callbackTask = undefined;
-    root.callbackLane = Lanes$ResFiber.none;
+    Stdlib_Option.forEach(root.task, task => Scheduler$ResFiber.Default.cancelCallback(task));
+    root.task = undefined;
+    root.tl = Lanes$ResFiber.none;
   };
   let schedulerPriority = lanes => {
     if (Lanes$ResFiber.intersects(lanes, Lanes$ResFiber.idle)) {
@@ -1465,8 +1465,8 @@ function Make(Host) {
     }
   };
   let abandon = root => {
-    root.pendingLanes = Lanes$ResFiber.none;
-    root.suspendedLanes = Lanes$ResFiber.none;
+    root.pl = Lanes$ResFiber.none;
+    root.sl = Lanes$ResFiber.none;
     cancelTask(root);
   };
   let guardRoot = (root, f) => {
@@ -1485,10 +1485,10 @@ function Make(Host) {
     }
   };
   let waitFor = (root, lanes, promise) => {
-    root.suspendedLanes = Lanes$ResFiber.merge(root.suspendedLanes, lanes);
+    root.sl = Lanes$ResFiber.merge(root.sl, lanes);
     let ping = param => {
-      root.suspendedLanes = Lanes$ResFiber.remove(root.suspendedLanes, lanes);
-      root.ensureScheduled();
+      root.sl = Lanes$ResFiber.remove(root.sl, lanes);
+      root.es();
     };
     promise.then(ping, ping);
   };
@@ -1513,10 +1513,10 @@ function Make(Host) {
       while (scheduledRoots.length !== 0) {
         let root = scheduledRoots.shift();
         working = root;
-        root.isScheduled = false;
+        root.sch = false;
         flushPassiveEffects();
         let lanes = FiberRoot$ResFiber.nextLanes(root);
-        if (Lanes$ResFiber.isBlocking(lanes) && !root.isUnmounted) {
+        if (Lanes$ResFiber.isBlocking(lanes) && !root.um) {
           checkRenderCount(root, renders);
           renderAndCommit(root, lanes);
         } else {
@@ -1545,7 +1545,7 @@ function Make(Host) {
     }
   };
   let ensureRootScheduled = root => {
-    if (root.isUnmounted) {
+    if (root.um) {
       return;
     }
     let next = FiberRoot$ResFiber.nextLanes(root);
@@ -1553,14 +1553,14 @@ function Make(Host) {
       return cancelTask(root);
     } else if (Lanes$ResFiber.isBlocking(next)) {
       cancelTask(root);
-      if (!root.isScheduled) {
-        root.isScheduled = true;
+      if (!root.sch) {
+        root.sch = true;
         scheduledRoots.push(root);
         return requestFlush();
       } else {
         return;
       }
-    } else if (root.callbackLane !== next || Stdlib_Option.isNone(root.callbackTask)) {
+    } else if (root.tl !== next || Stdlib_Option.isNone(root.task)) {
       cancelTask(root);
       return scheduleConcurrentWork(root, next);
     } else {
@@ -1568,11 +1568,11 @@ function Make(Host) {
     }
   };
   let scheduleConcurrentWork = (root, lanes) => {
-    root.callbackTask = Primitive_option.some(Scheduler$ResFiber.Default.scheduleCallback(schedulerPriority(lanes), () => {
-      root.callbackTask = undefined;
-      root.callbackLane = Lanes$ResFiber.none;
+    root.task = Primitive_option.some(Scheduler$ResFiber.Default.scheduleCallback(schedulerPriority(lanes), () => {
+      root.task = undefined;
+      root.tl = Lanes$ResFiber.none;
       let lanes = FiberRoot$ResFiber.nextLanes(root);
-      if (root.isUnmounted || lanes === Lanes$ResFiber.none) {
+      if (root.um || lanes === Lanes$ResFiber.none) {
         return;
       } else if (Lanes$ResFiber.isBlocking(lanes)) {
         return ensureRootScheduled(root);
@@ -1599,7 +1599,7 @@ function Make(Host) {
         });
       }
     }));
-    root.callbackLane = lanes;
+    root.tl = lanes;
   };
   let isPausedForAnotherRoot = (root, lanes) => {
     let other = workInProgressRoot.contents;
@@ -1634,39 +1634,39 @@ function Make(Host) {
   };
   let createRoot = container => {
     let rootFiber = Fiber$ResFiber.make("HostRoot", null, null);
-    rootFiber.memoizedState = null;
+    rootFiber.ms = null;
     let root = {
-      container: container,
-      current: rootFiber,
-      pendingLanes: Lanes$ResFiber.none,
-      suspendedLanes: Lanes$ResFiber.none,
-      pendingElement: null,
-      hasPendingElement: false,
-      isScheduled: false,
-      callbackTask: undefined,
-      callbackLane: Lanes$ResFiber.none,
-      isUnmounted: false,
-      ensureScheduled: () => {}
+      con: container,
+      cur: rootFiber,
+      pl: Lanes$ResFiber.none,
+      sl: Lanes$ResFiber.none,
+      pe: null,
+      hpe: false,
+      sch: false,
+      task: undefined,
+      tl: Lanes$ResFiber.none,
+      um: false,
+      es: () => {}
     };
-    rootFiber.stateNode = root;
-    root.ensureScheduled = () => ensureRootScheduled(root);
+    rootFiber.sn = root;
+    root.es = () => ensureRootScheduled(root);
     liveRoots.push(root);
     return root;
   };
   let render = (root, element) => {
-    if (root.isUnmounted) {
+    if (root.um) {
       Errors$ResFiber.fail(7, Env$ResCommon.isDev ? "ResFiber: can't render into a root that was unmounted" : "");
     }
-    root.pendingElement = element;
-    root.hasPendingElement = true;
-    FiberRoot$ResFiber.scheduleUpdate(root.current, HookImpl$ResFiber.updateLane.contents);
+    root.pe = element;
+    root.hpe = true;
+    FiberRoot$ResFiber.scheduleUpdate(root.cur, HookImpl$ResFiber.updateLane.contents);
   };
   let unmount = root => {
-    if (root.isUnmounted) {
+    if (root.um) {
       return;
     }
     flushSync(() => render(root, null));
-    root.isUnmounted = true;
+    root.um = true;
     cancelTask(root);
     if (workInProgressRoot.contents === root) {
       resetWorkInProgress();

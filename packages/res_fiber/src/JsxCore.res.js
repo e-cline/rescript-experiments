@@ -17,7 +17,7 @@ let Fragment = {
 function make(component, props, key) {
   return {
     kind: component === jsxFragment ? "Fragment" : Marker$ResFiber.kindOf(component),
-    elementType: component,
+    type: component,
     key: key,
     props: props
   };
@@ -54,7 +54,7 @@ function jsxsKeyed(component, props, key, param) {
 function makeHost(tag, props, key) {
   return {
     kind: "Host",
-    elementType: tag,
+    type: tag,
     key: key,
     props: props
   };

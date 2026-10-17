@@ -10,16 +10,16 @@ let stack = [];
 function push(context, value, provider) {
   stack.push([
     context,
-    context.currentValue,
+    context.cv,
     provider
   ]);
-  context.currentValue = value;
+  context.cv = value;
 }
 
 function pop() {
   let match = stack.pop();
   if (match !== undefined) {
-    match[0].currentValue = match[1];
+    match[0].cv = match[1];
     return;
   } else {
     return Errors$ResFiber.fail(10, Env$ResCommon.isDev ? "ResFiber: context stack underflow" : "");
@@ -32,7 +32,7 @@ function isWithin(fiber, ancestor) {
   while (!found && Stdlib_Option.isSome(node)) {
     let current = node;
     found = current === ancestor;
-    node = current.parent;
+    node = current.p;
   };
   return found;
 }
@@ -57,37 +57,37 @@ function reset() {
 }
 
 function ofProvider(fiber) {
-  return fiber.elementType.$$fiberContext;
+  return fiber.type.$$fiberContext;
 }
 
 function read(fiber, context) {
-  let value = context.currentValue;
+  let value = context.cv;
   let dependency = {
-    context: context,
-    memoizedValue: value
+    ctx: context,
+    mv: value
   };
-  let dependencies = fiber.dependencies;
+  let dependencies = fiber.dep;
   if (dependencies !== undefined) {
     dependencies.push(dependency);
   } else {
-    fiber.dependencies = [dependency];
+    fiber.dep = [dependency];
   }
   return value;
 }
 
 function hasChanged(fiber) {
-  let dependencies = fiber.dependencies;
+  let dependencies = fiber.dep;
   if (dependencies !== undefined) {
-    return dependencies.some(dependency => !Object.is(dependency.context.currentValue, dependency.memoizedValue));
+    return dependencies.some(dependency => !Object.is(dependency.ctx.cv, dependency.mv));
   } else {
     return false;
   }
 }
 
 function dependsOn(fiber, context) {
-  let dependencies = fiber.dependencies;
+  let dependencies = fiber.dep;
   if (dependencies !== undefined) {
-    return dependencies.some(dependency => dependency.context === context);
+    return dependencies.some(dependency => dependency.ctx === context);
   } else {
     return false;
   }
@@ -101,12 +101,12 @@ function markParentPath(fiber, provider, lanes) {
     if (parent !== undefined) {
       let tmp = false;
       if (parent !== provider) {
-        let alternate = parent.alternate;
+        let alternate = parent.alt;
         tmp = alternate !== undefined ? alternate !== provider : true;
       }
       if (tmp) {
         FiberRoot$ResFiber.markChildLanes(parent, lanes);
-        node = parent.parent;
+        node = parent.p;
       } else {
         climbing = false;
       }
@@ -123,16 +123,16 @@ function propagateChange(provider, context, renderLanes) {
       let fiber = child;
       if (dependsOn(fiber, context)) {
         FiberRoot$ResFiber.markLanes(fiber, renderLanes);
-        markParentPath(fiber.parent, provider, renderLanes);
+        markParentPath(fiber.p, provider, renderLanes);
       }
-      let shadowed = fiber.tag === "ContextProvider" && fiber.elementType.$$fiberContext === context;
+      let shadowed = fiber.tag === "ContextProvider" && fiber.type.$$fiberContext === context;
       if (!shadowed) {
-        visit(fiber.child);
+        visit(fiber.c);
       }
-      child = fiber.sibling;
+      child = fiber.s;
     };
   };
-  visit(provider.child);
+  visit(provider.c);
 }
 
 export {

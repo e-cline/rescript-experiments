@@ -19,9 +19,9 @@ function timeout(priority) {
 }
 
 function cmp(a, b) {
-  if (a.expiration < b.expiration) {
+  if (a.exp < b.exp) {
     return -1;
-  } else if (a.expiration > b.expiration) {
+  } else if (a.exp > b.exp) {
     return 1;
   } else {
     return a.id - b.id | 0;
@@ -64,7 +64,7 @@ function peekLive() {
     if (task === undefined) {
       return task;
     }
-    if (!task.cancelled) {
+    if (!task.x) {
       return task;
     }
     MutablePriorityQueue$ResPriorityQueue.dequeue(queue);
@@ -108,10 +108,10 @@ runLoop.contents = () => {
   while (running) {
     let task = peekLive();
     if (task !== undefined) {
-      if (task.expiration <= performance.now() || !shouldYield()) {
+      if (task.exp <= performance.now() || !shouldYield()) {
         MutablePriorityQueue$ResPriorityQueue.dequeue(queue);
         try {
-          task.callback();
+          task.cb();
         } catch (error) {
           scheduleLoop();
           throw error;
@@ -129,9 +129,9 @@ runLoop.contents = () => {
 function scheduleCallback(priority, callback) {
   let task = {
     id: nextId.contents,
-    callback: callback,
-    expiration: performance.now() + timeout(priority),
-    cancelled: false
+    cb: callback,
+    exp: performance.now() + timeout(priority),
+    x: false
   };
   nextId.contents = nextId.contents + 1 | 0;
   MutablePriorityQueue$ResPriorityQueue.enqueue(queue, task);
@@ -140,7 +140,7 @@ function scheduleCallback(priority, callback) {
 }
 
 function cancelCallback(task) {
-  task.cancelled = true;
+  task.x = true;
 }
 
 let Default = {

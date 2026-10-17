@@ -16,9 +16,9 @@ module type S = {
 module Default = {
   type task = {
     id: int,
-    callback: unit => unit,
-    expiration: float,
-    mutable cancelled: bool,
+    @as("cb") callback: unit => unit,
+    @as("exp") expiration: float,
+    @as("x") mutable cancelled: bool,
   }
 
   /** How long a task may wait before it runs regardless of the time slice. */

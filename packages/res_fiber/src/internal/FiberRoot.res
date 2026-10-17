@@ -4,26 +4,26 @@ this record). Updates find their way here by walking up from the fiber they were
 */
 
 type t = {
-  container: unknown,
-  mutable current: Fiber.t,
+  @as("con") container: unknown,
+  @as("cur") mutable current: Fiber.t,
   /** Lanes with work to do somewhere in the tree. */
-  mutable pendingLanes: Lanes.t,
+  @as("pl") mutable pendingLanes: Lanes.t,
   /**
   Pending lanes whose render suspended (a transition waiting for a promise, keeping the screen as it
   was): not rendered again until the promise settles or another update arrives.
   */
-  mutable suspendedLanes: Lanes.t,
+  @as("sl") mutable suspendedLanes: Lanes.t,
   /** The element passed to the latest `render`, until a commit has rendered it. */
-  mutable pendingElement: Element.t,
-  mutable hasPendingElement: bool,
+  @as("pe") mutable pendingElement: Element.t,
+  @as("hpe") mutable hasPendingElement: bool,
   /** Whether it's queued for blocking (sync or default) work in the next flush. */
-  mutable isScheduled: bool,
+  @as("sch") mutable isScheduled: bool,
   /** The scheduler task that will render its concurrent work, and the lane it renders. */
-  mutable callbackTask: option<unknown>,
-  mutable callbackLane: Lanes.t,
-  mutable isUnmounted: bool,
+  @as("task") mutable callbackTask: option<unknown>,
+  @as("tl") mutable callbackLane: Lanes.t,
+  @as("um") mutable isUnmounted: bool,
   /** Set by the renderer that created the root: arranges for its pending lanes to be rendered. */
-  mutable ensureScheduled: unit => unit,
+  @as("es") mutable ensureScheduled: unit => unit,
 }
 
 external ofStateNode: unknown => t = "%identity"

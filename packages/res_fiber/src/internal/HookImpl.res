@@ -21,14 +21,14 @@ type kind =
   | Deferred
 
 type rec hook = {
-  kind: kind,
-  mutable memoizedState: unknown,
+  @as("k") kind: kind,
+  @as("ms") mutable memoizedState: unknown,
   /** State hooks: the state the `baseQueue` applies to. */
-  mutable baseState: unknown,
+  @as("bs") mutable baseState: unknown,
   /** State hooks: updates a render skipped (lower priority), and every update after them. */
-  mutable baseQueue: unknown,
-  mutable queue: unknown,
-  mutable next: option<hook>,
+  @as("bq") mutable baseQueue: unknown,
+  @as("q") mutable queue: unknown,
+  @as("n") mutable next: option<hook>,
 }
 
 type mode =
@@ -37,16 +37,16 @@ type mode =
   | Rerender
 
 type renderState = {
-  mutable fiber: option<Fiber.t>,
+  @as("f") mutable fiber: option<Fiber.t>,
   /** The node of the current (committed) fiber's list matching the last hook called. */
-  mutable currentHook: option<hook>,
+  @as("ch") mutable currentHook: option<hook>,
   /** The node of the work-in-progress list for the last hook called. */
-  mutable workInProgressHook: option<hook>,
-  mutable mode: mode,
-  mutable didScheduleRenderPhaseUpdate: bool,
+  @as("wh") mutable workInProgressHook: option<hook>,
+  @as("m") mutable mode: mode,
+  @as("rpu") mutable didScheduleRenderPhaseUpdate: bool,
   /** Whether the fiber being rendered got new props or state: if not, its old output is reused. */
-  mutable didReceiveUpdate: bool,
-  mutable renderLanes: Lanes.t,
+  @as("dru") mutable didReceiveUpdate: bool,
+  @as("rl") mutable renderLanes: Lanes.t,
 }
 
 let state = {
@@ -272,18 +272,18 @@ let bailoutHooks = (current: Fiber.t, workInProgress: Fiber.t, renderLanes: Lane
 // State and reducers
 
 type update<'state, 'action> = {
-  lane: Lanes.t,
-  action: 'action,
-  mutable hasEagerState: bool,
-  mutable eagerState: 'state,
+  @as("l") lane: Lanes.t,
+  @as("a") action: 'action,
+  @as("he") mutable hasEagerState: bool,
+  @as("es") mutable eagerState: 'state,
 }
 
 type queue<'state, 'action> = {
   /** Updates not yet seen by a render. A render moves them to the hook's `baseQueue`. */
-  mutable pending: array<update<'state, 'action>>,
-  mutable lastRenderedState: 'state,
-  mutable lastRenderedReducer: ('state, 'action) => 'state,
-  mutable dispatch: 'action => unit,
+  @as("p") mutable pending: array<update<'state, 'action>>,
+  @as("lrs") mutable lastRenderedState: 'state,
+  @as("lrr") mutable lastRenderedReducer: ('state, 'action) => 'state,
+  @as("d") mutable dispatch: 'action => unit,
 }
 
 external queueToUnknown: queue<'state, 'action> => unknown = "%identity"
@@ -474,7 +474,7 @@ let clearStoreReads = () =>
 
 // Memoization
 
-type memo<'value> = {value: 'value, deps: option<array<unknown>>}
+type memo<'value> = {@as("v") value: 'value, @as("d") deps: option<array<unknown>>}
 
 external memoToUnknown: memo<'value> => unknown = "%identity"
 external unknownToMemo: unknown => memo<'value> = "%identity"
@@ -529,15 +529,15 @@ type effectKind =
   | Layout
 
 /** Shared by an effect's successive renders: the cleanup from the last time it ran. */
-type effectInstance = {mutable destroy: option<unit => unit>}
+type effectInstance = {@as("d") mutable destroy: option<unit => unit>}
 
 type effect = {
-  effectKind: effectKind,
+  @as("k") effectKind: effectKind,
   /** Whether it's due: its dependencies changed (or it's new). */
-  hasEffect: bool,
-  create: unit => option<unit => unit>,
-  deps: option<array<unknown>>,
-  inst: effectInstance,
+  @as("h") hasEffect: bool,
+  @as("c") create: unit => option<unit => unit>,
+  @as("d") deps: option<array<unknown>>,
+  @as("i") inst: effectInstance,
 }
 
 external effectToUnknown: effect => unknown = "%identity"

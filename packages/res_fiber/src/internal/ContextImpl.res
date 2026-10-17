@@ -11,10 +11,10 @@ if everything between bails out.
 */
 
 type t<'value> = {
-  mutable currentValue: 'value,
-  defaultValue: 'value,
+  @as("cv") mutable currentValue: 'value,
+  @as("dv") defaultValue: 'value,
   /** The provider component, created once so its identity is stable. */
-  mutable provider: unknown,
+  @as("pr") mutable provider: unknown,
 }
 
 type providerProps<'value> = {value: 'value, children: Element.t}

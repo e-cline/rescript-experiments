@@ -55,6 +55,17 @@ module type S = {
   ) => unit
   let commitTextUpdate: (textInstance, ~oldText: string, ~newText: string) => unit
 
+  /**
+  Hides a node that's on screen without removing it, for content a `Suspense` boundary keeps
+  mounted behind its fallback (in the DOM, `display: none`).
+  */
+  let hideInstance: instance => unit
+  /** Shows a hidden node again, as its current `props` say. */
+  let unhideInstance: (instance, ~props: props) => unit
+  let hideTextInstance: textInstance => unit
+  /** Shows a hidden text node again, with its current `text`. */
+  let unhideTextInstance: (textInstance, ~text: string) => unit
+
   /** Appends `node`, moving it if it's already a child. */
   let appendChild: (instance, node) => unit
   /** Inserts `node` before `before`, moving it if it's already a child. */

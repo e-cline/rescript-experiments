@@ -14,6 +14,8 @@ but that the reconciler did no more than it had to:
 - `update div#a {className, title}`: props shown in `toString` changed (handler changes aren't
   logged).
 - `text "old" -> "new"`: a text node changed.
+- `hide span#a` / `unhide span#a`: a node hidden behind (or shown again from behind) a `Suspense`
+  fallback. `toString` leaves hidden nodes out.
 */
 
 /** A rendered node: a host element, or text (whose `tag` is `"#text"`). A `ref` receives one. */

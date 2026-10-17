@@ -192,7 +192,11 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
         ~provider=workInProgress,
       )
     }
-    bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
+    // Nothing in a hidden subtree renders until it's shown again.
+    workInProgress.tag == OffscreenComponent &&
+      SuspenseImpl.isHiddenProps(workInProgress.memoizedProps)
+      ? None
+      : bailoutOnAlreadyFinishedWork(workInProgress, renderLanes)
   } else {
     workInProgress.lanes = Lanes.none
     switch workInProgress.tag {
@@ -225,9 +229,22 @@ let beginWork = (current: option<Fiber.t>, workInProgress: Fiber.t, renderLanes:
       ChildReconciler.reconcileChildren(
         current,
         workInProgress,
-        SuspenseImpl.childrenOf(workInProgress),
+        SuspenseImpl.childrenOf(current, workInProgress),
       )
       workInProgress.child
+    | OffscreenComponent =>
+      if SuspenseImpl.isHiddenProps(workInProgress.pendingProps) {
+        // Hidden: keep the children as they are on screen, without rendering them.
+        workInProgress.child = current->Option.flatMap(current => current.child)
+        None
+      } else {
+        ChildReconciler.reconcileChildren(
+          current,
+          workInProgress,
+          SuspenseImpl.offscreenPropsOf(workInProgress.pendingProps).children,
+        )
+        workInProgress.child
+      }
     | HostPortal =>
       ChildReconciler.reconcilePortalChildren(
         current,

@@ -9,6 +9,7 @@ type kind =
   | ErrorBoundary
   | Portal
   | Suspense
+  | Offscreen
 
 type node = {
   kind: kind,

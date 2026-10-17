@@ -45,6 +45,8 @@ external getProperty: (element, string) => unknown = ""
 @get external style: element => style = "style"
 @send external setStyleProperty: (style, string, string) => unit = "setProperty"
 @send external removeStyleProperty: (style, string) => unit = "removeProperty"
+@send
+external setStylePropertyWithPriority: (style, string, string, string) => unit = "setProperty"
 @set_index external setStyle: (style, string, string) => unit = ""
 @get_index external getStyle: (style, string) => string = ""
 

@@ -108,6 +108,10 @@ let prepareUpdate = (_: node, ~tag as _, ~oldProps: props, ~newProps: props) =>
 
 let commitUpdate = (node: node, (), ~tag as _, ~oldProps as _, ~newProps) => node.props = newProps
 let commitTextUpdate = (node: node, ~oldText as _, ~newText) => node.text = newText
+let hideInstance = (_: node) => ()
+let unhideInstance = (_: node, ~props as _) => ()
+let hideTextInstance = (_: node) => ()
+let unhideTextInstance = (_: node, ~text as _) => ()
 
 let appendChild = append
 let insertBefore = (parent, child, ~before) => insertBefore(parent, child, before)

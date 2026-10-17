@@ -78,18 +78,50 @@ let retryWhenSettled = (boundary: Fiber.t, promise: promise<unknown>) => {
   onSettled(promise, retry, retry)
 }
 
-/**
-What the boundary renders: its children, or (having caught a suspension in this render) its
-fallback. Each is in a keyed fragment, so switching between them never reuses one's fibers for the
-other.
-*/
-let childrenOf = (fiber: Fiber.t): Element.t => {
-  let props = propsOf(fiber.pendingProps)
-  let showFallback = Fiber.hasFlag(fiber.flags, Fiber.Flags.didCapture)
+type offscreenProps = {mode: string, children: Element.t}
+
+external offscreenPropsOf: unknown => offscreenProps = "%identity"
+external fromArray: array<Element.t> => Element.t = "%identity"
+
+let hidden = "hidden"
+let visible = "visible"
+
+/** Whether an offscreen fiber's props (pending or memoized) say its children are hidden. */
+let isHiddenProps = (props: unknown) => offscreenPropsOf(props).mode == hidden
+
+let offscreen = (~mode: string, children: Element.t) =>
+  Element.fromNode({
+    kind: Offscreen,
+    elementType: Unsafe.nothing,
+    key: Nullable.make("children"),
+    props: Unsafe.toUnknown({mode, children}),
+  })
+
+let fallbackFragment = (fallback: Element.t) =>
   Element.fromNode({
     kind: Fragment,
     elementType: Unsafe.nothing,
-    key: Nullable.make(showFallback ? "fallback" : "children"),
-    props: Unsafe.toUnknown({"children": showFallback ? props.fallback : props.children}),
+    key: Nullable.make("fallback"),
+    props: Unsafe.toUnknown({"children": fallback}),
   })
+
+/**
+What the boundary renders. Normally its children, in a visible offscreen fiber. Having caught a
+suspension in this render: its fallback, after the children kept hidden if they've been shown (so
+their state survives), or alone if they never have. The keys keep the children's fibers and the
+fallback's apart.
+*/
+let childrenOf = (current: option<Fiber.t>, fiber: Fiber.t): Element.t => {
+  let props = propsOf(fiber.pendingProps)
+  if !Fiber.hasFlag(fiber.flags, Fiber.Flags.didCapture) {
+    offscreen(~mode=visible, props.children)
+  } else {
+    let hasShownChildren = switch current->Option.flatMap(current => current.child) {
+    | Some(child) => child.tag == OffscreenComponent
+    | None => false
+    }
+    hasShownChildren
+      ? fromArray([offscreen(~mode=hidden, props.children), fallbackFragment(props.fallback)])
+      : fallbackFragment(props.fallback)
+  }
 }

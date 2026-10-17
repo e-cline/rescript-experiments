@@ -6,6 +6,8 @@ type rec node = {
   mutable props: TestJsx.Elements.props,
   mutable text: string,
   mutable children: array<node>,
+  /** Hidden behind a `Suspense` fallback: left out of `toString`. */
+  mutable hidden: bool,
   owner: log,
 }
 /** A root's container, or a portal target: named in the log. */
@@ -80,7 +82,7 @@ module Host = {
   let make = (container: container, ~tag, ~props, ~text) => {
     let uid = container.log.nextUid
     container.log.nextUid = uid + 1
-    {uid, tag, props, text, children: [], owner: container.log}
+    {uid, tag, props, text, children: [], hidden: false, owner: container.log}
   }
 
   let createInstance = (~tag, ~props, ~container) => {
@@ -120,6 +122,30 @@ module Host = {
     if Array.length(changed) > 0 {
       record(instance.owner, `update ${describe(instance)} {${changed->Array.join(", ")}}`)
     }
+  }
+
+  let hide = (instance: instance) =>
+    if !instance.hidden {
+      instance.hidden = true
+      record(instance.owner, `hide ${describe(instance)}`)
+    }
+
+  // Logged only for a node that was hidden: one shown for the first time isn't "unhidden".
+  let unhide = (instance: instance) =>
+    if instance.hidden {
+      instance.hidden = false
+      record(instance.owner, `unhide ${describe(instance)}`)
+    }
+
+  let hideInstance = hide
+  let unhideInstance = (instance: instance, ~props) => {
+    instance.props = props
+    unhide(instance)
+  }
+  let hideTextInstance = hide
+  let unhideTextInstance = (instance: instance, ~text) => {
+    instance.text = text
+    unhide(instance)
   }
 
   let commitTextUpdate = (instance: instance, ~oldText, ~newText) => {
@@ -206,7 +232,9 @@ let flushSync = Renderer.flushSync
 let unmount = renderer => act(() => Renderer.unmount(renderer.root))
 
 let rec nodeToString = (node: node) =>
-  if node.tag == textTag {
+  if node.hidden {
+    ""
+  } else if node.tag == textTag {
     node.text
   } else {
     let attributes =

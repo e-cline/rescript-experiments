@@ -251,3 +251,142 @@ describe("Suspense", () => {
     ->Expect.toThrow(~message="hooks can only be called while a function component is rendering")
   })
 })
+
+/** A counter whose setter tests can reach, to show state surviving behind a fallback. */
+let setCount: ref<(int => int) => unit> = ref(_ => ())
+
+module Counter = {
+  @jsx.component
+  let make = () => {
+    let (count, set) = Hooks.useState(() => 0)
+    setCount := set
+    <b id="counter"> {TestJsx.int(count)} </b>
+  }
+}
+
+/**
+A resolved promise that `use` already knows the value of. (In a record: an `async` function
+returning a promise directly would hand back its value instead.)
+*/
+type known = {promise: promise<string>}
+
+let known = async (value: string): known => {
+  let data = deferred()
+  data.resolve(value)
+  let renderer = TestRenderer.create()
+  TestRenderer.render(
+    renderer,
+    <Suspense fallback=loading>
+      <Reads promise=data.promise id="probe" />
+    </Suspense>,
+  )
+  await settle()
+  {promise: data.promise}
+}
+
+describe("Suspense: children already shown", () => {
+  testAsync("are hidden behind the fallback, not unmounted, and keep their state", async t => {
+    let first = (await known("first")).promise
+    let renderer = TestRenderer.create()
+    let view = promise =>
+      <Suspense fallback=loading>
+        <Counter />
+        <Reads promise id="data" />
+        {TestJsx.string("tail")}
+      </Suspense>
+    TestRenderer.render(renderer, view(first))
+    TestRenderer.act(() => setCount.contents(c => c + 1))
+    let counter = TestRenderer.findById(renderer, "counter")->Option.map(TestRenderer.uid)
+    TestRenderer.clearOps(renderer)
+
+    let next = deferred()
+    TestRenderer.render(renderer, view(next.promise))
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="loading">loading</i>`)
+    let ops = TestRenderer.ops(renderer)
+    t
+    ->expect(ops->Array.filter(op => op->String.startsWith("hide")))
+    ->Expect.toEqual(["hide b#counter", "hide span#data", `hide "tail"`])
+    t->expect(ops->Array.some(op => op->String.startsWith("remove")))->Expect.toBe(false)
+
+    next.resolve("second")
+    await settle()
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(`<b id="counter">1</b><span id="data">second</span>tail`)
+    // The same node, with the state it had.
+    t
+    ->expect(TestRenderer.findById(renderer, "counter")->Option.map(TestRenderer.uid))
+    ->Expect.toEqual(counter)
+  })
+
+  testAsync("an update made while hidden shows when they're shown again", async t => {
+    let first = (await known("first")).promise
+    let renderer = TestRenderer.create()
+    let view = promise =>
+      <Suspense fallback=loading>
+        <Counter />
+        <Reads promise id="data" />
+      </Suspense>
+    TestRenderer.render(renderer, view(first))
+    let next = deferred()
+    TestRenderer.render(renderer, view(next.promise))
+    // Doesn't render (or loop): the counter is hidden.
+    TestRenderer.act(() => setCount.contents(c => c + 5))
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="loading">loading</i>`)
+    next.resolve("second")
+    await settle()
+    t
+    ->expect(TestRenderer.toString(renderer))
+    ->Expect.toBe(`<b id="counter">5</b><span id="data">second</span>`)
+  })
+
+  testAsync("on first mount there's nothing to hide", async t => {
+    let data = deferred()
+    let renderer = TestRenderer.create()
+    TestRenderer.render(
+      renderer,
+      <Suspense fallback=loading>
+        <Counter />
+        <Reads promise=data.promise id="data" />
+      </Suspense>,
+    )
+    t
+    ->expect(TestRenderer.ops(renderer)->Array.some(op => op->String.startsWith("hide")))
+    ->Expect.toBe(false)
+    t->expect(TestRenderer.findById(renderer, "counter"))->Expect.toBe(None)
+  })
+
+  testAsync(
+    "a nested boundary's hidden children stay hidden when the outer one shows again",
+    async t => {
+      let shown = (await known("shown")).promise
+      let renderer = TestRenderer.create()
+      let view = (~inner, ~outer) =>
+        <Suspense fallback={TestJsx.string("outer loading")}>
+          <Reads promise=outer id="outer" />
+          <Suspense fallback={TestJsx.string("inner loading")}>
+            <Reads promise=inner id="inner" />
+          </Suspense>
+        </Suspense>
+      TestRenderer.render(renderer, view(~inner=shown, ~outer=shown))
+      let inner = deferred()
+      TestRenderer.render(renderer, view(~inner=inner.promise, ~outer=shown))
+      t
+      ->expect(TestRenderer.toString(renderer))
+      ->Expect.toBe(`<span id="outer">shown</span>inner loading`)
+      let outer = deferred()
+      TestRenderer.render(renderer, view(~inner=inner.promise, ~outer=outer.promise))
+      t->expect(TestRenderer.toString(renderer))->Expect.toBe("outer loading")
+      outer.resolve("back")
+      await settle()
+      t
+      ->expect(TestRenderer.toString(renderer))
+      ->Expect.toBe(`<span id="outer">back</span>inner loading`)
+      inner.resolve("done")
+      await settle()
+      t
+      ->expect(TestRenderer.toString(renderer))
+      ->Expect.toBe(`<span id="outer">back</span><span id="inner">done</span>`)
+    },
+  )
+})

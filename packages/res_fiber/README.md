@@ -149,8 +149,9 @@ module Profile = {
 `Hooks.use(promise)` returns what the promise resolved to. Until it settles, the nearest `Suspense`
 boundary shows its fallback, and renders its children again once it has; a rejection goes to the
 nearest `ErrorBoundary`. Pass the same promise every render, since a render that suspends is thrown
-away. For now, children that suspend after being shown are unmounted while the fallback shows, and a
-transition that suspends shows the fallback too (see the plan's phase 6 for what comes next).
+away. Children that suspend after being shown stay mounted behind the fallback, hidden, keeping
+their state. For now a transition that suspends shows the fallback too (see the plan's phase 6 for
+what comes next).
 
 ### Portals
 

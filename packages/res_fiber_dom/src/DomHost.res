@@ -225,6 +225,21 @@ let commitUpdate = (element, changed, ~tag as _, ~oldProps, ~newProps) => {
 
 let commitTextUpdate = (text, ~oldText as _, ~newText) => Dom.setData(text, newText)
 
+// Content kept mounted behind a `Suspense` fallback: hidden with an `!important` `display: none`, so
+// no stylesheet shows it, and shown again with whatever `display` its `style` prop gives it.
+
+let hideInstance = (element: Dom.element) =>
+  Dom.style(element)->Dom.setStylePropertyWithPriority("display", "none", "important")
+
+let unhideInstance = (element: Dom.element, ~props: props) =>
+  switch props.style->Option.flatMap(style => style->Dict.get("display")) {
+  | Some(display) => Dom.setStyleProperty(Dom.style(element), "display", display)
+  | None => Dom.removeStyleProperty(Dom.style(element), "display")
+  }
+
+let hideTextInstance = (text: Dom.text) => Dom.setData(text, "")
+let unhideTextInstance = (text: Dom.text, ~text as content) => Dom.setData(text, content)
+
 let appendChild = Dom.appendChild
 let insertBefore = (parent, node, ~before) => Dom.insertBefore(parent, node, before)
 let removeChild = Dom.removeChild

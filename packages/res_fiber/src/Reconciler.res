@@ -122,6 +122,14 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
         )
       }
     | ContextProvider => ContextImpl.pop()
+    | OffscreenComponent =>
+      switch current {
+      | Some(current)
+        if SuspenseImpl.isHiddenProps(current.memoizedProps) !=
+          SuspenseImpl.isHiddenProps(workInProgress.memoizedProps) =>
+        addFlag(workInProgress, Flags.visibility)
+      | _ => ()
+      }
     | HostRoot
     | FunctionComponent
     | MemoComponent
@@ -151,7 +159,12 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       c.parent = Some(fiber)
     })
     fiber.subtreeFlags = subtreeFlags.contents
-    fiber.childLanes = childLanes.contents
+
+    // Updates in a hidden subtree wait until it's shown: the root doesn't render for them meanwhile.
+    fiber.childLanes = fiber.tag == OffscreenComponent &&
+      SuspenseImpl.isHiddenProps(fiber.memoizedProps)
+      ? Lanes.none
+      : childLanes.contents
   }
 
   // Render phase: the work loop. One render is in progress at a time, across all of this renderer's
@@ -447,7 +460,12 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
           ~remove=Some(node => Host.removeChildFromContainer(container, node)),
         )
       )
-    | HostRoot | Fragment | ContextProvider | ErrorBoundaryComponent | SuspenseComponent =>
+    | HostRoot
+    | Fragment
+    | ContextProvider
+    | ErrorBoundaryComponent
+    | SuspenseComponent
+    | OffscreenComponent =>
       forEachChild(fiber, child => commitDeletionEffects(child, ~remove))
     }
 
@@ -489,6 +507,28 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     | _ => ()
     }
 
+  /**
+  Hides (or shows again) the top-level host nodes below an offscreen fiber. A portal's nodes are
+  elsewhere and left alone, and a nested offscreen fiber that's hidden stays hidden.
+  */
+  let rec setVisibility = (fiber: Fiber.t, ~hide: bool) =>
+    switch fiber.tag {
+    | HostComponent =>
+      hide
+        ? Host.hideInstance(toInstance(fiber.stateNode))
+        : Host.unhideInstance(toInstance(fiber.stateNode), ~props=toProps(fiber.memoizedProps))
+    | HostText =>
+      hide
+        ? Host.hideTextInstance(toTextInstance(fiber.stateNode))
+        : Host.unhideTextInstance(
+            toTextInstance(fiber.stateNode),
+            ~text=toString(fiber.memoizedProps),
+          )
+    | HostPortal => ()
+    | OffscreenComponent if SuspenseImpl.isHiddenProps(fiber.memoizedProps) => ()
+    | _ => forEachChild(fiber, child => setVisibility(child, ~hide))
+    }
+
   let rec commitMutationEffects = (fiber: Fiber.t) => {
     // `deletions` stays set for the passive phase, which cleans up the deleted effects.
     switch fiber.deletions {
@@ -514,6 +554,10 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     }
     if hasFlag(fiber.flags, Flags.update) {
       commitUpdate(fiber)
+    }
+    if fiber.tag == OffscreenComponent && hasFlag(fiber.flags, Flags.visibility) {
+      let hide = SuspenseImpl.isHiddenProps(fiber.memoizedProps)
+      forEachChild(fiber, child => setVisibility(child, ~hide))
     }
     if isFunctionLike(fiber) && hasFlag(fiber.flags, Flags.layout) {
       HookImpl.commitEffectsUnmount(fiber, ~effectKind=Layout, ~all=false)

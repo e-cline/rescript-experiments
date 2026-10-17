@@ -16,6 +16,7 @@ WARNING: None of this is intended for real production use.
 | [`@e-cline/res_server`](packages/res_server)                 | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
 | [`@e-cline/res_fiber`](packages/res_fiber)                   | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
 | [`@e-cline/res_fiber_dom`](packages/res_fiber_dom)           | The DOM renderer for `res_fiber`: render components into a browser page.                                                                             |
+| [`@e-cline/res_fiber_signals`](packages/res_fiber_signals)   | Hooks for reading `res_signals` atoms and computeds from `res_fiber` components.                                                                     |
 
 These are at version 0.0.x: the APIs are still changing, and any release may break them.
 
@@ -40,9 +41,9 @@ Then list it in your `rescript.json`:
 ```
 
 Each package's modules sit under a namespace named after it (`ResSignals`, `ResTrees`, `ResCommon`,
-`ResSignalMaps`, `ResServer`, `ResFiber`, `ResFiberDom`), so `ResSignals.Atom.make` works without an
-`open`. The packages ship as ReScript source, and your project's `rescript build` compiles them
-along with your own code.
+`ResSignalMaps`, `ResServer`, `ResFiber`, `ResFiberDom`, `ResFiberSignals`), so
+`ResSignals.Atom.make` works without an `open`. The packages ship as ReScript source, and your
+project's `rescript build` compiles them along with your own code.
 
 ## Also in this repository
 

@@ -192,6 +192,11 @@ export function makeRescriptLibConfig(
      * tasks that run a compiled `*.res.jsx` entry point).
      */
     tasks?: Record<string, RunTask>;
+    /**
+     * Where the tests run: Vitest's default `node`, or `jsdom` for tests
+     * that render into a document. Default: `node`.
+     */
+    testEnvironment?: 'node' | 'jsdom';
   } = {},
 ): ReturnType<typeof defineConfig> {
   const typescriptSurface = options.typescriptSurface ?? false;
@@ -276,6 +281,7 @@ export function makeRescriptLibConfig(
       // default rather than adding to it, so they're repeated here.
       exclude: ['**/node_modules/**', '**/.git/**', 'lib/**'],
       passWithNoTests: true,
+      environment: options.testEnvironment ?? 'node',
       typecheck: {
         enabled: typescriptSurface,
         include: [...testFileMatch],

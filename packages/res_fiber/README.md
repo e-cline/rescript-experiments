@@ -19,7 +19,9 @@ This is an early stage of the [plan](../../docs/res_fiber_plan.md). What works:
   while rendering, skipping components whose props and state didn't change.
 - `TestRenderer`: an in-memory renderer that logs every host operation.
 
-Not yet: a DOM renderer, concurrent rendering, error boundaries.
+Not yet: concurrent rendering, error boundaries.
+
+To render into a browser page, use [`@e-cline/res_fiber_dom`](../res_fiber_dom).
 
 ## Installing
 

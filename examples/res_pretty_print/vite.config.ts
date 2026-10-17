@@ -4,7 +4,7 @@ export default makeRescriptLibConfig({
   tasks: {
     // Prints a few values with their generated printers.
     demo: {
-      command: 'tsx src/Demo.res.jsx',
+      command: 'node src/Demo.res.js',
       dependsOn: [rootResTask],
       cache: false,
     },

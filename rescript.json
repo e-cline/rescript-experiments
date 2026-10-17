@@ -14,7 +14,6 @@
     "@e-cline/res_fiber_dom",
     "@e-cline/res_fiber_signals",
     "@e-cline/res_fiber_benchmarks",
-    "@e-cline/res_react_ui_example",
     "@e-cline/res_fiber_app_example",
     "@e-cline/res_pretty_print_example",
     "@e-cline/res_tree_shaking_example",
@@ -27,6 +26,6 @@
       "in-source": true
     }
   ],
-  "suffix": ".res.jsx",
-  "jsx": {"version": 4, "preserve": true}
+  "suffix": ".res.js",
+  "jsx": {"version": 4}
 }

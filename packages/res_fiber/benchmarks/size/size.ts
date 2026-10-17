@@ -27,11 +27,11 @@ type Entry = {
 };
 
 const entries: Entry[] = [
-  {name: 'counter', file: 'Counter.res.jsx', consoleCalls: 0},
-  {name: 'full API', file: 'FullApi.res.jsx', consoleCalls: 0},
+  {name: 'counter', file: 'Counter.res.js', consoleCalls: 0},
+  {name: 'full API', file: 'FullApi.res.js', consoleCalls: 0},
   {
     name: 'todo app (examples/res_fiber_app)',
-    file: '../../../../examples/res_fiber_app/src/Main.res.jsx',
+    file: '../../../../examples/res_fiber_app/src/Main.res.js',
     // `Main.res` logs an error when the page has no `#app` element.
     consoleCalls: 1,
   },

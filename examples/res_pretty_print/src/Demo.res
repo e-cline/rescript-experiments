@@ -1,6 +1,6 @@
 /***
 Prints a few values with their generated printers. Run with `vp run demo`
-(or, after a build, `tsx src/Demo.res.jsx`).
+(or, after a build, `node src/Demo.res.js`).
 */
 
 let section = (title, output) => Console.log(`-- ${title}\n${output}\n`)

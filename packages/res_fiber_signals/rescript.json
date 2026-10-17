@@ -10,7 +10,7 @@
       "in-source": true
     }
   ],
-  "suffix": ".res.jsx",
+  "suffix": ".res.js",
   "namespace": "ResFiberSignals",
   "dev-dependencies": ["rescript-vitest"],
   "dependencies": ["@e-cline/res_fiber", "@e-cline/res_signals"]

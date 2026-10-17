@@ -13,7 +13,6 @@
   "devDependencies": {
     "rescript": "catalog:",
     "rescript-vitest": "catalog:",
-    "tsx": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {

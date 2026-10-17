@@ -101,8 +101,9 @@ pnpm run check
 ```
 
 Clean up artifacts. This deletes every gitignored file: `node_modules`, `dist`, the ReScript
-compiler's output (`lib/`, `*.res.jsx`, `*.gen.tsx`), and the PPX's `_build`. The opam switch lives
-outside the repository, so it survives this:
+compiler's build cache (`lib/`) and genType output (`*.gen.tsx`), and the PPX's `_build`. The
+compiled JS (`*.res.js`, `*.res.jsx`) is committed, so it stays. The opam switch lives outside the
+repository, so it survives this too:
 
 ```bash
 git clean -fdX
@@ -119,7 +120,13 @@ a build -- the type check covers TypeScript that imports files the ReScript comp
 pnpm run check
 ```
 
-CI runs that check, the build and every package's tests on each pull request.
+The ReScript compiler's JS output (`*.res.js`, or `*.res.jsx` in a package with preserved JSX) is
+committed next to its `.res` source, so a change's effect on the generated code shows up in review.
+Build before you commit and commit the regenerated files along with the `.res`/`.resi` change.
+(`pnpm run rescript:clean` deletes them; the next build writes them back.)
+
+CI runs that check, the build and every package's tests on each pull request, and fails if the build
+changes the committed ReScript output.
 
 ## Changesets
 

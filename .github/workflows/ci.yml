@@ -37,5 +37,11 @@ jobs:
       # The check type-checks TypeScript that imports files the ReScript
       # compiler generates, so it has to follow the build.
       - run: vp run build
+      # The ReScript compiler's output is committed (see .gitignore): fail if
+      # the build changed it, or wrote output for a file that has none yet.
+      - name: Check the committed ReScript output is up to date
+        run: |
+          git add --intent-to-add -- '*.res.js' '*.res.jsx'
+          git diff --exit-code --stat -- '*.res.js' '*.res.jsx'
       - run: vp run check
       - run: vp run test

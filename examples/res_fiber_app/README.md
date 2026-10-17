@@ -11,7 +11,7 @@ library:
 - the new-todo input controlled by `useState`, and focused on mount through a `ref` and an effect.
 
 The source is [`src/App.res`](src/App.res) (components) and [`src/Todo.res`](src/Todo.res) (state).
-The root `res` task compiles them to `.res.jsx`, which `index.html` loads like any other module.
+The root `res` task compiles them to `.res.js`, which `index.html` loads like any other module.
 
 Run it:
 

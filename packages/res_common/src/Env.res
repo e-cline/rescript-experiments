@@ -5,7 +5,7 @@
 // by build condition the way a bundler's module resolution does. The compiler
 // doesn't look inside the string at all -- it just emits
 // `import * as Js_env from "@e-cline/js_env"` plus `let isDev = Js_env.IS_DEV`
-// into the compiled `.res.jsx` and trusts the declared types. That plain JS
+// into the compiled `.res.js` and trusts the declared types. That plain JS
 // import is what a bundler's export-condition resolution (`"development"` vs.
 // `"production"`, picking one of `@e-cline/js_env`'s two physical files)
 // applies to, and ordinary dead-code elimination downstream of that then

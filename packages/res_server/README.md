@@ -540,7 +540,7 @@ From JavaScript or TypeScript, pass the compiled export to anything that takes a
 ```js
 import {serve} from '@hono/node-server';
 
-import {app} from './src/Routes.res.jsx';
+import {app} from './src/Routes.res.js';
 
 serve({fetch: app, port: 3000});
 ```

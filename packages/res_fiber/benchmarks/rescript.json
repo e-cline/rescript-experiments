@@ -1,9 +1,9 @@
 {
   "name": "@e-cline/res_fiber_benchmarks",
-  "sources": {
-    "dir": "src",
-    "subdirs": true
-  },
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "size", "subdirs": true}
+  ],
   "package-specs": [
     {
       "module": "esmodule",
@@ -12,5 +12,9 @@
   ],
   "suffix": ".res.js",
   "namespace": "ResFiberBenchmarks",
-  "dependencies": ["@e-cline/res_fiber", "@e-cline/res_benchmarking"]
+  "dependencies": [
+    "@e-cline/res_fiber",
+    "@e-cline/res_fiber_dom",
+    "@e-cline/res_benchmarking"
+  ]
 }

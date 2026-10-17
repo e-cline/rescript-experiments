@@ -76,6 +76,18 @@ export default defineConfig({
         command: 'res-bench readme README.md',
         cache: false,
       },
+      // Bundle sizes, minified and compressed, of the apps in `size/` and of
+      // examples/res_fiber_app (see the README). Builds nothing to disk.
+      size: {
+        command: 'tsx ./size/size.ts',
+        dependsOn: [rootResTask],
+        cache: false,
+      },
+      // Type-checks `size/size.ts`, the only TypeScript here.
+      typecheck: {
+        command: 'tsc --noEmit',
+        cache: false,
+      },
       // The same benchmarks, run straight from the compiler's output, to see
       // what bundling and minifying change.
       'bench:unbundled': {

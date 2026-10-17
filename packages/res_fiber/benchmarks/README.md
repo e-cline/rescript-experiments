@@ -103,6 +103,26 @@ operation grows linearly with the list.
 row. It still grows with the list, because reaching the row clones every sibling fiber of the
 `<ul>`'s children on the way (bailing out of them without rendering), as React's reconciler does.
 
+## Bundle size
+
+`vp run size` (from here or from the repository root) measures what `res_fiber` and `res_fiber_dom`
+add to an app's production bundle:
+
+| Bytes                                                                   | minified |   gzip | brotli |
+| ----------------------------------------------------------------------- | -------: | -----: | -----: |
+| [`size/Counter.res`](size/Counter.res): one `useState` and a `<button>` |   32,788 | 10,487 |  9,494 |
+| [`size/FullApi.res`](size/FullApi.res): every hook and component, once  |   36,921 | 11,933 | 10,826 |
+| [the todo app](../../../examples/res_fiber_app)                         |   36,813 | 12,008 | 10,839 |
+
+Measured at a1d88a5, 2026-10-17. Each app is bundled on its own by Vite in production mode, into one
+ES module, and minified by Terser (top-level mangling, 3 compress passes) until another run stops
+shrinking it; then compressed with gzip (level 9) and brotli (quality 11). The script,
+[`size/size.ts`](size/size.ts), also fails if a bundle includes development-only code (the key
+warnings, behind `ResCommon.Env.isDev`): a production build resolves `@e-cline/js_env` to constants
+that let the minifier drop it.
+
+The counter already carries most of the code: using the whole API adds about 4 KB (1.4 KB gzipped).
+
 ## Reading the results
 
 - Compare benchmarks within one run: absolute times depend on the machine, and on what else it is

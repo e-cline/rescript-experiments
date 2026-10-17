@@ -18,6 +18,7 @@
     "build": "vp run -r build",
     "test": "vp run -r test",
     "bench": "vp run -r bench",
+    "size": "vp run -r size",
     "fmt": "vp fmt && vp run -r res:fmt",
     "check": "vp check && vp run -r res:check",
     "prepare": "vp config",

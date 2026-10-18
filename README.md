@@ -6,8 +6,9 @@ WARNING: None of this is intended for real production use.
 
 ## Weft
 
-Weft is the UI framework in here: `weft_core` (components, hooks and a fiber reconciler), `weft_dom`
-(the DOM renderer) and `weft_signals` (hooks for reading `signals`), plus the `weft_app` example.
+Weft is the UI framework in here: `weft` (its public API, re-exporting the next two), `weft_core`
+(components, hooks and a fiber reconciler), `weft_dom` (the DOM renderer) and `weft_signals` (hooks
+for reading `signals`), plus the `weft_app` example.
 
 ## Packages
 
@@ -19,6 +20,7 @@ Weft is the UI framework in here: `weft_core` (components, hooks and a fiber rec
 | [`@e-cline/signals`](packages/signals)               | Reactive signals: atoms, computeds and effects, with diff-driven history for incremental consumers.                                                  |
 | [`@e-cline/signal_maps`](packages/signal_maps)       | A sorted, signal-backed map whose derived views update incrementally. Built on the two packages above.                                               |
 | [`@e-cline/server`](packages/server)                 | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
+| [`@e-cline/weft`](packages/weft)                     | Weft's public API: `weft_core` and `weft_dom` behind one `Weft` module. The package to depend on.                                                    |
 | [`@e-cline/weft_core`](packages/weft_core)           | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
 | [`@e-cline/weft_dom`](packages/weft_dom)             | The DOM renderer for `weft_core`: render components into a browser page.                                                                             |
 | [`@e-cline/weft_signals`](packages/weft_signals)     | Hooks for reading `signals` atoms and computeds from `weft_core` components.                                                                         |
@@ -47,8 +49,8 @@ Then list it in your `rescript.json`:
 
 Each package's modules sit under a namespace named after it (`Signals`, `Trees`, `Common`,
 `SignalMaps`, `Server`, `WeftCore`, `WeftDom`, `WeftSignals`), so `Signals.Atom.make` works without
-an `open`. The packages ship as ReScript source, and your project's `rescript build` compiles them
-along with your own code.
+an `open`. (`weft` is the exception: a single `Weft` module.) The packages ship as ReScript source,
+and your project's `rescript build` compiles them along with your own code.
 
 ## Also in this repository
 

@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
+@@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 /***
 An app using every public feature of `weft_core` and `weft_dom`, for `vp run size`: every kind
@@ -7,15 +7,15 @@ of hook, context, `Memo`, `ErrorBoundary`, `Suspense`, transitions, portals, `fl
 It's only bundled, never run.
 */
 
-open WeftCore.Hooks
+open Weft.Hooks
 
-module Dom = WeftDom.Dom
-module Jsx = WeftDom.Jsx
+module Dom = Weft.Dom
+module Jsx = Weft.Jsx
 
 module Theme = {
-  let context = WeftCore.Context.make("light")
+  let context = Weft.Context.make("light")
   module Provider = {
-    let make = WeftCore.Context.provider(context)
+    let make = Weft.Context.provider(context)
   }
 }
 
@@ -30,7 +30,7 @@ module Greeting = {
 
 module Label = {
   @jsx.component
-  let make = WeftCore.Memo.memo((~text: string) => <span> {Jsx.string(text)} </span>)
+  let make = Weft.Memo.memo((~text: string) => <span> {Jsx.string(text)} </span>)
 }
 
 module App = {
@@ -58,31 +58,31 @@ module App = {
       <button onClick={_ => startTransition(() => dispatch(1))}>
         {Jsx.string(isPending ? "..." : Int.toString(deferred + stored))}
       </button>
-      <button onClick={_ => WeftCore.Transition.start(() => setCount(_ => 0))}>
+      <button onClick={_ => Weft.Transition.start(() => setCount(_ => 0))}>
         <Label text="reset" />
       </button>
-      <WeftCore.ErrorBoundary
-        fallback={(~error, ~reset as _) => Jsx.string(WeftCore.ErrorBoundary.message(error))}
+      <Weft.ErrorBoundary
+        fallback={(~error, ~reset as _) => Jsx.string(Weft.ErrorBoundary.message(error))}
       >
-        <WeftCore.Suspense fallback={Jsx.string("loading")}>
+        <Weft.Suspense fallback={Jsx.string("loading")}>
           <Greeting />
-        </WeftCore.Suspense>
-      </WeftCore.ErrorBoundary>
-      <WeftDom.Portal container=layer> {Jsx.string("portal")} </WeftDom.Portal>
+        </Weft.Suspense>
+      </Weft.ErrorBoundary>
+      <Weft.Portal container=layer> {Jsx.string("portal")} </Weft.Portal>
     </div>
   }
 }
 
 switch Nullable.toOption(Dom.document->Dom.body->Dom.querySelector("#app")) {
 | Some(container) =>
-  let root = WeftDom.Client.createRoot(container)
-  WeftDom.Client.flushSync(() =>
-    root->WeftDom.Client.render(
+  let root = Weft.Client.createRoot(container)
+  Weft.Client.flushSync(() =>
+    root->Weft.Client.render(
       <Theme.Provider value="dark">
         <App layer={Dom.document->Dom.body} />
       </Theme.Provider>,
     )
   )
-  WeftDom.Client.unmount(root)
+  Weft.Client.unmount(root)
 | None => ()
 }

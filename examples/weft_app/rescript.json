@@ -13,5 +13,5 @@
   "suffix": ".res.js",
   "namespace": "WeftAppExample",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/weft_core", "@e-cline/weft_dom"]
+  "dependencies": ["@e-cline/weft", "@e-cline/weft_core", "@e-cline/weft_dom"]
 }

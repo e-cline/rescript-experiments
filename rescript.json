@@ -13,6 +13,7 @@
     "@e-cline/weft_core",
     "@e-cline/weft_dom",
     "@e-cline/weft_signals",
+    "@e-cline/weft",
     "@e-cline/weft_core_benchmarks",
     "@e-cline/weft_app_example",
     "@e-cline/pretty_print_example",

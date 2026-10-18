@@ -1,23 +1,11 @@
 module Element = WeftCore.Element
 
-/** A frame's entry in its page's registry, which `useFrame` reads. */
-type registered = {
-  mutable refetch: option<(~url: string=?) => promise<unit>>,
-  mutable isPending: bool,
-  /** Who to tell when either changes. */
-  listeners: Set.t<unit => unit>,
-  /** The registration currently in effect, so an older one's cleanup leaves a newer one alone. */
-  mutable owner: int,
-}
-
 type t = {
   client: Client.t,
   render: Element.t => unit,
   mutable url: string,
   onNavigate: string => unit,
   latest: Client.Latest.t,
-  frames: Map.t<string, registered>,
-  mutable registrations: int,
 }
 
 let context: WeftCore.Context.t<option<t>> = WeftCore.Context.make(None)
@@ -29,8 +17,6 @@ let make = (client, ~render, ~url, ~onNavigate=_ => ()) => {
   url,
   onNavigate,
   latest: Client.Latest.make(),
-  frames: Map.make(),
-  registrations: 0,
 }
 
 let show = (navigation, element) =>
@@ -60,70 +46,75 @@ let useNavigation = () =>
     Errors.fail(
       16,
       Common.Env.isDev
-        ? "WeftServer: useNavigation (or useFrame) was called outside a page: render the element with Navigation.show"
+        ? "WeftServer: useNavigation (or useRefetchable) was called outside a page: render the element with Navigation.show"
         : "",
     )
   }
+
+type refetchable = {
+  element: Element.t,
+  refetch: (~url: string=?) => promise<unit>,
+  isPending: bool,
+}
+
+/** A refetched element, and the `children` it replaced (newer `children` replace it in turn). */
+type refetched = {fetched: Element.t, over: Element.t}
+
+let useRefetchable = (~src, children) => {
+  open WeftCore.Hooks
+  let navigation = useNavigation()
+  let (refetched, setRefetched) = useState(() => None)
+  let (fetching, setFetching) = useState(() => false)
+  let (transitionPending, startTransition) = useTransition()
+  // Each place's fetches replace each other.
+  let latest = useMemo0(() => Client.Latest.make())
+  // What `children` are now, for a refetch finishing later to record what it replaced.
+  let currentChildren = useRef(children)
+  currentChildren.current = children
+
+  let refetch = useCallback2(async (~url=?) => {
+    setFetching(_ => true)
+    switch await latest->Client.Latest.fetchElement(navigation.client, url->Option.getOr(src)) {
+    | Some(fetched) =>
+      // In a transition, so what's on screen stays until what replaces it is ready.
+      startTransition(() => {
+        setFetching(_ => false)
+        setRefetched(_ => Some({fetched, over: currentChildren.current}))
+      })
+    | None => ()
+    | exception error =>
+      setFetching(_ => false)
+      throw(error)
+    }
+  }, (navigation, src))
+
+  let element = switch refetched {
+  // Shown until newer `children` come (with a `navigate` or `refresh`): whichever is newer wins.
+  | Some({fetched, over}) if over === children => fetched
+  | _ => children
+  }
+  {element, refetch, isPending: fetching || transitionPending}
+}
 
 type frame = {
   refetch: (~url: string=?) => promise<unit>,
   isPending: bool,
 }
 
-let registered = (navigation, name) =>
-  switch navigation.frames->Map.get(name) {
-  | Some(found) => found
+let frameContext: WeftCore.Context.t<option<frame>> = WeftCore.Context.make(None)
+let frameProvider = WeftCore.Context.provider(frameContext)
+
+let withFrame = (frame, element) =>
+  WeftCore.JsxCore.jsx(frameProvider, {value: Some(frame), children: element})
+
+let useFrame = () =>
+  switch WeftCore.Hooks.useContext(frameContext) {
+  | Some(frame) => frame
   | None =>
-    let found = {refetch: None, isPending: false, listeners: Set.make(), owner: -1}
-    navigation.frames->Map.set(name, found)
-    found
+    Errors.fail(
+      18,
+      Common.Env.isDev
+        ? "WeftServer: useFrame was called outside a frame: render it inside a WeftServer.Frame (or Navigation.withFrame)"
+        : "",
+    )
   }
-
-let notify = found => found.listeners->Set.forEach(listener => listener())
-
-let registerFrame = (navigation, name, ~refetch, ~isPending) => {
-  let found = registered(navigation, name)
-  navigation.registrations = navigation.registrations + 1
-  let owner = navigation.registrations
-  found.owner = owner
-  found.refetch = Some(refetch)
-  found.isPending = isPending
-  notify(found)
-  () =>
-    if found.owner == owner {
-      found.refetch = None
-      found.isPending = false
-      notify(found)
-    }
-}
-
-let useFrame = name => {
-  let navigation = useNavigation()
-  let found = registered(navigation, name)
-  let subscribe = WeftCore.Hooks.useCallback1(listener => {
-    found.listeners->Set.add(listener)
-    () => found.listeners->Set.delete(listener)->ignore
-  }, [found])
-  let isPending = WeftCore.Hooks.useSyncExternalStore(~subscribe, ~getSnapshot=() =>
-    found.isPending
-  )
-  let refetch = WeftCore.Hooks.useCallback1((~url=?) =>
-    switch found.refetch {
-    | Some(refetch) => refetch(~url?)
-    | None => Promise.resolve()
-    }
-  , [found])
-  {refetch, isPending}
-}
-
-let frame = (navigation, name) => {
-  let found = registered(navigation, name)
-  {
-    refetch: (~url=?) =>
-      switch found.refetch {
-      | Some(refetch) => refetch(~url?)
-      | None => Promise.resolve()
-      },
-    isPending: found.isPending,
-  }
-}

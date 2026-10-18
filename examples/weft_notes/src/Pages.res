@@ -70,9 +70,15 @@ module NoteBody = {
 }
 
 module Comments = {
-  /** The comments' frame's content: the list, given the comments as a promise. */
+  /**
+  The comments' frame's content: the button that reloads them (inside the frame, so it finds it),
+  and the list, given the comments as a promise.
+  */
   @weft.component({kind: Server})
-  let make = (~id, ~signal) => <CommentList comments={Db.commentsOf(id, ~signal)} />
+  let make = (~id, ~signal) => <>
+    <ReloadComments />
+    <CommentList comments={Db.commentsOf(id, ~signal)} />
+  </>
 }
 
 module Related = {
@@ -105,7 +111,7 @@ module NotePage = {
   @weft.component({kind: Server})
   let make = (~id, ~signal) =>
     <Layout>
-      <WeftServer.Frame name="header" src={`/notes/${id}/header`}>
+      <WeftServer.Frame src={`/notes/${id}/header`}>
         <NoteHeader id />
       </WeftServer.Frame>
       <Weft.Suspense fallback={loading("likes-loading", "…")}>
@@ -116,8 +122,7 @@ module NotePage = {
       </Weft.Suspense>
       <section id="comments-section">
         <h2> {Weft.Jsx.string("Comments")} </h2>
-        <ReloadComments />
-        <WeftServer.Frame name="comments" src={`/notes/${id}/comments`}>
+        <WeftServer.Frame src={`/notes/${id}/comments`}>
           <Comments id signal />
         </WeftServer.Frame>
         <CommentForm noteId=id />

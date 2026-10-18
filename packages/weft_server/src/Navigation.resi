@@ -6,14 +6,20 @@ keep their content until what replaces it is ready. Fetches replace each other: 
 arrives after a newer one is dropped, and its stream cancelled.
 
 `Bootstrap` makes the browser's; a test can make one over any renderer. Entrypoints reach it with
-`useNavigation`, and parts of the page (`Frame`s) with `useFrame`:
+`useNavigation`:
 
 ```rescript
 // in an entrypoint
 let navigation = WeftServer.Navigation.useNavigation()
 <button onClick={_ => navigation->WeftServer.Navigation.refresh->ignore}> {...} </button>
+```
 
-let comments = WeftServer.Navigation.useFrame("comments")
+A part of the page can be fetched again by itself with `useRefetchable` (which `Frame` wraps), and
+entrypoints inside a `Frame` reach it with `useFrame`:
+
+```rescript
+// in an entrypoint inside a <WeftServer.Frame>
+let comments = WeftServer.Navigation.useFrame()
 <button onClick={_ => comments.refetch()->ignore}> {...} </button> // comments.isPending
 ```
 */
@@ -57,27 +63,42 @@ let client: t => Client.t
 /** The page an entrypoint is on. Fails outside one. */
 let useNavigation: unit => t
 
-/** A part of the page that can be fetched again on its own (see `Frame`). */
-type frame = {
-  /** Fetches the frame's `src` again (or `url`), and renders it in the frame's place. */
+/** An element that can be fetched again, from `useRefetchable`. */
+type refetchable = {
+  /** What to render: the fetched element, or `children` until there is one (or newer ones come). */
+  element: WeftCore.Element.t,
+  /** Fetches `src` again (or `url`) and shows what it gets, in a transition. */
   refetch: (~url: string=?) => promise<unit>,
   /** True from a refetch's start until what it fetched has rendered. */
   isPending: bool,
 }
 
 /**
-The frame named `name` on the page, from anywhere on it. Until a frame with that name has mounted,
-`refetch` does nothing and `isPending` is false.
+`children` (rendered on the server), until `refetch` fetches `src` (or a URL it's given) as a payload
+and replaces them with that. What the hard parts of doing this by hand are, done:
+
+- **Newer wins.** If newer `children` come (a `navigate` or `refresh` rendered this place again with
+  new ones from the server), they're shown instead of what was refetched, and a refetch after that
+  wins over them in turn. (`useState(() => children)` would keep showing what it first got.)
+- **Fetches replace each other.** A refetch cancels the one before it, whose result is dropped, so a
+  slow response can't land after a newer one.
+- **In a transition.** What's on screen stays (no fallbacks) until what replaces it is ready, and
+  `isPending` covers the fetch as well as the render.
+
+Render `element` where the children would go. The promise `refetch` returns resolves once the
+render has been started, or straight away if a newer refetch replaced it, and rejects (leaving the
+screen as it was) if the payload's root failed.
 */
-let useFrame: string => frame
+let useRefetchable: (~src: string, WeftCore.Element.t) => refetchable
 
-/** The frame named `name` on the page as it is now, outside a component (for tests, say). */
-let frame: (t, string) => frame
+/** A part of the page that can be fetched again by itself: what `useFrame` gives. */
+type frame = {
+  refetch: (~url: string=?) => promise<unit>,
+  isPending: bool,
+}
 
-/** For `Frame`: registers the frame `name`'s refetch and pending state. */
-let registerFrame: (
-  t,
-  string,
-  ~refetch: (~url: string=?) => promise<unit>,
-  ~isPending: bool,
-) => unit => unit
+/** `element`, with `frame` as what `useFrame` returns in it (what `Frame` does with its own). */
+let withFrame: (frame, WeftCore.Element.t) => WeftCore.Element.t
+
+/** The frame an entrypoint is in: the nearest `Frame` above it. Fails outside one. */
+let useFrame: unit => frame

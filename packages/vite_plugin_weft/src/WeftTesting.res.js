@@ -85,14 +85,6 @@ async function refresh(page) {
   return await Navigation$WeftServer.refresh(await page.started);
 }
 
-async function refetchFrame(page, url, name) {
-  return await Navigation$WeftServer.frame(await page.started, name).refetch(url);
-}
-
-async function framePending(page, name) {
-  return Navigation$WeftServer.frame(await page.started, name).isPending;
-}
-
 function html(page) {
   return page.container.innerHTML;
 }
@@ -207,8 +199,6 @@ export {
   setDelivery,
   navigate,
   refresh,
-  refetchFrame,
-  framePending,
   holdLoads,
   releaseLoads,
   loads,

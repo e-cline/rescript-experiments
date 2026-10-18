@@ -90,10 +90,6 @@ let setDelivery = (page, delivery) => page->pageApp->setAppDelivery(toJs(deliver
 
 let navigate = async (page, url) => await (await started(page))->WeftServer.Navigation.navigate(url)
 let refresh = async page => await (await started(page))->WeftServer.Navigation.refresh
-let refetchFrame = async (page, ~url=?, name) =>
-  await ((await started(page))->WeftServer.Navigation.frame(name)).refetch(~url?)
-let framePending = async (page, name) =>
-  ((await started(page))->WeftServer.Navigation.frame(name)).isPending
 
 @send external holdLoads: (page, ~matching: string=?) => unit = "holdLoads"
 @send external releaseLoads: page => unit = "releaseLoads"

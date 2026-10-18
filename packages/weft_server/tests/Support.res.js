@@ -147,11 +147,11 @@ let Inner = {
 let frames = {};
 
 function Support$FrameButton(props) {
-  let name = props.name;
-  let frame = Navigation$WeftServer.useFrame(name);
-  frames[name] = frame;
+  let label = props.label;
+  let frame = Navigation$WeftServer.useFrame();
+  frames[label] = frame;
   return TestJsx$WeftCore.Elements.jsx("button", {
-    id: name + `-button`,
+    id: label + `-button`,
     title: frame.isPending ? "pending" : "idle"
   });
 }
@@ -160,6 +160,25 @@ Entrypoint$WeftCore.mark(Support$FrameButton, "test/Entrypoints.res#FrameButton"
 
 let FrameButton = {
   make: Support$FrameButton
+};
+
+let refetchers = {};
+
+function Support$Refetching(props) {
+  let src = props.src;
+  let match = Navigation$WeftServer.useRefetchable(src, props.children);
+  refetchers[src] = match.refetch;
+  return TestJsx$WeftCore.Elements.jsx("div", {
+    id: "refetching",
+    title: match.isPending ? "pending" : "idle",
+    children: match.element
+  });
+}
+
+Entrypoint$WeftCore.mark(Support$Refetching, "test/Entrypoints.res#Refetching");
+
+let Refetching = {
+  make: Support$Refetching
 };
 
 let theme = Context$WeftCore.make("plain");
@@ -224,6 +243,13 @@ let entrypointFile = Testing$WeftServer.module_([
     Testing$WeftServer.module_([[
         "make",
         Support$FrameButton
+      ]])
+  ],
+  [
+    "Refetching",
+    Testing$WeftServer.module_([[
+        "make",
+        Support$Refetching
       ]])
   ],
   [
@@ -390,6 +416,8 @@ export {
   Inner,
   frames,
   FrameButton,
+  refetchers,
+  Refetching,
   theme,
   Themed,
   ThemeReader,

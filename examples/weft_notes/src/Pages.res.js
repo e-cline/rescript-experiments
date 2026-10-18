@@ -117,8 +117,13 @@ let NoteBody = {
 };
 
 function Pages$Comments(props) {
-  return Jsx$WeftDom.jsx(CommentList$WeftNotes.make, {
-    comments: Db$WeftNotes.commentsOf(props.id, props.signal)
+  return Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
+    children: [
+      Jsx$WeftDom.jsx(ReloadComments$WeftNotes.make, {}),
+      Jsx$WeftDom.jsx(CommentList$WeftNotes.make, {
+        comments: Db$WeftNotes.commentsOf(props.id, props.signal)
+      })
+    ]
   });
 }
 
@@ -169,7 +174,6 @@ function Pages$NotePage(props) {
   return Jsx$WeftDom.jsxs(Pages$Layout, {
     children: [
       Jsx$WeftDom.jsx(Frame$WeftServer.make, {
-        name: "header",
         src: `/notes/` + id + `/header`,
         children: Jsx$WeftDom.jsx(Pages$NoteHeader, {
           id: id
@@ -194,9 +198,7 @@ function Pages$NotePage(props) {
           Jsx$WeftDom.Elements.jsx("h2", {
             children: "Comments"
           }),
-          Jsx$WeftDom.jsx(ReloadComments$WeftNotes.make, {}),
           Jsx$WeftDom.jsx(Frame$WeftServer.make, {
-            name: "comments",
             src: `/notes/` + id + `/comments`,
             children: Jsx$WeftDom.jsx(Pages$Comments, {
               id: id,

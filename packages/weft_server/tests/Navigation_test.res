@@ -45,12 +45,16 @@ let reset = () => {
 }
 
 module CommentList = {
-  /** A server component: the comments on `page`, with a counter (an entrypoint) beside them. */
+  /**
+  A server component: the comments on `page`, with a counter (an entrypoint) beside them, and the
+  button that reloads them (inside the frame, so it finds it).
+  */
   @jsx.component
   let make = (~page: string) =>
     <ul id="comments">
       <li id="text"> {text(commentsOf(page))} </li>
       <Counter label="in-frame" />
+      <FrameButton label="comments" />
     </ul>
 }
 
@@ -64,8 +68,7 @@ let route = url =>
     <section id="page">
       <h1 id="title"> {text(title(page))} </h1>
       <Counter label="outside" />
-      <FrameButton name="comments" />
-      <Frame name="comments" src={`/comments/${page}`}>
+      <Frame src={`/comments/${page}`}>
         <CommentList page />
       </Frame>
     </section>
@@ -187,7 +190,7 @@ describe("navigating", () => {
   })
 })
 
-let refetch = name => (frames->Dict.getUnsafe(name)).refetch(~url=?None)
+let refetch = label => (frames->Dict.getUnsafe(label)).refetch(~url=?None)
 let pending = renderer =>
   TestRenderer.findById(renderer, "comments-button")->Option.flatMap(node =>
     (node->TestRenderer.props).title
@@ -293,15 +296,15 @@ module TwoFrames = {
   @jsx.component
   let make = (~version: string) =>
     <Themed value="dark">
-      <Frame name="left" src="/left">
+      <Frame src="/left">
         <p id="left"> {text(`left ${version}`)} </p>
         <ThemeReader id="left-theme" />
+        <FrameButton label="left" />
       </Frame>
-      <Frame name="right" src="/right">
+      <Frame src="/right">
         <p id="right"> {text(`right ${version}`)} </p>
+        <FrameButton label="right" />
       </Frame>
-      <FrameButton name="left" />
-      <FrameButton name="right" />
     </Themed>
 }
 
@@ -317,8 +320,13 @@ describe("two frames", () => {
           <>
             <p id="left"> {text(`left ${version.contents}`)} </p>
             <ThemeReader id="left-theme" />
+            <FrameButton label="left" />
           </>
-        | "/right" => <p id="right"> {text(`right ${version.contents}`)} </p>
+        | "/right" =>
+          <>
+            <p id="right"> {text(`right ${version.contents}`)} </p>
+            <FrameButton label="right" />
+          </>
         | _ => <TwoFrames version=version.contents />
         }
       let (fetch, _) = serve(route)
@@ -330,6 +338,44 @@ describe("two frames", () => {
       t->expect(text("left"))->Expect.toEqual(Some("left 2"))
       t->expect(text("right"))->Expect.toEqual(Some("right 1"))
       t->expect(text("left-theme"))->Expect.toEqual(Some("dark"))
+    },
+  )
+})
+
+describe("useRefetchable, by hand", () => {
+  testAsync(
+    "refetches, and gives way to newer children from a refresh, as a frame does",
+    async t => {
+      reset()
+      let version = ref("1")
+      let route = url =>
+        switch url {
+        | "/part" => <p id="part"> {text(`part ${version.contents}`)} </p>
+        | _ =>
+          <section id="page">
+            <Refetching src="/part">
+              <p id="part"> {text(`part ${version.contents}`)} </p>
+            </Refetching>
+          </section>
+        }
+      let (fetch, _) = serve(route)
+      let (renderer, navigation) = await start(~fetch, ~route, ~url="/")
+      let part = () => textIn(renderer, "part")
+      version := "2"
+      await (refetchers->Dict.getUnsafe("/part"))()
+      await settle()
+      t->expect(part())->Expect.toEqual(Some("part 2"))
+      version := "3"
+      await navigation->Navigation.refresh
+      await settle()
+      t->expect(part())->Expect.toEqual(Some("part 3"))
+      t
+      ->expect(
+        TestRenderer.findById(renderer, "refetching")->Option.flatMap(
+          node => (node->TestRenderer.props).title,
+        ),
+      )
+      ->Expect.toEqual(Some("idle"))
     },
   )
 })

@@ -6,7 +6,7 @@ import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/Entrypoint.res.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/Navigation.res.js";
 
 function ReloadComments(props) {
-  let comments = Navigation$WeftServer.useFrame("comments");
+  let comments = Navigation$WeftServer.useFrame();
   return Jsx$WeftDom.Elements.jsx("button", {
     id: "reload-comments",
     title: comments.isPending ? "pending" : "idle",

@@ -12,7 +12,7 @@ things only a browser can show, in Chromium.
 - `NoteEditor`, a draft of the title in state, the saved title and time as props: saving posts the
   draft, then refetches the header's `Frame`, so new props arrive and the draft, the input, its
   focus and its selection stay.
-- The comments in a `Frame` of their own, with a button that reloads them (`useFrame`), a
+- The comments in a `Frame` of their own, with a button in it that reloads them (`useFrame`), a
   `CommentList` entrypoint given them as a promise (and showing its own fallback until it resolves),
   and `CommentForm`, which posts a comment and then `refresh`es the page.
 - A server component that fails, inside an `ErrorBox` entrypoint (an error boundary), and links that

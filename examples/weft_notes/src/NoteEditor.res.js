@@ -14,7 +14,7 @@ function NoteEditor(props) {
   let match = Hooks$WeftCore.useState(() => title);
   let setDraft = match[1];
   let draft = match[0];
-  let header = Navigation$WeftServer.useFrame("header");
+  let header = Navigation$WeftServer.useFrame();
   let save = event => {
     event.preventDefault();
     (async () => {

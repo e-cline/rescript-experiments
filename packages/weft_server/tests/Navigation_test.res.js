@@ -63,6 +63,9 @@ function Navigation_test$CommentList(props) {
       }),
       TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
         label: "in-frame"
+      }),
+      TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
+        label: "comments"
       })
     ]
   });
@@ -93,11 +96,7 @@ function route(url) {
           TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
             label: "outside"
           }),
-          TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-            name: "comments"
-          }),
           TestJsx$WeftCore.jsx(Frame$WeftServer.make, {
-            name: "comments",
             src: `/comments/` + page,
             children: TestJsx$WeftCore.jsx(Navigation_test$CommentList, {
               page: page
@@ -238,8 +237,8 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
   });
 });
 
-function refetch(name) {
-  return Support$WeftServer.frames[name].refetch(undefined);
+function refetch(label) {
+  return Support$WeftServer.frames[label].refetch(undefined);
 }
 
 function pending(renderer) {
@@ -351,7 +350,6 @@ function Navigation_test$TwoFrames(props) {
     value: "dark",
     children: [
       TestJsx$WeftCore.jsxs(Frame$WeftServer.make, {
-        name: "left",
         src: "/left",
         children: [
           TestJsx$WeftCore.Elements.jsx("p", {
@@ -360,22 +358,23 @@ function Navigation_test$TwoFrames(props) {
           }),
           TestJsx$WeftCore.jsx(Support$WeftServer.ThemeReader.make, {
             id: "left-theme"
+          }),
+          TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
+            label: "left"
           })
         ]
       }),
-      TestJsx$WeftCore.jsx(Frame$WeftServer.make, {
-        name: "right",
+      TestJsx$WeftCore.jsxs(Frame$WeftServer.make, {
         src: "/right",
-        children: TestJsx$WeftCore.Elements.jsx("p", {
-          id: "right",
-          children: Support$WeftServer.text(`right ` + version)
-        })
-      }),
-      TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-        name: "left"
-      }),
-      TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-        name: "right"
+        children: [
+          TestJsx$WeftCore.Elements.jsx("p", {
+            id: "right",
+            children: Support$WeftServer.text(`right ` + version)
+          }),
+          TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
+            label: "right"
+          })
+        ]
       })
     ]
   });
@@ -401,13 +400,23 @@ Vitest.describe("two frames", undefined, undefined, undefined, undefined, undefi
             }),
             TestJsx$WeftCore.jsx(Support$WeftServer.ThemeReader.make, {
               id: "left-theme"
+            }),
+            TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
+              label: "left"
             })
           ]
         });
       case "/right" :
-        return TestJsx$WeftCore.Elements.jsx("p", {
-          id: "right",
-          children: Support$WeftServer.text(`right ` + version.contents)
+        return TestJsx$WeftCore.jsxs(TestJsx$WeftCore.jsxFragment, {
+          children: [
+            TestJsx$WeftCore.Elements.jsx("p", {
+              id: "right",
+              children: Support$WeftServer.text(`right ` + version.contents)
+            }),
+            TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
+              label: "right"
+            })
+          ]
         });
       default:
         return TestJsx$WeftCore.jsx(Navigation_test$TwoFrames, {
@@ -424,6 +433,44 @@ Vitest.describe("two frames", undefined, undefined, undefined, undefined, undefi
   t.expect(textIn(renderer, "left")).toEqual("left 2");
   t.expect(textIn(renderer, "right")).toEqual("right 1");
   return t.expect(textIn(renderer, "left-theme")).toEqual("dark");
+}));
+
+Vitest.describe("useRefetchable, by hand", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("refetches, and gives way to newer children from a refresh, as a frame does", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  reset();
+  let version = {
+    contents: "1"
+  };
+  let route = url => {
+    if (url === "/part") {
+      return TestJsx$WeftCore.Elements.jsx("p", {
+        id: "part",
+        children: Support$WeftServer.text(`part ` + version.contents)
+      });
+    } else {
+      return TestJsx$WeftCore.Elements.jsx("section", {
+        id: "page",
+        children: TestJsx$WeftCore.jsx(Support$WeftServer.Refetching.make, {
+          src: "/part",
+          children: TestJsx$WeftCore.Elements.jsx("p", {
+            id: "part",
+            children: Support$WeftServer.text(`part ` + version.contents)
+          })
+        })
+      });
+    }
+  };
+  let match = Support$WeftServer.serve(undefined, route);
+  let match$1 = await start(match[0], route, "/", undefined);
+  let renderer = match$1[0];
+  version.contents = "2";
+  await Support$WeftServer.refetchers["/part"](undefined);
+  await Support$WeftServer.settle();
+  t.expect(textIn(renderer, "part")).toEqual("part 2");
+  version.contents = "3";
+  await Navigation$WeftServer.refresh(match$1[1]);
+  await Support$WeftServer.settle();
+  t.expect(textIn(renderer, "part")).toEqual("part 3");
+  return t.expect(Stdlib_Option.flatMap(TestRenderer$WeftCore.findById(renderer, "refetching"), node => TestRenderer$WeftCore.props(node).title)).toEqual("idle");
 }));
 
 let shows = TestRenderer$WeftCore.toString;

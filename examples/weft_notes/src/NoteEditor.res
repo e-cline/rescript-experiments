@@ -1,15 +1,15 @@
 @@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 /***
-The note's title, with a draft of a new one. Saving posts the draft, then refetches the header's
-frame: the saved title and time come back as new props, while the draft (and the input, its focus
+The note's title, with a draft of a new one. Saving posts the draft, then refetches the frame it's
+in (the header's): the saved title and time come back as new props, while the draft (and the input, its focus
 and its selection) stay as they are.
 */
 
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~title: string, ~savedAt: string) => {
   let (draft, setDraft) = Weft.Hooks.useState(() => title)
-  let header = WeftServer.Navigation.useFrame("header")
+  let header = WeftServer.Navigation.useFrame()
   let save = event => {
     Weft.Dom.Event.preventDefault(event)
 

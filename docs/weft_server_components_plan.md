@@ -573,12 +573,13 @@ around a subtree:
 
 ```rescript
 // in a server component
-<WeftServer.Frame name="comments" src={`/notes/${id}/comments`}>
+<WeftServer.Frame src={`/notes/${id}/comments`}>
+  <ReloadButton />
   <Comments noteId=id />
 </WeftServer.Frame>
 
-// in any entrypoint below it, or elsewhere on the page
-let comments = WeftServer.Navigation.useFrame("comments")
+// in ReloadButton, or any entrypoint inside the frame
+let comments = WeftServer.Navigation.useFrame()
 <button onClick={_ => comments.refetch()}> {Weft.Jsx.string("Reload")} </button>
 // comments.isPending is true until the new subtree has rendered
 ```
@@ -589,8 +590,20 @@ in their place, in a transition, under the same rules. The route at `src` render
 with `Page.respond`. If a later full `refresh()` or `navigate` gives the frame new `children`, the
 newest content wins, whichever way it came. Underneath is `WeftServer.Client.fetchElement(url)`, a
 promise of a decoded element an entrypoint can keep in its own state, for anything `Frame` doesn't
-cover. `useFrame` works from anywhere on the page: each frame registers its `refetch` and pending
-state with the page as it mounts.
+cover.
+
+As built (after a review of phase 5), the frame's behaviour is a hook,
+`Navigation.useRefetchable(~src, children)`, returning the element to show, `refetch` and
+`isPending`, and `Frame` is a thin entrypoint over it. Doing it by hand with `useState` and
+`fetchElement` gets three things wrong easily: newer `children` from a refresh are ignored (state
+initialised from a prop), a slow response can land after a newer one, and without a transition
+boundaries flash their fallbacks (and `isPending` misses the fetch). The hook does those, so an
+entrypoint wanting its own refetching uses it rather than `Frame`. `useFrame()` is the nearest
+`Frame` above, through context (`Navigation.withFrame`). An earlier version named frames
+(`<Frame name>`, and `useFrame(name)` from anywhere on the page, through a page-wide registry); that
+was dropped, since names collide and the registry leaked into the public interface. Something that
+refetches a part of the page goes inside its frame, or is an entrypoint of its own around that part,
+using `useRefetchable`.
 
 **Keys.** A list a server component builds at runtime (`Jsx.array`) and one written out in JSX look
 the same once they've been through the payload, so the client marks every list it decodes as written
@@ -719,11 +732,11 @@ On the TestRenderer and TestScheduler, as the existing Suspense tests are:
   - _ordering_: two refetches of the same place whose responses arrive in the wrong order: only the
     newer is rendered, and the older's stream is cancelled; refetches of two different frames don't
     interfere;
-  - _frames_: `useFrame(name).refetch()` patches only that frame's subtree (nothing outside it
-    renders, per the render counts) and `isPending` is true until it has; a full `refresh()`
-    afterwards with new `children` for the frame wins over the refetched content, and a refetch
-    after that wins over the `children`; a context provided by an entrypoint above a frame still
-    reaches entrypoints inside it after a refetch;
+  - _frames_: `useFrame().refetch()` patches only that frame's subtree (nothing outside it renders,
+    per the render counts) and `isPending` is true until it has; a full `refresh()` afterwards with
+    new `children` for the frame wins over the refetched content, and a refetch after that wins over
+    the `children`; a context provided by an entrypoint above a frame still reaches entrypoints
+    inside it after a refetch;
   - _errors_: a refetch that fails with an `X` row inside a boundary shows that boundary's error
     while everything else keeps its state; one that fails at row 0 leaves the screen as it was and
     rejects the refetch.
@@ -805,7 +818,6 @@ await page->WeftTesting.waitFor(() => page->WeftTesting.has("#title"))
 await page->WeftTesting.settle                     // deliver everything, until it's quiet
 let _ = await app->WeftTesting.callServer("tests/FakeDbControl.res.js", "release", [JSON.String("comments:1")])
 await page->WeftTesting.navigate("/notes/2")       // through the page's own navigation
-await page->WeftTesting.refetchFrame("comments")   // as useFrame(name).refetch() would
 ```
 
 As built: the server side is TypeScript (`src/testing.ts`, and `src/testingWorker.ts`, the worker),
@@ -947,7 +959,7 @@ packages/weft_server/              namespace WeftServer
   src/Client.res(i)                stream => elements; fetchElement, Latest
   src/Page.res(i)                  the HTML shell with inlined rows; respond (HTML or payload)
   src/Bootstrap.res(i)             the browser's start: rows from the page, a root, history
-  src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useFrame
+  src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useRefetchable, useFrame
   src/Frame.res(i)                 the built-in entrypoint for refetching part of a page
   src/Testing.res(i)               tier 1 helpers: a stub stream, entrypoints served from a map
 packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
@@ -1009,11 +1021,12 @@ decides between the worker and the one-thread fallback. Then `Page`, the bootstr
 `navigate`/`refresh`, `Frame` and `useFrame`, and server HMR; the tier 2 harness and its bindings;
 `examples/weft_notes` with its scenario tests; `weft_split`'s harness tests, from source and built;
 and the tier 3 browser tests, with the `e2e` task wired into CI. Done. Along the way: navigation
-became a module of its own (`Navigation`, with `useFrame`), `Bootstrap` and the plugin's default
-bootstrap came with it, `weft_server` gained dependencies on `weft_dom` (the bootstrap) and
-`@rescript/webapi` (`Page.respond`), cancelled payloads leave their rows waiting rather than failing
-them, the server took over warning about missing keys, and `weft_split` switched to `Page` and the
-default bootstrap (with a `Link` entrypoint, for navigating in build mode).
+became a module of its own (`Navigation`, with `useRefetchable` and `useFrame`; frames lost their
+names after review), `Bootstrap` and the plugin's default bootstrap came with it, `weft_server`
+gained dependencies on `weft_dom` (the bootstrap) and `@rescript/webapi` (`Page.respond`), cancelled
+payloads leave their rows waiting rather than failing them, the server took over warning about
+missing keys, and `weft_split` switched to `Page` and the default bootstrap (with a `Link`
+entrypoint, for navigating in build mode).
 
 **Phase 6 -- HTML and hydration** (§8): the hook-less HTML renderer, streaming Suspense HTML, then
 hydration in the reconciler and the DOM host. Could be its own plan once phases 1--5 have settled.

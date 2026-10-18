@@ -95,12 +95,6 @@ let navigate: (page, string) => promise<unit>
 /** Fetches the page again. */
 let refresh: page => promise<unit>
 
-/** Refetches the frame `name`, as `useFrame(name).refetch()` would. */
-let refetchFrame: (page, ~url: string=?, string) => promise<unit>
-
-/** Whether the frame `name` is pending. */
-let framePending: (page, string) => promise<bool>
-
 /** Holds entrypoint loads until `releaseLoads`: those whose file id contains `matching`. */
 let holdLoads: (page, ~matching: string=?) => unit
 

@@ -44,8 +44,9 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 ## Status
 
 Phases 0--5 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
-the phases will go in one PR, not opened yet). Next is phase 6: HTML rendering and hydration, which
-may want a plan of its own.
+the phases will go in one PR, not opened yet). Next is phase 6, Weft RPCs (§8), whose open decisions
+are listed under Decisions; then phase 7, HTML rendering and hydration, which may want a plan of its
+own.
 
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -353,7 +354,7 @@ What it does:
 
 - **Two environments**: `rsc` (Node; runs server components) and `client` (browser). React's plugin
   needs a third, `ssr`, because React has a separate build for server components (the `react-server`
-  condition); Weft's runtime is the same everywhere, so HTML rendering (phase 6) runs in `rsc` too.
+  condition); Weft's runtime is the same everywhere, so HTML rendering (phase 7) runs in `rsc` too.
 - **Virtual modules**:
   - `virtual:weft/client-references` (client): the map in §3.
   - `virtual:weft/client` (client): what a bootstrap needs from the plugin: `loadModule` (from the
@@ -374,7 +375,7 @@ What it does:
   keeps every position, so no source map is needed. A server-only module with no server components
   has no directive, so nothing stops the client importing it; the build test's sentinel is what
   checks that.
-- **The harness** (§9) supplies its own `rsc` environment, whose module runner is in a worker: the
+- **The harness** (§10) supplies its own `rsc` environment, whose module runner is in a worker: the
   plugin keeps a `createEnvironment` the config already has, adds no middleware for an environment
   it can't run itself, and exposes its options (`api.options`) so the harness can find the server
   entry.
@@ -468,7 +469,7 @@ preserved (a cycle is an error); that keeps the encoder a plain recursive walk.
 decodable, and keeps decoding as rows arrive. `loadModule` (a file id, the part of an entrypoint id
 before `#`, to a promise of the compiled file's module) is what the bootstrap fills in from
 `virtual:weft/client-references`; `fetch` (a URL to a payload stream) defaults to the global
-`fetch`. Taking both as arguments is also what lets tests run without Vite or a network (§9).
+`fetch`. Taking both as arguments is also what lets tests run without Vite or a network (§10).
 `client->Client.fetchElement(url)` fetches and decodes; `Client.Latest` runs fetches that replace
 each other (the newest cancels the one before, and only its element is returned), which `navigate`
 and `useRefetchable` use.
@@ -509,7 +510,7 @@ parent's render, which the Suspense machinery is built around.
 
 ### 7. Pages, streaming, navigation and refetching
 
-**The first request** (before phase 6's HTML rendering) gets one streamed HTML response: the
+**The first request** (before phase 7's HTML rendering) gets one streamed HTML response: the
 document shell, `<div id="root">`, the bootstrap `<script type="module" async>` (`async`, or it
 would wait for the whole document) and `modulepreload` links, then the payload's rows as they're
 produced, each as an inline `<script>(self.__weft||=[]).push("...")</script>` (`<` written as
@@ -530,7 +531,7 @@ entrypoints, provided by a context around what it renders. `Bootstrap.start` mak
 with `history.pushState` after a navigation and `popstate` loading the URL gone back to; links are
 the app's own entrypoints calling `navigate` (`weft_notes`' and `weft_split`'s `Link`). They use a
 `fetch` the client is created with (the global one, from the bootstrap), so a test can give it one
-that goes to a stubbed server instead (§9).
+that goes to a stubbed server instead (§10).
 
 `WeftServer.Page.respond(request, element, ~assets)` picks HTML or payload from the `Accept` header,
 and stops rendering when the request is aborted. It takes and returns `@rescript/webapi`'s
@@ -605,7 +606,246 @@ the same once they've been through the payload, so the client marks every list i
 out (`JsxCore.markStaticList`, new in `weft_core`), and the server warns instead, in development,
 about a runtime list of children with elements missing keys, naming where it is.
 
-### 8. Server-rendered HTML and hydration (phase 6)
+### 8. Weft RPCs (phase 6)
+
+What other frameworks call server functions or server actions: functions that run on the server,
+which the client calls as if they were local. Weft's are explicit, as TanStack Start's
+`createServerFn` is and React's `'use server'` isn't: each has an ID its author chose, typed input,
+response and error, and an optional client-side step before anything is sent. In the abstract, an
+RPC is
+
+```rescript
+'input => promise<result<'response, WeftServer.Rpc.error<'error>>>
+```
+
+and the promise doesn't reject: every way a call can fail is an `Error`.
+
+**An RPC is declared in one place and handled in another.** The declaration is shared code (the
+client imports it): the ID, how a request goes over the wire, and what to do on the client first.
+The handler is server code, in a server-only file, typed against the declaration:
+
+```rescript
+// src/Api.res: shared
+type addComment = {noteId: string, author: string, text: string}
+
+@weft.rpc({id: "notes.addComment"})
+let addComment: WeftServer.Rpc.t<CommentForm.values, addComment, Types.comment, Errors.comment> =
+  WeftServer.Rpc.make(
+    // How a request is written on the client, and read (and checked) on the server.
+    ~request=Codec.object3(
+      ("noteId", Codec.string), ("author", Codec.string), ("text", Codec.string),
+      (noteId, author, text) => {noteId, author, text},
+      ({noteId, author, text}) => (noteId, author, text),
+    ),
+    // On the client, before sending: turn the caller's input into a request, or refuse (nothing
+    // is sent). Can be async.
+    ~prepare=async values =>
+      switch String.trim(values.text) {
+      | "" => Error(Errors.EmptyComment)
+      | text => Ok({noteId: values.noteId, author: values.author, text})
+      },
+    // Checked on both sides: on the client for quick feedback, and again on the server, which
+    // can't trust the client to have.
+    ~check=request => String.length(request.text) > 2000 ? Error(Errors.TooLong) : Ok(request),
+  )
+
+// src/ApiServer.res: server only (the attribute makes the client build refuse it, see below)
+@@weft.server
+
+let addComment = WeftServer.Rpc.handler(Api.addComment, async (request, ~http as _) =>
+  switch Db.find(request.noteId) {
+  | Some(_) => Ok(Db.addComment(request.noteId, ~author=request.author, ~text=request.text))
+  | None => Error(Errors.NoSuchNote)
+  }
+)
+
+// src/Server.res: the app mounts the RPCs it serves, by listing their handlers
+let rpcs = WeftServer.Rpc.router([ApiServer.addComment, ApiServer.saveTitle, ApiServer.like])
+let app = App.build()->App.router([Route.post(list{"_weft", "rpc", ":id"}, rpcs->WeftServer.Rpc.route), ...])
+
+// in an entrypoint
+let addComment = WeftServer.Rpc.use(Api.addComment) // bound to the page's client
+switch await addComment(values) {
+| Ok(comment) => ...
+| Error(Rejected(Errors.EmptyComment)) => ... // from `prepare`: nothing was sent
+| Error(Rejected(error)) => ...               // from `check`, or the handler's own `Error`
+| Error(Invalid(_)) => ...                    // the server couldn't read the request
+| Error(Failed(problem)) => ...               // network, unknown RPC, a handler that threw
+}
+```
+
+The four type parameters are what the caller passes (`'input`), what goes over the wire
+(`'request`), what comes back, and the RPC's own errors. Without `~prepare`, `'input` is `'request`.
+
+**Why two parts, not one definition.** TanStack (like React) defines an RPC in one place, and its
+bundler compiles that module twice: for the client, with the handler replaced by a stub that
+`fetch`es. ReScript compiles each file once, to one `.res.js` both environments load, so the same
+trick here would mean the Vite plugin rewriting ReScript's compiled output to find and remove the
+handler (and everything only the handler imports, which sits at the top of the file). That's
+pattern-matching compiler output, which is brittle (it's why phase 4's hand-written fixtures were
+replaced). Splitting by file reuses the boundary that already exists: the handler's file is
+server-only, the plugin keeps it out of the client, and the declaration is safe to ship (an ID,
+codecs, and client logic, nothing secret). The ID is the contract between the two halves, and the
+types keep them in step: `handler` only accepts a function of the declaration's request, response
+and error types.
+
+**Why values, not functors (module functions).** A functor reads well:
+
+```rescript
+module AddComment = WeftServer.Rpc.Make({
+  let id = "notes.addComment"
+  type request = {...}
+  type response = Types.comment
+  let request = Codec...
+  let prepare = ...
+})
+```
+
+but it doesn't help with the split (a functor whose argument includes the handler puts the handler
+in the shared module, so the declaration and the handler are still two functor applications), and
+modules aren't values: passing one to a hook (`Rpc.use(AddComment)`) needs a first-class module
+(`Rpc.use(module(AddComment))`, and a module type to annotate it with), which is clunkier everywhere
+it's used. What a functor does do well, insisting on a complete definition, labelled arguments to
+`Rpc.make` do as well: leaving out `~request` is a type error. So an RPC is a value,
+`Rpc.t<'input, 'request, 'response, 'error>`, which can be passed around, stored, and given to
+hooks.
+
+**`@weft.rpc({id: "..."})`.** On a `let` whose value is `WeftServer.Rpc.make(...)`, `ppx_weft`:
+
+- checks the argument: a record with one field, `id`, a string literal;
+- checks the ID's form: dot-separated names, each a letter then letters, digits and `_`
+  (`notes.addComment`, `Billing.refund`), so it reads well in a URL and in logs, and nothing like
+  `__proto__` or `constructor` is a valid ID;
+- passes it to `Rpc.make` as `~id`, and marks the file with a `'use weft rpc'` directive, which can
+  sit beside an `'use weft entrypoint'` one (a file of entrypoints can declare RPCs too; a server
+  file's declarations are pointless, since the client can't import them, and are an error);
+- fails on everything else: the attribute twice, on something that isn't a `let`, an ID that isn't a
+  literal, a declaration in a server file.
+
+The plugin's scan collects every ID from the marks (as it does entrypoint IDs) across the app and
+its ReScript dependencies, and a duplicate fails the build (and the dev server), naming both files.
+The router checks again at startup. IDs are explicit, so they're stable across builds and refactors:
+renaming a file or moving a declaration doesn't change the endpoint, and an old client calling a
+removed ID gets a `Failed` with a 404, which it can answer by reloading. `Rpc.make(~id)` works
+without the PPX too (the attribute adds the checks, the scan's duplicate check, and a place for
+options later), so the API doesn't depend on it.
+
+**`@@weft.server`**, new in the same phase: a file attribute that makes `ppx_weft` mark a file with
+`'use weft server'` even though it has no server components. Today a server-only module without
+server components (a database module, an RPC handler) has no directive, so nothing stops client code
+importing it but review and the build test's sentinels (§4). With this, the plugin refuses it to the
+client the way it refuses a server component's file, naming the chain of imports.
+
+**Calling.** `Rpc.use(rpc)` (a hook, bound to the page's client, from `Navigation.useNavigation`)
+returns the function; `Rpc.call(rpc, ~client, input, ~signal=?)` is the same outside components. A
+call:
+
+1. runs `prepare` (if any), then `check`: an `Error` there is returned as `Rejected`, and nothing is
+   sent;
+2. encodes the request with the codec, to JSON;
+3. `POST`s it to `<base>/<id>` (`/_weft/rpc` by default) with `content-type: application/json` and
+   `x-weft-rpc: 1`;
+4. decodes the response (a payload, below) with the page's `Client`, and returns its result.
+
+Network failures, a status other than 2xx, and a handler that threw are `Failed(problem)`:
+`{status: option<int>, message: string, digest: option<string>}`, the message a development build's
+only, as with `Render`'s errors. Aborting `signal` cancels the request (and, on the server, aborts
+the handler's `~signal`). What happens after a mutation is the caller's: use the response,
+`Navigation.refresh`, or `refetch` a part of the page.
+
+```rescript
+type error<'error> =
+  /** `prepare` or `check` said no (on the client: nothing was sent), or the handler returned `Error`. */
+  | Rejected('error)
+  /** The server couldn't read the request (a client older or newer than it, or a forged request). */
+  | Invalid(string)
+  /** Anything else: the network, an unknown RPC, a handler that threw. */
+  | Failed(problem)
+```
+
+**On the server**, `Rpc.router(handlers)` makes a handler for the route, which, in order:
+
+1. looks the ID up in a `Map` made from the handlers (duplicates fail at startup). An unknown ID is
+   a 404. Never a property lookup on an object, which is how `"constructor"` or `"__proto__"` turn
+   into code;
+2. requires `POST`, `content-type: application/json`, the `x-weft-rpc` header, and (by default) an
+   `Origin` that's the server's own: 405, 415 or 403 otherwise, before the body is read. A form on
+   another site can't send JSON or set the header without the browser asking first (CORS), which is
+   the CSRF protection;
+3. reads the body up to a size limit (64 KB by default, per router and per RPC): 413 beyond it;
+4. parses it with `JSON.parse` (no reviver), then decodes it with the RPC's codec, field by field:
+   `Invalid` (a 400) if it doesn't fit, without calling anything else;
+5. runs `check`: `Rejected` if it fails;
+6. calls the handler with the request, the HTTP `Request.t` (`~http`: headers, cookies, for
+   authentication) and the request's `~signal`;
+7. answers with a payload whose root row is `{"ok": value}` or `{"error": value}`, encoded by
+   `Render` (so a response can be or contain elements, rendered server components included, and
+   promises that stream in later rows), with `cache-control: no-store`. A handler that throws gives
+   an `X` row, through the router's `onError` (a digest, and the message in development only).
+
+Every RPC is a public endpoint: anyone can call any ID the router lists, whether the UI does or not,
+with any body. Authentication and authorization are the handler's (or a servy middleware's around
+the route): an ID is not a secret. The router serves only the handlers it's given, an explicit list
+of what's callable, not everything the scan found.
+
+**Serialization, and not repeating React's CVEs.** The two directions are trusted differently, and
+get different formats:
+
+- **Responses** (server to client) are the server's own output, so they reuse the payload format
+  (`Render` on the server, `Client` on the client) and everything it can carry. The client only ever
+  loads entrypoints from the reference map, so a response can't make it load anything else.
+- **Requests** (client to server) are anyone's. They must not go through the payload decoder.
+  React2Shell (CVE-2025-55182, CVSS 10) was exactly that: React's Flight decoder ran on the server
+  against an attacker's request, followed references and property names taken from the payload up
+  the prototype chain to the `Function` constructor, and ran code, before any authentication. Our
+  payload format has the same kinds of features (row references, `$L` and `$@`, that the decoder
+  follows; `$E` entrypoint references that make it load modules; elements it turns into components;
+  promises), all of them features that make a decoder _do_ things, which is right for the server's
+  own output and wrong for a stranger's.
+
+So a request is plain JSON: what `JSON.stringify` writes and `JSON.parse` reads, with no references,
+no tags, and nothing in it that chooses a code path. The server parses it under a size limit and
+decodes it with the RPC's codec, which reads only the fields it knows, as own properties, and builds
+the request value afresh. A codec is required, not optional. ReScript's types are erased, so a
+request cast from parsed JSON to its record type would be whatever the sender sent: a `text: string`
+that's an object, or an array of a million items.
+
+The client doesn't encode requests by reflection either (walking the value as `Render` walks props).
+That would make ReScript's runtime representations the wire format (variants as `{TAG, _0}`, nested
+options boxed by `Primitive_option`), so the server would have to decode exactly those. That ties
+the format, and its security, to compiler internals that change between releases. A codec writes an
+explicit format, and the same codec reads it on the server.
+
+The rest of the CVEs come out the same way:
+
+- **CVE-2025-55184 and CVE-2025-67779** (denial of service): a self-referencing payload made the
+  decoder loop forever. A request has no references to loop on, its size is capped before it's
+  parsed, and decoding is linear in its size. `JSON.parse` on absurdly deep nesting throws, which is
+  a 400.
+- **CVE-2025-55183** (server functions' source code exposed): functions are never serialized
+  (`Render` refuses them), handlers live in server-only files the client build can't include, and
+  the router answers with nothing but the handler's result.
+
+**Codecs.** An open decision (see Decisions). Three ways to get them:
+
+1. **A small combinator library in `weft_server`** (`Rpc.Codec`): `string`, `int`, `float`, `bool`,
+   `option`, `array`, `dict`, `date` (as an ISO string), `object1` to `object8` from fields,
+   `variant` from tagged cases, `map` and `custom`. Each value encodes and decodes, so the two can't
+   drift. Small, no dependency, easy to fuzz. Recommended for this phase.
+2. **An existing schema library** (`rescript-schema`, also known as Sury): richer (refinements, JSON
+   Schema, error paths), but a dependency of every app, and more to ship to the client.
+3. **Codecs derived by the PPX** from type declarations (`@weft.codec type addComment = {...}`), as
+   `ppx_pretty_print` derives printers: the least boilerplate, exact by construction, and derived
+   codecs would just be values of option 1's type. A follow-up, once option 1 has settled.
+
+**Not in this phase:** `GET` RPCs (TanStack's default). Reads already go through pages and server
+components, which stream, and a `GET` brings caching, URL limits and side-effect-free rules of its
+own. Also left out: `FormData` and files (JSON only; a `Codec.file` over multipart later, under the
+same rules); RPCs called without JavaScript (forms posting to an RPC, which needs phase 7's HTML);
+and single-flight mutations, where the RPC's response also carries the refreshed page so there's no
+second round trip, as Next's server actions can. All of these are possible later.
+
+### 9. Server-rendered HTML and hydration (phase 7)
 
 Streaming rows without HTML means a blank page until the JavaScript runs. Proper first paint needs
 three more things, which are as big as everything above put together, so they come last:
@@ -623,7 +863,7 @@ three more things, which are as big as everything above put together, so they co
 - **The payload is still sent**, interleaved with the HTML as in §7, because hydrating needs the
   element tree.
 
-### 9. Testing
+### 10. Testing
 
 Every part has tests of its own, and two example apps test the parts together. The tests come in
 three tiers, from many fast ones to a few slow ones:
@@ -863,6 +1103,37 @@ started with a spike of the transport against the plugin's `basic` fixture
 server has no `document` or `window`, runs with the development conditions, and runs changed code
 once Vite sees the change), so the one-thread fallback wasn't needed.
 
+#### Weft RPCs (phase 6)
+
+- **Codecs**: every combinator round-trips (property tests over random values); decoding rejects
+  wrong types, missing fields and values out of range, with the path to what's wrong; extra fields
+  are ignored; `__proto__`, `constructor` and `prototype` keys in a request are inert (decoded
+  records are built afresh, and no prototype changes).
+- **The router**, against hand-made requests: unknown IDs (`__proto__`, `constructor`, `toString`
+  and `hasOwnProperty` among them) are 404s; a wrong method, content type or `Origin`, or no
+  `x-weft-rpc` header, is refused before the body is read; an oversized body, malformed JSON and
+  very deep nesting are 4xx without the codec or handler running; a request the codec rejects is
+  `Invalid`, one `check` rejects is `Rejected`, and in neither case is the handler called; a
+  handler's `Error` is `Rejected`, its `Ok` the response, and a throw `Failed` (with the message in
+  development only); duplicate IDs fail when the router is made.
+- **A fuzz test**: random bytes and random JSON sent to every route of a router with a few RPCs: the
+  server never crashes, never answers 5xx for a bad request, and no handler is ever called with a
+  request its codec wouldn't produce.
+- **Calls**, from the client through an in-process server (as `Support.serve` does for pages):
+  `prepare` refusing sends nothing; aborting cancels the handler; responses with elements (a server
+  component's output) and with promises stream in; a 404 or a network failure is `Failed`.
+- **The PPX**: fixtures that compile (the ID passed as `~id`, the directive written beside an
+  entrypoint one, `@@weft.server` writing `'use weft server'`) and errors (no literal, a bad ID, the
+  attribute twice or on something other than a `let`, a declaration in a server file).
+- **The plugin**: the scan finds RPC IDs in the app and its dependencies; a duplicate fails the
+  build and the dev server, naming both files; an `@@weft.server` file is refused to the client,
+  naming the chain.
+- **`weft_notes`** (tier 2): saving a title, adding a comment and liking go through RPCs; a comment
+  `prepare` refuses shows its error with no request made (`pageRequests`); one the handler rejects
+  shows that error; a request the server can't read (an older client, simulated by a codec that
+  doesn't match) is `Invalid`, and the page says so. One browser test posts a comment through an
+  RPC.
+
 #### Example apps
 
 Both are Vite apps served by `@e-cline/servy`, with their data behind an interface the tests
@@ -935,7 +1206,7 @@ enabled by `WEFT_NOTES_TEST_ROUTES=1`, which the test server sets:
 They run in CI on one Node version, as a job of their own (`vp run e2e`, after
 `playwright install --with-deps chromium`), since they need a browser installed. (The job was
 written in phase 5 but hasn't run in CI yet: it'll first run on the PR.) They're few by design:
-anything that can be checked in tier 2 is, and these cover what only a browser can show. Phase 6
+anything that can be checked in tier 2 is, and these cover what only a browser can show. Phase 7
 adds hydration's (no flash of client rendering, the server's nodes kept).
 
 ## Packages and layout
@@ -955,16 +1226,17 @@ packages/weft_server/              namespace WeftServer
   src/Page.res(i)                  the HTML shell with inlined rows; respond (HTML or payload)
   src/Bootstrap.res(i)             the browser's start: rows from the page, a root, history
   src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useRefetchable
+  src/Rpc.res(i)                   Weft RPCs (phase 6): make, handler, router, call, use; Rpc.Codec
   src/Testing.res(i)               tier 1 helpers: a stub stream, entrypoints served from a map
 packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
   src/testing.ts, testingWorker.ts the tier 2 harness (`/testing` export): Vite server, worker, port
   src/WeftTesting.res(i)           its ReScript bindings
   tests/fixtures/                  small ReScript apps, compiled by the root build
 tools/ppx/weft_tests/              fixtures that compile, fixtures that don't, compiler canaries
-examples/weft_notes/               notes app: the integration test bed (§9)
+examples/weft_notes/               notes app: the integration test bed (§10)
   tests/                           tier 2 scenarios, and the fake database's control module
   e2e/                             tier 3 Playwright tests
-examples/weft_split/               code-splitting edge cases, tested built and from source (§9)
+examples/weft_split/               code-splitting edge cases, tested built and from source (§10)
 ```
 
 Each package gets the usual wiring: root `rescript.json` `dependencies` and a `workspace:*` root
@@ -978,24 +1250,24 @@ few). For now they all go in one PR, `claude/weft-ppx-phase-0`, rather than a PR
 **Phase 0 -- Pin what the compiler does.** A `ppx_weft` that replaces `@weft.component` with
 `@jsx.component` (every kind compiling as a shared component for now), and already checks the
 attribute: its argument, where it is, and that a binding has it once and not with `@jsx.component`.
-The PPX test package with the first good fixtures, those errors and the compiler canaries (§9), and
+The PPX test package with the first good fixtures, those errors and the compiler canaries (§10), and
 the opam setup moved to the shared switch.
 
 **Phase 1 -- `WeftCore.Lazy` and `Entrypoint`.** The new element kind, unwrapped in
 `ChildReconciler`; `Entrypoint.mark`; the server-render flag in `HookImpl`, set through a public
 `ServerRender.run` (since `weft_server` is another package), with `Hooks.use` allowed under it;
 error codes 13 (an unresolved lazy reaching the reconciler) and 14 (a stateful hook on the server);
-the `Weft.Lazy` alias; with their tests (§9).
+the `Weft.Lazy` alias; with their tests (§10).
 
 **Phase 2 -- The PPX in full.** Async rewriting, marks, ids, directives and the rest of the errors
 in §2 (`async` outside a server component, server components and entrypoints in one file,
 function-typed props, an entrypoint not named `make`, no `rescript.json` to name it by), with the
-rest of the PPX's fixtures, good and bad, and canary 4 (§9): the ids are made from the source path
+rest of the PPX's fixtures, good and bad, and canary 4 (§10): the ids are made from the source path
 the PPX is given, so the tests of the ids are that canary.
 
 **Phase 3 -- Wire format and renderer, no bundler.** `Payload`, `Render` and `Client`, each tested
 on its own and then together into the TestRenderer, including every in-place update test and the
-update fuzz test (§9), with `fetchElement` and request ordering (`Client.Latest`).
+update fuzz test (§10), with `fetchElement` and request ordering (`Client.Latest`).
 `WeftServer.Testing` (the tier 1 helpers: a pipe the test controls, modules from a map) comes with
 them. `weft_core` gains `Deferred` (rows readable the moment they arrive),
 `ServerRender.suspendedOn` (so the renderer needn't reach into its internals), and rejected lazies
@@ -1010,7 +1282,7 @@ build on Node), the missing-PPX check, and server HMR as far as the plugin goes 
 `onRefresh`). Until `Page` exists, `weft_split`'s server answers a page with a shell that loads the
 bootstrap, which then fetches the payload; it works the same in `vp dev` and built.
 
-**Phase 5 -- Pages, navigation, the harness and `weft_notes`.** First the tier 2 spike (§9), which
+**Phase 5 -- Pages, navigation, the harness and `weft_notes`.** First the tier 2 spike (§10), which
 decides between the worker and the one-thread fallback. Then `Page`, the bootstrap,
 `navigate`/`refresh`, refetching part of a page, and server HMR; the tier 2 harness and its
 bindings; `examples/weft_notes` with its scenario tests; `weft_split`'s harness tests, from source
@@ -1022,15 +1294,21 @@ payloads leave their rows waiting rather than failing them, the server took over
 missing keys, and `weft_split` switched to `Page` and the default bootstrap (with a `Link`
 entrypoint, for navigating in build mode).
 
-**Phase 6 -- HTML and hydration** (§8): the hook-less HTML renderer, streaming Suspense HTML, then
-hydration in the reconciler and the DOM host. Could be its own plan once phases 1--5 have settled.
+**Phase 6 -- Weft RPCs** (§8). First the decisions still open (Decisions). Then `WeftServer.Rpc`
+(`make`, `handler`, `router`, `call`, `use`) and its codecs; `@weft.rpc` and `@@weft.server` in
+`ppx_weft`, with their fixtures and errors; the plugin's scan collecting RPC IDs (duplicates fail
+the build); then `weft_notes`' posts (saving a title, adding a comment, liking) moved to RPCs, with
+the tests in §10.
+
+**Phase 7 -- HTML and hydration** (§9): the hook-less HTML renderer, streaming Suspense HTML, then
+hydration in the reconciler and the DOM host. Could be its own plan once phases 1--6 have settled.
 The harness carries over: the first page's HTML is put into the container before the client starts,
 and `weft_notes`' scenarios are run again checking that hydration reused the server's nodes; the
 browser tests check the same in Chromium.
 
-Out of scope: server functions/actions (mutations go through ordinary routes, then `refresh()`), the
-Flight wire format and interop with React, CSS handling beyond what Vite does already, shared
-references and cycles in payloads, context on the server, and caching rendered output.
+Out of scope: the Flight wire format and interop with React, CSS handling beyond what Vite does
+already, shared references and cycles in payloads, context on the server, and caching rendered
+output.
 
 ## Decisions
 
@@ -1044,8 +1322,35 @@ Settled before phase 0, since these names and this setup get built into everythi
 - **The two PPXs share one opam switch**, `rescript_ppx`, set up by `tools/ppx/setup.sh` from one
   lock file (see §2's "Toolchain"), rather than each having its own and compiling OCaml twice.
 
+Open for phase 6 (Weft RPCs), with what §8 recommends:
+
+- **Declaration and handler in two files**, joined by the ID and the types, rather than one
+  definition the plugin splits by rewriting compiled output. Recommended: two files.
+- **Values with labelled arguments, rather than functors.** Recommended: values.
+- **Codecs**: `weft_server`'s own small combinator library (recommended), a schema library such as
+  `rescript-schema`, or PPX-derived codecs (a follow-up either way).
+- **Errors**: `Rejected('error)` for the RPC's own errors (from `prepare`, `check` or the handler),
+  `Invalid` for a request the server couldn't read, `Failed` for everything else, and a promise that
+  never rejects. In particular: should `prepare`'s errors share the handler's error type
+  (recommended, so a form shows them the same way), or be a type of their own?
+- **Mounting**: the app lists its handlers in `Rpc.router` and mounts it on a route (recommended:
+  explicit, and the list is what's callable), or the plugin generates the list from the scan.
+- **Only `POST`, and JSON only**, for now (recommended), leaving `GET` RPCs and `FormData` for
+  later.
+- **The ID's form**: dot-separated names (recommended), checked by the PPX; and the default path,
+  `/_weft/rpc/<id>`.
+- **`@@weft.server`** as part of this phase (recommended: handler files need it, and it closes a gap
+  the plugin has had since phase 4).
+- **Authentication**: handlers get the HTTP request, and apps use servy middleware around the route
+  (recommended), or `Rpc.router` grows middleware of its own, as TanStack's server functions have.
+
 ## Risks
 
+- **An RPC is a public endpoint**, which is easy to forget when calling one looks like calling a
+  function. The docs say so first; the router serves only what it's given, and the example's
+  handlers check what they need to.
+- **Codecs are boilerplate**, and boilerplate drifts or gets skipped. A required codec can't be
+  skipped (`Rpc.make` doesn't compile without one), and PPX-derived codecs would remove most of it.
 - **The PPX depends on compiler details**: that external PPXs run before the JSX transform, and the
   AST encoding ppxlib 0.34 reads. Phase 0's tests exist to catch a ReScript upgrade changing any of
   these.

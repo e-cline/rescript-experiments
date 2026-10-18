@@ -13,7 +13,7 @@ type kind =
 
 type node = {
   kind: kind,
-  @as("type") elementType: unknown,
+  elementType: unknown,
   key: Nullable.t<string>,
   props: unknown,
 }

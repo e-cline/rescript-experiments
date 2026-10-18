@@ -14,13 +14,13 @@ import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_excep
 import * as ErrorBoundaryImpl$ResFiber from "./ErrorBoundaryImpl.res.js";
 
 let state = {
-  f: undefined,
-  ch: undefined,
-  wh: undefined,
-  m: "Mount",
-  rpu: false,
-  dru: false,
-  rl: Lanes$ResFiber.none
+  fiber: undefined,
+  currentHook: undefined,
+  workInProgressHook: undefined,
+  mode: "Mount",
+  didScheduleRenderPhaseUpdate: false,
+  didReceiveUpdate: false,
+  renderLanes: Lanes$ResFiber.none
 };
 
 let updateLane = {
@@ -28,18 +28,18 @@ let updateLane = {
 };
 
 function reset() {
-  state.f = undefined;
-  state.ch = undefined;
-  state.wh = undefined;
-  state.rpu = false;
+  state.fiber = undefined;
+  state.currentHook = undefined;
+  state.workInProgressHook = undefined;
+  state.didScheduleRenderPhaseUpdate = false;
 }
 
 function firstHook(fiber) {
-  return Primitive_option.fromNullable(fiber.ms);
+  return Primitive_option.fromNullable(fiber.memoizedState);
 }
 
 function renderingFiber() {
-  let fiber = state.f;
+  let fiber = state.fiber;
   if (fiber !== undefined) {
     return fiber;
   } else {
@@ -67,49 +67,49 @@ function kindName(kind) {
 }
 
 function checkKind(hook, kind) {
-  if (Env$ResCommon.isDev && hook.k !== kind) {
-    return Stdlib_JsError.throwWithMessage(`ResFiber: hooks were called in a different order from the previous render (expected ` + kindName(hook.k) + `, got ` + kindName(kind) + `). Hooks must be called unconditionally, in the same order on every render.`);
+  if (Env$ResCommon.isDev && hook.kind !== kind) {
+    return Stdlib_JsError.throwWithMessage(`ResFiber: hooks were called in a different order from the previous render (expected ` + kindName(hook.kind) + `, got ` + kindName(kind) + `). Hooks must be called unconditionally, in the same order on every render.`);
   }
 }
 
 function appendHook(fiber, hook) {
-  let previous = state.wh;
+  let previous = state.workInProgressHook;
   if (previous !== undefined) {
-    previous.n = hook;
+    previous.next = hook;
   } else {
-    fiber.ms = hook;
+    fiber.memoizedState = hook;
   }
-  state.wh = hook;
+  state.workInProgressHook = hook;
 }
 
 function mountHook(fiber, kind) {
   let hook = {
-    k: kind,
-    ms: null,
-    bs: null,
-    bq: null,
-    q: null,
-    n: undefined
+    kind: kind,
+    memoizedState: null,
+    baseState: null,
+    baseQueue: null,
+    queue: null,
+    next: undefined
   };
   appendHook(fiber, hook);
   return hook;
 }
 
 function updateHook(fiber, kind) {
-  let hook = state.ch;
+  let hook = state.currentHook;
   let nextCurrentHook;
   if (hook !== undefined) {
-    nextCurrentHook = hook.n;
+    nextCurrentHook = hook.next;
   } else {
-    let current = fiber.alt;
-    nextCurrentHook = current !== undefined ? Primitive_option.fromNullable(current.ms) : undefined;
+    let current = fiber.alternate;
+    nextCurrentHook = current !== undefined ? Primitive_option.fromNullable(current.memoizedState) : undefined;
   }
-  let hook$1 = state.wh;
-  let nextWorkInProgressHook = hook$1 !== undefined ? hook$1.n : Primitive_option.fromNullable(fiber.ms);
-  state.ch = nextCurrentHook;
+  let hook$1 = state.workInProgressHook;
+  let nextWorkInProgressHook = hook$1 !== undefined ? hook$1.next : Primitive_option.fromNullable(fiber.memoizedState);
+  state.currentHook = nextCurrentHook;
   if (nextWorkInProgressHook !== undefined) {
     checkKind(nextWorkInProgressHook, kind);
-    state.wh = nextWorkInProgressHook;
+    state.workInProgressHook = nextWorkInProgressHook;
     return nextWorkInProgressHook;
   }
   if (nextCurrentHook === undefined) {
@@ -117,12 +117,12 @@ function updateHook(fiber, kind) {
   }
   checkKind(nextCurrentHook, kind);
   let hook$2 = {
-    k: kind,
-    ms: nextCurrentHook.ms,
-    bs: nextCurrentHook.bs,
-    bq: nextCurrentHook.bq,
-    q: nextCurrentHook.q,
-    n: undefined
+    kind: kind,
+    memoizedState: nextCurrentHook.memoizedState,
+    baseState: nextCurrentHook.baseState,
+    baseQueue: nextCurrentHook.baseQueue,
+    queue: nextCurrentHook.queue,
+    next: undefined
   };
   appendHook(fiber, hook$2);
   return hook$2;
@@ -130,7 +130,7 @@ function updateHook(fiber, kind) {
 
 function nextHook(kind) {
   let fiber = renderingFiber();
-  let match = state.m;
+  let match = state.mode;
   switch (match) {
     case "Mount" :
       return [
@@ -149,14 +149,14 @@ function nextHook(kind) {
 }
 
 function isRenderPhaseUpdate(fiber) {
-  let rendering = state.f;
+  let rendering = state.fiber;
   if (rendering === undefined) {
     return false;
   }
   if (rendering === fiber) {
     return true;
   }
-  let alternate = fiber.alt;
+  let alternate = fiber.alternate;
   if (alternate !== undefined) {
     return alternate === rendering;
   } else {
@@ -165,32 +165,32 @@ function isRenderPhaseUpdate(fiber) {
 }
 
 function renderWithHooks(current, workInProgress, component, props, renderLanes) {
-  let hasCurrentHooks = current !== undefined ? Stdlib_Option.isSome(Primitive_option.fromNullable(current.ms)) : false;
-  state.f = workInProgress;
-  state.rl = renderLanes;
-  state.ch = undefined;
-  state.wh = undefined;
-  state.m = hasCurrentHooks ? "Update" : "Mount";
-  workInProgress.ms = null;
-  workInProgress.uq = null;
-  workInProgress.dep = undefined;
+  let hasCurrentHooks = current !== undefined ? Stdlib_Option.isSome(Primitive_option.fromNullable(current.memoizedState)) : false;
+  state.fiber = workInProgress;
+  state.renderLanes = renderLanes;
+  state.currentHook = undefined;
+  state.workInProgressHook = undefined;
+  state.mode = hasCurrentHooks ? "Update" : "Mount";
+  workInProgress.memoizedState = null;
+  workInProgress.updateQueue = null;
+  workInProgress.dependencies = undefined;
   let children = component(props);
   let rerenders = 0;
-  while (state.rpu) {
+  while (state.didScheduleRenderPhaseUpdate) {
     rerenders = rerenders + 1 | 0;
     if (rerenders > 25) {
       Errors$ResFiber.fail(4, Env$ResCommon.isDev ? "ResFiber: too many re-renders. A component is setting its own state on every render." : "");
     }
-    state.rpu = false;
-    state.ch = undefined;
-    state.wh = undefined;
-    state.m = "Rerender";
-    workInProgress.uq = null;
-    workInProgress.dep = undefined;
+    state.didScheduleRenderPhaseUpdate = false;
+    state.currentHook = undefined;
+    state.workInProgressHook = undefined;
+    state.mode = "Rerender";
+    workInProgress.updateQueue = null;
+    workInProgress.dependencies = undefined;
     children = component(props);
   };
-  let hook = state.ch;
-  let didRenderTooFewHooks = hook !== undefined ? Stdlib_Option.isSome(hook.n) : hasCurrentHooks;
+  let hook = state.currentHook;
+  let didRenderTooFewHooks = hook !== undefined ? Stdlib_Option.isSome(hook.next) : hasCurrentHooks;
   reset();
   if (didRenderTooFewHooks) {
     Errors$ResFiber.fail(3, Env$ResCommon.isDev ? "ResFiber: rendered fewer hooks than during the previous render. Hooks must be called unconditionally." : "");
@@ -199,77 +199,77 @@ function renderWithHooks(current, workInProgress, component, props, renderLanes)
 }
 
 function bailoutHooks(current, workInProgress, renderLanes) {
-  workInProgress.uq = current.uq;
+  workInProgress.updateQueue = current.updateQueue;
   Fiber$ResFiber.removeFlag(workInProgress, Fiber$ResFiber.Flags.passive | Fiber$ResFiber.Flags.layout);
-  current.l = Lanes$ResFiber.remove(current.l, renderLanes);
+  current.lanes = Lanes$ResFiber.remove(current.lanes, renderLanes);
 }
 
 function updatesOf(hook) {
-  return Stdlib_Option.getOr(Primitive_option.fromNullable(hook.bq), []);
+  return Stdlib_Option.getOr(Primitive_option.fromNullable(hook.baseQueue), []);
 }
 
 function dispatch(fiber, queue, eager, action) {
   if (isRenderPhaseUpdate(fiber)) {
-    state.rpu = true;
-    queue.p.push({
-      l: Lanes$ResFiber.none,
-      a: action,
-      he: false,
-      es: null
+    state.didScheduleRenderPhaseUpdate = true;
+    queue.pending.push({
+      lane: Lanes$ResFiber.none,
+      action: action,
+      hasEagerState: false,
+      eagerState: null
     });
     return;
   }
   let update = {
-    l: updateLane.contents,
-    a: action,
-    he: false,
-    es: null
+    lane: updateLane.contents,
+    action: action,
+    hasEagerState: false,
+    eagerState: null
   };
   let idle = false;
-  if (eager && fiber.l === Lanes$ResFiber.none) {
-    let alternate = fiber.alt;
-    idle = alternate !== undefined ? alternate.l === Lanes$ResFiber.none : true;
+  if (eager && fiber.lanes === Lanes$ResFiber.none) {
+    let alternate = fiber.alternate;
+    idle = alternate !== undefined ? alternate.lanes === Lanes$ResFiber.none : true;
   }
   let unchanged;
   if (idle) {
-    let current = queue.lrs;
-    let next = queue.lrr(current, action);
-    update.he = true;
-    update.es = next;
+    let current = queue.lastRenderedState;
+    let next = queue.lastRenderedReducer(current, action);
+    update.hasEagerState = true;
+    update.eagerState = next;
     unchanged = Object.is(next, current);
   } else {
     unchanged = false;
   }
   if (!unchanged) {
-    queue.p.push(update);
-    return FiberRoot$ResFiber.scheduleUpdate(fiber, update.l);
+    queue.pending.push(update);
+    return FiberRoot$ResFiber.scheduleUpdate(fiber, update.lane);
   }
 }
 
 function apply(reducer, state, update) {
-  if (update.he) {
-    return update.es;
+  if (update.hasEagerState) {
+    return update.eagerState;
   } else {
-    return reducer(state, update.a);
+    return reducer(state, update.action);
   }
 }
 
 function processUpdates(fiber, hook, reducer) {
   let result = {
-    contents: hook.bs
+    contents: hook.baseState
   };
   let newBaseState = {
     contents: result.contents
   };
   let newBaseQueue = [];
   updatesOf(hook).forEach(update => {
-    if (Lanes$ResFiber.isSubset(state.rl, update.l)) {
+    if (Lanes$ResFiber.isSubset(state.renderLanes, update.lane)) {
       if (newBaseQueue.length !== 0) {
         newBaseQueue.push({
-          l: Lanes$ResFiber.none,
-          a: update.a,
-          he: update.he,
-          es: update.es
+          lane: Lanes$ResFiber.none,
+          action: update.action,
+          hasEagerState: update.hasEagerState,
+          eagerState: update.eagerState
         });
       }
       result.contents = apply(reducer, result.contents, update);
@@ -278,14 +278,14 @@ function processUpdates(fiber, hook, reducer) {
         newBaseState.contents = result.contents;
       }
       newBaseQueue.push(update);
-      fiber.l = Lanes$ResFiber.merge(fiber.l, update.l);
+      fiber.lanes = Lanes$ResFiber.merge(fiber.lanes, update.lane);
     }
   });
   if (newBaseQueue.length === 0) {
     newBaseState.contents = result.contents;
   }
-  hook.bs = newBaseState.contents;
-  hook.bq = newBaseQueue;
+  hook.baseState = newBaseState.contents;
+  hook.baseQueue = newBaseQueue;
   return result.contents;
 }
 
@@ -295,25 +295,25 @@ function useReducerWith(kind, eager, reducer, init) {
   let fiber = match[0];
   if (match[2]) {
     let initial = init();
-    hook.ms = initial;
-    hook.bs = initial;
-    hook.bq = [];
+    hook.memoizedState = initial;
+    hook.baseState = initial;
+    hook.baseQueue = [];
     let queue = {
-      p: [],
-      lrs: initial,
-      lrr: reducer,
-      d: param => {}
+      pending: [],
+      lastRenderedState: initial,
+      lastRenderedReducer: reducer,
+      dispatch: param => {}
     };
-    queue.d = action => dispatch(fiber, queue, eager, action);
-    hook.q = queue;
+    queue.dispatch = action => dispatch(fiber, queue, eager, action);
+    hook.queue = queue;
     return [
       initial,
-      queue.d
+      queue.dispatch
     ];
   }
-  let queue$1 = hook.q;
-  let previous = hook.ms;
-  let match$1 = state.m;
+  let queue$1 = hook.queue;
+  let previous = hook.memoizedState;
+  let match$1 = state.mode;
   let next;
   let exit = 0;
   switch (match$1) {
@@ -322,34 +322,34 @@ function useReducerWith(kind, eager, reducer, init) {
       exit = 1;
       break;
     case "Rerender" :
-      let next$1 = Stdlib_Array.reduce(queue$1.p, previous, (state, update) => apply(reducer, state, update));
-      queue$1.p = [];
+      let next$1 = Stdlib_Array.reduce(queue$1.pending, previous, (state, update) => apply(reducer, state, update));
+      queue$1.pending = [];
       if (updatesOf(hook).length === 0) {
-        hook.bs = next$1;
+        hook.baseState = next$1;
       }
       next = next$1;
       break;
   }
   if (exit === 1) {
-    if (queue$1.p.length !== 0) {
-      let merged = updatesOf(hook).concat(queue$1.p);
-      queue$1.p = [];
-      hook.bq = merged;
-      Stdlib_Option.forEach(state.ch, current => {
-        current.bq = merged;
+    if (queue$1.pending.length !== 0) {
+      let merged = updatesOf(hook).concat(queue$1.pending);
+      queue$1.pending = [];
+      hook.baseQueue = merged;
+      Stdlib_Option.forEach(state.currentHook, current => {
+        current.baseQueue = merged;
       });
     }
     next = processUpdates(fiber, hook, reducer);
   }
   if (!Object.is(next, previous)) {
-    state.dru = true;
+    state.didReceiveUpdate = true;
   }
-  hook.ms = next;
-  queue$1.lrs = next;
-  queue$1.lrr = reducer;
+  hook.memoizedState = next;
+  queue$1.lastRenderedState = next;
+  queue$1.lastRenderedReducer = reducer;
   return [
     next,
-    queue$1.d
+    queue$1.dispatch
   ];
 }
 
@@ -371,18 +371,18 @@ function useDeferredValue(value) {
   let match = nextHook("Deferred");
   let hook = match[1];
   if (match[2]) {
-    hook.ms = value;
+    hook.memoizedState = value;
     return value;
   }
-  let previous = hook.ms;
+  let previous = hook.memoizedState;
   if (Object.is(previous, value)) {
     return value;
-  } else if (Lanes$ResFiber.isBlocking(state.rl)) {
+  } else if (Lanes$ResFiber.isBlocking(state.renderLanes)) {
     FiberRoot$ResFiber.scheduleUpdate(match[0], Lanes$ResFiber.transition);
     return previous;
   } else {
-    hook.ms = value;
-    state.dru = true;
+    hook.memoizedState = value;
+    state.didReceiveUpdate = true;
     return value;
   }
 }
@@ -414,16 +414,16 @@ function useMemo(create, deps) {
   let hook = match[1];
   let reuse = false;
   if (!match[2]) {
-    let previous = hook.ms;
-    reuse = depsEqual(previous.d, deps);
+    let previous = hook.memoizedState;
+    reuse = depsEqual(previous.deps, deps);
   }
   if (reuse) {
-    return hook.ms.v;
+    return hook.memoizedState.value;
   }
   let value = create();
-  hook.ms = {
-    v: value,
-    d: deps
+  hook.memoizedState = {
+    value: value,
+    deps: deps
   };
   return value;
 }
@@ -432,12 +432,12 @@ function useRef(initial) {
   let match = nextHook("Ref");
   let hook = match[1];
   if (!match[2]) {
-    return hook.ms;
+    return hook.memoizedState;
   }
   let box = {
     current: initial
   };
-  hook.ms = box;
+  hook.memoizedState = box;
   return box;
 }
 
@@ -446,7 +446,7 @@ function useContext(context) {
 }
 
 function effectsOf(fiber) {
-  let effects = fiber.uq;
+  let effects = fiber.updateQueue;
   if (effects == null) {
     return [];
   } else {
@@ -457,29 +457,29 @@ function effectsOf(fiber) {
 function useEffectWith(effectKind, create, deps) {
   let match = nextHook(effectKind === "Passive" ? "Effect" : "LayoutEffect");
   let fiber = match[0];
-  let previous = match[2] ? undefined : Stdlib_Option.map(state.ch, current => current.ms);
+  let previous = match[2] ? undefined : Stdlib_Option.map(state.currentHook, current => current.memoizedState);
   let match$1 = previous !== undefined ? [
-      previous.i,
-      !depsEqual(previous.d, deps)
+      previous.inst,
+      !depsEqual(previous.deps, deps)
     ] : [
       {
-        d: undefined
+        destroy: undefined
       },
       true
     ];
   let hasEffect = match$1[1];
-  let effect_i = match$1[0];
+  let effect_inst = match$1[0];
   let effect = {
-    k: effectKind,
-    h: hasEffect,
-    c: create,
-    d: deps,
-    i: effect_i
+    effectKind: effectKind,
+    hasEffect: hasEffect,
+    create: create,
+    deps: deps,
+    inst: effect_inst
   };
-  match[1].ms = effect;
-  let effects = fiber.uq;
+  match[1].memoizedState = effect;
+  let effects = fiber.updateQueue;
   if (effects == null) {
-    fiber.uq = [effect];
+    fiber.updateQueue = [effect];
   } else {
     effects.push(effect);
   }
@@ -523,12 +523,12 @@ function rethrowCommitError() {
 
 function commitEffectsUnmount(fiber, effectKind, all) {
   effectsOf(fiber).forEach(effect => {
-    if (!(effect.k === effectKind && (all || effect.h))) {
+    if (!(effect.effectKind === effectKind && (all || effect.hasEffect))) {
       return;
     }
-    let destroy = effect.i.d;
+    let destroy = effect.inst.destroy;
     if (destroy !== undefined) {
-      effect.i.d = undefined;
+      effect.inst.destroy = undefined;
       return guard(fiber, destroy);
     }
   });
@@ -536,9 +536,9 @@ function commitEffectsUnmount(fiber, effectKind, all) {
 
 function commitEffectsMount(fiber, effectKind) {
   effectsOf(fiber).forEach(effect => {
-    if (effect.k === effectKind && effect.h) {
+    if (effect.effectKind === effectKind && effect.hasEffect) {
       return guard(fiber, () => {
-        effect.i.d = effect.c();
+        effect.inst.destroy = effect.create();
       });
     }
   });

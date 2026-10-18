@@ -54,7 +54,7 @@ Vitest.describe("Jsx: the generic JSX transform's calls", undefined, undefined, 
       label: "a"
     }));
     t.expect(element.kind).toBe("Component");
-    t.expect(element.type === Jsx_test$Leaf).toBe(true);
+    t.expect(element.elementType === Jsx_test$Leaf).toBe(true);
     t.expect(element.key).toEqual(null);
     let props = element.props;
     t.expect(props.label).toBe("a");
@@ -73,7 +73,7 @@ Vitest.describe("Jsx: the generic JSX transform's calls", undefined, undefined, 
         label: "a"
       })
     })).props.children);
-    t.expect(child.type === Jsx_test$Leaf).toBe(true);
+    t.expect(child.elementType === Jsx_test$Leaf).toBe(true);
   });
   Vitest.test("several children arrive as a plain array", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let children = list(node(Jsx$ResFiber.jsxs(Jsx_test$Box, {

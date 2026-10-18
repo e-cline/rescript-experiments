@@ -8,11 +8,6 @@ other tree, and `createWorkInProgress` reuses it, so steady-state renders alloca
 The record is host-independent (hooks and the render phase don't know the renderer), so
 `stateNode`, props and state are `unknown`; the code that stores each value is the code that reads
 it back.
-
-The records here and in the other internal modules give their fields short JavaScript names with
-`@as` (`pendingProps` is `pp`, `alternate` is `alt`). A minifier can rename variables but not
-properties, so the full names would cost bytes in every bundle; the `@as` beside each field says
-what to look for in a debugger.
 */
 
 type tag =
@@ -31,37 +26,37 @@ type tag =
   | OffscreenComponent
 
 /** A context a function component read while rendering, and the value it read. */
-type dependency = {@as("ctx") context: unknown, @as("mv") memoizedValue: unknown}
+type dependency = {context: unknown, memoizedValue: unknown}
 
 type rec t = {
   mutable tag: tag,
   key: Nullable.t<string>,
   /** Host: the tag name. Function component: its `make`. */
-  @as("type") mutable elementType: unknown,
-  @as("pp") mutable pendingProps: unknown,
+  mutable elementType: unknown,
+  mutable pendingProps: unknown,
   /** The props of the last finished render. Host text: the text. Fragment: the children. */
-  @as("mp") mutable memoizedProps: unknown,
+  mutable memoizedProps: unknown,
   /** Host: the instance or text instance. Root: the `FiberRoot.t`. */
-  @as("sn") mutable stateNode: unknown,
-  @as("p") mutable parent: option<t>,
-  @as("c") mutable child: option<t>,
-  @as("s") mutable sibling: option<t>,
+  mutable stateNode: unknown,
+  mutable parent: option<t>,
+  mutable child: option<t>,
+  mutable sibling: option<t>,
   /** The position among its siblings when last reconciled. */
-  @as("i") mutable index: int,
-  @as("alt") mutable alternate: option<t>,
-  @as("f") mutable flags: int,
+  mutable index: int,
+  mutable alternate: option<t>,
+  mutable flags: int,
   /** The union of every descendant's `flags`: the commit phase skips subtrees where it's 0. */
-  @as("sf") mutable subtreeFlags: int,
+  mutable subtreeFlags: int,
   /** Children to remove at commit. */
-  @as("del") mutable deletions: option<array<t>>,
+  mutable deletions: option<array<t>>,
   /** Function component: its first hook. Root: the rendered element. */
-  @as("ms") mutable memoizedState: unknown,
+  mutable memoizedState: unknown,
   /** Host component: the update payload for commit. Function component: its effects. */
-  @as("uq") mutable updateQueue: unknown,
+  mutable updateQueue: unknown,
   /** Function component: the contexts it read in its last render. */
-  @as("dep") mutable dependencies: option<array<dependency>>,
-  @as("l") mutable lanes: Lanes.t,
-  @as("cl") mutable childLanes: Lanes.t,
+  mutable dependencies: option<array<dependency>>,
+  mutable lanes: Lanes.t,
+  mutable childLanes: Lanes.t,
 }
 
 module Flags = {

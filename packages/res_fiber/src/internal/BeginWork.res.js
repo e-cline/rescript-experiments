@@ -11,64 +11,64 @@ import * as ChildReconciler$ResFiber from "./ChildReconciler.res.js";
 import * as ErrorBoundaryImpl$ResFiber from "./ErrorBoundaryImpl.res.js";
 
 function cloneChildFibers(workInProgress) {
-  let currentChild = workInProgress.c;
+  let currentChild = workInProgress.child;
   if (currentChild === undefined) {
     return;
   }
   let clone = current => {
-    let fiber = Fiber$ResFiber.createWorkInProgress(current, current.pp);
-    fiber.p = workInProgress;
+    let fiber = Fiber$ResFiber.createWorkInProgress(current, current.pendingProps);
+    fiber.parent = workInProgress;
     return fiber;
   };
   let newChild = clone(currentChild);
-  workInProgress.c = newChild;
+  workInProgress.child = newChild;
   let current = currentChild;
   let previous = newChild;
-  while (Stdlib_Option.isSome(current.s)) {
-    let next = current.s;
+  while (Stdlib_Option.isSome(current.sibling)) {
+    let next = current.sibling;
     let fiber = clone(next);
-    previous.s = fiber;
+    previous.sibling = fiber;
     current = next;
     previous = fiber;
   };
-  previous.s = undefined;
+  previous.sibling = undefined;
 }
 
 function bailoutOnAlreadyFinishedWork(workInProgress, renderLanes) {
-  if (Lanes$ResFiber.intersects(workInProgress.cl, renderLanes)) {
+  if (Lanes$ResFiber.intersects(workInProgress.childLanes, renderLanes)) {
     cloneChildFibers(workInProgress);
-    return workInProgress.c;
+    return workInProgress.child;
   }
 }
 
 function updateHostRoot(current, workInProgress) {
   let root = FiberRoot$ResFiber.ofFiber(workInProgress);
-  if (root.hpe) {
-    workInProgress.ms = root.pe;
+  if (root.hasPendingElement) {
+    workInProgress.memoizedState = root.pendingElement;
   }
-  ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.ms);
-  return workInProgress.c;
+  ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.memoizedState);
+  return workInProgress.child;
 }
 
 function updateFunctionComponent(current, workInProgress, component, renderLanes) {
   if (current !== undefined && ContextImpl$ResFiber.hasChanged(current)) {
-    HookImpl$ResFiber.state.dru = true;
+    HookImpl$ResFiber.state.didReceiveUpdate = true;
   }
-  let children = HookImpl$ResFiber.renderWithHooks(current, workInProgress, component, workInProgress.pp, renderLanes);
-  if (current !== undefined && !HookImpl$ResFiber.state.dru) {
+  let children = HookImpl$ResFiber.renderWithHooks(current, workInProgress, component, workInProgress.pendingProps, renderLanes);
+  if (current !== undefined && !HookImpl$ResFiber.state.didReceiveUpdate) {
     HookImpl$ResFiber.bailoutHooks(current, workInProgress, renderLanes);
     return bailoutOnAlreadyFinishedWork(workInProgress, renderLanes);
   } else {
     ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, children);
-    return workInProgress.c;
+    return workInProgress.child;
   }
 }
 
 function updateMemoComponent(current, workInProgress, hasUpdate, renderLanes) {
-  let inner = workInProgress.type.$$fiberMemoInner;
-  if (current !== undefined && workInProgress.type.$$fiberMemoCompare(current.mp, workInProgress.pp)) {
-    workInProgress.pp = current.mp;
-    HookImpl$ResFiber.state.dru = false;
+  let inner = workInProgress.elementType.$$fiberMemoInner;
+  if (current !== undefined && workInProgress.elementType.$$fiberMemoCompare(current.memoizedProps, workInProgress.pendingProps)) {
+    workInProgress.pendingProps = current.memoizedProps;
+    HookImpl$ResFiber.state.didReceiveUpdate = false;
     if (hasUpdate || ContextImpl$ResFiber.hasChanged(current)) {
       return updateFunctionComponent(current, workInProgress, inner, renderLanes);
     } else {
@@ -81,11 +81,11 @@ function updateMemoComponent(current, workInProgress, hasUpdate, renderLanes) {
 
 function updateContextProvider(current, workInProgress, renderLanes) {
   let context = ContextImpl$ResFiber.ofProvider(workInProgress);
-  let props = workInProgress.pp;
+  let props = workInProgress.pendingProps;
   ContextImpl$ResFiber.push(context, props.value, workInProgress);
   let unchanged;
   if (current !== undefined) {
-    let previous = current.mp;
+    let previous = current.memoizedProps;
     if (Object.is(previous.value, props.value)) {
       unchanged = previous.children === props.children;
     } else {
@@ -99,61 +99,61 @@ function updateContextProvider(current, workInProgress, renderLanes) {
     return bailoutOnAlreadyFinishedWork(workInProgress, renderLanes);
   } else {
     ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, props.children);
-    return workInProgress.c;
+    return workInProgress.child;
   }
 }
 
 function updateErrorBoundary(current, workInProgress) {
-  let props = workInProgress.pp;
+  let props = workInProgress.pendingProps;
   let instance = ErrorBoundaryImpl$ResFiber.instanceOf(workInProgress);
   let previous = ErrorBoundaryImpl$ResFiber.stateOf(workInProgress, instance);
-  let error = instance.pe;
-  let state = error !== undefined ? (instance.pe = undefined, {
-      e: error,
-      g: instance.g
+  let error = instance.pendingError;
+  let state = error !== undefined ? (instance.pendingError = undefined, {
+      error: error,
+      generation: instance.generation
     }) : (
-      previous.g !== instance.g ? ({
-          e: undefined,
-          g: instance.g
+      previous.generation !== instance.generation ? ({
+          error: undefined,
+          generation: instance.generation
         }) : previous
     );
-  workInProgress.ms = state;
-  let error$1 = state.e;
-  let children = error$1 !== undefined ? props.fallback(error$1, instance.r) : props.children;
+  workInProgress.memoizedState = state;
+  let error$1 = state.error;
+  let children = error$1 !== undefined ? props.fallback(error$1, instance.reset) : props.children;
   ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, children);
-  return workInProgress.c;
+  return workInProgress.child;
 }
 
 function beginWork(current, workInProgress, renderLanes) {
-  let hasUpdate = Lanes$ResFiber.intersects(workInProgress.l, renderLanes);
+  let hasUpdate = Lanes$ResFiber.intersects(workInProgress.lanes, renderLanes);
   let bailout = current !== undefined ? (
-      current.mp !== workInProgress.pp ? (HookImpl$ResFiber.state.dru = true, false) : (HookImpl$ResFiber.state.dru = false, !hasUpdate && !Fiber$ResFiber.hasFlag(workInProgress.f, Fiber$ResFiber.Flags.didCapture))
-    ) : (HookImpl$ResFiber.state.dru = false, false);
+      current.memoizedProps !== workInProgress.pendingProps ? (HookImpl$ResFiber.state.didReceiveUpdate = true, false) : (HookImpl$ResFiber.state.didReceiveUpdate = false, !hasUpdate && !Fiber$ResFiber.hasFlag(workInProgress.flags, Fiber$ResFiber.Flags.didCapture))
+    ) : (HookImpl$ResFiber.state.didReceiveUpdate = false, false);
   if (bailout) {
     if (workInProgress.tag === "ContextProvider") {
-      ContextImpl$ResFiber.push(ContextImpl$ResFiber.ofProvider(workInProgress), workInProgress.mp.value, workInProgress);
+      ContextImpl$ResFiber.push(ContextImpl$ResFiber.ofProvider(workInProgress), workInProgress.memoizedProps.value, workInProgress);
     }
-    if (workInProgress.tag === "OffscreenComponent" && SuspenseImpl$ResFiber.isHiddenProps(workInProgress.mp)) {
+    if (workInProgress.tag === "OffscreenComponent" && SuspenseImpl$ResFiber.isHiddenProps(workInProgress.memoizedProps)) {
       return;
     } else {
       return bailoutOnAlreadyFinishedWork(workInProgress, renderLanes);
     }
   }
-  workInProgress.l = Lanes$ResFiber.none;
+  workInProgress.lanes = Lanes$ResFiber.none;
   let match = workInProgress.tag;
   switch (match) {
     case "HostRoot" :
       return updateHostRoot(current, workInProgress);
     case "HostComponent" :
-      ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.pp.children);
-      return workInProgress.c;
+      ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.pendingProps.children);
+      return workInProgress.child;
     case "HostText" :
       return;
     case "FunctionComponent" :
-      return updateFunctionComponent(current, workInProgress, workInProgress.type, renderLanes);
+      return updateFunctionComponent(current, workInProgress, workInProgress.elementType, renderLanes);
     case "Fragment" :
-      ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.pp);
-      return workInProgress.c;
+      ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.pendingProps);
+      return workInProgress.child;
     case "ContextProvider" :
       return updateContextProvider(current, workInProgress, renderLanes);
     case "MemoComponent" :
@@ -161,18 +161,18 @@ function beginWork(current, workInProgress, renderLanes) {
     case "ErrorBoundaryComponent" :
       return updateErrorBoundary(current, workInProgress);
     case "HostPortal" :
-      ChildReconciler$ResFiber.reconcilePortalChildren(current, workInProgress, workInProgress.pp.children);
-      return workInProgress.c;
+      ChildReconciler$ResFiber.reconcilePortalChildren(current, workInProgress, workInProgress.pendingProps.children);
+      return workInProgress.child;
     case "SuspenseComponent" :
       ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, SuspenseImpl$ResFiber.childrenOf(current, workInProgress));
-      return workInProgress.c;
+      return workInProgress.child;
     case "OffscreenComponent" :
-      if (SuspenseImpl$ResFiber.isHiddenProps(workInProgress.pp)) {
-        workInProgress.c = Stdlib_Option.flatMap(current, current => current.c);
+      if (SuspenseImpl$ResFiber.isHiddenProps(workInProgress.pendingProps)) {
+        workInProgress.child = Stdlib_Option.flatMap(current, current => current.child);
         return;
       } else {
-        ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.pp.children);
-        return workInProgress.c;
+        ChildReconciler$ResFiber.reconcileChildren(current, workInProgress, workInProgress.pendingProps.children);
+        return workInProgress.child;
       }
   }
 }

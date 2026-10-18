@@ -43,9 +43,9 @@ function createFiberFromNode(node) {
     return Fiber$ResFiber.make("Fragment", node.key, node.props.children);
   }
   let fiber = Fiber$ResFiber.make(tagOfKind(kind), node.key, node.props);
-  fiber.type = node.type;
+  fiber.elementType = node.elementType;
   if (kind === "Portal") {
-    fiber.sn = node.type;
+    fiber.stateNode = node.elementType;
   }
   return fiber;
 }
@@ -55,7 +55,7 @@ function sameType(fiber, node) {
   if (kind === "Fragment") {
     return fiber.tag === "Fragment";
   } else if (fiber.tag === tagOfKind(kind)) {
-    return fiber.type === node.type;
+    return fiber.elementType === node.elementType;
   } else {
     return false;
   }
@@ -72,13 +72,13 @@ function pendingPropsOf(node) {
 
 function useFiber(fiber, pendingProps) {
   let clone = Fiber$ResFiber.createWorkInProgress(fiber, pendingProps);
-  clone.i = 0;
-  clone.s = undefined;
+  clone.index = 0;
+  clone.sibling = undefined;
   return clone;
 }
 
 function adopt(returnFiber, fiber) {
-  fiber.p = returnFiber;
+  fiber.parent = returnFiber;
   return fiber;
 }
 
@@ -86,12 +86,12 @@ function deleteChild(track, returnFiber, child) {
   if (!track) {
     return;
   }
-  let deletions = returnFiber.del;
+  let deletions = returnFiber.deletions;
   if (deletions !== undefined) {
     deletions.push(child);
     return;
   } else {
-    returnFiber.del = [child];
+    returnFiber.deletions = [child];
     return Fiber$ResFiber.addFlag(returnFiber, Fiber$ResFiber.Flags.childDeletion);
   }
 }
@@ -104,18 +104,18 @@ function deleteRemainingChildren(track, returnFiber, first) {
   while (Stdlib_Option.isSome(child)) {
     let fiber = child;
     deleteChild(track, returnFiber, fiber);
-    child = fiber.s;
+    child = fiber.sibling;
   };
 }
 
 function placeChild(track, newFiber, lastPlacedIndex, newIndex) {
-  newFiber.i = newIndex;
+  newFiber.index = newIndex;
   if (!track) {
     return lastPlacedIndex;
   }
-  let current = newFiber.alt;
-  if (current !== undefined && current.i >= lastPlacedIndex) {
-    return current.i;
+  let current = newFiber.alternate;
+  if (current !== undefined && current.index >= lastPlacedIndex) {
+    return current.index;
   } else {
     Fiber$ResFiber.addFlag(newFiber, Fiber$ResFiber.Flags.placement);
     return lastPlacedIndex;
@@ -123,7 +123,7 @@ function placeChild(track, newFiber, lastPlacedIndex, newIndex) {
 }
 
 function placeSingleChild(track, newFiber) {
-  if (track && Stdlib_Option.isNone(newFiber.alt)) {
+  if (track && Stdlib_Option.isNone(newFiber.alternate)) {
     Fiber$ResFiber.addFlag(newFiber, Fiber$ResFiber.Flags.placement);
   }
   return newFiber;
@@ -211,8 +211,8 @@ function mapRemainingChildren(first) {
   let child = first;
   while (Stdlib_Option.isSome(child)) {
     let fiber = child;
-    existing.set(mapKey(fiber.key, fiber.i), fiber);
-    child = fiber.s;
+    existing.set(mapKey(fiber.key, fiber.index), fiber);
+    child = fiber.sibling;
   };
   return existing;
 }
@@ -247,7 +247,7 @@ function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildr
   let link = fiber => {
     let previous$1 = previous.contents;
     if (previous$1 !== undefined) {
-      previous$1.s = fiber;
+      previous$1.sibling = fiber;
     } else {
       first.contents = fiber;
     }
@@ -259,17 +259,17 @@ function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildr
   let matching = true;
   while (matching && Stdlib_Option.isSome(oldFiber) && newIndex < length) {
     let old = oldFiber;
-    let match = old.i > newIndex ? [
+    let match = old.index > newIndex ? [
         undefined,
         old
       ] : [
         old,
-        old.s
+        old.sibling
       ];
     let slot = match[0];
     let newFiber = updateSlot(returnFiber, slot, newChildren[newIndex]);
     if (newFiber !== undefined) {
-      if (slot !== undefined && track && Stdlib_Option.isNone(newFiber.alt)) {
+      if (slot !== undefined && track && Stdlib_Option.isNone(newFiber.alternate)) {
         deleteChild(track, returnFiber, slot);
       }
       lastPlacedIndex = placeChild(track, newFiber, lastPlacedIndex, newIndex);
@@ -289,9 +289,9 @@ function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildr
       for (let index = newIndex; index < length; ++index) {
         let newFiber$1 = updateFromMap(existing, returnFiber, index, newChildren[index]);
         if (newFiber$1 !== undefined) {
-          let reused = newFiber$1.alt;
+          let reused = newFiber$1.alternate;
           if (reused !== undefined && track) {
-            existing.delete(mapKey(reused.key, reused.i));
+            existing.delete(mapKey(reused.key, reused.index));
           }
           lastPlacedIndex = placeChild(track, newFiber$1, lastPlacedIndex, index);
           link(newFiber$1);
@@ -320,7 +320,7 @@ function reconcileSingleElement(track, returnFiber, currentFirstChild, node) {
       }
       if (child.key === node.key) {
         if (sameType(child, node)) {
-          deleteRemainingChildren(track, returnFiber, child.s);
+          deleteRemainingChildren(track, returnFiber, child.sibling);
           return adopt(returnFiber, useFiber(child, pendingPropsOf(node)));
         } else {
           deleteRemainingChildren(track, returnFiber, child);
@@ -328,7 +328,7 @@ function reconcileSingleElement(track, returnFiber, currentFirstChild, node) {
         }
       }
       deleteChild(track, returnFiber, child);
-      _child = child.s;
+      _child = child.sibling;
       continue;
     };
   };
@@ -342,7 +342,7 @@ function reconcileSingleElement(track, returnFiber, currentFirstChild, node) {
 
 function reconcileSingleTextNode(track, returnFiber, currentFirstChild, text) {
   if (currentFirstChild !== undefined && currentFirstChild.tag === "HostText") {
-    deleteRemainingChildren(track, returnFiber, currentFirstChild.s);
+    deleteRemainingChildren(track, returnFiber, currentFirstChild.sibling);
     return adopt(returnFiber, useFiber(currentFirstChild, text));
   }
   deleteRemainingChildren(track, returnFiber, currentFirstChild);
@@ -374,11 +374,11 @@ function reconcileChildFibers(track, returnFiber, currentFirstChild, newChild) {
 }
 
 function reconcileChildren(current, workInProgress, nextChildren) {
-  workInProgress.c = current !== undefined ? reconcileChildFibers(true, workInProgress, current.c, nextChildren) : reconcileChildFibers(false, workInProgress, undefined, nextChildren);
+  workInProgress.child = current !== undefined ? reconcileChildFibers(true, workInProgress, current.child, nextChildren) : reconcileChildFibers(false, workInProgress, undefined, nextChildren);
 }
 
 function reconcilePortalChildren(current, workInProgress, nextChildren) {
-  workInProgress.c = reconcileChildFibers(true, workInProgress, Stdlib_Option.flatMap(current, current => current.c), nextChildren);
+  workInProgress.child = reconcileChildFibers(true, workInProgress, Stdlib_Option.flatMap(current, current => current.child), nextChildren);
 }
 
 export {

@@ -4,19 +4,19 @@ import * as Marker$ResFiber from "./internal/Marker.res.js";
 
 function make(defaultValue) {
   let context = {
-    cv: defaultValue,
-    dv: defaultValue,
-    pr: null
+    currentValue: defaultValue,
+    defaultValue: defaultValue,
+    provider: null
   };
   let provider = props => props.children;
   provider.$$fiberKind = Marker$ResFiber.providerKind;
   provider.$$fiberContext = context;
-  context.pr = provider;
+  context.provider = provider;
   return context;
 }
 
 function provider(context) {
-  return context.pr;
+  return context.provider;
 }
 
 export {

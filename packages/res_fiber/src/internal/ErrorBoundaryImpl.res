@@ -12,13 +12,13 @@ type props = {
   children: Element.t,
 }
 
-type state = {@as("e") error: option<exn>, @as("g") generation: int}
+type state = {error: option<exn>, generation: int}
 
 type instance = {
-  @as("g") mutable generation: int,
+  mutable generation: int,
   /** An error from an effect, waiting for the boundary's next render to show it. */
-  @as("pe") mutable pendingError: option<exn>,
-  @as("r") mutable reset: unit => unit,
+  mutable pendingError: option<exn>,
+  mutable reset: unit => unit,
 }
 
 external propsOf: unknown => props = "%identity"

@@ -75,7 +75,7 @@ working tree, alternating between the two over several processes (see
 [`tools/benchmarking`](tools/benchmarking#measuring-over-several-processes-res-bench)):
 
 ```bash
-pnpm --filter @e-cline/res_trees_benchmarks exec vp run bench:compare main
+pnpm --filter @e-cline/trees_benchmarks exec vp run bench:compare main
 ```
 
 Compile just the ReScript code (all packages, PPX included):

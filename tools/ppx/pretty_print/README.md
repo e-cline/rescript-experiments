@@ -28,7 +28,7 @@ is broken up, one element per line:
 }
 ```
 
-See `../../../examples/res_pretty_print` for a package using it. Targets ReScript 12+.
+See `../../../examples/pretty_print` for a package using it. Targets ReScript 12+.
 
 ## What's generated
 

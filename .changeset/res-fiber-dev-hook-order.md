@@ -1,5 +1,5 @@
 ---
-'@e-cline/res_fiber': patch
+'@e-cline/fiber': patch
 ---
 
 Checking that hooks are called in the same order on every render now happens in development only, as

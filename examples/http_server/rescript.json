@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/http_server_example",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "HttpServerExample",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": ["@e-cline/server", "@rescript/webapi"]
+}

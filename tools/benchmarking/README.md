@@ -1,9 +1,9 @@
-# @e-cline/res_benchmarking
+# @e-cline/benchmarking
 
 Shared support for the workspace's benchmark packages
-([`packages/res_trees/benchmarks`](../../packages/res_trees/benchmarks),
-[`packages/res_signals/benchmarks`](../../packages/res_signals/benchmarks) and
-[`packages/res_signal_maps/benchmarks`](../../packages/res_signal_maps/benchmarks)). Not published.
+([`packages/trees/benchmarks`](../../packages/trees/benchmarks),
+[`packages/signals/benchmarks`](../../packages/signals/benchmarks) and
+[`packages/signal_maps/benchmarks`](../../packages/signal_maps/benchmarks)). Not published.
 
 - **`Mitata`** -- bindings to [mitata](https://github.com/evanwashere/mitata), covering what the
   benchmarks use rather than the whole library: `bench`, `group`, `summary`, `doNotOptimize` and
@@ -339,7 +339,7 @@ A benchmark package depends on this one and on the package it measures, register
 module top level, and ends by running them with `Runner.main()`:
 
 ```rescript
-open ResBenchmarking
+open Benchmarking
 
 let comparison = Comparison.make(~implementations=["BTree", "Belt.Map"])
 
@@ -386,5 +386,5 @@ the JIT delete the computation that produced it.
 
 The package needs `mitata` in its own `dependencies` as well as this package: its bundle leaves
 `mitata` external, so Node resolves it from the benchmark package's `node_modules` at run time. See
-[`packages/res_trees/benchmarks`](../../packages/res_trees/benchmarks) for the build and task
-configuration to copy.
+[`packages/trees/benchmarks`](../../packages/trees/benchmarks) for the build and task configuration
+to copy.

@@ -1,9 +1,9 @@
 ---
-'@e-cline/res_signal_maps': minor
+'@e-cline/signal_maps': minor
 ---
 
-Support any `res_trees` sorted map, not only `BTree`: `SignalMap.Make(ResTrees.ChunkTree)` (or any
-`ResTrees.SortedMap.S`, such as `AvlTree`) gives an `AtomMap` and a `ComputedMap` over that tree.
+Support any `trees` sorted map, not only `BTree`: `SignalMap.Make(Trees.ChunkTree)` (or any
+`Trees.SortedMap.S`, such as `AvlTree`) gives an `AtomMap` and a `ComputedMap` over that tree.
 `AtomMap` and `ComputedMap` themselves are unchanged and still hold a `BTree.t`; their interfaces
 are now `SignalMap.AtomMap` and `SignalMap.ComputedMap`, where each operation is documented, and
 each gains a `tree` type naming the tree it holds. `MapDiff.Make` gives `ofTrees` for any tree, and

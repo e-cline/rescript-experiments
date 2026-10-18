@@ -1,5 +1,5 @@
 ---
-'@e-cline/res_trees': minor
+'@e-cline/trees': minor
 ---
 
 Add `SortedMap`, the interfaces the trees share, as module types: `SortedMap.Persistent` (`BTree`,

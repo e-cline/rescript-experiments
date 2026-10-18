@@ -1,5 +1,5 @@
 {
-  "name": "@e-cline/res_benchmarking",
+  "name": "@e-cline/benchmarking",
   "sources": {
     "dir": "src",
     "subdirs": true
@@ -11,6 +11,6 @@
     }
   ],
   "suffix": ".res.js",
-  "namespace": "ResBenchmarking",
+  "namespace": "Benchmarking",
   "dependencies": []
 }

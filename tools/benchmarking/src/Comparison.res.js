@@ -7,7 +7,7 @@ import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
-import * as Mitata$ResBenchmarking from "./Mitata.res.js";
+import * as Mitata$Benchmarking from "./Mitata.res.js";
 
 function make(implementations) {
   return {
@@ -29,7 +29,7 @@ function bench(comparison, operation, parameter, implementations) {
   Mitata.group(operation + ` ` + parameter, () => {
     Mitata.summary(() => {
       implementations.forEach(param => {
-        Mitata$ResBenchmarking.benchWithSetup(benchName(param[0], row), param[1]);
+        Mitata$Benchmarking.benchWithSetup(benchName(param[0], row), param[1]);
       });
     });
   });

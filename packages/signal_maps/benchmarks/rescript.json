@@ -1,0 +1,21 @@
+{
+  "name": "@e-cline/signal_maps_benchmarks",
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "SignalMapsBenchmarks",
+  "dependencies": [
+    "@e-cline/signal_maps",
+    "@e-cline/signals",
+    "@e-cline/trees",
+    "@e-cline/benchmarking"
+  ]
+}

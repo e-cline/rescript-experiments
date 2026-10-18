@@ -1,0 +1,31 @@
+{
+  "name": "@e-cline/react_ui_example",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A ReScript-authored React component, exploring @rescript/react (JSX authoring, uncurried components), CSS Modules from ReScript, and consuming a third-party ReScript library (rescript-webapi) from this workspace's Vite+ toolchain.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    },
+    "./*.css": "./dist/*.css",
+    "./*.res": null
+  },
+  "devDependencies": {
+    "@rescript/react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "rescript": "catalog:",
+    "rescript-webapi": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

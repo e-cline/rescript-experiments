@@ -1,0 +1,22 @@
+{
+  "name": "@e-cline/react_ui_example",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.jsx",
+  "jsx": {"version": 4, "preserve": true},
+  "namespace": "ReactUiExample",
+  "gentypeconfig": {
+    "language": "typescript",
+    "module": "esmodule",
+    "shims": {}
+  },
+  "dependencies": ["@rescript/react", "rescript-webapi"]
+}

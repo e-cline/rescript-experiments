@@ -241,60 +241,60 @@ importers:
       '@changesets/cli':
         specifier: 'catalog:'
         version: 3.0.3
-      '@e-cline/res_benchmarking':
+      '@e-cline/benchmarking':
         specifier: workspace:*
         version: link:tools/benchmarking
-      '@e-cline/res_common':
+      '@e-cline/common':
         specifier: workspace:*
-        version: link:packages/res_common
-      '@e-cline/res_fiber':
+        version: link:packages/common
+      '@e-cline/fiber':
         specifier: workspace:*
-        version: link:packages/res_fiber
-      '@e-cline/res_fiber_app_example':
+        version: link:packages/fiber
+      '@e-cline/fiber_app_example':
         specifier: workspace:*
-        version: link:examples/res_fiber_app
-      '@e-cline/res_fiber_benchmarks':
+        version: link:examples/fiber_app
+      '@e-cline/fiber_benchmarks':
         specifier: workspace:*
-        version: link:packages/res_fiber/benchmarks
-      '@e-cline/res_fiber_dom':
+        version: link:packages/fiber/benchmarks
+      '@e-cline/fiber_dom':
         specifier: workspace:*
-        version: link:packages/res_fiber_dom
-      '@e-cline/res_fiber_signals':
+        version: link:packages/fiber_dom
+      '@e-cline/fiber_signals':
         specifier: workspace:*
-        version: link:packages/res_fiber_signals
-      '@e-cline/res_http_server_example':
+        version: link:packages/fiber_signals
+      '@e-cline/http_server_example':
         specifier: workspace:*
-        version: link:examples/res_http_server
-      '@e-cline/res_pretty_print_example':
+        version: link:examples/http_server
+      '@e-cline/pretty_print_example':
         specifier: workspace:*
-        version: link:examples/res_pretty_print
-      '@e-cline/res_priority_queue':
+        version: link:examples/pretty_print
+      '@e-cline/priority_queue':
         specifier: workspace:*
-        version: link:packages/res_priority_queue
-      '@e-cline/res_server':
+        version: link:packages/priority_queue
+      '@e-cline/server':
         specifier: workspace:*
-        version: link:packages/res_server
-      '@e-cline/res_signal_maps':
+        version: link:packages/server
+      '@e-cline/signal_maps':
         specifier: workspace:*
-        version: link:packages/res_signal_maps
-      '@e-cline/res_signal_maps_benchmarks':
+        version: link:packages/signal_maps
+      '@e-cline/signal_maps_benchmarks':
         specifier: workspace:*
-        version: link:packages/res_signal_maps/benchmarks
-      '@e-cline/res_signals':
+        version: link:packages/signal_maps/benchmarks
+      '@e-cline/signals':
         specifier: workspace:*
-        version: link:packages/res_signals
-      '@e-cline/res_signals_benchmarks':
+        version: link:packages/signals
+      '@e-cline/signals_benchmarks':
         specifier: workspace:*
-        version: link:packages/res_signals/benchmarks
-      '@e-cline/res_tree_shaking_example':
+        version: link:packages/signals/benchmarks
+      '@e-cline/tree_shaking_example':
         specifier: workspace:*
-        version: link:examples/res_tree_shaking
-      '@e-cline/res_trees':
+        version: link:examples/tree_shaking
+      '@e-cline/trees':
         specifier: workspace:*
-        version: link:packages/res_trees
-      '@e-cline/res_trees_benchmarks':
+        version: link:packages/trees
+      '@e-cline/trees_benchmarks':
         specifier: workspace:*
-        version: link:packages/res_trees/benchmarks
+        version: link:packages/trees/benchmarks
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -314,14 +314,14 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  examples/res_fiber_app:
+  examples/fiber_app:
     dependencies:
-      '@e-cline/res_fiber':
+      '@e-cline/fiber':
         specifier: workspace:*
-        version: link:../../packages/res_fiber
-      '@e-cline/res_fiber_dom':
+        version: link:../../packages/fiber
+      '@e-cline/fiber_dom':
         specifier: workspace:*
-        version: link:../../packages/res_fiber_dom
+        version: link:../../packages/fiber_dom
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -334,19 +334,19 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
-        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  examples/res_http_server:
+  examples/http_server:
     dependencies:
-      '@e-cline/res_server':
+      '@e-cline/server':
         specifier: workspace:*
-        version: link:../../packages/res_server
+        version: link:../../packages/server
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.1.5(hono@4.13.13)
@@ -362,12 +362,12 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  examples/res_pretty_print:
+  examples/pretty_print:
     dependencies:
       '@e-cline/ppx_pretty_print':
         specifier: workspace:*
@@ -381,13 +381,13 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  examples/res_react_app:
+  examples/react_app:
     dependencies:
-      '@e-cline/res_react_ui_example':
+      '@e-cline/react_ui_example':
         specifier: workspace:*
-        version: link:../res_react_ui
+        version: link:../react_ui
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -406,12 +406,12 @@ importers:
         version: 7.0.2
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
-        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  examples/res_react_ui:
+  examples/react_ui:
     devDependencies:
       '@rescript/react':
         specifier: 'catalog:'
@@ -435,11 +435,11 @@ importers:
         specifier: 'catalog:'
         version: 0.10.0
 
-  examples/res_tree_shaking:
+  examples/tree_shaking:
     dependencies:
-      '@e-cline/res_common':
+      '@e-cline/common':
         specifier: workspace:*
-        version: link:../../packages/res_common
+        version: link:../../packages/common
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -466,7 +466,7 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/res_common:
+  packages/common:
     dependencies:
       '@e-cline/js_env':
         specifier: ^0.0.2
@@ -480,16 +480,16 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_fiber:
+  packages/fiber:
     dependencies:
-      '@e-cline/res_common':
+      '@e-cline/common':
         specifier: workspace:^
-        version: link:../res_common
-      '@e-cline/res_priority_queue':
+        version: link:../common
+      '@e-cline/priority_queue':
         specifier: workspace:^
-        version: link:../res_priority_queue
+        version: link:../priority_queue
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -499,19 +499,19 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_fiber/benchmarks:
+  packages/fiber/benchmarks:
     dependencies:
-      '@e-cline/res_benchmarking':
+      '@e-cline/benchmarking':
         specifier: workspace:*
         version: link:../../../tools/benchmarking
-      '@e-cline/res_fiber':
+      '@e-cline/fiber':
         specifier: workspace:*
         version: link:..
-      '@e-cline/res_fiber_dom':
+      '@e-cline/fiber_dom':
         specifier: workspace:*
-        version: link:../../res_fiber_dom
+        version: link:../../fiber_dom
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -541,11 +541,11 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/res_fiber_dom:
+  packages/fiber_dom:
     dependencies:
-      '@e-cline/res_fiber':
+      '@e-cline/fiber':
         specifier: workspace:^
-        version: link:../res_fiber
+        version: link:../fiber
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -558,16 +558,16 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_fiber_signals:
+  packages/fiber_signals:
     dependencies:
-      '@e-cline/res_fiber':
+      '@e-cline/fiber':
         specifier: workspace:^
-        version: link:../res_fiber
-      '@e-cline/res_signals':
+        version: link:../fiber
+      '@e-cline/signals':
         specifier: workspace:^
-        version: link:../res_signals
+        version: link:../signals
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -577,13 +577,13 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_priority_queue:
+  packages/priority_queue:
     dependencies:
-      '@e-cline/res_common':
+      '@e-cline/common':
         specifier: workspace:^
-        version: link:../res_common
+        version: link:../common
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -593,9 +593,9 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_server:
+  packages/server:
     dependencies:
       '@hono/node-server':
         specifier: 'catalog:'
@@ -615,16 +615,16 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_signal_maps:
+  packages/signal_maps:
     dependencies:
-      '@e-cline/res_signals':
+      '@e-cline/signals':
         specifier: workspace:^
-        version: link:../res_signals
-      '@e-cline/res_trees':
+        version: link:../signals
+      '@e-cline/trees':
         specifier: workspace:^
-        version: link:../res_trees
+        version: link:../trees
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -634,22 +634,22 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_signal_maps/benchmarks:
+  packages/signal_maps/benchmarks:
     dependencies:
-      '@e-cline/res_benchmarking':
+      '@e-cline/benchmarking':
         specifier: workspace:*
         version: link:../../../tools/benchmarking
-      '@e-cline/res_signal_maps':
+      '@e-cline/signal_maps':
         specifier: workspace:*
         version: link:..
-      '@e-cline/res_signals':
+      '@e-cline/signals':
         specifier: workspace:*
-        version: link:../../res_signals
-      '@e-cline/res_trees':
+        version: link:../../signals
+      '@e-cline/trees':
         specifier: workspace:*
-        version: link:../../res_trees
+        version: link:../../trees
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -670,7 +670,7 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/res_signals:
+  packages/signals:
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -680,14 +680,14 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_signals/benchmarks:
+  packages/signals/benchmarks:
     dependencies:
-      '@e-cline/res_benchmarking':
+      '@e-cline/benchmarking':
         specifier: workspace:*
         version: link:../../../tools/benchmarking
-      '@e-cline/res_signals':
+      '@e-cline/signals':
         specifier: workspace:*
         version: link:..
       '@rescript/runtime':
@@ -710,7 +710,7 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/res_trees:
+  packages/trees:
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -720,14 +720,14 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/res_trees/benchmarks:
+  packages/trees/benchmarks:
     dependencies:
-      '@e-cline/res_benchmarking':
+      '@e-cline/benchmarking':
         specifier: workspace:*
         version: link:../../../tools/benchmarking
-      '@e-cline/res_trees':
+      '@e-cline/trees':
         specifier: workspace:*
         version: link:..
       '@rescript/runtime':
@@ -1910,10 +1910,6 @@ packages:
     resolution: {integrity: sha512-86diuUyeeWM8CrqhpGCaDafrzjS1s++7sWy2AbAPoFNz/xKv7ID57CR4pZsMuGCh60PtsnEx4z68b+Vgt07VPw==}
     engines: {node: '>=20.19.0'}
 
-  chai@6.2.2:
-    resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
-    engines: {node: '>=18'}
-
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
     engines: {node: '>=18'}
@@ -1955,9 +1951,6 @@ packages:
   entities@8.0.0:
     resolution: {integrity: sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA==}
     engines: {node: '>=20.19.0'}
-
-  es-module-lexer@2.3.1:
-    resolution: {integrity: sha512-shc1dbU90Yl/xq1QrC7QRtfcwURZuVRfPhZbDoldJ1cn1gzDvBaBWlv0eFolj5+0znnPJz5TXLxsN77X/12KTA==}
 
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
@@ -2300,9 +2293,6 @@ packages:
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
 
-  std-env@4.2.0:
-    resolution: {integrity: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==}
-
   std-env@4.3.0:
     resolution: {integrity: sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==}
 
@@ -2338,10 +2328,6 @@ packages:
   tinypool@2.2.0:
     resolution: {integrity: sha512-jBrmx4lYmaC9k/mgPbylxs7kBUxHtD8256up+HjLaDFfXScKJQyil+SWXSvhAtT7XHo+yTVlpB81PGmHP8oLSQ==}
     engines: {node: ^20.0.0 || >=22.0.0}
-
-  tinyrainbow@3.1.1:
-    resolution: {integrity: sha512-yau8yJdTt989Mm0Bd/236QnzEiPf2xLLTqUZRUJOo/3CB078LSwzei343DgtJVmfJKJE3TMINY1u42SQsP6mXw==}
-    engines: {node: '>=14.0.0'}
 
   tinyrainbow@3.2.0:
     resolution: {integrity: sha512-LgO3D9yZJjApUiuUfl9iFAwrtaX4+lok3wJIqttGoKCHlWUqHqbQpnxCf82L8FjgKsh4iGo78hqJwgL8F6To2A==}
@@ -2811,7 +2797,7 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
       '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/resolve-uri@3.1.2': {}
@@ -3260,16 +3246,16 @@ snapshots:
       '@types/chai': 5.2.3
       '@vitest/spy': 4.1.10
       '@vitest/utils': 4.1.10
-      chai: 6.2.2
-      tinyrainbow: 3.1.1
+      chai: 6.3.0
+      tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.10(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.10(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
 
   '@vitest/mocker@5.0.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)':
     dependencies:
@@ -3333,7 +3319,7 @@ snapshots:
 
   '@vitest/pretty-format@4.1.10':
     dependencies:
-      tinyrainbow: 3.1.1
+      tinyrainbow: 3.2.0
 
   '@vitest/pretty-format@5.0.5':
     dependencies:
@@ -3376,7 +3362,7 @@ snapshots:
     dependencies:
       '@vitest/pretty-format': 4.1.10
       convert-source-map: 2.0.0
-      tinyrainbow: 3.1.1
+      tinyrainbow: 3.2.0
 
   '@vitest/utils@5.0.5':
     dependencies:
@@ -3516,8 +3502,6 @@ snapshots:
 
   cac@7.0.1: {}
 
-  chai@6.2.2: {}
-
   chai@6.3.0: {}
 
   commander@2.20.3: {}
@@ -3549,8 +3533,6 @@ snapshots:
   dom-accessibility-api@0.5.16: {}
 
   entities@8.0.0: {}
-
-  es-module-lexer@2.3.1: {}
 
   es-module-lexer@2.3.2: {}
 
@@ -3718,7 +3700,7 @@ snapshots:
 
   magic-string@0.30.21:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   magic-string@1.4.3:
     dependencies:
@@ -3884,11 +3866,11 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  rescript-vitest@3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1):
+  rescript-vitest@3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1):
     dependencies:
       rescript: 12.3.1
-      vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
-      vitest: 4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)
+      vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vitest: 4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@opentelemetry/api'
@@ -3948,8 +3930,6 @@ snapshots:
 
   stackback@0.0.2: {}
 
-  std-env@4.2.0: {}
-
   std-env@4.3.0: {}
 
   terser@5.50.0:
@@ -3981,8 +3961,6 @@ snapshots:
       picomatch: 4.0.7
 
   tinypool@2.2.0: {}
-
-  tinyrainbow@3.1.1: {}
 
   tinyrainbow@3.2.0: {}
 
@@ -4155,27 +4133,27 @@ snapshots:
       - vue-tsc
       - yaml
 
-  vitest@4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3):
+  vitest@4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.10(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
       '@vitest/spy': 4.1.10
       '@vitest/utils': 4.1.10
-      es-module-lexer: 2.3.1
+      es-module-lexer: 2.3.2
       expect-type: 1.4.0
       magic-string: 0.30.21
       obug: 2.1.4
       pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.2.0
+      picomatch: 4.0.7
+      std-env: 4.3.0
       tinybench: 2.9.0
-      tinyexec: 1.3.0
+      tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      tinyrainbow: 3.1.1
-      vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      tinyrainbow: 3.2.0
+      vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.6.5

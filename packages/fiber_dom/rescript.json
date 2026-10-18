@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/fiber_dom",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "FiberDom",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": ["@e-cline/fiber"]
+}

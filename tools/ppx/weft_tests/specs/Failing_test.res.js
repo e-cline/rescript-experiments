@@ -34,7 +34,8 @@ function compile(dir, withPpx, name) {
     ]
   ]), {
     cwd: workDir,
-    encoding: "utf8"
+    encoding: "utf8",
+    timeout: 60000
   });
   let output = (result.stdout + result.stderr).replace(ansi, "").replaceAll(file, name);
   return [

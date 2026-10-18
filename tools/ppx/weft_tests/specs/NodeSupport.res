@@ -14,7 +14,8 @@ The bits of Node these tests need: reading files, and running the compiler.
 /** This package's directory (`tools/ppx/weft_tests`): the parent of `specs/`, where this file is. */
 let packageRoot = dirname(dirname(fileURLToPath(%raw(`import.meta.url`))))
 
-type spawnOptions = {cwd: string, encoding: string}
+/** `timeout` is in milliseconds: the child is killed after it. */
+type spawnOptions = {cwd: string, encoding: string, timeout: int}
 type spawnResult = {status: Nullable.t<int>, stdout: string, stderr: string}
 
 @module("node:child_process")

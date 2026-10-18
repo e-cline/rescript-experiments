@@ -255,9 +255,12 @@ an entrypoint no server component renders still gets a chunk, which is harmless.
 instead builds the server graph first to find client references; that can come later if it's ever
 needed.)
 
-One thing to test early: ReScript renames modules that clash with JavaScript globals in its output
-(a module `Error` is exported as `$$Error`). The client has to walk the same names; the simplest fix
-is for the PPX to write the JS export path into the id, applying the same rule.
+ReScript renames modules that clash with JavaScript globals in its output (a module `Error` is
+exported as `$$Error`, which phase 0's fixtures pin). The id keeps the ReScript module path
+(`...#Error`), and the client, walking it, looks up each name and then the `$$`-prefixed one.
+Copying ReScript's list of renamed names into the PPX instead was considered and dropped: it's long,
+and the compiler can change it, while trying both names can't go wrong (a module can't export both
+`Error` and `$$Error`).
 
 ### 4. The Vite plugin (`packages/vite_plugin_weft`, `@e-cline/vite_plugin_weft`)
 
@@ -804,7 +807,9 @@ the `Weft.Lazy` alias; with their tests (§9).
 
 **Phase 2 -- The PPX in full.** Async rewriting, marks, ids, directives and the rest of the errors
 in §2 (`async` outside a server component, server components and entrypoints in one file,
-function-typed props), with the rest of the PPX's fixtures, good and bad, and canary 4 (§9).
+function-typed props, an entrypoint not named `make`, no `rescript.json` to name it by), with the
+rest of the PPX's fixtures, good and bad, and canary 4 (§9): the ids are made from the source path
+the PPX is given, so the tests of the ids are that canary.
 
 **Phase 3 -- Wire format and renderer, no bundler.** `Payload`, `Render` and `Client`, each tested
 on its own and then together into the TestRenderer, including every in-place update test and the
@@ -853,6 +858,11 @@ Settled before phase 0, since these names and this setup get built into everythi
   `@weft.component` is ignored and every use of the component is a type error about `component<'a>`
   (verified point 2), which doesn't say what's wrong. Nothing builds, so it can't ship; the README
   should lead with the setup, and list that error as its symptom.
+- **Async server components only work in the server renderer.** It calls one once and waits;
+  rendering one with the client reconciler would call it on every render, each time with a new
+  promise, and never settle (found writing phase 2's tests: the loop runs in microtasks, so it even
+  starves a test runner's timeout). In an app, the Vite plugin keeps server files out of the client;
+  in tests, async server components go through the server renderer (or are called once and awaited).
 - **Hooks on the server.** Shared components that call `useState` work in the browser and fail on
   the server, which is only found at runtime. React has the same limitation; the error message is
   the mitigation.

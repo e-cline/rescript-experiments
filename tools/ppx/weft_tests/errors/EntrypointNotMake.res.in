@@ -1,0 +1,2 @@
+@weft.component({kind: Entrypoint})
+let render = (~label: string) => label

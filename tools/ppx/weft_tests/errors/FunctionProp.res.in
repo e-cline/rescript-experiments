@@ -1,0 +1,5 @@
+@weft.component({kind: Entrypoint})
+let make = (~label: string, ~onSave: string => unit) => {
+  onSave(label)
+  label
+}

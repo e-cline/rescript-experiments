@@ -1,0 +1,9 @@
+module Note = {
+  @weft.component({kind: Server})
+  let make = (~id: string) => id
+}
+
+module LikeButton = {
+  @weft.component({kind: Entrypoint})
+  let make = (~id: string) => id
+}

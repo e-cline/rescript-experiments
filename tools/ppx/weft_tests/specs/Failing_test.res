@@ -35,7 +35,8 @@ let compile = (~dir, ~withPpx, name) => {
   let result = NodeSupport.spawnSync(
     bsc,
     [...ppxArgs, "-bs-jsx", "4", file],
-    {cwd: workDir, encoding: "utf8"},
+    // A compile that hangs would block the test runner too (this call is synchronous).
+    {cwd: workDir, encoding: "utf8", timeout: 60_000},
   )
   let output =
     (result.stdout ++ result.stderr)

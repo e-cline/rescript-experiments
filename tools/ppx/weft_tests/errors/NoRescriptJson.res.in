@@ -1,0 +1,3 @@
+// Compiled from a temporary directory, with no rescript.json above it to name the entrypoint by.
+@weft.component({kind: Entrypoint})
+let make = (~label: string) => label

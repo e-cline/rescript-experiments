@@ -1,0 +1,2 @@
+@weft.component
+let make = async (~id: string) => id

@@ -450,7 +450,7 @@ function defaultOnError(error) {
   console.error(error);
 }
 
-function toStream(element, onErrorOpt, signal) {
+function valueToStream(value, onErrorOpt, signal) {
   let onError = onErrorOpt !== undefined ? onErrorOpt : defaultOnError;
   let request = {
     contents: undefined
@@ -487,13 +487,16 @@ function toStream(element, onErrorOpt, signal) {
         ancestors: /* [] */0
       };
       let root = allocate(current);
-      spawn(context, root, () => encodeValue(context, element));
+      spawn(context, root, () => encodeValue(context, value));
     },
     cancel: param => Stdlib_Option.forEach(request.contents, abort)
   });
 }
 
+let toStream = valueToStream;
+
 export {
   toStream,
+  valueToStream,
 }
 /* warned Not a pure module */

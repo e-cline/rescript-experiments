@@ -112,3 +112,34 @@ test("navigating between notes keeps the like button's state, and the back butto
   // The like went to the server, and the button still knows it was liked here.
   await expect(page.locator('#like')).toHaveText('4 likes (you liked this)');
 });
+
+test('posting a comment goes through its RPC, as JSON with its header, and a refresh shows it', async ({
+  page,
+  request,
+}) => {
+  await openGates(request, '1');
+  await page.goto('/notes/1');
+  await page.locator('#comment-author').fill('Me');
+  await page.locator('#comment-text').fill('  From a browser  ');
+  const posted = page.waitForRequest(
+    (sent) => new URL(sent.url()).pathname === '/_weft/rpc/notes.addComment',
+  );
+  await page.locator('#post-comment').click();
+  const sent = await posted;
+  expect(sent.method()).toBe('POST');
+  expect(sent.headers()['content-type']).toBe('application/json');
+  expect(sent.headers()['x-weft-rpc']).toBe('1');
+  // `prepare` trimmed it, on the client.
+  expect(sent.postDataJSON()).toEqual({
+    noteId: '1',
+    author: 'Me',
+    text: 'From a browser',
+  });
+  expect((await sent.response())?.status()).toBe(200);
+  // The refresh's comments wait on their gate again.
+  await release(request, 'comments:1');
+  await expect(page.locator('#comment-list')).toContainText(
+    'Me: From a browser',
+  );
+  await expect(page.locator('#comment-text')).toHaveValue('');
+});

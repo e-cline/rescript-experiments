@@ -446,7 +446,7 @@ let defaultOnError = error => {
   None
 }
 
-let toStream = (element, ~onError=defaultOnError, ~signal=?) => {
+let valueToStream = (value: unknown, ~onError=defaultOnError, ~signal=?) => {
   let request = ref(None)
   Streams.make({
     start: controller => {
@@ -470,8 +470,11 @@ let toStream = (element, ~onError=defaultOnError, ~signal=?) => {
       }
       let context = {request: current, inSuspense: false, path: list{}, ancestors: list{}}
       let root = allocate(current)
-      spawn(context, root, () => encodeValue(context, Values.toUnknown(element)))
+      spawn(context, root, () => encodeValue(context, value))
     },
     cancel: _ => request.contents->Option.forEach(abort),
   })
 }
+
+let toStream = (element: Element.t, ~onError=?, ~signal=?) =>
+  valueToStream(Values.toUnknown(element), ~onError?, ~signal?)

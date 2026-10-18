@@ -29,6 +29,16 @@ function title(noteId) {
   return Stdlib_Option.mapOr(Db$WeftNotes.find(noteId), "", note => note.title);
 }
 
+function likes(noteId) {
+  return Stdlib_Option.mapOr(Db$WeftNotes.find(noteId), 0, note => note.likes);
+}
+
+function commentCount(noteId) {
+  return Stdlib_Option.mapOr(Db$WeftNotes.comments[noteId], 0, prim => prim.length);
+}
+
+let removeNote = Db$WeftNotes.remove;
+
 export {
   reset,
   release,
@@ -38,5 +48,8 @@ export {
   editComment,
   setLikes,
   title,
+  likes,
+  commentCount,
+  removeNote,
 }
 /* Db-WeftNotes Not a pure module */

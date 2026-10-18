@@ -9,4 +9,4 @@ function load() {
 export {
   load,
 }
-/* Db-FixtureClientImportsServer Not a pure module */
+/* No side effect */

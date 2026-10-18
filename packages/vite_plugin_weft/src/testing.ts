@@ -91,6 +91,10 @@ export class App {
   delivery: Delivery = {type: 'immediate'};
   /** Every request made, by URL, in order. */
   readonly requests: string[] = [];
+  /** How `rewriteBodies` changes the bodies of requests to paths containing `matching`. */
+  private rewrite:
+    | {matching: string; change: (body: string) => string}
+    | undefined;
 
   constructor(
     root: string,
@@ -113,6 +117,18 @@ export class App {
 
   private changed() {
     for (const listener of [...this.listeners]) listener();
+  }
+
+  /**
+   * Changes the body of each request whose path contains `matching`, before the server gets it,
+   * until `stopRewriting` (a client older or newer than the server, say, or a forged request).
+   */
+  rewriteBodies(matching: string, change: (body: string) => string) {
+    this.rewrite = {matching, change};
+  }
+
+  stopRewriting() {
+    this.rewrite = undefined;
   }
 
   /** Calls `listener` whenever a chunk arrives, is delivered, or a response ends. */
@@ -261,10 +277,20 @@ export class App {
       ),
       input instanceof Request ? input : init,
     );
-    const body =
+    let body =
       request.body === null
         ? null
         : new Uint8Array(await request.arrayBuffer());
+    const rewrite = this.rewrite;
+    if (
+      body !== null &&
+      rewrite !== undefined &&
+      new URL(request.url).pathname.includes(rewrite.matching)
+    ) {
+      body = new TextEncoder().encode(
+        rewrite.change(new TextDecoder().decode(body)),
+      );
+    }
     const id = this.nextId++;
     this.requests.push(
       new URL(request.url).pathname + new URL(request.url).search,

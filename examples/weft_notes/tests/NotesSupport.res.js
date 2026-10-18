@@ -106,6 +106,18 @@ function text(page, selector) {
   return Stdlib_Option.getOr(WeftTesting.textOf(page, selector), "");
 }
 
+function likes(app, noteId) {
+  return WeftTesting.callServer(app, control, "likes", [noteId]).then(json => Stdlib_Option.mapOr(Stdlib_JSON.Decode.float(json), 0, prim => prim | 0));
+}
+
+function commentCount(app, noteId) {
+  return WeftTesting.callServer(app, control, "commentCount", [noteId]).then(json => Stdlib_Option.mapOr(Stdlib_JSON.Decode.float(json), 0, prim => prim | 0));
+}
+
+function removeNote(app, noteId) {
+  return WeftTesting.callServer(app, control, "removeNote", [noteId]).then(param => {});
+}
+
 let has = WeftTesting.has;
 
 export {
@@ -126,5 +138,8 @@ export {
   waiterFor,
   text,
   has,
+  likes,
+  commentCount,
+  removeNote,
 }
 /* packageRoot Not a pure module */

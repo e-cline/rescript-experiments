@@ -1,8 +1,15 @@
 {
   "name": "@e-cline/ppx_weft_tests",
   "sources": [
-    {"dir": "fixtures", "subdirs": true},
-    {"dir": "specs", "subdirs": true, "type": "dev"}
+    {
+      "dir": "fixtures",
+      "subdirs": true
+    },
+    {
+      "dir": "specs",
+      "subdirs": true,
+      "type": "dev"
+    }
   ],
   "package-specs": [
     {
@@ -13,6 +20,11 @@
   "suffix": ".res.js",
   "namespace": "PpxWeftTests",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/weft", "@e-cline/weft_core", "@e-cline/weft_dom"],
+  "dependencies": [
+    "@e-cline/weft",
+    "@e-cline/weft_core",
+    "@e-cline/weft_dom",
+    "@e-cline/weft_server"
+  ],
   "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 }

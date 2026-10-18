@@ -11,7 +11,7 @@ import {
   type ViteDevServer,
 } from 'vite';
 
-import {findDirective, stripDirective} from './internal/directives.js';
+import {findDirectives, stripDirectives} from './internal/directives.js';
 import {
   entrypoints,
   hasPpx,
@@ -139,9 +139,10 @@ export function weft(options: Options): Plugin[] {
   function boundaryError(chain: string[]): string {
     const names = chain.map((module) => displayId(config.root, module));
     return (
-      `[weft] ${names.at(-1)} has server components ('use weft server'), so the client can't ` +
-      `import it, but it does: ${names.join(' -> ')}. ` +
-      'Render it from a server component instead, and pass what the client needs as props.'
+      `[weft] ${names.at(-1)} is a server file ('use weft server': it has server components, or ` +
+      `@@weft.server), so the client can't import it, but it does: ${names.join(' -> ')}. ` +
+      'Render it from a server component instead, and pass what the client needs as props ' +
+      '(or call an RPC).'
     );
   }
 
@@ -286,13 +287,13 @@ export function weft(options: Options): Plugin[] {
     },
 
     transform: {
-      // Only compiled files can have a directive, and most don't: `findDirective` checks first.
+      // Only compiled files can have a directive, and most don't: `findDirectives` checks first.
       filter: {code: 'use weft '},
       handler(code, id) {
-        const directive = findDirective(code);
-        if (directive === undefined) return undefined;
+        const found = findDirectives(code);
+        if (found === undefined) return undefined;
         if (
-          directive.kind === 'server' &&
+          found.kind === 'server' &&
           this.environment.name !== serverEnvironment
         ) {
           if (this.environment.mode === 'dev') {
@@ -302,7 +303,7 @@ export function weft(options: Options): Plugin[] {
           // In a build, who imports a file is known once the whole graph is: see `buildEnd`.
           serverFilesInClient.add(id);
         }
-        return {code: stripDirective(code, directive)!, map: null};
+        return {code: stripDirectives(code, found)!, map: null};
       },
     },
 
@@ -372,12 +373,18 @@ export function weft(options: Options): Plugin[] {
       if (this.environment.name === clientEnvironment) {
         const pkg = packageOf(scanned, file);
         if (pkg !== undefined && scanned.dirs.has(dirname(file))) {
-          const before = scanned.files.get(file)?.kind;
-          const after =
+          const was = scanned.files.get(file);
+          const now =
             type === 'delete'
               ? undefined
-              : readCompiledFile(pkg, file, scanned.suffix)?.kind;
-          if (before !== after) {
+              : readCompiledFile(pkg, file, scanned.suffix);
+          const before = was?.kind;
+          const after = now?.kind;
+          if (
+            before !== after ||
+            (was?.rpcs ?? []).join() !== (now?.rpcs ?? []).join()
+          ) {
+            // Fails (an error in the terminal) if an RPC ID is now declared twice.
             rescan();
             if ((before ?? after) === 'entrypoint') {
               for (const [environment, id] of [

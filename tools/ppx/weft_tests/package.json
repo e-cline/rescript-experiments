@@ -2,13 +2,14 @@
   "name": "@e-cline/ppx_weft_tests",
   "version": "0.0.0",
   "private": true,
-  "description": "Tests of the @weft.component PPX in tools/ppx/weft: fixtures compiled through it, and ones it (or the compiler) must reject.",
+  "description": "Tests of the @weft.component, @weft.rpc and @@weft.server PPX in tools/ppx/weft: fixtures compiled through it, and ones it (or the compiler) must reject.",
   "type": "module",
   "dependencies": {
     "@e-cline/ppx_weft": "workspace:*",
     "@e-cline/weft": "workspace:*",
     "@e-cline/weft_core": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
+    "@e-cline/weft_server": "workspace:*",
     "@rescript/runtime": "catalog:"
   },
   "devDependencies": {

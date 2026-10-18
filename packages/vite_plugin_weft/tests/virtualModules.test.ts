@@ -15,11 +15,17 @@ import {
 } from '../src/internal/virtualModules.js';
 
 const files: CompiledFile[] = [
-  {id: 'app/src/Likes.res', file: '/app/src/Likes.res.js', kind: 'entrypoint'},
+  {
+    id: 'app/src/Likes.res',
+    file: '/app/src/Likes.res.js',
+    kind: 'entrypoint',
+    rpcs: [],
+  },
   {
     id: 'lib/src/Widget.res',
     file: '/lib/src/Widget.res.js',
     kind: 'entrypoint',
+    rpcs: [],
   },
 ];
 

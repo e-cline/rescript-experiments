@@ -1,3 +1,5 @@
+@@weft.server
+
 /***
 What the database's queries wait on, by name (`body:1`, `comments:1`, ...): in `vp dev`, a timer
 for each, so the streaming is visible by hand; in tests, nothing until the test opens the gate

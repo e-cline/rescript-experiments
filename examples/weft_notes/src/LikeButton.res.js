@@ -4,17 +4,19 @@
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/Jsx.res.js";
 import * as Api$WeftNotes from "./Api.res.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
+import * as Rpc$WeftServer from "@e-cline/weft_server/src/Rpc.res.js";
 import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/Entrypoint.res.js";
 
 function LikeButton(props) {
   let noteId = props.noteId;
   let match = Hooks$WeftCore.useState(() => false);
   let setJustLiked = match[1];
+  let like = Rpc$WeftServer.use(Api$WeftNotes.like, undefined);
   return Jsx$WeftDom.Elements.jsx("button", {
     id: "like",
     onClick: param => {
       setJustLiked(param => true);
-      Api$WeftNotes.post(`/notes/` + noteId + `/like`, null);
+      like(noteId);
     },
     children: props.likes.toString() + ` likes` + (
       match[0] ? " (you liked this)" : ""

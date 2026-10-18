@@ -139,6 +139,14 @@ function requests(prim) {
   return prim.requests;
 }
 
+function rewriteBodies(prim0, prim1, prim2) {
+  prim0.rewriteBodies(prim1, prim2);
+}
+
+function stopRewriting(prim) {
+  prim.stopRewriting();
+}
+
 function pageRequests(prim) {
   return prim.requests;
 }
@@ -188,6 +196,8 @@ export {
   close,
   callServer,
   requests,
+  rewriteBodies,
+  stopRewriting,
   open_,
   pageRequests,
   navigation,

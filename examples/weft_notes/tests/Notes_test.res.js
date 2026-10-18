@@ -239,8 +239,84 @@ Vitest.describe("posting", undefined, undefined, undefined, undefined, undefined
     t.expect(WeftTesting.renderCount(page, commentForm)).toBe(formRenders);
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/notes/1",
-      "/notes/1",
+      "/_weft/rpc/notes.saveTitle",
       "/notes/1/title"
+    ]);
+  });
+  Vitest.testAsync("an empty title is refused on the client, and nothing is sent", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    WeftTesting.input(page, "#title-input", "   ");
+    WeftTesting.click(page, "#save");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#title-error"));
+    t.expect(NotesSupport$WeftNotes.text(page, "#title-error")).toBe("A title can't be empty.");
+    t.expect(NotesSupport$WeftNotes.text(page, "#title")).toBe("Groceries");
+    return t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
+  });
+});
+
+Vitest.describe("posting, through RPCs", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  let rpc = "/_weft/rpc/notes.addComment";
+  Vitest.testAsync("a comment the RPC's prepare refuses shows why, and sends nothing", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    WeftTesting.input(page, "#comment-author", "Me");
+    WeftTesting.input(page, "#comment-text", "   ");
+    WeftTesting.click(page, "#post-comment");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-error"));
+    t.expect(NotesSupport$WeftNotes.text(page, "#comment-error")).toBe("Write something first.");
+    t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
+    t.expect(await NotesSupport$WeftNotes.commentCount(app(), "1")).toBe(1);
+    WeftTesting.input(page, "#comment-text", "Now with words");
+    WeftTesting.click(page, "#post-comment");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#comment-list").includes("Me: Now with words"));
+    t.expect(NotesSupport$WeftNotes.has(page, "#comment-error")).toBe(false);
+    return t.expect(WeftTesting.pageRequests(page)).toEqual([
+      "/notes/1",
+      rpc,
+      "/notes/1"
+    ]);
+  });
+  Vitest.testAsync("a comment the handler refuses shows why", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    await NotesSupport$WeftNotes.removeNote(app(), "1");
+    WeftTesting.input(page, "#comment-text", "Hello?");
+    WeftTesting.click(page, "#post-comment");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-error"));
+    t.expect(NotesSupport$WeftNotes.text(page, "#comment-error")).toBe("This note doesn't exist any more.");
+    t.expect(Stdlib_Option.map(WeftTesting.query(page, "#comment-text"), prim => prim.value)).toEqual("Hello?");
+    return t.expect(WeftTesting.pageRequests(page)).toEqual([
+      "/notes/1",
+      rpc
+    ]);
+  });
+  Vitest.testAsync("the server checks a comment again, whatever the client sent", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    WeftTesting.rewriteBodies(app(), rpc, body => body.replace(`"text":"short"`, `"text":"` + "x".repeat(501) + `"`));
+    WeftTesting.input(page, "#comment-text", "short");
+    WeftTesting.click(page, "#post-comment");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-error"));
+    WeftTesting.stopRewriting(app());
+    t.expect(NotesSupport$WeftNotes.text(page, "#comment-error")).toBe("That's too long: 500 characters at most.");
+    return t.expect(await NotesSupport$WeftNotes.commentCount(app(), "1")).toBe(1);
+  });
+  Vitest.testAsync("a request the server can't read is Invalid, and the page says so", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    WeftTesting.rewriteBodies(app(), rpc, param => `{"note":"1","comment":"hi"}`);
+    WeftTesting.input(page, "#comment-text", "hi");
+    WeftTesting.click(page, "#post-comment");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-error"));
+    WeftTesting.stopRewriting(app());
+    t.expect(NotesSupport$WeftNotes.text(page, "#comment-error")).toBe("The server couldn't read that: reload the page, and try again.");
+    return t.expect(await NotesSupport$WeftNotes.commentCount(app(), "1")).toBe(1);
+  });
+  Vitest.testAsync("liking is an RPC too", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    WeftTesting.click(page, "#like");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like").includes("you liked this"));
+    await WeftTesting.settle(page);
+    t.expect(await NotesSupport$WeftNotes.likes(app(), "1")).toBe(4);
+    return t.expect(WeftTesting.pageRequests(page)).toEqual([
+      "/notes/1",
+      "/_weft/rpc/notes.like"
     ]);
   });
 });

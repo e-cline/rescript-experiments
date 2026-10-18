@@ -38,6 +38,15 @@ let callServer: (app, string, string, array<JSON.t>) => promise<JSON.t>
 /** Every request the client has made, by path (with the query), in order. */
 let requests: app => array<string>
 
+/**
+Changes the body of each request whose path contains `matching` (`"/_weft/rpc/notes.addComment"`),
+before the server gets it, until `stopRewriting`: a client older or newer than the server, say, or a
+forged request.
+*/
+let rewriteBodies: (app, string, string => string) => unit
+
+let stopRewriting: app => unit
+
 /** How the server's responses reach the client. */
 type delivery =
   /** As they're sent. */

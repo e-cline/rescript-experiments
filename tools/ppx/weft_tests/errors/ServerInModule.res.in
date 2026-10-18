@@ -1,0 +1,4 @@
+module Inner = {
+  @@weft.server
+  let value = 1
+}

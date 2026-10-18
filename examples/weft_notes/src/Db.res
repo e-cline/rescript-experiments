@@ -1,3 +1,5 @@
+@@weft.server
+
 /***
 The notes, in memory: the app's "database". The queries the page streams (a note's body, its
 comments, related notes) each wait on a gate (`Gates`); the rest answer at once.
@@ -74,3 +76,4 @@ let setLikes = (id, likes) =>
   find(id)->Option.forEach(note => notes->Dict.set(id, {...note, likes}))
 let like = id =>
   find(id)->Option.forEach(note => notes->Dict.set(id, {...note, likes: note.likes + 1}))
+let remove = id => notes->Dict.delete(id)

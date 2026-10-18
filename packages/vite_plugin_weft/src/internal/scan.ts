@@ -1,6 +1,7 @@
-// Finding the entrypoint files: every compiled file with the `'use weft entrypoint'` directive in the
-// app's ReScript sources and its ReScript dependencies'. `rescript build` has written them all before
-// Vite starts, so this is a walk over directories, not a build.
+// Finding the files Weft cares about: every compiled file with a Weft directive in the app's
+// ReScript sources and its ReScript dependencies' (entrypoint files, server files, and the RPCs
+// files declare). `rescript build` has written them all before Vite starts, so this is a walk over
+// directories, not a build.
 
 import {
   existsSync,
@@ -11,7 +12,7 @@ import {
 } from 'node:fs';
 import {dirname, join, relative, sep} from 'node:path';
 
-import {findDirective, type Kind} from './directives.js';
+import {findDirectives, type Kind} from './directives.js';
 
 /** What the plugin needs from a `rescript.json`. */
 type RescriptJson = {
@@ -40,6 +41,8 @@ export type CompiledFile = {
   /** Its absolute path. */
   file: string;
   kind: Kind;
+  /** The IDs of the RPCs it declares. */
+  rpcs: string[];
 };
 
 export class ScanError extends Error {}
@@ -154,10 +157,10 @@ export function readCompiledFile(
   suffix: string,
   code = readFileSync(file, 'utf8'),
 ): CompiledFile | undefined {
-  const directive = findDirective(code);
-  if (directive === undefined) return undefined;
+  const found = findDirectives(code);
+  if (found === undefined) return undefined;
   const id = fileId(pkg, file, suffix);
-  if (directive.kind === 'entrypoint') {
+  if (found.kind === 'entrypoint') {
     // The client loads the file by the id the server writes, which is the PPX's: if the two were
     // ever made differently, every entrypoint in the file would fail to load, so fail here instead.
     for (const marked of markedFileIds(code)) {
@@ -169,7 +172,7 @@ export function readCompiledFile(
       }
     }
   }
-  return {id, file, kind: directive.kind};
+  return {id, file, kind: found.kind, rpcs: found.rpcs};
 }
 
 export type Scan = {
@@ -180,6 +183,8 @@ export type Scan = {
   dirs: Set<string>;
   /** Every file with a Weft directive, by absolute path. */
   files: Map<string, CompiledFile>;
+  /** The file declaring each RPC, by ID. */
+  rpcs: Map<string, CompiledFile>;
 };
 
 /** The suffix the app's compiled files have. */
@@ -204,7 +209,27 @@ export function scan(root: string): Scan {
       }
     }
   }
-  return {suffix, packages, dirs, files};
+  return {suffix, packages, dirs, files, rpcs: rpcsOf(files.values())};
+}
+
+/** The file declaring each RPC, by ID: an ID declared twice is an error, naming both files. */
+export function rpcsOf(
+  files: Iterable<CompiledFile>,
+): Map<string, CompiledFile> {
+  const rpcs = new Map<string, CompiledFile>();
+  for (const file of files) {
+    for (const id of file.rpcs) {
+      const other = rpcs.get(id);
+      if (other !== undefined) {
+        throw new ScanError(
+          `[weft] the RPC ID ${id} is declared twice: in ${other.id} and in ${file.id}. ` +
+            'Each RPC needs an ID of its own.',
+        );
+      }
+      rpcs.set(id, file);
+    }
+  }
+  return rpcs;
 }
 
 /** The package `file` is in, if it's one of the scanned packages' (the deepest, if they nest). */

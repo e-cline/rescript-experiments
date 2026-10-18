@@ -97,3 +97,15 @@ let waiterFor = async (app, gate) =>
 
 let text = (page, selector) => page->WeftTesting.textOf(selector)->Option.getOr("")
 let has = WeftTesting.has
+let likes = (app, ~noteId) =>
+  app
+  ->WeftTesting.callServer(control, "likes", [JSON.String(noteId)])
+  ->Promise.thenResolve(json => json->JSON.Decode.float->Option.mapOr(0, Float.toInt))
+let commentCount = (app, ~noteId) =>
+  app
+  ->WeftTesting.callServer(control, "commentCount", [JSON.String(noteId)])
+  ->Promise.thenResolve(json => json->JSON.Decode.float->Option.mapOr(0, Float.toInt))
+let removeNote = (app, ~noteId) =>
+  app
+  ->WeftTesting.callServer(control, "removeNote", [JSON.String(noteId)])
+  ->Promise.thenResolve(_ => ())

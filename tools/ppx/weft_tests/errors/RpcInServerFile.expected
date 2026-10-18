@@ -1,0 +1,12 @@
+
+  We've found a bug for you!
+  RpcInServerFile.res:3:1-9
+
+  1 │ @@weft.server
+  2 │ 
+  3 │ @weft.rpc({id: "notes.save"})
+  4 │ let save = WeftServer.Rpc.make(~request=WeftServer.Rpc.Codec.string)
+  5 │ 
+
+  @weft.rpc: the client can't import a server file, so an RPC is declared in a shared one (its handler goes in the server file)
+

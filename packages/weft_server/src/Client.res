@@ -328,7 +328,7 @@ let read = async (session, stream, ~signal) => {
   }
 }
 
-let fromStream = (client, stream, ~signal=?) => {
+let valueFromStream = (client, stream, ~signal=?) => {
   let session = {
     client,
     rows: Map.make(),
@@ -338,8 +338,13 @@ let fromStream = (client, stream, ~signal=?) => {
   }
   let root = row(session, 0)
   read(session, stream, ~signal)->ignore
-  root.promise->Promise.thenResolve((value): Element.t => fromUnknown(value))
+  root.promise
 }
+
+let fromStream = (client, stream, ~signal=?) =>
+  valueFromStream(client, stream, ~signal?)->Promise.thenResolve((value): Element.t =>
+    fromUnknown(value)
+  )
 
 let fetchElement = async (client, url, ~signal=?) => {
   let signal = switch signal {

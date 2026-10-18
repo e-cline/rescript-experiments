@@ -2,8 +2,8 @@
 
 The Vite plugin for [Weft's server components](../weft_server): it runs the server entry in an `rsc`
 environment and the browser's code in the `client` one, makes every entrypoint file a chunk of its
-own, refuses to let client code import a server file, answers requests in development with the
-server entry, and builds both. This is phases 4 and 5 of
+own, refuses to let client code import a server file, checks the app's RPC IDs are unique, answers
+requests in development with the server entry, and builds both. This is phases 4 to 6 of
 [the server components plan](../../docs/weft_server_components_plan.md).
 [`examples/weft_split`](../../examples/weft_split) is an app using it.
 
@@ -11,7 +11,9 @@ server entry, and builds both. This is phases 4 and 5 of
 
 The plugin works on what `rescript build` writes, so the app has to compile through
 [`ppx_weft`](../../tools/ppx/weft), which marks each compiled file with server components or
-entrypoints with a directive (`'use weft server'`, `'use weft entrypoint'`). In `rescript.json`:
+entrypoints with a directive (`'use weft server'`, `'use weft entrypoint'`), each server-only file
+(`@@weft.server`) with the server one, and each RPC a file declares with `'use weft rpc <id>'`. In
+`rescript.json`:
 
 ```json
 {
@@ -69,10 +71,15 @@ Types for them are in `@e-cline/vite_plugin_weft/virtual`. A client environment 
   one `ppx_weft` gives it (the package's name, then the source's path in it), and the plugin checks
   that against the ids in the file's marks. Each file is `import()`ed from
   `virtual:weft/client-references`, so each is a chunk of its own, with whatever it alone imports.
-- **The boundary.** A file with `'use weft server'` reaching the client environment is an error that
-  names the chain of imports that got it there. In development that's the request for it; in a
-  build, the build, once its module graph is complete. The directives are blanked out in both
-  environments, so bundlers don't warn about them, and nothing else in the file moves.
+- **RPC IDs** are collected by the same scan, from the `'use weft rpc <id>'` directives: an ID
+  declared in two files (the app's, or a dependency's) fails the build and the dev server, naming
+  both. (When `rescript build -w` changes a file's RPCs in development, the scan runs again, and
+  fails the same way.)
+- **The boundary.** A file with `'use weft server'` (server components, or `@@weft.server`) reaching
+  the client environment is an error that names the chain of imports that got it there. In
+  development that's the request for it; in a build, the build, once its module graph is complete.
+  The directives are blanked out in both environments, so bundlers don't warn about them, and
+  nothing else in the file moves.
 - **Development.** After Vite's own middleware, every request goes to the server entry, imported
   through the `rsc` environment's module runner, so it always runs the current code.
   `@e-cline/js_env` is bundled into that environment rather than left to Node, so `Common.Env.isDev`
@@ -111,7 +118,8 @@ await page->WeftTesting.navigate("/notes/2")
   bytes. Cancelling a response (a navigation away) aborts the request in the worker.
 - **What it checks**: `waitFor` a condition, `settle` until quiet, `loads` (and `holdLoads` to make
   a chunk slow), `renderCount` of an entrypoint, `snapshot` and `removedSince` (that an update kept
-  the DOM's nodes), `pageRequests`.
+  the DOM's nodes), `pageRequests`. `rewriteBodies` changes requests on their way to the server, to
+  play a client older or newer than it (an RPC's request with other fields), or a forged one.
 - **`Build` mode** runs the build: the worker imports `dist/server/index.js`, and the page is the
   built client's own bootstrap and chunks. A file can open one page that way (the build's modules
   are shared), and moves on by following links.
@@ -126,13 +134,15 @@ through the PPX by the workspace's build, with the output committed. A test copi
 it, or changes its files as `rescript build -w` would:
 
 - **Unit:** finding directives and blanking them out; the scan (dependencies, dev sources, ids,
-  marks that disagree); and the generated modules.
+  marks that disagree, RPC IDs and duplicates); and the generated modules.
 - **Build:** a fixture built with `buildApp`: a chunk per entrypoint file, shared modules in shared
   chunks, a large client-only module only where it's used, no server code in the client, the
   manifest's URLs in the server's assets, the production export conditions, and `serve`. A fixture
-  whose client imports a server file fails to build, naming the chain; so does one without the PPX.
+  whose client imports a server file (an `@@weft.server` one) fails to build, naming the chain; so
+  does one with an RPC ID declared twice, and one without the PPX.
 - **Dev:** a dev server in the test process: pages and payloads through the middleware, the
-  development conditions, the boundary error, and the HMR messages for each kind of change.
+  development conditions, the boundary error, an RPC ID declared twice, and the HMR messages for
+  each kind of change.
 - **The harness:** the fixture's server in the worker (no browser globals there, the development
   conditions, `callServer`, changed code running), chunks held and re-cut, and the HTML's rows read
   back however the HTML is cut.

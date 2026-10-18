@@ -1,4 +1,10 @@
-import {readFileSync, renameSync, rmSync, writeFileSync} from 'node:fs';
+import {
+  copyFileSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import type {AddressInfo} from 'node:net';
 import {join} from 'node:path';
 
@@ -163,8 +169,8 @@ describe('the dev server', () => {
         '/src/Notes.res.js',
       ),
     ).rejects.toThrow(
-      "[weft] src/Notes.res.js has server components ('use weft server'), so the client can't " +
-        'import it, but it does: src/Notes.res.js.',
+      "[weft] src/Notes.res.js is a server file ('use weft server': it has server components, " +
+        "or @@weft.server), so the client can't import it, but it does: src/Notes.res.js.",
     );
   });
 
@@ -231,6 +237,16 @@ describe('the dev server', () => {
       'virtual:weft/client-references',
     );
     expect(references?.code).not.toContain('Deep.res');
+  });
+});
+
+describe('the dev server, with an RPC ID declared twice', () => {
+  test("doesn't start, naming both files", async () => {
+    const root = copyFixture('basic');
+    copyFileSync(join(root, 'src/Api.res.js'), join(root, 'src/Again.res.js'));
+    await expect(createServer(config(root))).rejects.toThrow(
+      `the RPC ID basic.save is declared twice: in ${basic}/src/Again.res and in ${basic}/src/Api.res`,
+    );
   });
 });
 

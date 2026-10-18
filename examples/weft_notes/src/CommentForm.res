@@ -1,26 +1,30 @@
 @@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 /***
-Posts a comment, then fetches the page again to show it. The author stays filled in; the text is
-cleared.
+Posts a comment (the `notes.addComment` RPC), then fetches the page again to show it. The author
+stays filled in; the text is cleared. If the RPC says no (an empty comment, which never leaves the
+browser, or one the server refuses), it says why.
 */
 
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string) => {
   let (author, setAuthor) = Weft.Hooks.useState(() => "")
   let (text, setText) = Weft.Hooks.useState(() => "")
+  let (error, setError) = Weft.Hooks.useState(() => None)
   let navigation = WeftServer.Navigation.useNavigation()
+  let addComment = WeftServer.Rpc.use(Api.addComment)
   let submit = event => {
     Weft.Dom.Event.preventDefault(event)
 
     (
       async () => {
-        await Api.post(
-          `/notes/${noteId}/comments`,
-          JSON.Encode.object(dict{"author": JSON.String(author), "text": JSON.String(text)}),
-        )
-        setText(_ => "")
-        await navigation->WeftServer.Navigation.refresh
+        switch await addComment({noteId, author, text}) {
+        | Ok(_) =>
+          setError(_ => None)
+          setText(_ => "")
+          await navigation->WeftServer.Navigation.refresh
+        | Error(error) => setError(_ => Some(Api.describe(error)))
+        }
       }
     )()->ignore
   }
@@ -38,5 +42,9 @@ let make = (~noteId: string) => {
       onInput={event => setText(_ => Weft.Dom.Event.targetValue(event))}
     />
     <button id="post-comment" type_="submit"> {Weft.Jsx.string("Post")} </button>
+    {switch error {
+    | Some(message) => <p id="comment-error" role="alert"> {Weft.Jsx.string(message)} </p>
+    | None => Weft.Jsx.null
+    }}
   </form>
 }

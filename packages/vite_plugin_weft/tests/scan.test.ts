@@ -65,7 +65,22 @@ describe('scan', () => {
     // Compiled through the PPX, with the directive, but in a dev source.
     expect(paths).not.toContain(join(root, 'tests/Fake.res.js'));
     expect(paths).not.toContain(join(root, 'src/NotReScript.js'));
-    expect(scanned.files.size).toBe(6);
+    expect(scanned.files.size).toBe(7);
+  });
+
+  test("collects the RPCs' IDs, the app's and its dependencies', with the files declaring them", () => {
+    expect(
+      [...scanned.rpcs]
+        .map(([id, file]) => [id, file.id])
+        .sort(([a], [b]) => (a! < b! ? -1 : 1)),
+    ).toEqual([
+      ['basic.remove', `${basic}/src/Api.res`],
+      ['basic.save', `${basic}/src/Api.res`],
+      ['widgets.press', `${widgets}/src/Widget.res`],
+    ]);
+    expect(scanned.files.get(join(root, 'src/Api.res.js'))?.kind).toBe(
+      'shared',
+    );
   });
 
   test('knows the PPX is set up', () => {
@@ -121,6 +136,14 @@ describe('the scan', () => {
       sources: [{dir: 'src', subdirs: [{dir: 'nested'}]}],
     });
     expect(ids(root)).toContain(`${basic}/src/nested/Deep.res`);
+  });
+
+  test('fails on an RPC ID declared twice, naming both files', () => {
+    const root = copyFixture('basic');
+    cpSync(join(root, 'src/Api.res.js'), join(root, 'src/nested/Again.res.js'));
+    expect(() => scan(root)).toThrow(
+      `[weft] the RPC ID basic.save is declared twice: in ${basic}/src/Api.res and in ${basic}/src/nested/Again.res.`,
+    );
   });
 
   test("knows when the PPX isn't set up", () => {

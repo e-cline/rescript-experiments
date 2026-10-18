@@ -1,0 +1,12 @@
+
+  We've found a bug for you!
+  ServerWithEntrypoint.res:3:1-15
+
+  1 │ @@weft.server
+  2 │ 
+  3 │ @weft.component({kind: Entrypoint})
+  4 │ let make = (~label: string) => label
+  5 │ 
+
+  @weft.component: an entrypoint is loaded by the client, so it can't be in a file marked server-only (@@weft.server, at line 1)
+

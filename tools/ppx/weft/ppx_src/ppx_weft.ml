@@ -61,6 +61,28 @@
    type-check, with an error about `component<'a>` that doesn't mention the
    PPX.
 
+   It also handles Weft RPCs (section 8 of the plan):
+
+   {[
+     @weft.rpc({id: "notes.addComment"})
+     let addComment = WeftServer.Rpc.make(~request=...)
+     // becomes
+     let addComment = WeftServer.Rpc.make(~request=..., ~id="notes.addComment")
+   ]}
+
+   after checking the ID is names separated by dots, each a letter then
+   letters, digits and `_`. The file gets a `'use weft rpc <id>'` directive
+   for each, beside any `'use weft entrypoint'` one, from which the Vite
+   plugin collects the app's IDs. And a file with `@@weft.server` gets
+   `'use weft server'` whatever it has, so the client can't import it.
+
+   The mistakes for these: `@weft.rpc` with anything but `{id: "<literal>"}`,
+   an ID that isn't one, given twice in a file, on something other than a
+   `let` of `WeftServer.Rpc.make(...)` (or `makePrepared`), twice, or in a
+   server file (which the client can't import, so its declarations would be
+   no use); `@@weft.server` anywhere but at the top level, or in a file with
+   entrypoints.
+
    A note on the AST. bsc hands a PPX a frozen, OCaml 4.06-shaped version of
    its parsetree (`Parsetree0` in the compiler's sources), with ReScript-only
    constructs encoded: a function `(a, b) => body` is `fun a -> fun b -> body`
@@ -289,6 +311,92 @@ let file_id ~loc =
   in
   find (Filename.dirname file) (Filename.basename file)
 
+(* -- RPCs ----------------------------------------------------------------- *)
+
+let rpc_name = "weft.rpc"
+let server_name = "weft.server"
+
+let fail_rpc ~loc fmt = Location.raise_errorf ~loc ("@%s: " ^^ fmt) rpc_name
+
+let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+let is_name_char c = is_letter c || (c >= '0' && c <= '9') || c = '_'
+
+(* Names separated by dots, each a letter then letters, digits and `_`: what
+   `WeftServer.Rpc.isValidId` accepts. *)
+let valid_rpc_id id =
+  id <> ""
+  && List.for_all
+       (fun name ->
+         name <> "" && is_letter name.[0] && String.for_all is_name_char name)
+       (String.split_on_char '.' id)
+
+(* The ID in `@weft.rpc({id: "..."})`. *)
+let rpc_id_of_payload ~loc = function
+  | PStr
+      [
+        {
+          pstr_desc =
+            Pstr_eval
+              ( {
+                  pexp_desc =
+                    Pexp_record ([ ({ txt = Lident "id"; _ }, value) ], None);
+                  _;
+                },
+                _ );
+          _;
+        };
+      ] -> (
+      match value.pexp_desc with
+      | Pexp_constant (Pconst_string (id, _, _)) ->
+          if valid_rpc_id id then id
+          else
+            fail_rpc ~loc:value.pexp_loc
+              "\"%s\" isn't an RPC ID: it's names separated by dots, each a \
+               letter then letters, digits and _ (notes.addComment, say)"
+              id
+      | _ ->
+          fail_rpc ~loc:value.pexp_loc
+            "the ID is a string literal, so it's the same in every build")
+  | _ -> fail_rpc ~loc "takes the RPC's ID: @weft.rpc({id: \"notes.addComment\"})"
+
+(* The `@weft.rpc` among a binding's attributes, if any, with its ID, and the
+   attributes without it. *)
+let rpc_attribute attributes =
+  match List.filter (is_named rpc_name) attributes with
+  | [] -> None
+  | _ :: second :: _ -> fail_rpc ~loc:second.attr_loc "is given twice"
+  | [ attribute ] ->
+      let id = rpc_id_of_payload ~loc:attribute.attr_loc attribute.attr_payload in
+      Some
+        ( id,
+          attribute.attr_loc,
+          List.filter (fun a -> not (is_named rpc_name a)) attributes )
+
+let is_rpc_make = function
+  | Ldot (Lident "Rpc", ("make" | "makePrepared"))
+  | Ldot (Ldot (_, "Rpc"), ("make" | "makePrepared")) ->
+      true
+  | _ -> false
+
+(* `WeftServer.Rpc.make(...)` (under any type annotations) with `~id` added. *)
+let rec add_rpc_id ~loc id expr =
+  match expr.pexp_desc with
+  | Pexp_constraint (inner, typ) ->
+      { expr with pexp_desc = Pexp_constraint (add_rpc_id ~loc id inner, typ) }
+  | Pexp_apply (({ pexp_desc = Pexp_ident { txt; _ }; _ } as callee), args)
+    when is_rpc_make txt ->
+      if List.exists (function Labelled "id", _ -> true | _ -> false) args then
+        fail_rpc ~loc "passes the ID itself, so `~id` can't be given too";
+      let gloc = { expr.pexp_loc with loc_ghost = true } in
+      {
+        expr with
+        pexp_desc = Pexp_apply (callee, args @ [ (Labelled "id", str ~loc:gloc id) ]);
+      }
+  | _ ->
+      fail_rpc ~loc
+        "goes on a `let` whose value is `WeftServer.Rpc.make(...)` (or \
+         `WeftServer.Rpc.makePrepared(...)`)"
+
 (* -- The rewrite ---------------------------------------------------------- *)
 
 (* What a file has, so far: the first server component and the first
@@ -297,6 +405,10 @@ type file = {
   mutable server : location option;
   mutable entrypoint : location option;
   mutable id : string option;
+  (* `@@weft.server`, if the file has it. *)
+  mutable server_only : location option;
+  (* Each RPC declared, in order, and where. *)
+  mutable rpcs : (string * location) list;
 }
 
 let note_kind file ~loc = function
@@ -310,6 +422,13 @@ let note_kind file ~loc = function
             other.loc_start.pos_lnum
       | None -> if file.server = None then file.server <- Some loc)
   | Entrypoint -> (
+      (match file.server_only with
+      | Some server_only ->
+          fail ~loc
+            "an entrypoint is loaded by the client, so it can't be in a file \
+             marked server-only (@@@@weft.server, at line %d)"
+            server_only.loc_start.pos_lnum
+      | None -> ());
       match file.server with
       | Some other ->
           fail ~loc
@@ -327,12 +446,33 @@ let file_id_once file ~loc =
       id
 
 let rewriter () =
-  let file = { server = None; entrypoint = None; id = None } in
+  let file =
+    { server = None; entrypoint = None; id = None; server_only = None; rpcs = [] }
+  in
   (* The modules the traversal is inside, innermost first. *)
   let modules = ref [] in
   (* Rewrites one binding, returning it and, for an entrypoint, the
      statement that marks it. *)
+  let rewrite_rpc binding =
+    match rpc_attribute binding.pvb_attributes with
+    | None -> binding
+    | Some (id, loc, attributes) ->
+        if has_attribute name attributes then
+          fail_rpc ~loc "is for an RPC, so a binding can't have @%s too" name;
+        (match List.assoc_opt id file.rpcs with
+        | Some other ->
+            fail_rpc ~loc "the ID %s is already this file's RPC at line %d" id
+              other.loc_start.pos_lnum
+        | None -> ());
+        file.rpcs <- file.rpcs @ [ (id, loc) ];
+        {
+          binding with
+          pvb_attributes = attributes;
+          pvb_expr = add_rpc_id ~loc id binding.pvb_expr;
+        }
+  in
   let rewrite_binding binding =
+    let binding = rewrite_rpc binding in
     match rewrite_attributes binding.pvb_attributes with
     | None -> (binding, None)
     | Some (kind, loc, attributes) ->
@@ -402,6 +542,20 @@ let rewriter () =
                 }
               in
               item :: List.filter_map snd rewritten
+          | Pstr_attribute attribute when is_named server_name attribute ->
+              if !modules <> [] then
+                Location.raise_errorf ~loc:attribute.attr_loc
+                  "@@@@%s: marks a whole file, so it goes at its top level, not \
+                   in a module"
+                  server_name;
+              (match attribute.attr_payload with
+              | PStr [] -> ()
+              | _ ->
+                  Location.raise_errorf ~loc:attribute.attr_loc
+                    "@@@@%s: takes no argument" server_name);
+              if file.server_only = None then
+                file.server_only <- Some attribute.attr_loc;
+              []
           | _ -> [ self#structure_item item ])
         items
 
@@ -419,16 +573,46 @@ let rewriter () =
         fail ~loc:attribute.attr_loc
           "goes on a `let` binding of a component (or its declaration in an \
            interface)"
+      else if is_named rpc_name attribute then
+        fail_rpc ~loc:attribute.attr_loc
+          "goes on a `let` whose value is `WeftServer.Rpc.make(...)`, in an \
+           implementation"
+      else if is_named server_name attribute then
+        Location.raise_errorf ~loc:attribute.attr_loc
+          "@@@@%s: marks a whole file, so it goes at the top level of an \
+           implementation, as `@@@@%s`"
+          server_name server_name
       else super#attribute attribute
 
     (* The whole file: rewritten, then given the directive for what it has. *)
     method file items =
       let items = self#structure items in
       let loc = Location.none in
-      match file.server, file.entrypoint with
+      let server =
+        match file.server, file.server_only with
+        | Some loc, _ | None, Some loc -> Some loc
+        | None, None -> None
+      in
+      (match server, file.entrypoint, file.server_only with
+      | _, Some entrypoint, Some server_only ->
+          Location.raise_errorf ~loc:server_only
+            "@@@@%s: this file has an entrypoint (line %d), which the client \
+             loads, so it can't be server-only"
+            server_name entrypoint.loc_start.pos_lnum
+      | _ -> ());
+      (match server, file.rpcs with
+      | Some _, (_, rpc_loc) :: _ ->
+          fail_rpc ~loc:rpc_loc
+            "the client can't import a server file, so an RPC is declared in a \
+             shared one (its handler goes in the server file)"
+      | _ -> ());
+      let rpcs =
+        List.map (fun (id, _) -> directive ~loc ("use weft rpc " ^ id)) file.rpcs
+      in
+      match server, file.entrypoint with
       | Some _, _ -> directive ~loc "use weft server" :: items
-      | _, Some _ -> directive ~loc "use weft entrypoint" :: items
-      | None, None -> items
+      | _, Some _ -> (directive ~loc "use weft entrypoint" :: rpcs) @ items
+      | None, None -> rpcs @ items
   end
 
 let () =

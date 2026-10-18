@@ -19,6 +19,8 @@ let start = (~root, ~mode=Source, ~buildDir=?) =>
 @send external close: app => promise<unit> = "close"
 @send external callServer: (app, string, string, array<JSON.t>) => promise<JSON.t> = "callServer"
 @get external requests: app => array<string> = "requests"
+@send external rewriteBodies: (app, string, string => string) => unit = "rewriteBodies"
+@send external stopRewriting: app => unit = "stopRewriting"
 @get external pageRequests: page => array<string> = "requests"
 
 type delivery = Immediate | Manual | EveryBytes(int)

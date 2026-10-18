@@ -47,3 +47,9 @@ The payload for `element`. `onError` (by default, logging with `Console.error`) 
 error, and returns the digest to send with it, if any.
 */
 let toStream: (WeftCore.Element.t, ~onError: exn => option<string>=?, ~signal: signal=?) => stream
+
+/**
+The payload for any value the encoder can send, not just an element (an RPC's response: its
+result, which can contain elements and promises). The client reads it with `Client.valueFromStream`.
+*/
+let valueToStream: (unknown, ~onError: exn => option<string>=?, ~signal: signal=?) => stream

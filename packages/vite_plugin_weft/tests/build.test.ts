@@ -1,4 +1,10 @@
-import {existsSync, readdirSync, readFileSync, writeFileSync} from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import type {AddressInfo} from 'node:net';
 import {join} from 'node:path';
 
@@ -189,8 +195,19 @@ describe('building a fixture whose client imports a server file', () => {
   test('fails, naming the chain of imports', async () => {
     const root = copyFixture('client_imports_server');
     await expect(buildApp(root)).rejects.toThrow(
-      "src/Db.res.js has server components ('use weft server'), so the client can't import it, " +
-        'but it does: src/Client.res.js -> src/Helpers.res.js -> src/Db.res.js',
+      "src/Db.res.js is a server file ('use weft server': it has server components, or " +
+        "@@weft.server), so the client can't import it, but it does: " +
+        'src/Client.res.js -> src/Helpers.res.js -> src/Db.res.js',
+    );
+  });
+});
+
+describe('building a fixture with an RPC ID declared twice', () => {
+  test('fails, naming both files', async () => {
+    const root = copyFixture('basic');
+    copyFileSync(join(root, 'src/Api.res.js'), join(root, 'src/Again.res.js'));
+    await expect(buildApp(root)).rejects.toThrow(
+      `the RPC ID basic.save is declared twice: in ${basic}/src/Again.res and in ${basic}/src/Api.res`,
     );
   });
 });

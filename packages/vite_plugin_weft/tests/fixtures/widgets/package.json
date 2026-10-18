@@ -8,6 +8,7 @@
     "@e-cline/weft": "workspace:*",
     "@e-cline/weft_core": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
+    "@e-cline/weft_server": "workspace:*",
     "@rescript/runtime": "catalog:"
   },
   "devDependencies": {

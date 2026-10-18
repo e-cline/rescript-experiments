@@ -838,6 +838,9 @@ importers:
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../../../weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../../weft_server
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -882,6 +885,9 @@ importers:
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../../../weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../../weft_server
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -1082,6 +1088,9 @@ importers:
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../packages/weft_server
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1

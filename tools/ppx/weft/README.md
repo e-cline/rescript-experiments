@@ -1,8 +1,8 @@
 # @e-cline/ppx_weft
 
-A [ReScript](https://rescript-lang.org/) PPX for Weft's component attribute, `@weft.component`. It's
-the start of server components for Weft; see
-[the plan](../../../docs/weft_server_components_plan.md) for where it's going.
+A [ReScript](https://rescript-lang.org/) PPX for Weft's attributes: `@weft.component`, for
+components; `@weft.rpc`, for declaring RPCs; and `@@weft.server`, for marking a file server-only.
+See [the server components plan](../../../docs/weft_server_components_plan.md).
 
 ```rescript
 @@jsxConfig({version: 4, module_: "Weft.Jsx"})
@@ -61,6 +61,33 @@ The attribute is checked, so a mistake is a compile error rather than silently i
 
 In an interface file only the attribute is replaced: an async server component's signature is
 already `(~id: string) => element`.
+
+## RPCs, and server-only files
+
+`@weft.rpc({id: "..."})` goes on a `let` whose value is `WeftServer.Rpc.make(...)` (or
+`makePrepared`), and passes it the ID as `~id`:
+
+```rescript
+@weft.rpc({id: "notes.addComment"})
+let addComment: WeftServer.Rpc.t<...> = WeftServer.Rpc.make(~request=codec)
+// becomes
+let addComment: WeftServer.Rpc.t<...> = WeftServer.Rpc.make(~request=codec, ~id="notes.addComment")
+```
+
+The file gets `@@directive("'use weft rpc notes.addComment'")`, one for each RPC it declares (beside
+an `'use weft entrypoint'` one, if it has entrypoints): the Vite plugin collects the app's RPC IDs
+from these, and fails on one declared twice. It's an error for the ID not to be a string literal, or
+not to be names separated by dots, each a letter then letters, digits and `_` (`notes.addComment`,
+`Billing.refund`); for an ID to be declared twice in a file; for `~id` to be given as well; for the
+attribute to be given twice, with `@weft.component`, or on anything else; and for a declaration to
+be in a server file, which the client can't import.
+
+`@@weft.server`, at the top of a file, gives it `'use weft server'` whatever it has, so the client
+can't import it (the plugin refuses it, naming the chain of imports): for server-only modules with
+no server components, like a database module or an RPC's handlers. It's an error in a module, or in
+a file with entrypoints.
+
+## Without the PPX
 
 **Without the PPX**, the compiler ignores `@weft.component` (it doesn't know the attribute), so the
 component gets no `props` type, and every use of it fails to type-check: the component "has type"

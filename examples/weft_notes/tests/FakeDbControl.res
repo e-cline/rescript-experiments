@@ -19,3 +19,8 @@ let addComment = (noteId, author, text) => Db.addComment(noteId, ~author, ~text)
 let editComment = (noteId, commentId, text) => Db.editComment(noteId, commentId, text)
 let setLikes = (noteId, likes) => Db.setLikes(noteId, likes)
 let title = noteId => Db.find(noteId)->Option.mapOr("", note => note.title)
+let likes = noteId => Db.find(noteId)->Option.mapOr(0, note => note.likes)
+let commentCount = noteId => Db.comments->Dict.get(noteId)->Option.mapOr(0, Array.length)
+
+/** Another user, deleting a note. */
+let removeNote = noteId => Db.remove(noteId)

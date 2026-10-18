@@ -2,8 +2,8 @@
 
 Server components for Weft: render a component tree on the server into a streamed payload, and turn
 it back into elements on the client as it arrives, with interactive components (entrypoints) loaded
-on demand, and pages that stream, navigate and fetch parts of themselves again. It's phases 3 and 5
-of [the server components plan](../../docs/weft_server_components_plan.md).
+on demand, pages that stream, navigate and fetch parts of themselves again, and RPCs. It's phases 3,
+5 and 6 of [the server components plan](../../docs/weft_server_components_plan.md).
 [The Vite plugin](../vite_plugin_weft) bundles an app using it, and
 [`examples/weft_notes`](../../examples/weft_notes) is one. HTML rendering (and hydration) comes
 later.
@@ -64,6 +64,78 @@ let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comme
 
 The route at `src` renders just that part (`<Comments id />`), with `Page.respond`.
 
+### RPCs
+
+A Weft RPC is a function that runs on the server, which the client calls as if it were local:
+`'input => promise<result<'response, Rpc.error<'error>>>`, whose promise never rejects. It's
+declared in shared code, with an ID, how its request goes over the wire (a codec), and what to check
+first. The declaration needs its type written out: nothing else says what the response is.
+
+```rescript
+// src/Api.res: shared
+type addComment = {noteId: string, text: string}
+
+@weft.rpc({id: "notes.addComment"})
+let addComment: WeftServer.Rpc.t<addComment, addComment, Types.comment, error> =
+  WeftServer.Rpc.makePrepared(
+    ~request=Codec.object2(
+      ("noteId", Codec.string),
+      ("text", Codec.string),
+      (noteId, text) => {noteId, text},
+      ({noteId, text}) => (noteId, text),
+    ),
+    // On the client, before anything is sent. (`Rpc.make` has none: its input is the request.)
+    ~prepare=async ({noteId, text}) =>
+      String.trim(text) == "" ? Error(EmptyComment) : Ok({noteId, text: String.trim(text)}),
+    // On both sides: the server can't count on the client having checked.
+    ~check=({text}) => String.length(text) > 500 ? Error(TooLong) : Ok(),
+  )
+```
+
+It's handled in a server-only file, and the server answers the RPCs a router lists:
+
+```rescript
+// src/ApiServer.res
+@@weft.server
+
+let addComment = WeftServer.Rpc.handler(Api.addComment, async ({noteId, text}, ~http as _) =>
+  Ok(Db.addComment(noteId, text))
+)
+let router = WeftServer.Rpc.router([addComment])
+
+// src/Server.res
+Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
+  await ApiServer.router->WeftServer.Rpc.respond(ctx.request, ~id=ctx->RequestContext.paramOrThrow("id"))
+)
+```
+
+An entrypoint calls it with `Rpc.use` (or anything else with `Rpc.call` and a client):
+
+```rescript
+let addComment = WeftServer.Rpc.use(Api.addComment)
+switch await addComment({noteId, text}) {
+| Ok(comment) => ...
+| Error(Rejected(error)) => ... // prepare, check, or the handler said no
+| Error(Invalid(_)) => ...      // the server couldn't read the request (an older client, say)
+| Error(Failed(problem)) => ... // the network, an unknown RPC, a handler that threw
+}
+```
+
+- **Requests are plain JSON**, written and read by the codec (`Rpc.Codec`: `string`, `int`, `float`,
+  `bool`, `option`, `array`, `dict`, `date`, `object1` to `object8`, `variant`, `map`, `custom`),
+  never by the payload decoder, which follows references and loads modules: right for the server's
+  own output, wrong for a stranger's. A codec reads only the fields it knows, as own properties, and
+  builds values afresh, so a request can't reach a prototype.
+- **Responses are payloads**, so they can be or contain elements (server components' output) and
+  promises, which stream in after the response.
+- **The router** answers only the IDs it was given (a `Map`, never a property lookup), and only a
+  `POST` of `application/json` with the `x-weft-rpc: 1` header from an allowed `Origin` (CSRF), with
+  a body under its limit (64 KB by default). It never calls a handler with a request its codec
+  didn't read and `check` didn't accept. Every RPC it lists is public: authentication is the
+  handler's (`~http`), or a middleware's.
+
+### The lower levels
+
 The lower levels are there too: `Render.toStream(element)` (the payload, as a `ReadableStream`), and
 `Client.make(~loadModule)` with `Client.fetchElement(url)` (a decoded element, to render anywhere).
 `loadModule` loads an entrypoint's compiled file, given its id: the Vite plugin provides it
@@ -117,29 +189,37 @@ modules served from a map, whose loads can be held. This package's own tests use
   refetched with `useRefetchable` (only their subtree changes, pending until rendered, newer content
   winning either way), requests replacing each other, and failures leaving the screen as it was, all
   against a server in the same process (`Support.serve`).
+- **RPCs:** codecs round-tripping random values, and refusing what doesn't fit (with where), while
+  ignoring unknown fields and prototype names; the router against hand-made requests (unknown IDs,
+  prototype names among them, the wrong method, content type, header or origin, bodies too big, not
+  JSON, too deep, or not what the codec reads); random bodies (the router never gets a 5xx for one,
+  and no handler gets a request its codec wouldn't produce); and calls through the router in process
+  (`prepare` sending nothing, aborting, elements and promises in responses, failures).
 
 ## Error codes
 
 Production builds throw `WeftServer error <code>` instead of these messages:
 
-| Code | Development message                                                                      |
-| ---: | ---------------------------------------------------------------------------------------- |
-|    1 | A payload row isn't one.                                                                 |
-|    2 | A function can't be sent from the server.                                                |
-|    3 | A host element rendered on the server can't have an event handler.                       |
-|    4 | A host element rendered on the server can't have a ref.                                  |
-|    5 | A value that can't be sent from the server (a symbol, or an instance of a class).        |
-|    6 | A value can't contain itself (a cycle) when it's sent from the server.                   |
-|    7 | A context provider can't be rendered on the server.                                      |
-|    8 | An `ErrorBoundary` can't be rendered on the server.                                      |
-|    9 | A portal can't be rendered on the server.                                                |
-|   10 | A component suspended 100 times in a row (making a new promise every time it's called?). |
-|   11 | An internal element reached the server renderer (a bug in WeftServer).                   |
-|   12 | An entrypoint's module doesn't have the module or `make` its id names.                   |
-|   13 | The payload ended before a row it referred to arrived.                                   |
-|   14 | Fetching a payload failed (a status other than 2xx).                                     |
-|   15 | Something in a payload isn't a value (a bug in WeftServer, or a corrupted payload).      |
-|   16 | `useNavigation` or `useRefetchable` was called outside a page (`Navigation.show`).       |
-|   17 | `Bootstrap.start` found no `#root` in the document.                                      |
+| Code | Development message                                                                       |
+| ---: | ----------------------------------------------------------------------------------------- |
+|    1 | A payload row isn't one.                                                                  |
+|    2 | A function can't be sent from the server.                                                 |
+|    3 | A host element rendered on the server can't have an event handler.                        |
+|    4 | A host element rendered on the server can't have a ref.                                   |
+|    5 | A value that can't be sent from the server (a symbol, or an instance of a class).         |
+|    6 | A value can't contain itself (a cycle) when it's sent from the server.                    |
+|    7 | A context provider can't be rendered on the server.                                       |
+|    8 | An `ErrorBoundary` can't be rendered on the server.                                       |
+|    9 | A portal can't be rendered on the server.                                                 |
+|   10 | A component suspended 100 times in a row (making a new promise every time it's called?).  |
+|   11 | An internal element reached the server renderer (a bug in WeftServer).                    |
+|   12 | An entrypoint's module doesn't have the module or `make` its id names.                    |
+|   13 | The payload ended before a row it referred to arrived.                                    |
+|   14 | Fetching a payload failed (a status other than 2xx).                                      |
+|   15 | Something in a payload isn't a value (a bug in WeftServer, or a corrupted payload).       |
+|   16 | `useNavigation` or `useRefetchable` was called outside a page (`Navigation.show`).        |
+|   17 | `Bootstrap.start` found no `#root` in the document.                                       |
+|   18 | An RPC's ID isn't one (names separated by dots, each a letter then letters, digits, `_`). |
+|   19 | An RPC router was given two handlers for one ID.                                          |
 
 Codes don't change once published: a new error gets the next number.

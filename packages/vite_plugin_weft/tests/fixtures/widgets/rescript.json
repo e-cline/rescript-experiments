@@ -9,6 +9,11 @@
   ],
   "suffix": ".res.js",
   "namespace": "FixtureWidgets",
-  "dependencies": ["@e-cline/weft", "@e-cline/weft_core", "@e-cline/weft_dom"],
+  "dependencies": [
+    "@e-cline/weft",
+    "@e-cline/weft_core",
+    "@e-cline/weft_dom",
+    "@e-cline/weft_server"
+  ],
   "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 }

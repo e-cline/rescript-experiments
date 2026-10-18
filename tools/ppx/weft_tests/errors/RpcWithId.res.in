@@ -1,0 +1,2 @@
+@weft.rpc({id: "notes.save"})
+let save = WeftServer.Rpc.make(~id="notes.other", ~request=WeftServer.Rpc.Codec.string)

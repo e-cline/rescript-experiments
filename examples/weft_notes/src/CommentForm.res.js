@@ -5,6 +5,7 @@ import * as Dom$WeftDom from "@e-cline/weft_dom/src/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/Jsx.res.js";
 import * as Api$WeftNotes from "./Api.res.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
+import * as Rpc$WeftServer from "@e-cline/weft_server/src/Rpc.res.js";
 import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/Entrypoint.res.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/Navigation.res.js";
 
@@ -16,16 +17,26 @@ function CommentForm(props) {
   let match$1 = Hooks$WeftCore.useState(() => "");
   let setText = match$1[1];
   let text = match$1[0];
+  let match$2 = Hooks$WeftCore.useState(() => {});
+  let setError = match$2[1];
+  let error = match$2[0];
   let navigation = Navigation$WeftServer.useNavigation();
+  let addComment = Rpc$WeftServer.use(Api$WeftNotes.addComment, undefined);
   let submit = event => {
     event.preventDefault();
     (async () => {
-      await Api$WeftNotes.post(`/notes/` + noteId + `/comments`, {
+      let error = await addComment({
+        noteId: noteId,
         author: author,
         text: text
       });
-      setText(param => "");
-      return await Navigation$WeftServer.refresh(navigation);
+      if (error.TAG === "Ok") {
+        setError(param => {});
+        setText(param => "");
+        return await Navigation$WeftServer.refresh(navigation);
+      }
+      let error$1 = error._0;
+      return setError(param => Api$WeftNotes.describe(error$1));
     })();
   };
   return Jsx$WeftDom.Elements.jsxs("form", {
@@ -48,7 +59,12 @@ function CommentForm(props) {
         id: "post-comment",
         type: "submit",
         children: "Post"
-      })
+      }),
+      error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
+          id: "comment-error",
+          role: "alert",
+          children: error
+        }) : Jsx$WeftDom.$$null
     ]
   });
 }

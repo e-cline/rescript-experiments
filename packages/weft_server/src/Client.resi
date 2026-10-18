@@ -47,6 +47,12 @@ since it may still be on screen until whatever replaces it is ready.
 */
 let fromStream: (t, stream, ~signal: signal=?) => promise<WeftCore.Element.t>
 
+/**
+`fromStream` for a payload whose root is any value, not just an element (an RPC's response, whose
+root is its result).
+*/
+let valueFromStream: (t, stream, ~signal: signal=?) => promise<unknown>
+
 /** Fetches `url`'s payload with the client's `fetch`, and decodes it (`fromStream`). */
 let fetchElement: (t, string, ~signal: signal=?) => promise<WeftCore.Element.t>
 

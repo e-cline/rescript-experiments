@@ -236,9 +236,94 @@ describe("posting", () => {
       t->expect(page->WeftTesting.renderCount(commentForm))->Expect.toBe(formRenders)
       t
       ->expect(page->WeftTesting.pageRequests)
-      ->Expect.toEqual(["/notes/1", "/notes/1", "/notes/1/title"])
+      ->Expect.toEqual(["/notes/1", "/_weft/rpc/notes.saveTitle", "/notes/1/title"])
     },
   )
+
+  testAsync("an empty title is refused on the client, and nothing is sent", async t => {
+    let page = await openNote()
+    page->WeftTesting.input("#title-input", "   ")
+    page->WeftTesting.click("#save")
+    await page->WeftTesting.waitFor(() => has(page, "#title-error"))
+    t->expect(text(page, "#title-error"))->Expect.toBe("A title can't be empty.")
+    t->expect(text(page, "#title"))->Expect.toBe("Groceries")
+    t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
+  })
+})
+
+describe("posting, through RPCs", () => {
+  let rpc = "/_weft/rpc/notes.addComment"
+
+  testAsync("a comment the RPC's prepare refuses shows why, and sends nothing", async t => {
+    let page = await openNote()
+    page->WeftTesting.input("#comment-author", "Me")
+    page->WeftTesting.input("#comment-text", "   ")
+    page->WeftTesting.click("#post-comment")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-error"))
+    t->expect(text(page, "#comment-error"))->Expect.toBe("Write something first.")
+    t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
+    t->expect(await app()->commentCount(~noteId="1"))->Expect.toBe(1)
+    // Fixed, it goes, and the error goes away.
+    page->WeftTesting.input("#comment-text", "Now with words")
+    page->WeftTesting.click("#post-comment")
+    await page->WeftTesting.waitFor(
+      () => text(page, "#comment-list")->String.includes("Me: Now with words"),
+    )
+    t->expect(has(page, "#comment-error"))->Expect.toBe(false)
+    t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1", rpc, "/notes/1"])
+  })
+
+  testAsync("a comment the handler refuses shows why", async t => {
+    let page = await openNote()
+    await app()->removeNote(~noteId="1")
+    page->WeftTesting.input("#comment-text", "Hello?")
+    page->WeftTesting.click("#post-comment")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-error"))
+    t->expect(text(page, "#comment-error"))->Expect.toBe("This note doesn't exist any more.")
+    // Nothing was refreshed: the text is still there to try again with.
+    t
+    ->expect(page->WeftTesting.query("#comment-text")->Option.map(Doc.value))
+    ->Expect.toEqual(Some("Hello?"))
+    t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1", rpc])
+  })
+
+  testAsync("the server checks a comment again, whatever the client sent", async t => {
+    let page = await openNote()
+    // A client that doesn't check (a forged request, say): far too long a comment.
+    app()->WeftTesting.rewriteBodies(
+      rpc,
+      body => body->String.replace(`"text":"short"`, `"text":"${String.repeat("x", 501)}"`),
+    )
+    page->WeftTesting.input("#comment-text", "short")
+    page->WeftTesting.click("#post-comment")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-error"))
+    app()->WeftTesting.stopRewriting
+    t->expect(text(page, "#comment-error"))->Expect.toBe("That's too long: 500 characters at most.")
+    t->expect(await app()->commentCount(~noteId="1"))->Expect.toBe(1)
+  })
+
+  testAsync("a request the server can't read is Invalid, and the page says so", async t => {
+    let page = await openNote()
+    // An older client, whose request has other names for its fields.
+    app()->WeftTesting.rewriteBodies(rpc, _ => `{"note":"1","comment":"hi"}`)
+    page->WeftTesting.input("#comment-text", "hi")
+    page->WeftTesting.click("#post-comment")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-error"))
+    app()->WeftTesting.stopRewriting
+    t
+    ->expect(text(page, "#comment-error"))
+    ->Expect.toBe("The server couldn't read that: reload the page, and try again.")
+    t->expect(await app()->commentCount(~noteId="1"))->Expect.toBe(1)
+  })
+
+  testAsync("liking is an RPC too", async t => {
+    let page = await openNote()
+    page->WeftTesting.click("#like")
+    await page->WeftTesting.waitFor(() => text(page, "#like")->String.includes("you liked this"))
+    await page->WeftTesting.settle
+    t->expect(await app()->likes(~noteId="1"))->Expect.toBe(4)
+    t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1", "/_weft/rpc/notes.like"])
+  })
 })
 
 describe("the comments, refetched by themselves", () => {

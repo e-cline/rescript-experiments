@@ -5,6 +5,7 @@ import * as Dom$WeftDom from "@e-cline/weft_dom/src/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/Jsx.res.js";
 import * as Api$WeftNotes from "./Api.res.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
+import * as Rpc$WeftServer from "@e-cline/weft_server/src/Rpc.res.js";
 import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/Entrypoint.res.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/Navigation.res.js";
 
@@ -14,14 +15,24 @@ function NoteEditor(props) {
   let match = Hooks$WeftCore.useState(() => title);
   let setDraft = match[1];
   let draft = match[0];
+  let match$1 = Hooks$WeftCore.useState(() => {});
+  let setError = match$1[1];
+  let error = match$1[0];
   let saved = Navigation$WeftServer.useRefetchable(`/notes/` + noteId + `/title`, props.children);
+  let saveTitle = Rpc$WeftServer.use(Api$WeftNotes.saveTitle, undefined);
   let save = event => {
     event.preventDefault();
     (async () => {
-      await Api$WeftNotes.post(`/notes/` + noteId, {
+      let error = await saveTitle({
+        noteId: noteId,
         title: draft
       });
-      return await saved.refetch(undefined);
+      if (error.TAG === "Ok") {
+        setError(param => {});
+        return await saved.refetch(undefined);
+      }
+      let error$1 = error._0;
+      return setError(param => Api$WeftNotes.describe(error$1));
     })();
   };
   return Jsx$WeftDom.Elements.jsxs("form", {
@@ -39,7 +50,12 @@ function NoteEditor(props) {
         id: "save",
         type: "submit",
         children: saved.isPending ? "Saving…" : "Save"
-      })
+      }),
+      error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
+          id: "title-error",
+          role: "alert",
+          children: error
+        }) : Jsx$WeftDom.$$null
     ]
   });
 }

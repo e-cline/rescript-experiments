@@ -361,7 +361,7 @@ async function read(session, stream, signal) {
   }
 }
 
-function fromStream(client, stream, signal) {
+function valueFromStream(client, stream, signal) {
   let session = {
     client: client,
     rows: new Map(),
@@ -371,7 +371,11 @@ function fromStream(client, stream, signal) {
   };
   let root = row(session, 0);
   read(session, stream, signal);
-  return root.promise.then(value => value);
+  return root.promise;
+}
+
+function fromStream(client, stream, signal) {
+  return valueFromStream(client, stream, signal).then(value => value);
 }
 
 async function fetchElement(client, url, signal) {
@@ -417,6 +421,7 @@ let Latest = {
 export {
   make,
   fromStream,
+  valueFromStream,
   fetchElement,
   webFetch,
   Latest,

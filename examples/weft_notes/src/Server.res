@@ -1,9 +1,12 @@
+@@weft.server
+
 @@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 /***
 The server entry: an `@e-cline/servy` app (the default export). Pages answer with
 `WeftServer.Page.respond` (HTML for a first request, the bare payload for the client's), as do the
-routes of the parts entrypoints fetch again by themselves (the title, the comments). The rest are the posts the entrypoints make.
+routes of the parts entrypoints fetch again by themselves (the title, the comments). What the
+entrypoints change goes through the RPCs in `Api`, answered at `/_weft/rpc/<id>`.
 
 With `WEFT_NOTES_TEST_ROUTES=1` in the environment, `/test/gates/...` routes let a browser test
 open the database's gates.
@@ -36,19 +39,6 @@ let page = (~title, render: Gates.signal => Weft.element): Servy.Handler.t =>
 
 let id = ctx => ctx->RequestContext.paramOrThrow("id")
 
-let field = (json, name) =>
-  json
-  ->JSON.Decode.object
-  ->Option.flatMap(fields => fields->Dict.get(name))
-  ->Option.flatMap(JSON.Decode.string)
-  ->Option.getOr("")
-
-let body = async ctx =>
-  switch await ctx->RequestContext.json(~anyContentType=true) {
-  | Ok(json) => json
-  | Error(_) => JSON.Null
-  }
-
 let noteRoutes = [
   Route.get(list{}, page(~title="Notes", _ => <Pages.NoteList />)),
   Route.get(list{"notes", ":id"}, async ctx =>
@@ -60,19 +50,10 @@ let noteRoutes = [
   Route.get(list{"notes", ":id", "comments"}, async ctx =>
     await page(~title="Comments", signal => <Pages.Comments id={id(ctx)} signal />)(ctx)
   ),
-  Route.post(list{"notes", ":id"}, async ctx => {
-    Db.saveTitle(id(ctx), field(await body(ctx), "title"))
-    Respond.empty()
-  }),
-  Route.post(list{"notes", ":id", "comments"}, async ctx => {
-    let json = await body(ctx)
-    Db.addComment(id(ctx), ~author=field(json, "author"), ~text=field(json, "text"))->ignore
-    Respond.empty()
-  }),
-  Route.post(list{"notes", ":id", "like"}, async ctx => {
-    Db.like(id(ctx))
-    Respond.empty()
-  }),
+  // The RPCs (`Api`'s, answered by `ApiServer`'s handlers).
+  Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
+    await ApiServer.router->WeftServer.Rpc.respond(ctx.request, ~id=id(ctx))
+  ),
 ]
 
 @val @scope(("process", "env"))

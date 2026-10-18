@@ -10,11 +10,16 @@ things only a browser can show, in Chromium.
 - `LikeButton`, an entrypoint with state of its own (whether you just liked it), whose count comes
   from the server.
 - `NoteEditor`, a draft of the title in state, and the saved title and time, rendered on the server,
-  as its `children`: saving posts the draft, then refetches those (`useRefetchable`), while the
-  draft, the input, its focus and its selection stay.
+  as its `children`: saving sends the draft (an RPC), then refetches those (`useRefetchable`), while
+  the draft, the input, its focus and its selection stay.
 - The comments in `CommentsPanel`, an entrypoint that refetches them (`useRefetchable`) with a
   button, a `CommentList` entrypoint given them as a promise (and showing its own fallback until it
-  resolves), and `CommentForm`, which posts a comment and then `refresh`es the page.
+  resolves), and `CommentForm`, which posts a comment (an RPC) and then `refresh`es the page.
+- Weft RPCs for every change: saving a title, adding a comment and liking, declared in
+  [`src/Api.res`](src/Api.res) (each one's ID, codec, and the checks made before anything is sent)
+  and handled in [`src/ApiServer.res`](src/ApiServer.res), a server-only file (`@@weft.server`, as
+  are the database and its gates). Errors are the RPCs' own: an empty comment is refused before it's
+  sent, a too long one on both sides, and one on a note that's gone by the handler.
 - A server component that fails, inside an `ErrorBox` entrypoint (an error boundary), and links that
   `navigate` in place.
 
@@ -50,14 +55,18 @@ server in a worker thread (with the database's controls,
   queries abandoned) so none of its rows land;
 - posting a comment; saving a title, which refetches only the saved title (the same nodes, the
   draft, focus and selection kept, nothing else rendering again);
+- the RPCs: an empty title or comment refused with no request made, a comment the handler refuses
+  (its note deleted), one the server checks again and refuses (a client that didn't check, played by
+  `rewriteBodies`), one the server can't read (an older client's request) shown as such, and liking;
 - reloading the comments after another user's changes (new ones inserted, edited ones updated in
   place), while their gate is held (the old ones stay, pending), and twice (the first never lands);
 - the server's like count arriving with a refresh while the button keeps its own state.
 
 [`e2e/notes.e2e.ts`](e2e/notes.e2e.ts) checks, in Chromium against the build, what only a browser
 can: the HTML streaming, a chunk loaded once a page needs it and only once, focus and selection
-across a refetch, and the back button. With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes that
-open the gates, for these tests. Run them (they need Chromium:
+across a refetch, the back button, and a comment posted through its RPC (the request as the browser
+sends it, `Origin` and all). With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes that open the
+gates, for these tests. Run them (they need Chromium:
 `pnpm --filter @e-cline/weft_notes_example exec playwright install chromium`):
 
 ```bash

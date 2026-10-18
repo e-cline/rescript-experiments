@@ -1,8 +1,5 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@weft.server
 
-/*** A server file (it has a server component). */
+/*** A server-only file without server components (`@@weft.server`): a database, say. */
 
 let query = sql => `rows for ${sql}`
-
-@weft.component({kind: Server})
-let make = () => <p> {Weft.Jsx.string(query("select 1"))} </p>

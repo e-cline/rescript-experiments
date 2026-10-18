@@ -1,0 +1,2 @@
+@weft.rpc
+let save = WeftServer.Rpc.make(~request=WeftServer.Rpc.Codec.string)

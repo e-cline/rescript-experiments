@@ -13,6 +13,7 @@
   "suffix": ".res.js",
   "namespace": "WeftCoreBenchmarks",
   "dependencies": [
+    "@e-cline/weft",
     "@e-cline/weft_core",
     "@e-cline/weft_dom",
     "@e-cline/benchmarking"

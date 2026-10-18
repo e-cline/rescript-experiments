@@ -44,6 +44,7 @@
     "@e-cline/tree_shaking_example": "workspace:*",
     "@e-cline/trees": "workspace:*",
     "@e-cline/trees_benchmarks": "workspace:*",
+    "@e-cline/weft": "workspace:*",
     "@e-cline/weft_app_example": "workspace:*",
     "@e-cline/weft_core": "workspace:*",
     "@e-cline/weft_core_benchmarks": "workspace:*",

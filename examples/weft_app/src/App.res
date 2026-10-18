@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
+@@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 /***
 A todo app on `weft_core`: the todos live in a reducer (saved to `localStorage` by an effect), the
@@ -6,15 +6,15 @@ current filter reaches the list through context (switching it is a transition), 
 memoized, and the new-todo input is focused through a ref when the app mounts.
 */
 
-open WeftCore.Hooks
+open Weft.Hooks
 
-module Dom = WeftDom.Dom
-module Jsx = WeftDom.Jsx
+module Dom = Weft.Dom
+module Jsx = Weft.Jsx
 
 module FilterContext = {
-  let context = WeftCore.Context.make(Todo.All)
+  let context = Weft.Context.make(Todo.All)
   module Provider = {
-    let make = WeftCore.Context.provider(context)
+    let make = Weft.Context.provider(context)
   }
 }
 
@@ -50,7 +50,7 @@ module NewTodo = {
 
 module TodoItem = {
   @jsx.component
-  let make = WeftCore.Memo.memo((~todo: Todo.todo, ~dispatch: Todo.action => unit) => {
+  let make = Weft.Memo.memo((~todo: Todo.todo, ~dispatch: Todo.action => unit) => {
     let id = Int.toString(todo.id)
     <li id={`todo-${id}`} className={todo.done ? "done" : ""}>
       <input
@@ -90,7 +90,7 @@ module Filters = {
           key=name
           id={`filter-${name}`}
           ariaPressed={option == filter ? "true" : "false"}
-          onClick={_ => WeftCore.Transition.start(() => setFilter(_ => option))}
+          onClick={_ => Weft.Transition.start(() => setFilter(_ => option))}
         >
           {Jsx.string(name)}
         </button>

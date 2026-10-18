@@ -1,7 +1,7 @@
 # weft_app
 
-A todo app written with [`@e-cline/weft_core`](../../packages/weft_core) and
-[`@e-cline/weft_dom`](../../packages/weft_dom), bundled by Vite. It uses most of the library:
+A todo app written with [`@e-cline/weft`](../../packages/weft), bundled by Vite. It uses most of the
+library:
 
 - the todos in `useReducerWithMapState`, loaded from `localStorage` and saved back by a `useEffect`;
 - the current filter passed to the list through `Context`, and switched in a `Transition.start`;

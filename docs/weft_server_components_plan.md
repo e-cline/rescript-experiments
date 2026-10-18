@@ -44,9 +44,9 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 ## Status
 
 Phases 0--5 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
-the phases will go in one PR, not opened yet). Next is phase 6, Weft RPCs (§8), whose open decisions
-are listed under Decisions; then phase 7, HTML rendering and hydration, which may want a plan of its
-own.
+the phases will go in one PR, not opened yet). Next is phase 6, Weft RPCs (§8), whose design
+decisions are settled (Decisions); then phase 7, HTML rendering and hydration, which may want a plan
+of its own.
 
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -826,12 +826,12 @@ The rest of the CVEs come out the same way:
   (`Render` refuses them), handlers live in server-only files the client build can't include, and
   the router answers with nothing but the handler's result.
 
-**Codecs.** An open decision (see Decisions). Three ways to get them:
+**Codecs.** Decided: the first of these three ways to get them, with the third as a follow-up.
 
 1. **A small combinator library in `weft_server`** (`Rpc.Codec`): `string`, `int`, `float`, `bool`,
    `option`, `array`, `dict`, `date` (as an ISO string), `object1` to `object8` from fields,
    `variant` from tagged cases, `map` and `custom`. Each value encodes and decodes, so the two can't
-   drift. Small, no dependency, easy to fuzz. Recommended for this phase.
+   drift. Small, no dependency, easy to fuzz. The one for this phase.
 2. **An existing schema library** (`rescript-schema`, also known as Sury): richer (refinements, JSON
    Schema, error paths), but a dependency of every app, and more to ship to the client.
 3. **Codecs derived by the PPX** from type declarations (`@weft.codec type addComment = {...}`), as
@@ -1294,11 +1294,10 @@ payloads leave their rows waiting rather than failing them, the server took over
 missing keys, and `weft_split` switched to `Page` and the default bootstrap (with a `Link`
 entrypoint, for navigating in build mode).
 
-**Phase 6 -- Weft RPCs** (§8). First the decisions still open (Decisions). Then `WeftServer.Rpc`
-(`make`, `handler`, `router`, `call`, `use`) and its codecs; `@weft.rpc` and `@@weft.server` in
-`ppx_weft`, with their fixtures and errors; the plugin's scan collecting RPC IDs (duplicates fail
-the build); then `weft_notes`' posts (saving a title, adding a comment, liking) moved to RPCs, with
-the tests in §10.
+**Phase 6 -- Weft RPCs** (§8), as decided (Decisions): `WeftServer.Rpc` (`make`, `handler`,
+`router`, `call`, `use`) and its codecs; `@weft.rpc` and `@@weft.server` in `ppx_weft`, with their
+fixtures and errors; the plugin's scan collecting RPC IDs (duplicates fail the build); then
+`weft_notes`' posts (saving a title, adding a comment, liking) moved to RPCs, with the tests in §10.
 
 **Phase 7 -- HTML and hydration** (§9): the hook-less HTML renderer, streaming Suspense HTML, then
 hydration in the reconciler and the DOM host. Could be its own plan once phases 1--6 have settled.
@@ -1322,27 +1321,24 @@ Settled before phase 0, since these names and this setup get built into everythi
 - **The two PPXs share one opam switch**, `rescript_ppx`, set up by `tools/ppx/setup.sh` from one
   lock file (see §2's "Toolchain"), rather than each having its own and compiling OCaml twice.
 
-Open for phase 6 (Weft RPCs), with what §8 recommends:
+Settled before phase 6 (Weft RPCs, §8), as §8 recommended:
 
-- **Declaration and handler in two files**, joined by the ID and the types, rather than one
-  definition the plugin splits by rewriting compiled output. Recommended: two files.
-- **Values with labelled arguments, rather than functors.** Recommended: values.
-- **Codecs**: `weft_server`'s own small combinator library (recommended), a schema library such as
-  `rescript-schema`, or PPX-derived codecs (a follow-up either way).
-- **Errors**: `Rejected('error)` for the RPC's own errors (from `prepare`, `check` or the handler),
-  `Invalid` for a request the server couldn't read, `Failed` for everything else, and a promise that
-  never rejects. In particular: should `prepare`'s errors share the handler's error type
-  (recommended, so a form shows them the same way), or be a type of their own?
-- **Mounting**: the app lists its handlers in `Rpc.router` and mounts it on a route (recommended:
-  explicit, and the list is what's callable), or the plugin generates the list from the scan.
-- **Only `POST`, and JSON only**, for now (recommended), leaving `GET` RPCs and `FormData` for
-  later.
-- **The ID's form**: dot-separated names (recommended), checked by the PPX; and the default path,
-  `/_weft/rpc/<id>`.
-- **`@@weft.server`** as part of this phase (recommended: handler files need it, and it closes a gap
-  the plugin has had since phase 4).
-- **Authentication**: handlers get the HTTP request, and apps use servy middleware around the route
-  (recommended), or `Rpc.router` grows middleware of its own, as TanStack's server functions have.
+- **An RPC's declaration and handler are in two files** (shared and server-only), joined by the ID
+  and the types, rather than one definition the plugin splits by rewriting compiled output.
+- **An RPC is a value** made with labelled arguments (`Rpc.make`), not a functor.
+- **Codecs are `weft_server`'s own** small combinator library (`Rpc.Codec`); PPX-derived codecs may
+  follow.
+- **Errors**: `Rejected('error)` for the RPC's own errors, from `prepare`, `check` and the handler
+  alike (one type, so a form shows them the same way); `Invalid` for a request the server couldn't
+  read; `Failed` for everything else. The promise never rejects.
+- **The app mounts its RPCs** by listing their handlers in `Rpc.router`, on a route of its own: the
+  list is what's callable. The plugin's scan only checks IDs for duplicates.
+- **`POST` and JSON only** for now; `GET` RPCs and `FormData` later.
+- **IDs are dot-separated names**, checked by the PPX; the default path is `/_weft/rpc/<id>`.
+- **`@@weft.server` comes in this phase**, for handler files and any other server-only module.
+- **Authentication is servy middleware** around the RPC route (handlers get the HTTP request); the
+  router has no middleware of its own.
+- **Responses can be or contain elements and promises**, through the payload format.
 
 ## Risks
 

@@ -34,6 +34,7 @@
     "@e-cline/benchmarking": "workspace:*",
     "@e-cline/common": "workspace:*",
     "@e-cline/http_server_example": "workspace:*",
+    "@e-cline/ppx_weft_tests": "workspace:*",
     "@e-cline/pretty_print_example": "workspace:*",
     "@e-cline/priority_queue": "workspace:*",
     "@e-cline/servy": "workspace:*",

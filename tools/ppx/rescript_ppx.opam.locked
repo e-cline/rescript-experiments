@@ -1,7 +1,7 @@
 opam-version: "2.0"
-name: "ppx_pretty_print"
+name: "rescript_ppx"
 version: "dev"
-synopsis: "ReScript PPX that derives pretty-printers for types"
+synopsis: "The toolchain the workspace's ReScript PPXs build with"
 depends: [
   "base-bigarray" {= "base"}
   "base-domains" {= "base"}
@@ -20,18 +20,4 @@ depends: [
   "ppxlib" {= "0.34.0"}
   "sexplib0" {= "v0.17.0"}
   "stdlib-shims" {= "0.3.0"}
-]
-build: [
-  ["dune" "subst"] {dev}
-  [
-    "dune"
-    "build"
-    "-p"
-    name
-    "-j"
-    jobs
-    "@install"
-    "@runtest" {with-test}
-    "@doc" {with-doc}
-  ]
 ]

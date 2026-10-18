@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  AsyncWithCustomJsx.res
+
+  This has type: promise<MyJsx.element>
+  But this function argument is expecting: promise<Jsx.element>
+  
+  The incompatible parts:
+    MyJsx.element vs Jsx.element
+

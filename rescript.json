@@ -17,6 +17,7 @@
     "@e-cline/weft_core_benchmarks",
     "@e-cline/weft_app_example",
     "@e-cline/pretty_print_example",
+    "@e-cline/ppx_weft_tests",
     "@e-cline/tree_shaking_example",
     "@e-cline/http_server_example",
     "@e-cline/servy"

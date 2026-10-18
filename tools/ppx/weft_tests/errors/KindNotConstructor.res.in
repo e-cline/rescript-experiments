@@ -1,0 +1,2 @@
+@weft.component({kind: "Server"})
+let make = (~label: string) => label

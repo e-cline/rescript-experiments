@@ -1,0 +1,2 @@
+@weft.component({kind: Client})
+let make = (~label: string) => label

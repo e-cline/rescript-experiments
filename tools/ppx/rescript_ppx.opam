@@ -1,0 +1,14 @@
+# The OCaml toolchain every ReScript PPX in tools/ppx builds with: not a
+# package to install, only the list `setup.sh` installs into the shared
+# `rescript_ppx` opam switch, and what `rescript_ppx.opam.locked` pins.
+# Each PPX's own dune-project states the same ranges for its own package.
+opam-version: "2.0"
+synopsis: "The toolchain the workspace's ReScript PPXs build with"
+depends: [
+  "dune" {>= "3.8"}
+  # ppxlib 0.34 is the last release that can still read and write the OCaml
+  # 4.06 binary AST, which is what ReScript hands to PPXs (0.35 dropped every
+  # AST older than 4.08). It needs OCaml < 5.4.
+  "ocaml" {>= "4.14.0" & < "5.4.0"}
+  "ppxlib" {>= "0.33.0" & < "0.35.0"}
+]

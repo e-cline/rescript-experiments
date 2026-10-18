@@ -1,19 +1,18 @@
 name: Set up opam
 description: >-
   Installs opam and restores the cached OCaml toolchain the workspace's ReScript
-  PPX is built with.
+  PPXs are built with.
 
-# The workspace compiles a ReScript PPX written in OCaml
-# (tools/ppx/pretty_print) before any ReScript, so building or testing needs
-# opam. The PPX's build task (its setup.sh) creates a global opam switch named
-# `ppx_pretty_print` from the lock file, which compiles OCaml and takes several
-# minutes, so opam's root -- the switch included -- is cached until the lock
-# file changes. The switch lives in ~/.opam rather than the checkout, so the
-# key doesn't depend on where the repository is checked out (or what it's
-# called). setup.sh is part of the key too: it decides what the switch is
-# called and how it's built, and an exact cache hit is never saved again, so a
-# restored ~/.opam missing the switch it now expects would be rebuilt on every
-# run.
+# The workspace compiles ReScript PPXs written in OCaml (tools/ppx/*) before
+# any ReScript, so building or testing needs opam. The root `ppx:setup` task
+# (tools/ppx/setup.sh) creates a global opam switch named `rescript_ppx` from
+# the lock file, which compiles OCaml and takes several minutes, so opam's
+# root -- the switch included -- is cached until the lock file changes. The
+# switch lives in ~/.opam rather than the checkout, so the key doesn't depend
+# on where the repository is checked out (or what it's called). setup.sh is
+# part of the key too: it decides what the switch is called and how it's
+# built, and an exact cache hit is never saved again, so a restored ~/.opam
+# missing the switch it now expects would be rebuilt on every run.
 runs:
   using: composite
   steps:
@@ -29,8 +28,8 @@ runs:
         path: ~/.opam
         key:
           opam-${{ runner.os }}-${{ runner.arch }}-${{
-          hashFiles('tools/ppx/pretty_print/ppx_pretty_print.opam.locked',
-          'tools/ppx/pretty_print/setup.sh') }}
+          hashFiles('tools/ppx/rescript_ppx.opam.locked', 'tools/ppx/setup.sh')
+          }}
     - name: Initialize opam
       if: steps.opam-cache.outputs.cache-hit != 'true'
       shell: bash

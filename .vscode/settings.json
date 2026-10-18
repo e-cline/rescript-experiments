@@ -19,7 +19,7 @@
   },
   "ocaml.sandbox": {
     "kind": "opam",
-    "switch": "ppx_pretty_print"
+    "switch": "rescript_ppx"
   },
   "[ocaml]": {
     "editor.defaultFormatter": "ocamllabs.ocaml-platform"

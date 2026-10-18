@@ -250,6 +250,9 @@ importers:
       '@e-cline/http_server_example':
         specifier: workspace:*
         version: link:examples/http_server
+      '@e-cline/ppx_weft_tests':
+        specifier: workspace:*
+        version: link:tools/ppx/weft_tests
       '@e-cline/pretty_print_example':
         specifier: workspace:*
         version: link:examples/pretty_print
@@ -806,6 +809,33 @@ importers:
       rescript:
         specifier: 'catalog:'
         version: 12.3.1
+
+  tools/ppx/weft: {}
+
+  tools/ppx/weft_tests:
+    dependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../weft
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../packages/weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../../packages/weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../packages/weft_dom
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
 packages:
 

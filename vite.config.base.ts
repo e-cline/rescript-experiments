@@ -31,6 +31,16 @@ const resTestFileMatch = ['**/*_{test,spec}.res.{js,jsx}'];
 // this one.
 export const rootResTask = '@e-cline/rescript-experiments#res';
 
+// The root-level task that makes sure the opam switch every PPX in `tools/ppx`
+// builds with exists and matches its lock file (`tools/ppx/setup.sh`). Each
+// PPX's `build` depends on it, rather than running `setup.sh` itself, so two
+// PPX builds never install into the switch at the same time.
+export const ppxSetupTask = '@e-cline/rescript-experiments#ppx:setup';
+
+// Runs a command with that switch's tools (dune, the OCaml compiler) on the
+// PATH, leaving the user's own opam switch alone.
+export const opamExec = 'opam exec --switch=rescript_ppx --';
+
 /** A `run.tasks` entry, as `makeRescriptLibConfig`'s `tasks` option takes. */
 export type RunTask = {
   command: string | string[];

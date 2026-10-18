@@ -1,0 +1,5 @@
+(library
+ (name ppx_weft)
+ (public_name ppx_weft)
+ (kind ppx_rewriter)
+ (libraries ppxlib))

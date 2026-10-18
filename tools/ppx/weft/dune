@@ -1,0 +1,4 @@
+; Only `ppx_src/` holds OCaml sources. Keeps dune out of everything else that
+; ends up in this directory: ReScript's `lib/` build cache, and
+; `node_modules/`.
+(dirs ppx_src)

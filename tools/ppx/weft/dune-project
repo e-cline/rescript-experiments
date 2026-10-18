@@ -1,0 +1,21 @@
+(lang dune 3.8)
+
+(name ppx_weft)
+
+(generate_opam_files true)
+
+(package
+ (name ppx_weft)
+ (synopsis "ReScript PPX for Weft's @weft.component attribute")
+ (depends
+  ; The same ranges as ../rescript_ppx.opam, the toolchain this builds with:
+  ; ppxlib 0.34 is the last release that can still read and write the OCaml
+  ; 4.06 binary AST ReScript hands to PPXs, and it needs OCaml < 5.4.
+  (ocaml
+   (and
+    (>= 4.14.0)
+    (< 5.4.0)))
+  (ppxlib
+   (and
+    (>= 0.33.0)
+    (< 0.35.0)))))

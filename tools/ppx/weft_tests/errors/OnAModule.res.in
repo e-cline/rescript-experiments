@@ -1,0 +1,4 @@
+@weft.component
+module Label = {
+  let make = (~label: string) => label
+}

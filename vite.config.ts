@@ -41,13 +41,24 @@ export default defineConfig({
       // `suffix` are root-only settings; see vite.config.base.ts's
       // `makeRescriptLibConfig`).
       //
-      // Depends on building the `@prettyPrint` PPX (tools/ppx/pretty_print,
-      // an OCaml program built by dune): `rescript build` runs it on every
-      // file of each package listing it in `ppx-flags`, so its executable
-      // has to exist first.
+      // Depends on building the PPXs (tools/ppx/*, OCaml programs built by
+      // dune): `rescript build` runs each on every file of each package
+      // listing it in `ppx-flags`, so their executables have to exist first.
       res: {
         command: 'rescript build',
-        dependsOn: ['@e-cline/ppx_pretty_print#build'],
+        dependsOn: [
+          '@e-cline/ppx_pretty_print#build',
+          '@e-cline/ppx_weft#build',
+        ],
+        cache: false,
+      },
+      // The opam switch every PPX builds with (tools/ppx/setup.sh; see
+      // tools/ppx/README.md). Each PPX's `build` depends on this, so the
+      // switch is set up once per run, never by two builds at once. Not
+      // cached: it checks the switch on this machine, which no cache
+      // describes, and does nothing when it's already in sync.
+      'ppx:setup': {
+        command: 'tools/ppx/setup.sh',
         cache: false,
       },
       // Watches the whole workspace; not a `dependsOn` of anything, since a

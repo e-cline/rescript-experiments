@@ -1,4 +1,4 @@
 # dune's build directory, and the opam switch local to this directory that
-# setup.sh used to create (see README.md).
+# setup.sh used to create (see ../README.md).
 _build
 _opam

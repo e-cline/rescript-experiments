@@ -226,9 +226,10 @@ file's path by convention. The PPX makes the id impossible to get wrong, gives e
 **Toolchain.** The two PPXs need the same OCaml and ppxlib (the ReScript AST pins ppxlib 0.34, which
 needs OCaml < 5.4), so rather than a second opam switch that compiles OCaml again (decided: see
 "Decisions"), move `setup.sh` and the lock file up to `tools/ppx/`, rename the switch to something
-shared (`rescript_ppx`), and have both packages' `build` tasks use it. That also means updating
-`.vscode/settings.json`'s `ocaml.sandbox`, the CI opam cache key, and the root `res` task's
-`dependsOn`, which gains `@e-cline/ppx_weft#build`.
+shared (`rescript_ppx`), and have both packages' `build` tasks use it. `setup.sh` runs as a root
+task, `ppx:setup`, that both builds depend on, so two builds never install into the switch at once.
+That also means updating `.vscode/settings.json`'s `ocaml.sandbox`, the CI opam cache key, and the
+root `res` task's `dependsOn`, which gains `@e-cline/ppx_weft#build`.
 
 ### 3. Entrypoint ids and the client manifest
 
@@ -487,7 +488,7 @@ real `<script>` execution and real chunk loading.
 Tests are `*_test.res` with `rescript-vitest`, as elsewhere, except the Vite plugin's and the
 browser tests, which are TypeScript.
 
-#### The PPX (`tools/ppx/weft/tests`)
+#### The PPX (`tools/ppx/weft_tests`)
 
 - **Fixtures that compile**: a ReScript package listed in the root `rescript.json` with `ppx_weft`
   in its `ppx-flags`, holding a shared component, a sync and an async server component, a file-level
@@ -498,13 +499,18 @@ browser tests, which are TypeScript.
   they're snapshots for free (CI already fails if a build changes them); a test also asserts what
   matters in them: the directive is the first line, and the mark comes after the JSX transform's
   last `make`.
-- **Fixtures that don't**: one file per error in §2 (`tests/errors/*.res`), each beside the message
-  it should produce. A Node test runs `bsc -bs-jsx 4 -ppx <the PPX>` on each and compares the error,
-  with colours and paths stripped. `bsc -dsource` on the good fixtures, checked in as `.expected`
-  files, shows the source after the PPX and the JSX transform have both run, which makes a change in
-  the PPX's output easy to review.
-- **Compiler canaries**: the verified points that the PPX relies on (1--5 and 7) get a fixture each,
-  so a ReScript upgrade that changes them fails a named test rather than something downstream.
+- **Fixtures that don't**: one file per error in §2 (`errors/<Name>.res.in`, so neither the build
+  nor the formatter picks them up), each beside the message it should produce (`<Name>.expected`). A
+  test compiles each with `bsc -bs-jsx 4 -ppx <the PPX>` from a fresh temporary directory and
+  compares the error, with colours and paths stripped, as a Vitest file snapshot (`-u` rewrites
+  them). (`bsc -dsource` snapshots of the good fixtures were considered and dropped: it writes
+  `.cmi`/`.cmj` files into its working directory and exits non-zero without the build's package
+  settings. The committed `.res.js` output shows the same changes.)
+- **Compiler canaries** (`canaries/`, compiled the same way but without the PPX): the verified
+  points the PPX relies on that can be shown by compiling a file get a fixture each (1, 2 and 5); 3
+  is shown by the good fixtures compiling at all, 7 by an assertion on a fixture's compiled output,
+  and 4 (the PPX sees the source's path) gets its test in phase 2, when the PPX first uses the path.
+  A ReScript upgrade that changes any of them fails a named test rather than something downstream.
 
 #### `weft_core` (`Lazy`, `Entrypoint`, the server-render flag)
 
@@ -767,7 +773,7 @@ packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
   src/testing/                     the tier 2 harness (`/testing` export): Vite server, worker, port
   src/WeftTesting.res(i)           its ReScript bindings
   tests/fixtures/                  small apps with hand-written "compiled" files
-tools/ppx/weft/tests/              fixtures that compile, fixtures that don't, compiler canaries
+tools/ppx/weft_tests/              fixtures that compile, fixtures that don't, compiler canaries
 examples/weft_notes/               notes app: the integration test bed (§9)
   tests/                           tier 2 scenarios, and the fake database's control module
   e2e/                             tier 3 Playwright tests
@@ -781,15 +787,18 @@ Each package gets the usual wiring: root `rescript.json` `dependencies` and a `w
 
 Each ends green (`pnpm run build`, `pnpm run test`, `pnpm run check`) and is a reviewable PR.
 
-**Phase 0 -- Pin what the compiler does.** A `ppx_weft` that only replaces `@weft.component` with
-`@jsx.component`, the PPX test package with the compiler canaries and the first good fixtures (§9),
-and the opam setup moved to the shared switch.
+**Phase 0 -- Pin what the compiler does.** A `ppx_weft` that replaces `@weft.component` with
+`@jsx.component` (every kind compiling as a shared component for now), and already checks the
+attribute: its argument, where it is, and that a binding has it once and not with `@jsx.component`.
+The PPX test package with the first good fixtures, those errors and the compiler canaries (§9), and
+the opam setup moved to the shared switch.
 
 **Phase 1 -- `WeftCore.Lazy` and `Entrypoint`.** The new element kind, unwrapped in
 `ChildReconciler`; `Entrypoint.mark`; the server-render flag in `HookImpl`; with their tests (§9).
 
-**Phase 2 -- The PPX in full.** Async rewriting, marks, ids, directives and every error in §2, with
-the rest of the PPX's fixtures, good and bad (§9).
+**Phase 2 -- The PPX in full.** Async rewriting, marks, ids, directives and the rest of the errors
+in §2 (`async` outside a server component, server components and entrypoints in one file,
+function-typed props), with the rest of the PPX's fixtures, good and bad, and canary 4 (§9).
 
 **Phase 3 -- Wire format and renderer, no bundler.** `Payload`, `Render` and `Client`, each tested
 on its own and then together into the TestRenderer, including every in-place update test and the

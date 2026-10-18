@@ -1,0 +1,4 @@
+// Canary (plan, verified point 1): `kind=Server` isn't an expression, so it can't be an
+// attribute's argument. Compiled without the PPX: this is the parser's error.
+@weft.component(kind=Server)
+let make = (~label: string) => label

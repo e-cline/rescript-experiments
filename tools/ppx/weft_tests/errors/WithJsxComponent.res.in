@@ -1,0 +1,2 @@
+@weft.component @jsx.component
+let make = (~label: string) => label

@@ -1,0 +1,2 @@
+@weft.component
+type t = int

@@ -68,6 +68,9 @@ These aren't published:
   mitata and a seeded PRNG.
 - [`tools/ppx/pretty_print`](tools/ppx/pretty_print) -- an example ReScript PPX, written in OCaml,
   that derives pretty-printers for types.
+- [`tools/ppx/weft`](tools/ppx/weft) -- the PPX for Weft's `@weft.component` attribute, the start of
+  [server components for Weft](docs/weft_server_components_plan.md), with its tests in
+  [`tools/ppx/weft_tests`](tools/ppx/weft_tests).
 - [`RESCRIPT.md`](RESCRIPT.md) -- notes on integrating ReScript with the Vite+ toolchain, including
   the rough edges found along the way.
 

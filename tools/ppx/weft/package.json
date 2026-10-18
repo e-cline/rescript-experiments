@@ -1,0 +1,11 @@
+{
+  "name": "@e-cline/ppx_weft",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A ReScript PPX, written in OCaml with ppxlib, for Weft's `@weft.component` attribute.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  }
+}

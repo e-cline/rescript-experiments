@@ -1,0 +1,14 @@
+
+  Syntax error!
+  KindEqualsSyntax.res:3:21
+
+  1 │ // Canary (plan, verified point 1): `kind=Server` isn't an expression, s
+    │ o it can't be an
+  2 │ // attribute's argument. Compiled without the PPX: this is the parser's 
+    │ error.
+  3 │ @weft.component(kind=Server)
+  4 │ let make = (~label: string) => label
+  5 │ 
+
+  Did you mean `==` here?
+

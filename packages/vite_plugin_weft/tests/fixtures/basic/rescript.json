@@ -1,0 +1,10 @@
+{
+  "name": "@fixtures/basic",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "type": "dev"}
+  ],
+  "suffix": ".res.js",
+  "dependencies": ["@fixtures/widgets"],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
+}

@@ -1,0 +1,63 @@
+{
+  "name": "@e-cline/vite_plugin_weft",
+  "version": "0.0.1",
+  "description": "The Vite plugin for Weft's server components: a server and a client environment, code-split entrypoints, the server/client boundary enforced, a dev server and a production build.",
+  "keywords": [
+    "rescript",
+    "server-components",
+    "vite",
+    "vite-plugin",
+    "weft"
+  ],
+  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/vite_plugin_weft#readme",
+  "bugs": {
+    "url": "https://github.com/e-cline/rescript-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/rescript-experiments.git",
+    "directory": "packages/vite_plugin_weft"
+  },
+  "files": [
+    "dist",
+    "virtual.d.ts"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./virtual": {
+      "types": "./virtual.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prepack": "vp pack"
+  },
+  "dependencies": {
+    "@hono/node-server": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "vite": ">=8"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

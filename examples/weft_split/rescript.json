@@ -1,0 +1,25 @@
+{
+  "name": "@e-cline/weft_split_example",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "WeftSplit",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": [
+    "@e-cline/servy",
+    "@e-cline/weft",
+    "@e-cline/weft_core",
+    "@e-cline/weft_dom",
+    "@e-cline/weft_server",
+    "@rescript/webapi"
+  ],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
+}

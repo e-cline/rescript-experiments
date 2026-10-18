@@ -4,8 +4,8 @@ Server components for Weft: render a component tree on the server into a streame
 it back into elements on the client as it arrives, with interactive components (entrypoints) loaded
 on demand. This is phase 3 of
 [the server components plan](../../docs/weft_server_components_plan.md): the payload format, the
-renderer and the client, tested in one process. Pages, navigation, the Vite plugin and HTML
-rendering come in later phases.
+renderer and the client, tested in one process. [The Vite plugin](../vite_plugin_weft) bundles an
+app using it. Pages, navigation and HTML rendering come in later phases.
 
 ## Installing
 
@@ -35,8 +35,9 @@ let element = await client->WeftServer.Client.fetchElement("/notes/1")
 root->WeftDom.Client.render(element)
 ```
 
-`loadModule` loads an entrypoint's compiled file, given its id. The Vite plugin (a later phase)
-provides it; until then, it's yours to write, or `Testing.loadModule` in tests.
+`loadModule` loads an entrypoint's compiled file, given its id.
+[The Vite plugin](../vite_plugin_weft) provides it (`virtual:weft/client`); in tests, it's
+`Testing.loadModule`.
 
 ## How it works
 

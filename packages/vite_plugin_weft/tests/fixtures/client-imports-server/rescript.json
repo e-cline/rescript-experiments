@@ -1,0 +1,6 @@
+{
+  "name": "@fixtures/client-imports-server",
+  "sources": {"dir": "src"},
+  "suffix": ".res.js",
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
+}

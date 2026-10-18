@@ -52,6 +52,7 @@
     "@e-cline/weft_dom": "workspace:*",
     "@e-cline/weft_server": "workspace:*",
     "@e-cline/weft_signals": "workspace:*",
+    "@e-cline/weft_split_example": "workspace:*",
     "@types/node": "catalog:",
     "jsdom": "catalog:",
     "rescript": "catalog:",

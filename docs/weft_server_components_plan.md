@@ -43,8 +43,9 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 
 ## Status
 
-Phases 0--3 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
-the phases will go in one PR, not opened yet). Next is phase 4: the Vite plugin and `weft_split`.
+Phases 0--4 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
+the phases will go in one PR, not opened yet). Next is phase 5: pages, navigation, frames, the tier
+2 harness and `weft_notes`.
 
 | Phase | What                                                         | Where                                                          |
 | ----- | ------------------------------------------------------------ | -------------------------------------------------------------- |
@@ -52,6 +53,7 @@ the phases will go in one PR, not opened yet). Next is phase 4: the Vite plugin 
 | 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`            | `packages/weft_core`, `packages/weft`                          |
 | 2     | async server components, entrypoint ids and directives       | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
 | 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`         | `packages/weft_server`, `packages/weft_core`                   |
+| 4     | the Vite plugin, `serve`; the `weft_split` example           | `packages/vite_plugin_weft`, `examples/weft_split`             |
 
 Where the implementation went its own way, the sections below say so. Things learned on the way, for
 whoever picks this up:
@@ -74,6 +76,25 @@ whoever picks this up:
   package would fix it.
 - **Test components shouldn't pass `undefined` host props** (`title=?note`): the TestRenderer prints
   them as `title="undefined"`.
+- **Compile ReScript with `vp run -w res`, not `npx rescript build`**: the bare command leaves out
+  dev sources, and deletes every package's compiled tests.
+- **Vite builds run from a Vitest test are development builds** unless `NODE_ENV` is set to
+  `production` around them: Vitest sets it to `test`, and Vite picks the export conditions (and with
+  them `Common.Env.isDev`) from it. The plugin's and `weft_split`'s build tests do this.
+- **A server build leaves `node_modules` dependencies external** (`@rescript/runtime`), so it only
+  runs where they resolve: `weft_split`'s test builds into its own `node_modules/.weft-split-test`,
+  not a temporary directory.
+- **A TypeScript test importing `vite-plus/test` fails in a ReScript package** under the root `vp`
+  ("Vitest failed to find the runner"): the workspace has two copies of vite-plus 1.3.0 (different
+  peer sets), the root `vp` runs its own Vitest, and the package's `vite-plus/test` is the other's.
+  It passes when run with the package's own `vp`, and in `vite_plugin_weft` either way. ReScript
+  tests, through `rescript-vitest`, are fine, so `weft_split`'s build test is `Build_test.res`, with
+  the file and Vite work in a JavaScript helper (`BuildSupport.mjs`).
+- **Rolldown doesn't know a module's importers yet in `transform`**: the plugin's build reports a
+  client import of a server file at `buildEnd`, once the graph is complete.
+- **The built client's shared code is in the bootstrap's chunk**, so importing an entrypoint's chunk
+  runs the bootstrap: `weft_split`'s test does it under jsdom, with no `#root` for it to render
+  into.
 
 ## What was verified before writing this
 
@@ -286,9 +307,12 @@ imports the file and walks the module path to the `make`. The browser only ever 
 map, so a server can't make it load arbitrary URLs.
 
 Files are found by **scanning the compiled output** for the directive: `rescript build` has already
-written every `.res.js` before Vite starts, so a glob over the app's sources (and its ReScript
-dependencies') is simple and deterministic, and doesn't need a server build first. The cost is that
-an entrypoint no server component renders still gets a chunk, which is harmless. (React's plugin
+written every `.res.js` before Vite starts, so a walk over the app's sources (and its ReScript
+dependencies', found as ReScript finds them, through `node_modules`; dev sources left out) is simple
+and deterministic, and doesn't need a server build first. The plugin makes each file's id as the PPX
+does (the nearest `rescript.json`'s `name`, then the source's path), and checks it against the ids
+in the file's `Entrypoint.mark` calls, so the two can't silently disagree. The cost is that an
+entrypoint no server component renders still gets a chunk, which is harmless. (React's plugin
 instead builds the server graph first to find client references; that can come later if it's ever
 needed.)
 
@@ -301,13 +325,18 @@ and the compiler can change it, while trying both names can't go wrong (a module
 
 ### 4. The Vite plugin (`packages/vite_plugin_weft`, `@e-cline/vite_plugin_weft`)
 
-TypeScript, on the Environment API. Configured with the server entry (a module exporting a fetch
-handler, as `@e-cline/servy`'s `App.t` is) and the client bootstrap's options:
+TypeScript, on the Environment API (Vite 8, through Vite+). Configured with the server entry (a
+module whose default export is a fetch handler, as `@e-cline/servy`'s `App.t` is:
+`let default = app`) and the client bootstrap:
 
 ```ts
-// examples/weft_notes/vite.config.ts
-plugins: [weft({server: './src/Server.res.js'})],
+// examples/weft_split/vite.config.ts
+plugins: [weft({server: 'src/Server.res.js', client: 'src/Client.res.js'})],
 ```
+
+(As built in phase 4, the bootstrap is the app's own module, which imports what it needs from
+`virtual:weft/client`. Phase 5 can give `client` a default, a bootstrap in `weft_server` that does
+what's described below, once `Page` and navigation exist.)
 
 What it does:
 
@@ -316,27 +345,47 @@ What it does:
   condition); Weft's runtime is the same everywhere, so HTML rendering (phase 6) runs in `rsc` too.
 - **Virtual modules**:
   - `virtual:weft/client-references` (client): the map in §3.
-  - `virtual:weft/client` (client): the bootstrap. Reads the rows the HTML stream delivers, creates
-    a `WeftDom.Client` root and renders into it, and wires up navigation (§7).
-  - `virtual:weft/assets` (rsc): the bootstrap script's URL, and, for each entrypoint file, its
-    chunk and the chunks it imports (for `modulepreload` hints). In dev these are `/src/...` URLs;
-    in a build, they come from the client build's `manifest.json`.
-- **Enforcing the boundary.** In the client environment's `transform`, a module with the
-  `'use weft server'` directive is an error, naming who imported it. Both directives are removed in
-  `transform` (bundlers warn about module-level directives they don't understand).
-- **Dev server.** A middleware passes requests to the server entry through the `rsc` environment's
-  module runner (`@hono/node-server`'s `getRequestListener` turns the fetch handler into a Node
-  listener), so a request always runs the current code. ReScript compiles in its own process
-  (`vp run -w res:watch`), so changes arrive as `.res.js` writes:
+  - `virtual:weft/client` (client): what a bootstrap needs from the plugin: `loadModule` (from the
+    map), and `onRefresh`, for the server HMR event. The bootstrap reads the rows the HTML stream
+    delivers, creates a `WeftDom.Client` root and renders into it, and wires up navigation (§7).
+  - `virtual:weft/assets` (rsc): `{scripts, preloads, styles, entrypoints}`: the module scripts to
+    load (in dev, `/@vite/client` and the bootstrap), the bootstrap's imports (for `modulepreload`
+    links) and stylesheets, and, for each entrypoint file, its chunk and the chunks it imports. In
+    dev these are `/src/...` URLs; in a build, they come from the client build's `manifest.json`.
+  - A client environment importing `virtual:weft/assets`, or the server one the client modules, is
+    an error.
+- **Enforcing the boundary.** A module with the `'use weft server'` directive reaching the client
+  environment's `transform` is an error, naming the chain of imports from the entry to it: in dev at
+  once (the module graph knows who asked for it), in a build at `buildEnd` (Rolldown only knows a
+  module's importers once the graph is complete). Both directives are blanked out in `transform`
+  (bundlers warn about module-level directives they don't understand); replacing them with spaces
+  keeps every position, so no source map is needed. A server-only module with no server components
+  has no directive, so nothing stops the client importing it; the build test's sentinel is what
+  checks that.
+- **A missing PPX** is caught early: if the app's `rescript.json` doesn't list `ppx_weft` in its
+  `ppx-flags`, the plugin stops with a message saying what to add (and what the compiler's error
+  without it looks like).
+- **Dev server.** `appType: 'custom'`, and a middleware, after Vite's own, passes requests to the
+  server entry through the `rsc` environment's module runner (`@hono/node-server`'s
+  `getRequestListener` turns the fetch handler into a Node listener), so a request always runs the
+  current code. ReScript compiles in its own process (`vp run -w res:watch`), so changes arrive as
+  `.res.js` writes:
   - a server-only module changed: send a custom HMR event, and the bootstrap refetches the current
     page's payload and renders it in a transition, keeping client state, like React's server HMR;
-  - a client module changed: a full reload (Weft has no fast refresh).
-- **Build** (`buildApp`): the client first (its entries are the bootstrap and every entrypoint file,
-  known from the scan), then `rsc`, whose `virtual:weft/assets` reads the client manifest. Output:
-  `dist/client/` (static files) and `dist/server/index.js` (the handler). The example's `start` task
-  serves both.
+  - a client module changed: a full reload (Weft has no fast refresh);
+  - a file became an entrypoint file, or stopped being one (or one was deleted): the scan is redone,
+    the reference map and assets invalidated, and the page reloaded.
+- **Build** (`buildApp`): the client first, then `rsc`, whose `virtual:weft/assets` reads the client
+  manifest. The client's one entry is the bootstrap: the entrypoint files are chunks because
+  `virtual:weft/client-references` `import()`s each, which also keeps all their exports (making them
+  entries too, as first planned, wasn't needed). Output: `dist/client/` (static files) and
+  `dist/server/index.js` (the handler). `serve` (in `@e-cline/vite_plugin_weft/node`) runs both,
+  `dist/client` as static files (not the manifest) and the rest through the handler; the example's
+  `start` task uses it.
 - **Conditions.** `@e-cline/js_env`'s development/production export conditions (which
-  `Common.Env.isDev` relies on) have to be set for the `rsc` environment as well as the client.
+  `Common.Env.isDev` relies on) have to apply in the `rsc` environment as well as the client. Vite's
+  server environments already resolve with them, but leave dependencies in `node_modules` to Node,
+  which would always pick production, so the plugin makes `@e-cline/js_env` `noExternal` there.
 
 ### 5. The wire format and the server renderer (`packages/weft_server`)
 
@@ -662,16 +711,25 @@ TypeScript, against small fixture apps whose "compiled ReScript" is hand-written
 (directives included), so these tests depend on neither ReScript nor the PPX; `weft_split` below
 covers the real thing.
 
-- **Unit**: the scan finds exactly the files with the entrypoint directive; directives are removed;
-  the generated `virtual:weft/client-references` and `virtual:weft/assets`; a client import of a
-  server file fails, naming the chain.
-- **Build**: Vite's `build` on a fixture: one chunk per entrypoint file, a sentinel string from a
-  server module appears nowhere in `dist/client`, and the manifest names each entrypoint's chunk and
-  its imports. A second fixture, whose client code imports a server file, fails to build with the
-  expected message.
+- **Unit**: the scan finds exactly the files with the entrypoint directive (in the app, in
+  subdirectories and subdirectory lists, and in a ReScript dependency; not in dev sources or files
+  without the suffix), with the PPX's ids, and fails on marks that disagree or a missing dependency;
+  directives are found only in the prologue, and blanked out keeping positions; the generated
+  `virtual:weft/client-references` (run, with its `loadModule` refusing other ids) and
+  `virtual:weft/assets` (from a hand-made manifest, and in dev).
+- **Build**: `buildApp` on a fixture: one chunk per entrypoint file, a shared module in a chunk both
+  import, a large client-only module only in its one user's chunk, a sentinel string from a server
+  module nowhere in `dist/client`, the export names (`$$Error`) kept, the server's assets made from
+  the manifest, the production conditions, and `serve` answering files and pages (and not the
+  manifest, or anything outside `dist/client`). A second fixture, whose client code imports a server
+  file through a shared one, fails to build with the chain in the message; so does the first without
+  the PPX in its `rescript.json`.
 - **Dev**: `createServer` in the test process: a page and a payload come back through the
-  middleware; changing a server-only file sends the refresh event on the client's HMR channel, and
-  changing an entrypoint file a full reload.
+  middleware, with the development conditions; the client gets the references and directive-free
+  files, and is refused a server file (with the chain) and the server's virtual module; changing a
+  server-only file sends the refresh event on the client's HMR channel and the next request runs the
+  new code, changing an entrypoint file sends a full reload, and a file becoming an entrypoint file
+  (or one being deleted) updates the references.
 
 #### Tier 2: the app harness (`@e-cline/vite_plugin_weft/testing`)
 
@@ -795,9 +853,12 @@ entrypoints sharing a module, an entrypoint that renders another, one used on on
 large client-only module (with a sentinel) imported by one entrypoint, and a server-only module
 (with another). Its tests:
 
-- **the build**: `vp build`, then assertions on the manifest and `dist/client`: each entrypoint file
-  is its own chunk, the shared module is a chunk both import, the large module is only in the chunk
-  of the entrypoint using it, and the server sentinel is nowhere;
+- **the build** (phase 4): the app built with its own config, then assertions on the manifest and
+  `dist/client`: each entrypoint file is its own chunk, the shared module is a chunk both import,
+  the entrypoint rendering another imports its chunk, the large module is only in the chunk of the
+  entrypoint using it, the server sentinel and the directives are nowhere, and `$$Error` is
+  exported; then the built server's payload for each route, decoded with the built chunks, loads
+  exactly the entrypoint files that route uses;
 - **the built app, through the harness** (`Build` mode): every route renders, and only the chunks a
   page uses are loaded;
 - the same scenarios in `Source` mode, so a difference between dev and build shows up as one passing
@@ -885,7 +946,10 @@ pages and navigation; the frame cases of the in-place tests come with them.
 **Phase 4 -- The Vite plugin, and `weft_split`.** Environments, the virtual modules, the scan, the
 boundary check, the dev middleware and the build, with the plugin's unit, build and dev tests on its
 fixtures. Then `examples/weft_split` and its build tests, the first time the real PPX output goes
-through the plugin. (Its harness tests wait for phase 5.)
+through the plugin. (Its harness tests wait for phase 5.) Done; it also brought `serve` (running a
+build on Node), the missing-PPX check, and server HMR as far as the plugin goes (the event, and
+`onRefresh`). Until `Page` exists, `weft_split`'s server answers a page with a shell that loads the
+bootstrap, which then fetches the payload; it works the same in `vp dev` and built.
 
 **Phase 5 -- Pages, navigation, the harness and `weft_notes`.** First the tier 2 spike (§9), which
 decides between the worker and the one-thread fallback. Then `Page`, the bootstrap,

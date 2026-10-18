@@ -21,6 +21,7 @@
     "@e-cline/ppx_weft_tests",
     "@e-cline/tree_shaking_example",
     "@e-cline/http_server_example",
+    "@e-cline/weft_split_example",
     "@e-cline/servy"
   ],
   "package-specs": [

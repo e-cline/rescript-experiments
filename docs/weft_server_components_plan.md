@@ -260,7 +260,7 @@ is for the PPX to write the JS export path into the id, applying the same rule.
 ### 4. The Vite plugin (`packages/vite_plugin_weft`, `@e-cline/vite_plugin_weft`)
 
 TypeScript, on the Environment API. Configured with the server entry (a module exporting a fetch
-handler, as `@e-cline/server`'s `App.t` is) and the client bootstrap's options:
+handler, as `@e-cline/servy`'s `App.t` is) and the client bootstrap's options:
 
 ```ts
 // examples/weft_notes/vite.config.ts
@@ -299,7 +299,7 @@ What it does:
 ### 5. The wire format and the server renderer (`packages/weft_server`)
 
 A new ReScript package, namespace `WeftServer`, depending on `weft_core` and nothing
-server-specific: `Render` produces a Web `ReadableStream<Uint8Array>`, which `@e-cline/server`'s
+server-specific: `Render` produces a Web `ReadableStream<Uint8Array>`, which `@e-cline/servy`'s
 `Respond.stream` (or any fetch-style server) can send. `Client` is browser-safe and shares the
 format module, `Payload`.
 
@@ -393,7 +393,7 @@ their state, and the reconciler only touches what changed. `WeftServer.Client.na
 Both use a `fetch` the client is created with (the global one, from the bootstrap), so a test can
 give it one that goes to a stubbed server instead (§9).
 
-A helper in `weft_server` (or the example) puts this together for `@e-cline/server`:
+A helper in `weft_server` (or the example) puts this together for `@e-cline/servy`:
 `Page.respond(request, element)` picks HTML or payload from the `Accept` header.
 
 **In-place updates.** A refetch is never a remount: the new payload is decoded into ordinary
@@ -678,7 +678,7 @@ catch.
 
 #### Example apps
 
-Both are Vite apps served by `@e-cline/server`, with their data behind an interface the tests
+Both are Vite apps served by `@e-cline/servy`, with their data behind an interface the tests
 replace: a fake database, in the server's realm, whose queries each wait on a named gate the test
 opens through `callServer`, so the order things finish in is the test's choice, not a timer's. In
 `vp dev` the gates are timers instead, so the streaming is visible by hand; in the browser tests, a
@@ -845,6 +845,6 @@ references and cycles in payloads, context on the server, and caching rendered o
 - **Tiers 1 and 2 never run real HTML streaming or chunk loading.** The browser tests do, but only
   for a few scenarios, so a browser-only problem elsewhere could get through. Keeping the first
   page's HTML reading in tier 2 identical to the bootstrap's (one shared module) narrows it.
-- **Naming**: `weft_server` sits next to `@e-cline/server` (HTTP); `weft_rsc` is the alternative.
-  `kind: Entrypoint` could equally be `kind: Client`; "entrypoint" says more precisely that it's
-  where client code starts, and everything it imports comes along.
+- **Naming**: `weft_server` could be mistaken for an HTTP server (that's `@e-cline/servy`);
+  `weft_rsc` is the alternative. `kind: Entrypoint` could equally be `kind: Client`; "entrypoint"
+  says more precisely that it's where client code starts, and everything it imports comes along.

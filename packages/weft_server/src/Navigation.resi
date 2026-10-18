@@ -14,13 +14,16 @@ let navigation = WeftServer.Navigation.useNavigation()
 <button onClick={_ => navigation->WeftServer.Navigation.refresh->ignore}> {...} </button>
 ```
 
-A part of the page can be fetched again by itself with `useRefetchable` (which `Frame` wraps), and
-entrypoints inside a `Frame` reach it with `useFrame`:
+An entrypoint can fetch part of the page again by itself with `useRefetchable`: given `children`
+from the server, it shows them until it's refetched, then what it fetched.
 
 ```rescript
-// in an entrypoint inside a <WeftServer.Frame>
-let comments = WeftServer.Navigation.useFrame()
-<button onClick={_ => comments.refetch()->ignore}> {...} </button> // comments.isPending
+// in an entrypoint, given the comments (rendered on the server) as `children`
+let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
+<section>
+  <button onClick={_ => comments.refetch()->ignore}> {...} </button> // comments.isPending
+  comments.element
+</section>
 ```
 */
 
@@ -90,15 +93,3 @@ render has been started, or straight away if a newer refetch replaced it, and re
 screen as it was) if the payload's root failed.
 */
 let useRefetchable: (~src: string, WeftCore.Element.t) => refetchable
-
-/** A part of the page that can be fetched again by itself: what `useFrame` gives. */
-type frame = {
-  refetch: (~url: string=?) => promise<unit>,
-  isPending: bool,
-}
-
-/** `element`, with `frame` as what `useFrame` returns in it (what `Frame` does with its own). */
-let withFrame: (frame, WeftCore.Element.t) => WeftCore.Element.t
-
-/** The frame an entrypoint is in: the nearest `Frame` above it. Fails outside one. */
-let useFrame: unit => frame

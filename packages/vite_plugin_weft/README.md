@@ -106,7 +106,7 @@ await page->WeftTesting.navigate("/notes/2")
 - **The page runs in the test's jsdom**, with the real bootstrap and the real reference map (the
   test's Vite config has the weft plugin, as the app's own does). Its first request is the HTML,
   whose rows are pushed as its inline scripts would push them; every request after that (payloads,
-  frames, an entrypoint's own `fetch`) goes to the worker too.
+  refetches, an entrypoint's own `fetch`) goes to the worker too.
 - **The test decides when bytes arrive**: as they're sent, one chunk per `deliver`, or cut every _n_
   bytes. Cancelling a response (a navigation away) aborts the request in the worker.
 - **What it checks**: `waitFor` a condition, `settle` until quiet, `loads` (and `holdLoads` to make

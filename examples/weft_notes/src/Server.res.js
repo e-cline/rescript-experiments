@@ -59,11 +59,11 @@ let noteRoutes = [
     tl: {
       hd: ":id",
       tl: {
-        hd: "header",
+        hd: "title",
         tl: /* [] */0
       }
     }
-  }, async ctx => await page("Note", param => Jsx$WeftDom.jsx(Pages$WeftNotes.NoteHeader.make, {
+  }, async ctx => await page("Note", param => Jsx$WeftDom.jsx(Pages$WeftNotes.NoteTitle.make, {
     id: RequestContext$Servy.paramOrThrow(ctx, "id")
   }))(ctx)),
   Route$Servy.get({

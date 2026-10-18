@@ -213,7 +213,7 @@ describe("posting", () => {
   })
 
   testAsync(
-    "a new title refetches the header frame: new props, the draft, focus and selection kept, nothing else touched",
+    "a new title refetches the saved title alone: the draft, focus and selection kept, nothing else touched",
     async t => {
       let page = await openNote()
       let input = page->WeftTesting.query("#title-input")->Option.getOrThrow
@@ -236,12 +236,12 @@ describe("posting", () => {
       t->expect(page->WeftTesting.renderCount(commentForm))->Expect.toBe(formRenders)
       t
       ->expect(page->WeftTesting.pageRequests)
-      ->Expect.toEqual(["/notes/1", "/notes/1", "/notes/1/header"])
+      ->Expect.toEqual(["/notes/1", "/notes/1", "/notes/1/title"])
     },
   )
 })
 
-describe("the comments frame", () => {
+describe("the comments, refetched by themselves", () => {
   testAsync(
     "reloaded after another user's changes: the new comment inserted, the edited one updated in place",
     async t => {

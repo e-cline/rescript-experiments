@@ -47,15 +47,15 @@ Phases 0--5 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a f
 the phases will go in one PR, not opened yet). Next is phase 6: HTML rendering and hydration, which
 may want a plan of its own.
 
-| Phase | What                                                           | Where                                                          |
-| ----- | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| 0     | `ppx_weft` (attribute rename and checks), shared opam switch   | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
-| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`              | `packages/weft_core`, `packages/weft`                          |
-| 2     | async server components, entrypoint ids and directives         | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
-| 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`           | `packages/weft_server`, `packages/weft_core`                   |
-| 4     | the Vite plugin, `serve`; the `weft_split` example             | `packages/vite_plugin_weft`, `examples/weft_split`             |
-| 5     | `Page`, `Bootstrap`, `Navigation`, `Frame`; the tier 2 harness | `packages/weft_server`, `packages/vite_plugin_weft`            |
-|       | `weft_notes` (tier 2 scenarios, tier 3 browser tests)          | `examples/weft_notes`, `examples/weft_split`                   |
+| Phase | What                                                                | Where                                                          |
+| ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| 0     | `ppx_weft` (attribute rename and checks), shared opam switch        | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
+| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`                   | `packages/weft_core`, `packages/weft`                          |
+| 2     | async server components, entrypoint ids and directives              | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
+| 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`                | `packages/weft_server`, `packages/weft_core`                   |
+| 4     | the Vite plugin, `serve`; the `weft_split` example                  | `packages/vite_plugin_weft`, `examples/weft_split`             |
+| 5     | `Page`, `Bootstrap`, `Navigation`, `useRefetchable`; tier 2 harness | `packages/weft_server`, `packages/vite_plugin_weft`            |
+|       | `weft_notes` (tier 2 scenarios, tier 3 browser tests)               | `examples/weft_notes`, `examples/weft_split`                   |
 
 Where the implementation went its own way, the sections below say so. Things learned on the way, for
 whoever picks this up:
@@ -471,7 +471,7 @@ before `#`, to a promise of the compiled file's module) is what the bootstrap fi
 `fetch`. Taking both as arguments is also what lets tests run without Vite or a network (§9).
 `client->Client.fetchElement(url)` fetches and decodes; `Client.Latest` runs fetches that replace
 each other (the newest cancels the one before, and only its element is returned), which `navigate`
-and frames use.
+and `useRefetchable` use.
 
 - Each row is a `WeftCore.Deferred`: a promise settled from outside, whose outcome `Hooks.use` and
   `Lazy` can read the moment it's settled (an ordinary promise's outcome is only known a microtask
@@ -565,45 +565,40 @@ its stream cancelled. What the cancelled payload hadn't delivered yet is left wa
 it may still be on screen (under a fallback) until the newer payload has rendered, and failing it
 would throw there. Only its root row fails, so whoever awaited it is told.
 
-**Refetching part of the page.** A whole-page `refresh()` is the simple case. For a part of it,
-`WeftServer.Frame` is a built-in entrypoint (marked with `Entrypoint.mark` by hand, since
-`weft_server` itself doesn't use the PPX, and given the entrypoint directive with `@@directive`, so
-the plugin's scan finds it in any app depending on `weft_server`) that a server component wraps
-around a subtree:
+**Refetching part of the page.** A whole-page `refresh()` is the simple case. For a part of it, an
+entrypoint uses `WeftServer.Navigation.useRefetchable(~src, children)`: given `children` rendered on
+the server (as any element prop is), it returns the element to show, `refetch` and `isPending`.
 
 ```rescript
-// in a server component
-<WeftServer.Frame src={`/notes/${id}/comments`}>
-  <ReloadButton />
-  <Comments noteId=id />
-</WeftServer.Frame>
+// in a server component: the comments, rendered here, given to an entrypoint as children
+<CommentsPanel noteId=id> <Comments noteId=id /> </CommentsPanel>
 
-// in ReloadButton, or any entrypoint inside the frame
-let comments = WeftServer.Navigation.useFrame()
-<button onClick={_ => comments.refetch()}> {Weft.Jsx.string("Reload")} </button>
+// in CommentsPanel, the entrypoint
+let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
+<div>
+  <button onClick={_ => comments.refetch()->ignore}> {Weft.Jsx.string("Reload")} </button>
+  {comments.element}
+</div>
 // comments.isPending is true until the new subtree has rendered
 ```
 
-The frame renders its `children` (rendered on the server, like any element prop) until it's
-refetched, then fetches `src` (or a URL `refetch` is given) as a payload, and renders that element
-in their place, in a transition, under the same rules. The route at `src` renders just that subtree,
-with `Page.respond`. If a later full `refresh()` or `navigate` gives the frame new `children`, the
-newest content wins, whichever way it came. Underneath is `WeftServer.Client.fetchElement(url)`, a
-promise of a decoded element an entrypoint can keep in its own state, for anything `Frame` doesn't
-cover.
+It shows its `children` until it's refetched, then fetches `src` (or a URL `refetch` is given) as a
+payload, and shows that element in their place, in a transition, under the same rules. The route at
+`src` renders just that subtree, with `Page.respond`. Doing this by hand with `useState` and
+`fetchElement` gets three things wrong easily, which the hook does: newer `children` from a later
+`refresh()` or `navigate` win over what was refetched (state initialised from a prop would ignore
+them), a refetch cancels the one before (a slow response can't land after a newer one), and the
+render is a transition (boundaries don't flash their fallbacks, and `isPending` covers the fetch as
+well as the render). Underneath is `WeftServer.Client.fetchElement(url)`, a promise of a decoded
+element, for anything the hook doesn't cover.
 
-As built (after a review of phase 5), the frame's behaviour is a hook,
-`Navigation.useRefetchable(~src, children)`, returning the element to show, `refetch` and
-`isPending`, and `Frame` is a thin entrypoint over it. Doing it by hand with `useState` and
-`fetchElement` gets three things wrong easily: newer `children` from a refresh are ignored (state
-initialised from a prop), a slow response can land after a newer one, and without a transition
-boundaries flash their fallbacks (and `isPending` misses the fetch). The hook does those, so an
-entrypoint wanting its own refetching uses it rather than `Frame`. `useFrame()` is the nearest
-`Frame` above, through context (`Navigation.withFrame`). An earlier version named frames
-(`<Frame name>`, and `useFrame(name)` from anywhere on the page, through a page-wide registry); that
-was dropped, since names collide and the registry leaked into the public interface. Something that
-refetches a part of the page goes inside its frame, or is an entrypoint of its own around that part,
-using `useRefetchable`.
+As first planned and built in phase 5, this was `WeftServer.Frame`, a built-in entrypoint a server
+component wrapped around a subtree, which entrypoints anywhere on the page refetched by name
+(`useFrame("comments")`, through a page-wide registry). Reviewing phase 5, the names (which collide,
+and whose registry leaked into the public interface) went first, leaving `Frame` a thin entrypoint
+over `useRefetchable` found through context, and then `Frame` itself: an app's own entrypoint around
+the part it refetches says what it does more plainly, and needs no hand-marked built-in entrypoint
+in every app's reference map.
 
 **Keys.** A list a server component builds at runtime (`Jsx.array`) and one written out in JSX look
 the same once they've been through the payload, so the client marks every list it decodes as written
@@ -730,13 +725,13 @@ On the TestRenderer and TestScheduler, as the existing Suspense tests are:
     a boundary new in B shows its fallback; an entrypoint chunk B needs that isn't loaded yet keeps
     A on screen until it is;
   - _ordering_: two refetches of the same place whose responses arrive in the wrong order: only the
-    newer is rendered, and the older's stream is cancelled; refetches of two different frames don't
+    newer is rendered, and the older's stream is cancelled; refetches of two different parts don't
     interfere;
-  - _frames_: `useFrame().refetch()` patches only that frame's subtree (nothing outside it renders,
-    per the render counts) and `isPending` is true until it has; a full `refresh()` afterwards with
-    new `children` for the frame wins over the refetched content, and a refetch after that wins over
-    the `children`; a context provided by an entrypoint above a frame still reaches entrypoints
-    inside it after a refetch;
+  - _parts refetched_ (`useRefetchable`): a refetch patches only that part's subtree (nothing
+    outside it renders, per the render counts) and `isPending` is true until it has; a full
+    `refresh()` afterwards with new `children` for the part wins over the refetched content, and a
+    refetch after that wins over the `children`; a context provided by an entrypoint above a part
+    still reaches entrypoints inside it after a refetch;
   - _errors_: a refetch that fails with an `X` row inside a boundary shows that boundary's error
     while everything else keeps its state; one that fails at row 0 leaves the screen as it was and
     rejects the refetch.
@@ -837,8 +832,8 @@ each test opens pages on it, in containers of its own.
   hands those to the client everything at once, one chunk per `deliver`, or re-chunked every _n_
   bytes, so a scenario can be run at several chunk sizes. Cancelling the response on the client (a
   navigation away) cancels the body stream in the worker, so the server sees the abort. Requests
-  from `navigate`, `refresh`, frames and entrypoints' own `fetch`es (a form posting a comment) all
-  go this way.
+  from `navigate`, `refresh`, refetches and entrypoints' own `fetch`es (a form posting a comment)
+  all go this way.
 - **Calling into the server.** `callServer(module, export, args)` imports a module through the
   worker's runner (the same instance the app uses) and calls an export with JSON arguments. It's how
   tests open the fake database's gates, ask which queries are waiting, or change data behind the
@@ -880,10 +875,10 @@ test-only route opens them.
 list page and a note page with three boundaries (the note, its comments, related notes), a
 `LikeButton` entrypoint with state, a comment form entrypoint that posts to a route and calls
 `refresh()`, a `CommentList` entrypoint receiving its comments as a promise prop, a `NoteEditor`
-entrypoint (a draft in state, the saved title and "saved at" time as props) whose save posts and
-refetches the note's header frame, the comments in a `Frame` with a reload button, a server
-component that fails inside an error boundary, and links that `navigate`. Its tests, through the
-tier 2 harness, from source:
+entrypoint (a draft in state, the saved title and "saved at" time as children rendered on the
+server) whose save posts and refetches those, the comments in a `CommentsPanel` entrypoint that
+refetches them with a reload button, a server component that fails inside an error boundary, and
+links that `navigate`. Its tests, through the tier 2 harness, from source:
 
 - the shell and row 0 render, then each boundary's content replaces its fallback as its gate opens,
   in whichever order the test opens them;
@@ -896,12 +891,12 @@ tier 2 harness, from source:
   loads;
 - navigating away while the page is still streaming cancels the old response (the fake database sees
   its waiters abandoned) and none of its rows land;
-- saving in `NoteEditor` refetches the header frame: the new title and "saved at" arrive as props,
-  the draft and the input's focus and selection are kept, the input is the same DOM node, and
-  nothing outside the frame changes (`removedSince`, render counts);
-- reloading the comments frame after another "user" adds a comment through the fake database: the
-  new comment is inserted, the existing comment nodes are kept, and a comment whose text was edited
-  is updated in place;
+- saving in `NoteEditor` refetches the saved title: the new title and "saved at" arrive, the draft
+  and the input's focus and selection are kept, the input is the same DOM node, and nothing outside
+  the refetched part changes (`removedSince`, render counts);
+- reloading the comments after another "user" adds a comment through the fake database: the new
+  comment is inserted, the existing comment nodes are kept, and a comment whose text was edited is
+  updated in place;
 - the like count changes on the server while `LikeButton` has a local "just liked" state: after a
   `refresh()` the button shows the server's count and keeps that state;
 - reloading comments while their gate is held keeps the old comments on screen (not the fallback),
@@ -934,7 +929,7 @@ enabled by `WEFT_NOTES_TEST_ROUTES=1`, which the test server sets:
 
 - the first page streams: the shell and row 0 show, then each boundary fills in as its gate opens;
 - an entrypoint's chunk is requested only once a page uses it, and once only (from the network log);
-- saving in `NoteEditor` refetches its frame and keeps the input's focus and selection;
+- saving in `NoteEditor` refetches the saved title and keeps the input's focus and selection;
 - navigating between notes keeps the like button's state, and the back button works.
 
 They run in CI on one Node version, as a job of their own (`vp run e2e`, after
@@ -959,8 +954,7 @@ packages/weft_server/              namespace WeftServer
   src/Client.res(i)                stream => elements; fetchElement, Latest
   src/Page.res(i)                  the HTML shell with inlined rows; respond (HTML or payload)
   src/Bootstrap.res(i)             the browser's start: rows from the page, a root, history
-  src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useRefetchable, useFrame
-  src/Frame.res(i)                 the built-in entrypoint for refetching part of a page
+  src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useRefetchable
   src/Testing.res(i)               tier 1 helpers: a stub stream, entrypoints served from a map
 packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
   src/testing.ts, testingWorker.ts the tier 2 harness (`/testing` export): Vite server, worker, port
@@ -1005,8 +999,8 @@ update fuzz test (§9), with `fetchElement` and request ordering (`Client.Latest
 `WeftServer.Testing` (the tier 1 helpers: a pipe the test controls, modules from a map) comes with
 them. `weft_core` gains `Deferred` (rows readable the moment they arrive),
 `ServerRender.suspendedOn` (so the renderer needn't reach into its internals), and rejected lazies
-throwing from their own position. The frames in §7 (`Frame`, `useFrame`) wait for phase 5, with
-pages and navigation; the frame cases of the in-place tests come with them.
+throwing from their own position. Refetching part of a page (§7) waits for phase 5, with pages and
+navigation; those cases of the in-place tests come with them.
 
 **Phase 4 -- The Vite plugin, and `weft_split`.** Environments, the virtual modules, the scan, the
 boundary check, the dev middleware and the build, with the plugin's unit, build and dev tests on its
@@ -1018,12 +1012,12 @@ bootstrap, which then fetches the payload; it works the same in `vp dev` and bui
 
 **Phase 5 -- Pages, navigation, the harness and `weft_notes`.** First the tier 2 spike (§9), which
 decides between the worker and the one-thread fallback. Then `Page`, the bootstrap,
-`navigate`/`refresh`, `Frame` and `useFrame`, and server HMR; the tier 2 harness and its bindings;
-`examples/weft_notes` with its scenario tests; `weft_split`'s harness tests, from source and built;
-and the tier 3 browser tests, with the `e2e` task wired into CI. Done. Along the way: navigation
-became a module of its own (`Navigation`, with `useRefetchable` and `useFrame`; frames lost their
-names after review), `Bootstrap` and the plugin's default bootstrap came with it, `weft_server`
-gained dependencies on `weft_dom` (the bootstrap) and `@rescript/webapi` (`Page.respond`), cancelled
+`navigate`/`refresh`, refetching part of a page, and server HMR; the tier 2 harness and its
+bindings; `examples/weft_notes` with its scenario tests; `weft_split`'s harness tests, from source
+and built; and the tier 3 browser tests, with the `e2e` task wired into CI. Done. Along the way:
+navigation became a module of its own (`Navigation`, with `useRefetchable`, which replaced `Frame`
+after review), `Bootstrap` and the plugin's default bootstrap came with it, `weft_server` gained
+dependencies on `weft_dom` (the bootstrap) and `@rescript/webapi` (`Page.respond`), cancelled
 payloads leave their rows waiting rather than failing them, the server took over warning about
 missing keys, and `weft_split` switched to `Page` and the default bootstrap (with a `Link`
 entrypoint, for navigating in build mode).

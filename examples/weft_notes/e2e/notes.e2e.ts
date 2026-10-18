@@ -63,7 +63,7 @@ test("an entrypoint's chunk is requested once a page uses it, and only once", as
   expect(likeChunks).toHaveLength(1);
 });
 
-test("saving a title refetches the header's frame, keeping the input's focus and selection", async ({
+test("saving a title refetches the saved title, keeping the input's focus and selection", async ({
   page,
   request,
 }) => {

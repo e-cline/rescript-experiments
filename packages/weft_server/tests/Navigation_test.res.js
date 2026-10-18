@@ -3,7 +3,6 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_Dict from "@rescript/runtime/lib/es6/Stdlib_Dict.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Frame$WeftServer from "../src/Frame.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
 import * as Client$WeftServer from "../src/Client.res.js";
@@ -55,17 +54,14 @@ function reset() {
 
 function Navigation_test$CommentList(props) {
   return TestJsx$WeftCore.Elements.jsxs("ul", {
-    id: "comments",
+    id: "comment-list",
     children: [
       TestJsx$WeftCore.Elements.jsx("li", {
         id: "text",
         children: Support$WeftServer.text(commentsOf(props.page))
       }),
       TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
-        label: "in-frame"
-      }),
-      TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-        label: "comments"
+        label: "in-part"
       })
     ]
   });
@@ -96,7 +92,8 @@ function route(url) {
           TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
             label: "outside"
           }),
-          TestJsx$WeftCore.jsx(Frame$WeftServer.make, {
+          TestJsx$WeftCore.jsx(Support$WeftServer.Refetching.make, {
+            id: "comments",
             src: `/comments/` + page,
             children: TestJsx$WeftCore.jsx(Navigation_test$CommentList, {
               page: page
@@ -237,15 +234,15 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
   });
 });
 
-function refetch(label) {
-  return Support$WeftServer.frames[label].refetch(undefined);
+function refetch(src) {
+  return Support$WeftServer.refetchers[src](undefined);
 }
 
 function pending(renderer) {
-  return Stdlib_Option.flatMap(TestRenderer$WeftCore.findById(renderer, "comments-button"), node => TestRenderer$WeftCore.props(node).title);
+  return Stdlib_Option.flatMap(TestRenderer$WeftCore.findById(renderer, "comments"), node => TestRenderer$WeftCore.props(node).title);
 }
 
-Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("refetched, patches only its own subtree, and is pending until that has rendered", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
     let match = Support$WeftServer.serve(url => {
@@ -259,11 +256,11 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     let match$1 = await start(match[0], route, "/a", undefined);
     let renderer = match$1[0];
     Support$WeftServer.bump("outside");
-    Support$WeftServer.bump("in-frame");
+    Support$WeftServer.bump("in-part");
     let outsideRenders = Support$WeftServer.rendersOf("outside");
     let textNode = uid(renderer, "text");
     comments["a"] = "two comments";
-    let done = refetch("comments");
+    let done = Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
     t.expect(pending(renderer)).toEqual("pending");
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
@@ -271,7 +268,7 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     await Support$WeftServer.settle();
     t.expect(pending(renderer)).toEqual("idle");
     t.expect(TestRenderer$WeftCore.toString(renderer).includes("two comments")).toBe(true);
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("in-frame:1")).toBe(true);
+    t.expect(TestRenderer$WeftCore.toString(renderer).includes("in-part:1")).toBe(true);
     t.expect(TestRenderer$WeftCore.toString(renderer).includes("outside:1")).toBe(true);
     t.expect(Support$WeftServer.rendersOf("outside")).toBe(outsideRenders);
     t.expect(uid(renderer, "text")).toEqual(textNode);
@@ -283,7 +280,7 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     let match$1 = await start(match[0], route, "/a", undefined);
     let renderer = match$1[0];
     comments["a"] = "refetched";
-    await refetch("comments");
+    await Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
     t.expect(TestRenderer$WeftCore.toString(renderer).includes("refetched")).toBe(true);
     comments["a"] = "refreshed";
@@ -291,7 +288,7 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     await Support$WeftServer.settle();
     t.expect(TestRenderer$WeftCore.toString(renderer).includes("refreshed")).toBe(true);
     comments["a"] = "refetched again";
-    await refetch("comments");
+    await Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
     return t.expect(TestRenderer$WeftCore.toString(renderer).includes("refetched again")).toBe(true);
   });
@@ -313,10 +310,10 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     let served = match[1];
     let match$1 = await start(match[0], route, "/a", undefined);
     comments["a"] = "older";
-    let older = refetch("comments");
+    let older = Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
     comments["a"] = "newer";
-    await refetch("comments");
+    await Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
     await older;
@@ -324,7 +321,7 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     t.expect(TestRenderer$WeftCore.toString(match$1[0]).includes("newer")).toBe(true);
     return t.expect(Testing$WeftServer.cancelled(served[0].pipe)).toBe(true);
   });
-  Vitest.testAsync("a refetch whose root fails rejects, and leaves the frame as it was", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  Vitest.testAsync("a refetch whose root fails rejects, and leaves the part as it was", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
     let match = Support$WeftServer.serve(undefined, route);
     let match$1 = await start(match[0], route, "/a", undefined);
@@ -332,7 +329,7 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
     let before = TestRenderer$WeftCore.toString(renderer);
     let failed;
     try {
-      await Support$WeftServer.frames["comments"].refetch("/fails");
+      await Support$WeftServer.refetchers["/comments/a"]("/fails");
       failed = false;
     } catch (exn) {
       failed = true;
@@ -344,12 +341,13 @@ Vitest.describe("a frame", undefined, undefined, undefined, undefined, undefined
   });
 });
 
-function Navigation_test$TwoFrames(props) {
+function Navigation_test$TwoParts(props) {
   let version = props.version;
   return TestJsx$WeftCore.jsxs(Support$WeftServer.Themed.make, {
     value: "dark",
     children: [
-      TestJsx$WeftCore.jsxs(Frame$WeftServer.make, {
+      TestJsx$WeftCore.jsxs(Support$WeftServer.Refetching.make, {
+        id: "left-part",
         src: "/left",
         children: [
           TestJsx$WeftCore.Elements.jsx("p", {
@@ -358,33 +356,26 @@ function Navigation_test$TwoFrames(props) {
           }),
           TestJsx$WeftCore.jsx(Support$WeftServer.ThemeReader.make, {
             id: "left-theme"
-          }),
-          TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-            label: "left"
           })
         ]
       }),
-      TestJsx$WeftCore.jsxs(Frame$WeftServer.make, {
+      TestJsx$WeftCore.jsx(Support$WeftServer.Refetching.make, {
+        id: "right-part",
         src: "/right",
-        children: [
-          TestJsx$WeftCore.Elements.jsx("p", {
-            id: "right",
-            children: Support$WeftServer.text(`right ` + version)
-          }),
-          TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-            label: "right"
-          })
-        ]
+        children: TestJsx$WeftCore.Elements.jsx("p", {
+          id: "right",
+          children: Support$WeftServer.text(`right ` + version)
+        })
       })
     ]
   });
 }
 
-let TwoFrames = {
-  make: Navigation_test$TwoFrames
+let TwoParts = {
+  make: Navigation_test$TwoParts
 };
 
-Vitest.describe("two frames", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("are refetched independently, and context from above reaches inside a refetched one", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+Vitest.describe("two parts", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("are refetched independently, and context from above reaches inside a refetched one", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
   reset();
   let version = {
     contents: "1"
@@ -400,26 +391,16 @@ Vitest.describe("two frames", undefined, undefined, undefined, undefined, undefi
             }),
             TestJsx$WeftCore.jsx(Support$WeftServer.ThemeReader.make, {
               id: "left-theme"
-            }),
-            TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-              label: "left"
             })
           ]
         });
       case "/right" :
-        return TestJsx$WeftCore.jsxs(TestJsx$WeftCore.jsxFragment, {
-          children: [
-            TestJsx$WeftCore.Elements.jsx("p", {
-              id: "right",
-              children: Support$WeftServer.text(`right ` + version.contents)
-            }),
-            TestJsx$WeftCore.jsx(Support$WeftServer.FrameButton.make, {
-              label: "right"
-            })
-          ]
+        return TestJsx$WeftCore.Elements.jsx("p", {
+          id: "right",
+          children: Support$WeftServer.text(`right ` + version.contents)
         });
       default:
-        return TestJsx$WeftCore.jsx(Navigation_test$TwoFrames, {
+        return TestJsx$WeftCore.jsx(Navigation_test$TwoParts, {
           version: version.contents
         });
     }
@@ -428,49 +409,11 @@ Vitest.describe("two frames", undefined, undefined, undefined, undefined, undefi
   let match$1 = await start(match[0], route, "/", undefined);
   let renderer = match$1[0];
   version.contents = "2";
-  await refetch("left");
+  await Support$WeftServer.refetchers["/left"](undefined);
   await Support$WeftServer.settle();
   t.expect(textIn(renderer, "left")).toEqual("left 2");
   t.expect(textIn(renderer, "right")).toEqual("right 1");
   return t.expect(textIn(renderer, "left-theme")).toEqual("dark");
-}));
-
-Vitest.describe("useRefetchable, by hand", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("refetches, and gives way to newer children from a refresh, as a frame does", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-  reset();
-  let version = {
-    contents: "1"
-  };
-  let route = url => {
-    if (url === "/part") {
-      return TestJsx$WeftCore.Elements.jsx("p", {
-        id: "part",
-        children: Support$WeftServer.text(`part ` + version.contents)
-      });
-    } else {
-      return TestJsx$WeftCore.Elements.jsx("section", {
-        id: "page",
-        children: TestJsx$WeftCore.jsx(Support$WeftServer.Refetching.make, {
-          src: "/part",
-          children: TestJsx$WeftCore.Elements.jsx("p", {
-            id: "part",
-            children: Support$WeftServer.text(`part ` + version.contents)
-          })
-        })
-      });
-    }
-  };
-  let match = Support$WeftServer.serve(undefined, route);
-  let match$1 = await start(match[0], route, "/", undefined);
-  let renderer = match$1[0];
-  version.contents = "2";
-  await Support$WeftServer.refetchers["/part"](undefined);
-  await Support$WeftServer.settle();
-  t.expect(textIn(renderer, "part")).toEqual("part 2");
-  version.contents = "3";
-  await Navigation$WeftServer.refresh(match$1[1]);
-  await Support$WeftServer.settle();
-  t.expect(textIn(renderer, "part")).toEqual("part 3");
-  return t.expect(Stdlib_Option.flatMap(TestRenderer$WeftCore.findById(renderer, "refetching"), node => TestRenderer$WeftCore.props(node).title)).toEqual("idle");
 }));
 
 let shows = TestRenderer$WeftCore.toString;
@@ -489,6 +432,6 @@ export {
   route,
   refetch,
   pending,
-  TwoFrames,
+  TwoParts,
 }
 /*  Not a pure module */

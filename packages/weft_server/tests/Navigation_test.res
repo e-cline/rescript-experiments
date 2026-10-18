@@ -1,8 +1,8 @@
 @@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
 
 /***
-`Navigation` and `Frame`: a page fetched again, or another page, rendered over the one on screen,
-and parts of it (frames) fetched again by themselves, all into a `TestRenderer`, with the server in
+`Navigation`: a page fetched again, or another page, rendered over the one on screen, and parts of
+it fetched again by themselves (`useRefetchable`), all into a `TestRenderer`, with the server in
 the same process (`Support.serve`).
 */
 
@@ -45,20 +45,16 @@ let reset = () => {
 }
 
 module CommentList = {
-  /**
-  A server component: the comments on `page`, with a counter (an entrypoint) beside them, and the
-  button that reloads them (inside the frame, so it finds it).
-  */
+  /** A server component: the comments on `page`, with a counter (an entrypoint) beside them. */
   @jsx.component
   let make = (~page: string) =>
-    <ul id="comments">
+    <ul id="comment-list">
       <li id="text"> {text(commentsOf(page))} </li>
-      <Counter label="in-frame" />
-      <FrameButton label="comments" />
+      <Counter label="in-part" />
     </ul>
 }
 
-/** The page at `url`: a title, a counter, and the comments in a frame of their own. */
+/** The page at `url`: a title, a counter, and the comments, which can be refetched by themselves. */
 let route = url =>
   switch url {
   | "/comments/a" | "/comments/b" => <CommentList page={url->String.slice(~start=10)} />
@@ -68,9 +64,9 @@ let route = url =>
     <section id="page">
       <h1 id="title"> {text(title(page))} </h1>
       <Counter label="outside" />
-      <Frame src={`/comments/${page}`}>
+      <Refetching id="comments" src={`/comments/${page}`}>
         <CommentList page />
-      </Frame>
+      </Refetching>
     </section>
   }
 
@@ -190,13 +186,13 @@ describe("navigating", () => {
   })
 })
 
-let refetch = label => (frames->Dict.getUnsafe(label)).refetch(~url=?None)
+let refetch = src => (refetchers->Dict.getUnsafe(src))()
 let pending = renderer =>
-  TestRenderer.findById(renderer, "comments-button")->Option.flatMap(node =>
+  TestRenderer.findById(renderer, "comments")->Option.flatMap(node =>
     (node->TestRenderer.props).title
   )
 
-describe("a frame", () => {
+describe("part of a page, refetched (useRefetchable)", () => {
   testAsync(
     "refetched, patches only its own subtree, and is pending until that has rendered",
     async t => {
@@ -207,11 +203,11 @@ describe("a frame", () => {
       )
       let (renderer, _) = await start(~fetch, ~route, ~url="/a")
       bump("outside")
-      bump("in-frame")
+      bump("in-part")
       let outsideRenders = rendersOf("outside")
       let textNode = uid(renderer, "text")
       comments->Dict.set("a", "two comments")
-      let done = refetch("comments")
+      let done = refetch("/comments/a")
       await settle()
       t->expect(pending(renderer))->Expect.toEqual(Some("pending"))
       served->Array.forEach(request => Testing.deliverAll(request.pipe))
@@ -219,8 +215,8 @@ describe("a frame", () => {
       await settle()
       t->expect(pending(renderer))->Expect.toEqual(Some("idle"))
       t->expect(shows(renderer)->String.includes("two comments"))->Expect.toBe(true)
-      // The counter in the frame kept its state; the one outside didn't render again.
-      t->expect(shows(renderer)->String.includes("in-frame:1"))->Expect.toBe(true)
+      // The counter in the part kept its state; the one outside didn't render again.
+      t->expect(shows(renderer)->String.includes("in-part:1"))->Expect.toBe(true)
       t->expect(shows(renderer)->String.includes("outside:1"))->Expect.toBe(true)
       t->expect(rendersOf("outside"))->Expect.toBe(outsideRenders)
       t->expect(uid(renderer, "text"))->Expect.toEqual(textNode)
@@ -235,7 +231,7 @@ describe("a frame", () => {
       let (fetch, _) = serve(route)
       let (renderer, navigation) = await start(~fetch, ~route, ~url="/a")
       comments->Dict.set("a", "refetched")
-      await refetch("comments")
+      await refetch("/comments/a")
       await settle()
       t->expect(shows(renderer)->String.includes("refetched"))->Expect.toBe(true)
       comments->Dict.set("a", "refreshed")
@@ -243,7 +239,7 @@ describe("a frame", () => {
       await settle()
       t->expect(shows(renderer)->String.includes("refreshed"))->Expect.toBe(true)
       comments->Dict.set("a", "refetched again")
-      await refetch("comments")
+      await refetch("/comments/a")
       await settle()
       t->expect(shows(renderer)->String.includes("refetched again"))->Expect.toBe(true)
     },
@@ -264,10 +260,10 @@ describe("a frame", () => {
     )
     let (renderer, _) = await start(~fetch, ~route, ~url="/a")
     comments->Dict.set("a", "older")
-    let older = refetch("comments")
+    let older = refetch("/comments/a")
     await settle()
     comments->Dict.set("a", "newer")
-    await refetch("comments")
+    await refetch("/comments/a")
     await settle()
     served->Array.forEach(request => Testing.deliverAll(request.pipe))
     await older
@@ -276,12 +272,12 @@ describe("a frame", () => {
     t->expect(Testing.cancelled((served->Array.getUnsafe(0)).pipe))->Expect.toBe(true)
   })
 
-  testAsync("a refetch whose root fails rejects, and leaves the frame as it was", async t => {
+  testAsync("a refetch whose root fails rejects, and leaves the part as it was", async t => {
     reset()
     let (fetch, _) = serve(route)
     let (renderer, _) = await start(~fetch, ~route, ~url="/a")
     let before = shows(renderer)
-    let failed = switch await (frames->Dict.getUnsafe("comments")).refetch(~url="/fails") {
+    let failed = switch await (refetchers->Dict.getUnsafe("/comments/a"))(~url="/fails") {
     | () => false
     | exception _ => true
     }
@@ -292,23 +288,21 @@ describe("a frame", () => {
   })
 })
 
-module TwoFrames = {
+module TwoParts = {
   @jsx.component
   let make = (~version: string) =>
     <Themed value="dark">
-      <Frame src="/left">
+      <Refetching id="left-part" src="/left">
         <p id="left"> {text(`left ${version}`)} </p>
         <ThemeReader id="left-theme" />
-        <FrameButton label="left" />
-      </Frame>
-      <Frame src="/right">
+      </Refetching>
+      <Refetching id="right-part" src="/right">
         <p id="right"> {text(`right ${version}`)} </p>
-        <FrameButton label="right" />
-      </Frame>
+      </Refetching>
     </Themed>
 }
 
-describe("two frames", () => {
+describe("two parts", () => {
   testAsync(
     "are refetched independently, and context from above reaches inside a refetched one",
     async t => {
@@ -320,62 +314,19 @@ describe("two frames", () => {
           <>
             <p id="left"> {text(`left ${version.contents}`)} </p>
             <ThemeReader id="left-theme" />
-            <FrameButton label="left" />
           </>
-        | "/right" =>
-          <>
-            <p id="right"> {text(`right ${version.contents}`)} </p>
-            <FrameButton label="right" />
-          </>
-        | _ => <TwoFrames version=version.contents />
+        | "/right" => <p id="right"> {text(`right ${version.contents}`)} </p>
+        | _ => <TwoParts version=version.contents />
         }
       let (fetch, _) = serve(route)
       let (renderer, _) = await start(~fetch, ~route, ~url="/")
       version := "2"
-      await refetch("left")
+      await refetch("/left")
       await settle()
       let text = id => textIn(renderer, id)
       t->expect(text("left"))->Expect.toEqual(Some("left 2"))
       t->expect(text("right"))->Expect.toEqual(Some("right 1"))
       t->expect(text("left-theme"))->Expect.toEqual(Some("dark"))
-    },
-  )
-})
-
-describe("useRefetchable, by hand", () => {
-  testAsync(
-    "refetches, and gives way to newer children from a refresh, as a frame does",
-    async t => {
-      reset()
-      let version = ref("1")
-      let route = url =>
-        switch url {
-        | "/part" => <p id="part"> {text(`part ${version.contents}`)} </p>
-        | _ =>
-          <section id="page">
-            <Refetching src="/part">
-              <p id="part"> {text(`part ${version.contents}`)} </p>
-            </Refetching>
-          </section>
-        }
-      let (fetch, _) = serve(route)
-      let (renderer, navigation) = await start(~fetch, ~route, ~url="/")
-      let part = () => textIn(renderer, "part")
-      version := "2"
-      await (refetchers->Dict.getUnsafe("/part"))()
-      await settle()
-      t->expect(part())->Expect.toEqual(Some("part 2"))
-      version := "3"
-      await navigation->Navigation.refresh
-      await settle()
-      t->expect(part())->Expect.toEqual(Some("part 3"))
-      t
-      ->expect(
-        TestRenderer.findById(renderer, "refetching")->Option.flatMap(
-          node => (node->TestRenderer.props).title,
-        ),
-      )
-      ->Expect.toEqual(Some("idle"))
     },
   )
 })

@@ -118,26 +118,6 @@ function useRefetchable(src, children) {
   };
 }
 
-let frameContext = Context$WeftCore.make(undefined);
-
-let frameProvider = Context$WeftCore.provider(frameContext);
-
-function withFrame(frame, element) {
-  return JsxCore$WeftCore.jsx(frameProvider, {
-    value: frame,
-    children: element
-  });
-}
-
-function useFrame() {
-  let frame = Hooks$WeftCore.useContext(frameContext);
-  if (frame !== undefined) {
-    return frame;
-  } else {
-    return Errors$WeftServer.fail(18, Env$Common.isDev ? "WeftServer: useFrame was called outside a frame: render it inside a WeftServer.Frame (or Navigation.withFrame)" : "");
-  }
-}
-
 export {
   make,
   show,
@@ -148,7 +128,5 @@ export {
   client,
   useNavigation,
   useRefetchable,
-  withFrame,
-  useFrame,
 }
 /* context Not a pure module */

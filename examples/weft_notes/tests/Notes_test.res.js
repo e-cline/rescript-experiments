@@ -211,7 +211,7 @@ Vitest.describe("posting", undefined, undefined, undefined, undefined, undefined
     t.expect(Stdlib_Option.map(WeftTesting.query(page, "#comment-author"), prim => prim.value)).toEqual("Me");
     return t.expect(Stdlib_Option.map(WeftTesting.query(page, "#comment-text"), prim => prim.value)).toEqual("");
   });
-  Vitest.testAsync("a new title refetches the header frame: new props, the draft, focus and selection kept, nothing else touched", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  Vitest.testAsync("a new title refetches the saved title alone: the draft, focus and selection kept, nothing else touched", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openNote(undefined, undefined);
     let input = Stdlib_Option.getOrThrow(WeftTesting.query(page, "#title-input"), undefined);
     let likeRenders = WeftTesting.renderCount(page, likeButton);
@@ -240,12 +240,12 @@ Vitest.describe("posting", undefined, undefined, undefined, undefined, undefined
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/notes/1",
       "/notes/1",
-      "/notes/1/header"
+      "/notes/1/title"
     ]);
   });
 });
 
-Vitest.describe("the comments frame", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+Vitest.describe("the comments, refetched by themselves", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("reloaded after another user's changes: the new comment inserted, the edited one updated in place", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openNote(undefined, undefined);
     let first = Stdlib_Option.getOrThrow(WeftTesting.query(page, "#comment-c1"), undefined);

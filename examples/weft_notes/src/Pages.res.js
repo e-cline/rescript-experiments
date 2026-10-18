@@ -7,14 +7,13 @@ import * as Lazy$WeftCore from "@e-cline/weft_core/src/Lazy.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Link$WeftNotes from "./Link.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
-import * as Frame$WeftServer from "@e-cline/weft_server/src/Frame.res.js";
 import * as Suspense$WeftCore from "@e-cline/weft_core/src/Suspense.res.js";
 import * as ErrorBox$WeftNotes from "./ErrorBox.res.js";
 import * as LikeButton$WeftNotes from "./LikeButton.res.js";
 import * as NoteEditor$WeftNotes from "./NoteEditor.res.js";
 import * as CommentForm$WeftNotes from "./CommentForm.res.js";
 import * as CommentList$WeftNotes from "./CommentList.res.js";
-import * as ReloadComments$WeftNotes from "./ReloadComments.res.js";
+import * as CommentsPanel$WeftNotes from "./CommentsPanel.res.js";
 
 function Pages$Layout(props) {
   return Jsx$WeftDom.Elements.jsxs("div", {
@@ -61,17 +60,20 @@ let NoteList = {
   make: Pages$NoteList
 };
 
-function Pages$NoteHeader(props) {
-  let id = props.id;
-  let note = Db$WeftNotes.find(id);
+function Pages$NoteTitle(props) {
+  let note = Db$WeftNotes.find(props.id);
   if (note !== undefined) {
-    return Jsx$WeftDom.Elements.jsx("header", {
-      id: "note-header",
-      children: Jsx$WeftDom.jsx(NoteEditor$WeftNotes.make, {
-        noteId: id,
-        title: note.title,
-        savedAt: note.savedAt
-      })
+    return Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
+      children: [
+        Jsx$WeftDom.Elements.jsx("h1", {
+          id: "title",
+          children: note.title
+        }),
+        Jsx$WeftDom.Elements.jsx("span", {
+          id: "saved-at",
+          children: `Saved: ` + note.savedAt
+        })
+      ]
     });
   } else {
     return Jsx$WeftDom.Elements.jsx("p", {
@@ -79,6 +81,24 @@ function Pages$NoteHeader(props) {
       children: "No such note"
     });
   }
+}
+
+let NoteTitle = {
+  make: Pages$NoteTitle
+};
+
+function Pages$NoteHeader(props) {
+  let id = props.id;
+  return Jsx$WeftDom.Elements.jsx("header", {
+    id: "note-header",
+    children: Jsx$WeftDom.jsx(NoteEditor$WeftNotes.make, {
+      noteId: id,
+      title: Stdlib_Option.mapOr(Db$WeftNotes.find(id), "", note => note.title),
+      children: Jsx$WeftDom.jsx(Pages$NoteTitle, {
+        id: id
+      })
+    })
+  });
 }
 
 let NoteHeader = {
@@ -117,13 +137,8 @@ let NoteBody = {
 };
 
 function Pages$Comments(props) {
-  return Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
-    children: [
-      Jsx$WeftDom.jsx(ReloadComments$WeftNotes.make, {}),
-      Jsx$WeftDom.jsx(CommentList$WeftNotes.make, {
-        comments: Db$WeftNotes.commentsOf(props.id, props.signal)
-      })
-    ]
+  return Jsx$WeftDom.jsx(CommentList$WeftNotes.make, {
+    comments: Db$WeftNotes.commentsOf(props.id, props.signal)
   });
 }
 
@@ -173,11 +188,8 @@ function Pages$NotePage(props) {
   let id = props.id;
   return Jsx$WeftDom.jsxs(Pages$Layout, {
     children: [
-      Jsx$WeftDom.jsx(Frame$WeftServer.make, {
-        src: `/notes/` + id + `/header`,
-        children: Jsx$WeftDom.jsx(Pages$NoteHeader, {
-          id: id
-        })
+      Jsx$WeftDom.jsx(Pages$NoteHeader, {
+        id: id
       }),
       Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
         fallback: loading("likes-loading", "…"),
@@ -198,8 +210,8 @@ function Pages$NotePage(props) {
           Jsx$WeftDom.Elements.jsx("h2", {
             children: "Comments"
           }),
-          Jsx$WeftDom.jsx(Frame$WeftServer.make, {
-            src: `/notes/` + id + `/comments`,
+          Jsx$WeftDom.jsx(CommentsPanel$WeftNotes.make, {
+            noteId: id,
             children: Jsx$WeftDom.jsx(Pages$Comments, {
               id: id,
               signal: signal
@@ -234,6 +246,7 @@ let NotePage = {
 export {
   Layout,
   NoteList,
+  NoteTitle,
   NoteHeader,
   Likes,
   NoteBody,

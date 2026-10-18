@@ -14,24 +14,21 @@ function NoteEditor(props) {
   let match = Hooks$WeftCore.useState(() => title);
   let setDraft = match[1];
   let draft = match[0];
-  let header = Navigation$WeftServer.useFrame();
+  let saved = Navigation$WeftServer.useRefetchable(`/notes/` + noteId + `/title`, props.children);
   let save = event => {
     event.preventDefault();
     (async () => {
       await Api$WeftNotes.post(`/notes/` + noteId, {
         title: draft
       });
-      return await header.refetch(undefined);
+      return await saved.refetch(undefined);
     })();
   };
   return Jsx$WeftDom.Elements.jsxs("form", {
     id: "editor",
     onSubmit: save,
     children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        id: "title",
-        children: title
-      }),
+      saved.element,
       Jsx$WeftDom.Elements.jsx("input", {
         id: "title-input",
         "aria-label": "Title",
@@ -41,11 +38,7 @@ function NoteEditor(props) {
       Jsx$WeftDom.Elements.jsx("button", {
         id: "save",
         type: "submit",
-        children: header.isPending ? "Saving…" : "Save"
-      }),
-      Jsx$WeftDom.Elements.jsx("span", {
-        id: "saved-at",
-        children: `Saved: ` + props.savedAt
+        children: saved.isPending ? "Saving…" : "Save"
       })
     ]
   });

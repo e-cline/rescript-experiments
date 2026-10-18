@@ -9,12 +9,12 @@ things only a browser can show, in Chromium.
   stream in on their own (the body, the comments, related notes), each under a `Suspense` boundary.
 - `LikeButton`, an entrypoint with state of its own (whether you just liked it), whose count comes
   from the server.
-- `NoteEditor`, a draft of the title in state, the saved title and time as props: saving posts the
-  draft, then refetches the header's `Frame`, so new props arrive and the draft, the input, its
-  focus and its selection stay.
-- The comments in a `Frame` of their own, with a button in it that reloads them (`useFrame`), a
-  `CommentList` entrypoint given them as a promise (and showing its own fallback until it resolves),
-  and `CommentForm`, which posts a comment and then `refresh`es the page.
+- `NoteEditor`, a draft of the title in state, and the saved title and time, rendered on the server,
+  as its `children`: saving posts the draft, then refetches those (`useRefetchable`), while the
+  draft, the input, its focus and its selection stay.
+- The comments in `CommentsPanel`, an entrypoint that refetches them (`useRefetchable`) with a
+  button, a `CommentList` entrypoint given them as a promise (and showing its own fallback until it
+  resolves), and `CommentForm`, which posts a comment and then `refresh`es the page.
 - A server component that fails, inside an `ErrorBox` entrypoint (an error boundary), and links that
   `navigate` in place.
 
@@ -48,7 +48,7 @@ server in a worker thread (with the database's controls,
 - the like button's state across notes and a refresh, links fetching payloads rather than pages, and
   navigating away from a page still streaming, which cancels its response (the database sees its
   queries abandoned) so none of its rows land;
-- posting a comment; saving a title, which refetches only the header's frame (the same nodes, the
+- posting a comment; saving a title, which refetches only the saved title (the same nodes, the
   draft, focus and selection kept, nothing else rendering again);
 - reloading the comments after another user's changes (new ones inserted, edited ones updated in
   place), while their gate is held (the old ones stay, pending), and twice (the first never lands);
@@ -56,8 +56,8 @@ server in a worker thread (with the database's controls,
 
 [`e2e/notes.e2e.ts`](e2e/notes.e2e.ts) checks, in Chromium against the build, what only a browser
 can: the HTML streaming, a chunk loaded once a page needs it and only once, focus and selection
-across a frame's refetch, and the back button. With `WEFT_NOTES_TEST_ROUTES=1`, the server has
-routes that open the gates, for these tests. Run them (they need Chromium:
+across a refetch, and the back button. With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes that
+open the gates, for these tests. Run them (they need Chromium:
 `pnpm --filter @e-cline/weft_notes_example exec playwright install chromium`):
 
 ```bash

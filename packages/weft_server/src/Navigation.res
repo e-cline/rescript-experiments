@@ -95,26 +95,3 @@ let useRefetchable = (~src, children) => {
   }
   {element, refetch, isPending: fetching || transitionPending}
 }
-
-type frame = {
-  refetch: (~url: string=?) => promise<unit>,
-  isPending: bool,
-}
-
-let frameContext: WeftCore.Context.t<option<frame>> = WeftCore.Context.make(None)
-let frameProvider = WeftCore.Context.provider(frameContext)
-
-let withFrame = (frame, element) =>
-  WeftCore.JsxCore.jsx(frameProvider, {value: Some(frame), children: element})
-
-let useFrame = () =>
-  switch WeftCore.Hooks.useContext(frameContext) {
-  | Some(frame) => frame
-  | None =>
-    Errors.fail(
-      18,
-      Common.Env.isDev
-        ? "WeftServer: useFrame was called outside a frame: render it inside a WeftServer.Frame (or Navigation.withFrame)"
-        : "",
-    )
-  }

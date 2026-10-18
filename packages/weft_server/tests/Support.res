@@ -104,30 +104,19 @@ module Inner = {
   let () = WeftCore.Entrypoint.mark(make, "test/Other.res#")
 }
 
-/** The frame each `FrameButton` is in, as it last saw it, by its label. */
-let frames: dict<Navigation.frame> = Dict.make()
-
-module FrameButton = {
-  /** Inside a frame: shows whether it's pending, and keeps its `refetch` where tests can call it. */
-  @jsx.component
-  let make = (~label: string) => {
-    let frame = Navigation.useFrame()
-    frames->Dict.set(label, frame)
-    <button id={`${label}-button`} title={frame.isPending ? "pending" : "idle"} />
-  }
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#FrameButton")
-}
-
 /** Each `Refetching`'s `refetch`, by `src`. */
 let refetchers: dict<(~url: string=?) => promise<unit>> = Dict.make()
 
 module Refetching = {
-  /** Refetches its children by hand, with `Navigation.useRefetchable` rather than a `Frame`. */
+  /**
+  Refetches its children, from `src`, with `Navigation.useRefetchable`: says whether it's pending
+  (its `title`), and keeps its `refetch` where tests can call it.
+  */
   @jsx.component
-  let make = (~src: string, ~children: WeftCore.Element.t) => {
+  let make = (~id: string, ~src: string, ~children: WeftCore.Element.t) => {
     let {element, refetch, isPending} = Navigation.useRefetchable(~src, children)
     refetchers->Dict.set(src, refetch)
-    <div id="refetching" title={isPending ? "pending" : "idle"}> element </div>
+    <div id title={isPending ? "pending" : "idle"}> element </div>
   }
   let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Refetching")
 }
@@ -154,7 +143,6 @@ let entrypointFile = Testing.module_([
   ("Probe", Testing.module_([("make", Testing.component(Probe.make))])),
   ("Reader", Testing.module_([("make", Testing.component(Reader.make))])),
   ("Guard", Testing.module_([("make", Testing.component(Guard.make))])),
-  ("FrameButton", Testing.module_([("make", Testing.component(FrameButton.make))])),
   ("Refetching", Testing.module_([("make", Testing.component(Refetching.make))])),
   ("Themed", Testing.module_([("make", Testing.component(Themed.make))])),
   ("ThemeReader", Testing.module_([("make", Testing.component(ThemeReader.make))])),
@@ -163,10 +151,6 @@ let entrypointFile = Testing.module_([
 let makeModules = () =>
   Testing.modules([
     ("test/Entrypoints.res", entrypointFile),
-    (
-      "@e-cline/weft_server/src/Frame.res",
-      Testing.module_([("make", Testing.component(Frame.make))]),
-    ),
     ("test/Other.res", Testing.module_([("make", Testing.component(Inner.make))])),
   ])
 

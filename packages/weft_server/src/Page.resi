@@ -1,6 +1,6 @@
 /***
 A page: the HTML the first request for a route gets, with the payload in it, or the payload by
-itself for a client asking for one (`navigate`, `refresh`, a frame).
+itself for a client asking for one (`navigate`, `refresh`, `useRefetchable`).
 
 ```rescript
 @module("virtual:weft/assets") external assets: WeftServer.Page.assets = "default"

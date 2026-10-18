@@ -51,21 +51,18 @@ parts that are easy to get wrong by hand done (newer `children` from a refresh w
 refetched, fetches replacing each other, rendering in a transition):
 
 ```rescript
-// in an entrypoint, given `children` from the server
-let {element, refetch, isPending} = WeftServer.Navigation.useRefetchable(~src="/notes/1/comments", children)
+// in a server component: the comments, rendered here, given to an entrypoint as children
+<CommentsPanel noteId=id> <Comments id /> </CommentsPanel>
+
+// in CommentsPanel, the entrypoint
+let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
+<div>
+  <button onClick={_ => comments.refetch()->ignore}> {Weft.Jsx.string(comments.isPending ? "…" : "Reload")} </button>
+  {comments.element}
+</div>
 ```
 
-`Frame` is that as a built-in entrypoint, for a server component to place; entrypoints inside it
-reach it with `useFrame`:
-
-```rescript
-// in a server component
-<WeftServer.Frame src={`/notes/${id}/comments`}> <ReloadButton /> <Comments id /> </WeftServer.Frame>
-
-// in ReloadButton, an entrypoint
-let comments = WeftServer.Navigation.useFrame()
-<button onClick={_ => comments.refetch()->ignore}> {Weft.Jsx.string(comments.isPending ? "…" : "Reload")} </button>
-```
+The route at `src` renders just that part (`<Comments id />`), with `Page.respond`.
 
 The lower levels are there too: `Render.toStream(element)` (the payload, as a `ReadableStream`), and
 `Client.make(~loadModule)` with `Client.fetchElement(url)` (a decoded element, to render anywhere).
@@ -100,9 +97,7 @@ The lower levels are there too: `Render.toStream(element)` (the payload, as a `R
   before (`Client.Latest`): the older is cancelled, and what it hadn't delivered is left waiting,
   not failed, since it may still be on screen until the newer has rendered.
 - **`useRefetchable`** shows its `children` until it's refetched, then what it fetched, until newer
-  `children` come with a `navigate` or `refresh`: whichever is newer wins. `Frame` is it as a
-  built-in entrypoint (marked by hand, with the directive the Vite plugin looks for), which makes
-  itself what `useFrame` returns below it.
+  `children` come with a `navigate` or `refresh`: whichever is newer wins.
 - **Keys** in lists a server component built at runtime are checked on the server (a development
   build warns, naming where the list is), since the client can't tell them from lists written out in
   JSX once they've been through the payload.
@@ -118,10 +113,10 @@ modules served from a map, whose loads can be held. This package's own tests use
   screen.
 - **A fuzz test:** random trees and refetches, compared with rendering the same trees directly.
 - **Pages and navigation:** `Page`'s HTML (the shell, rows that would end a script, preloads, rows
-  streaming under a boundary) read back by `Bootstrap.rows`; navigating, refreshing, frames
-  refetched (only their subtree changes, pending until rendered, newer content winning either way;
-  the same by hand with `useRefetchable`), requests replacing each other, and failures leaving the
-  screen as it was, all against a server in the same process (`Support.serve`).
+  streaming under a boundary) read back by `Bootstrap.rows`; navigating, refreshing, parts of a page
+  refetched with `useRefetchable` (only their subtree changes, pending until rendered, newer content
+  winning either way), requests replacing each other, and failures leaving the screen as it was, all
+  against a server in the same process (`Support.serve`).
 
 ## Error codes
 
@@ -146,6 +141,5 @@ Production builds throw `WeftServer error <code>` instead of these messages:
 |   15 | Something in a payload isn't a value (a bug in WeftServer, or a corrupted payload).      |
 |   16 | `useNavigation` or `useRefetchable` was called outside a page (`Navigation.show`).       |
 |   17 | `Bootstrap.start` found no `#root` in the document.                                      |
-|   18 | `useFrame` was called outside a `Frame` (or `Navigation.withFrame`).                     |
 
 Codes don't change once published: a new error gets the next number.

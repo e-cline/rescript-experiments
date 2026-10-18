@@ -3,7 +3,7 @@
 /***
 The server entry: an `@e-cline/servy` app (the default export). Pages answer with
 `WeftServer.Page.respond` (HTML for a first request, the bare payload for the client's), as do the
-frames' routes. The rest are the posts the entrypoints make.
+routes of the parts entrypoints fetch again by themselves (the title, the comments). The rest are the posts the entrypoints make.
 
 With `WEFT_NOTES_TEST_ROUTES=1` in the environment, `/test/gates/...` routes let a browser test
 open the database's gates.
@@ -54,8 +54,8 @@ let noteRoutes = [
   Route.get(list{"notes", ":id"}, async ctx =>
     await page(~title="Note", signal => <Pages.NotePage id={id(ctx)} signal />)(ctx)
   ),
-  Route.get(list{"notes", ":id", "header"}, async ctx =>
-    await page(~title="Note", _ => <Pages.NoteHeader id={id(ctx)} />)(ctx)
+  Route.get(list{"notes", ":id", "title"}, async ctx =>
+    await page(~title="Note", _ => <Pages.NoteTitle id={id(ctx)} />)(ctx)
   ),
   Route.get(list{"notes", ":id", "comments"}, async ctx =>
     await page(~title="Comments", signal => <Pages.Comments id={id(ctx)} signal />)(ctx)

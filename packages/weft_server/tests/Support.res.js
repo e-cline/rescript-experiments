@@ -6,7 +6,6 @@ import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Context$WeftCore from "@e-cline/weft_core/src/Context.res.js";
-import * as Frame$WeftServer from "../src/Frame.res.js";
 import * as JsxCore$WeftCore from "@e-cline/weft_core/src/JsxCore.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
@@ -144,24 +143,6 @@ let Inner = {
   make: Support$Inner
 };
 
-let frames = {};
-
-function Support$FrameButton(props) {
-  let label = props.label;
-  let frame = Navigation$WeftServer.useFrame();
-  frames[label] = frame;
-  return TestJsx$WeftCore.Elements.jsx("button", {
-    id: label + `-button`,
-    title: frame.isPending ? "pending" : "idle"
-  });
-}
-
-Entrypoint$WeftCore.mark(Support$FrameButton, "test/Entrypoints.res#FrameButton");
-
-let FrameButton = {
-  make: Support$FrameButton
-};
-
 let refetchers = {};
 
 function Support$Refetching(props) {
@@ -169,7 +150,7 @@ function Support$Refetching(props) {
   let match = Navigation$WeftServer.useRefetchable(src, props.children);
   refetchers[src] = match.refetch;
   return TestJsx$WeftCore.Elements.jsx("div", {
-    id: "refetching",
+    id: props.id,
     title: match.isPending ? "pending" : "idle",
     children: match.element
   });
@@ -239,13 +220,6 @@ let entrypointFile = Testing$WeftServer.module_([
       ]])
   ],
   [
-    "FrameButton",
-    Testing$WeftServer.module_([[
-        "make",
-        Support$FrameButton
-      ]])
-  ],
-  [
     "Refetching",
     Testing$WeftServer.module_([[
         "make",
@@ -273,13 +247,6 @@ function makeModules() {
     [
       "test/Entrypoints.res",
       entrypointFile
-    ],
-    [
-      "@e-cline/weft_server/src/Frame.res",
-      Testing$WeftServer.module_([[
-          "make",
-          Frame$WeftServer.make
-        ]])
     ],
     [
       "test/Other.res",
@@ -414,8 +381,6 @@ export {
   Reader,
   Guard,
   Inner,
-  frames,
-  FrameButton,
   refetchers,
   Refetching,
   theme,

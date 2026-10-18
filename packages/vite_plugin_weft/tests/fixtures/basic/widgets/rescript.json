@@ -1,6 +1,0 @@
-{
-  "name": "@fixtures/widgets",
-  "sources": "src",
-  "suffix": ".res.js",
-  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
-}

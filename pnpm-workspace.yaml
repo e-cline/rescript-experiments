@@ -4,6 +4,8 @@ packages:
   - examples/*
   - tools/benchmarking
   - tools/ppx/*
+  # vite_plugin_weft's fixture apps: ReScript packages, compiled by the root build.
+  - packages/vite_plugin_weft/tests/fixtures/*
 
 allowBuilds:
   esbuild: true

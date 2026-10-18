@@ -707,14 +707,19 @@ On the TestRenderer and TestScheduler, as the existing Suspense tests are:
 
 #### The Vite plugin (`packages/vite_plugin_weft/tests`)
 
-TypeScript, against small fixture apps whose "compiled ReScript" is hand-written `.res.js` files
-(directives included), so these tests depend on neither ReScript nor the PPX; `weft_split` below
-covers the real thing.
+TypeScript, against small fixture apps (`tests/fixtures`): ReScript packages in the workspace,
+compiled through the PPX by the root build like any other, with the output committed. (They were
+hand-written `.res.js` files at first, so as not to depend on ReScript; that was brittle, since
+nothing kept them like what the compiler writes.) The tests copy a fixture to a temporary directory
+and build it, or change its files there as `rescript build -w` would (writing a compiled file again,
+taking one away, putting it back), never editing compiled code. `weft_split` below covers a real
+app.
 
 - **Unit**: the scan finds exactly the files with the entrypoint directive (in the app, in
   subdirectories and subdirectory lists, and in a ReScript dependency; not in dev sources or files
-  without the suffix), with the PPX's ids, and fails on marks that disagree or a missing dependency;
-  directives are found only in the prologue, and blanked out keeping positions; the generated
+  without the suffix), with the PPX's ids, and fails on marks that disagree (a compiled file moved)
+  or a missing dependency; directives are found only in the prologue, in every compiled fixture file
+  as its components call for, and blanked out keeping positions; the generated
   `virtual:weft/client-references` (run, with its `loadModule` refusing other ids) and
   `virtual:weft/assets` (from a hand-made manifest, and in dev).
 - **Build**: `buildApp` on a fixture: one chunk per entrypoint file, a shared module in a chunk both
@@ -727,9 +732,9 @@ covers the real thing.
 - **Dev**: `createServer` in the test process: a page and a payload come back through the
   middleware, with the development conditions; the client gets the references and directive-free
   files, and is refused a server file (with the chain) and the server's virtual module; changing a
-  server-only file sends the refresh event on the client's HMR channel and the next request runs the
-  new code, changing an entrypoint file sends a full reload, and a file becoming an entrypoint file
-  (or one being deleted) updates the references.
+  server-only file sends the refresh event on the client's HMR channel and the next request runs it
+  again, changing an entrypoint file sends a full reload, and an entrypoint file appearing (or being
+  deleted) updates the references.
 
 #### Tier 2: the app harness (`@e-cline/vite_plugin_weft/testing`)
 
@@ -900,7 +905,7 @@ packages/weft_server/              namespace WeftServer
 packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
   src/testing/                     the tier 2 harness (`/testing` export): Vite server, worker, port
   src/WeftTesting.res(i)           its ReScript bindings
-  tests/fixtures/                  small apps with hand-written "compiled" files
+  tests/fixtures/                  small ReScript apps, compiled by the root build
 tools/ppx/weft_tests/              fixtures that compile, fixtures that don't, compiler canaries
 examples/weft_notes/               notes app: the integration test bed (§9)
   tests/                           tier 2 scenarios, and the fake database's control module

@@ -84,8 +84,9 @@ Types for them are in `@e-cline/vite_plugin_weft/virtual`. A client environment 
 
 ## Testing
 
-The tests run against small apps in [`tests/fixtures`](tests/fixtures), whose "compiled ReScript" is
-written by hand, so they need neither ReScript nor the PPX:
+The tests run against small apps in [`tests/fixtures`](tests/fixtures): ReScript packages compiled
+through the PPX by the workspace's build, with the output committed. A test copies one and builds
+it, or changes its files as `rescript build -w` would:
 
 - **Unit:** finding directives and blanking them out; the scan (dependencies, dev sources, ids,
   marks that disagree); and the generated modules.

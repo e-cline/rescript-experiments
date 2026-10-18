@@ -1,4 +1,4 @@
-import {mkdirSync, writeFileSync} from 'node:fs';
+import {cpSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
 import {afterAll, describe, expect, test} from 'vite-plus/test';
@@ -12,32 +12,45 @@ import {
   readCompiledFile,
   scan,
 } from '../src/internal/scan.js';
-import {copyFixture, removeCopies} from './support.js';
+import {copyFixture, fixtureName, fixtures, removeCopies} from './support.js';
 
 afterAll(removeCopies);
+
+const basic = fixtureName('basic');
+const widgets = fixtureName('widgets');
+
+/** Rewrites the `rescript.json` at `root`, changing the fields in `change`. */
+function changeRescriptJson(root: string, change: Record<string, unknown>) {
+  const path = join(root, 'rescript.json');
+  const config = JSON.parse(readFileSync(path, 'utf8'));
+  writeFileSync(path, JSON.stringify({...config, ...change}));
+}
 
 describe('scan', () => {
   const root = copyFixture('basic');
   const scanned = scan(root);
 
-  test('finds the app and its ReScript dependencies', () => {
-    expect(findPackages(root).map((pkg) => [pkg.name, pkg.dir])).toEqual([
-      ['@fixtures/basic', root],
-      ['@fixtures/widgets', join(root, 'widgets')],
-    ]);
+  test('finds the app and its ReScript dependencies, transitively', () => {
+    const packages = new Map(
+      findPackages(root).map((pkg) => [pkg.name, pkg.dir]),
+    );
+    expect(packages.get(basic)).toBe(root);
+    expect(packages.get(widgets)).toBe(join(fixtures, 'widgets'));
+    // Dependencies of dependencies: weft's own.
+    expect(packages.has('@e-cline/weft_core')).toBe(true);
+    // Not dev dependencies.
+    expect(packages.has('rescript-vitest')).toBe(false);
   });
 
-  test('finds exactly the entrypoint files, by the ids the PPX gives them', () => {
+  test('finds exactly the entrypoint files, by the ids the PPX gave them', () => {
     expect(entrypoints(scanned).map(({id, file}) => [id, file])).toEqual([
-      ['@fixtures/basic/src/Likes.res', join(root, 'src/Likes.res.js')],
-      ['@fixtures/basic/src/Panels.res', join(root, 'src/Panels.res.js')],
+      [`${basic}/src/Later.res`, join(root, 'src/Later.res.js')],
+      [`${basic}/src/Likes.res`, join(root, 'src/Likes.res.js')],
+      [`${basic}/src/Panels.res`, join(root, 'src/Panels.res.js')],
+      [`${basic}/src/nested/Deep.res`, join(root, 'src/nested/Deep.res.js')],
       [
-        '@fixtures/basic/src/nested/Deep.res',
-        join(root, 'src/nested/Deep.res.js'),
-      ],
-      [
-        '@fixtures/widgets/src/Widget.res',
-        join(root, 'widgets/src/Widget.res.js'),
+        `${widgets}/src/Widget.res`,
+        join(fixtures, 'widgets/src/Widget.res.js'),
       ],
     ]);
   });
@@ -47,14 +60,11 @@ describe('scan', () => {
       file,
       kind,
     ]);
-    expect(files).toContainEqual([join(root, 'src/Server.res.js'), 'server']);
     expect(files).toContainEqual([join(root, 'src/Notes.res.js'), 'server']);
-    expect(files.map(([file]) => file)).not.toContain(
-      join(root, 'tests/Fake.res.js'),
-    );
-    expect(files.map(([file]) => file)).not.toContain(
-      join(root, 'src/Plain.js'),
-    );
+    const paths = files.map(([file]) => file);
+    // Compiled through the PPX, with the directive, but in a dev source.
+    expect(paths).not.toContain(join(root, 'tests/Fake.res.js'));
+    expect(paths).not.toContain(join(root, 'src/NotReScript.js'));
     expect(scanned.files.size).toBe(6);
   });
 
@@ -69,68 +79,61 @@ describe('file ids', () => {
 
   test("are the package's name and the source's path", () => {
     expect(fileId(app!, join(root, 'src/nested/Deep.res.js'), '.res.js')).toBe(
-      '@fixtures/basic/src/nested/Deep.res',
+      `${basic}/src/nested/Deep.res`,
     );
     expect(fileId(app!, join(root, 'src/Deep.mjs'), '.mjs')).toBe(
-      '@fixtures/basic/src/Deep.res',
+      `${basic}/src/Deep.res`,
     );
   });
 
-  test('are read from the marks too', () => {
-    expect(
-      markedFileIds(
-        'A$B.mark(A, "pkg/src/A.res#");\nEntrypoint$WeftCore.mark(A$Nested, "pkg/src/A.res#Nested");\n',
-      ),
-    ).toEqual(['pkg/src/A.res']);
+  test('are read from the marks the PPX wrote', () => {
+    const panels = readFileSync(join(root, 'src/Panels.res.js'), 'utf8');
+    expect(markedFileIds(panels)).toEqual([`${basic}/src/Panels.res`]);
   });
 
   test('that differ from the marks are an error', () => {
-    const file = join(root, 'src/Moved.res.js');
-    const code =
-      '\'use weft entrypoint\'\nM.mark(Moved, "@fixtures/basic/src/Elsewhere.res#");\n';
-    expect(() => readCompiledFile(app!, file, '.res.js', code)).toThrow(
-      /marks an entrypoint as being in @fixtures\/basic\/src\/Elsewhere\.res, but its id is @fixtures\/basic\/src\/Moved\.res/,
+    // A compiled file moved without being compiled again.
+    const likes = readFileSync(join(root, 'src/Likes.res.js'), 'utf8');
+    const moved = join(root, 'src/Moved.res.js');
+    expect(() => readCompiledFile(app!, moved, '.res.js', likes)).toThrow(
+      `marks an entrypoint as being in ${basic}/src/Likes.res, but its id is ${basic}/src/Moved.res`,
     );
   });
 });
 
 describe('the scan', () => {
-  test('follows subdirectory lists, and files coming and going', () => {
+  const ids = (root: string) =>
+    entrypoints(scan(root))
+      .map(({id}) => id)
+      .filter((id) => id.startsWith(basic));
+
+  test('follows `subdirs`: none, or a list', () => {
     const root = copyFixture('basic');
-    writeFileSync(
-      join(root, 'rescript.json'),
-      JSON.stringify({
-        name: '@fixtures/basic',
-        sources: [{dir: 'src', subdirs: [{dir: 'nested'}]}],
-        suffix: '.res.js',
-      }),
-    );
+    changeRescriptJson(root, {sources: {dir: 'src'}});
+    expect(ids(root)).not.toContain(`${basic}/src/nested/Deep.res`);
+    // A directory the list leaves out: had the scan read it, the misplaced file would have failed.
     mkdirSync(join(root, 'src/other'));
-    writeFileSync(
-      join(root, 'src/other/Skipped.res.js'),
-      "'use weft entrypoint'\n",
+    cpSync(
+      join(root, 'src/Likes.res.js'),
+      join(root, 'src/other/Likes.res.js'),
     );
-    const ids = entrypoints(scan(root)).map(({id}) => id);
-    expect(ids).toEqual([
-      '@fixtures/basic/src/Likes.res',
-      '@fixtures/basic/src/Panels.res',
-      '@fixtures/basic/src/nested/Deep.res',
-    ]);
+    changeRescriptJson(root, {
+      sources: [{dir: 'src', subdirs: [{dir: 'nested'}]}],
+    });
+    expect(ids(root)).toContain(`${basic}/src/nested/Deep.res`);
+  });
+
+  test("knows when the PPX isn't set up", () => {
+    const root = copyFixture('basic');
+    changeRescriptJson(root, {'ppx-flags': []});
     expect(hasPpx(root)).toBe(false);
   });
 
   test('fails on a dependency it cannot find', () => {
     const root = copyFixture('basic');
-    writeFileSync(
-      join(root, 'rescript.json'),
-      JSON.stringify({
-        name: '@fixtures/basic',
-        sources: 'src',
-        dependencies: ['@fixtures/missing'],
-      }),
-    );
+    changeRescriptJson(root, {dependencies: ['@e-cline/missing']});
     expect(() => scan(root)).toThrow(
-      /couldn't find @fixtures\/missing, a dependency in/,
+      /couldn't find @e-cline\/missing, a dependency in/,
     );
   });
 });

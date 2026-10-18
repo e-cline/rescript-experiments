@@ -5,11 +5,20 @@ import {join} from 'node:path';
 import {createBuilder} from 'vite';
 import {afterAll, beforeAll, describe, expect, test} from 'vite-plus/test';
 
-import type {Manifest} from '../src/internal/virtualModules.js';
+import {manifestKey, type Manifest} from '../src/internal/virtualModules.js';
 import {serve} from '../src/node.js';
-import {config, copyFixture, removeCopies} from './support.js';
+import {
+  config,
+  copyFixture,
+  fixtureName,
+  fixtures,
+  removeCopies,
+} from './support.js';
 
 afterAll(removeCopies);
+
+const basic = fixtureName('basic');
+const widgets = fixtureName('widgets');
 
 async function buildApp(root: string) {
   // Vite takes a production build to be one with `NODE_ENV` unset or `production`, and Vitest sets
@@ -39,6 +48,8 @@ describe('a build of the basic fixture', () => {
   let root: string;
   let manifest: Manifest;
   let clientDir: string;
+  /** The manifest key of the dependency's entrypoint file, which is outside the copy. */
+  let widgetKey: string;
   const chunkOf = (key: string) =>
     readFileSync(join(clientDir, manifest[key]!.file), 'utf8');
 
@@ -49,15 +60,17 @@ describe('a build of the basic fixture', () => {
     manifest = JSON.parse(
       readFileSync(join(clientDir, '.vite/manifest.json'), 'utf8'),
     );
+    widgetKey = manifestKey(root, join(fixtures, 'widgets/src/Widget.res.js'));
   });
 
   test('has the bootstrap as the only entry, and each entrypoint file as a chunk of its own', () => {
     expect(manifest['src/Client.res.js']?.isEntry).toBe(true);
     const entrypointFiles = [
+      'src/Later.res.js',
       'src/Likes.res.js',
       'src/Panels.res.js',
       'src/nested/Deep.res.js',
-      'widgets/src/Widget.res.js',
+      widgetKey,
     ];
     for (const key of entrypointFiles)
       expect(manifest[key]?.isDynamicEntry, key).toBe(true);
@@ -119,14 +132,15 @@ describe('a build of the basic fixture', () => {
       await handler.default(new Request('http://localhost/assets.json'))
     ).json();
     expect(assets.scripts).toEqual(['/' + manifest['src/Client.res.js']!.file]);
-    expect(assets.entrypoints['@fixtures/basic/src/Panels.res'][0]).toBe(
+    expect(assets.entrypoints[`${basic}/src/Panels.res`][0]).toBe(
       '/' + manifest['src/Panels.res.js']!.file,
     );
     expect(Object.keys(assets.entrypoints).sort()).toEqual([
-      '@fixtures/basic/src/Likes.res',
-      '@fixtures/basic/src/Panels.res',
-      '@fixtures/basic/src/nested/Deep.res',
-      '@fixtures/widgets/src/Widget.res',
+      `${basic}/src/Later.res`,
+      `${basic}/src/Likes.res`,
+      `${basic}/src/Panels.res`,
+      `${basic}/src/nested/Deep.res`,
+      `${widgets}/src/Widget.res`,
     ]);
   });
 
@@ -173,7 +187,7 @@ describe('a build of the basic fixture', () => {
 
 describe('building a fixture whose client imports a server file', () => {
   test('fails, naming the chain of imports', async () => {
-    const root = copyFixture('client-imports-server');
+    const root = copyFixture('client_imports_server');
     await expect(buildApp(root)).rejects.toThrow(
       "src/Db.res.js has server components ('use weft server'), so the client can't import it, " +
         'but it does: src/Client.res.js -> src/Helpers.res.js -> src/Db.res.js',
@@ -187,7 +201,7 @@ describe('building without ppx_weft', () => {
     const rescriptJson = JSON.parse(
       readFileSync(join(root, 'rescript.json'), 'utf8'),
     );
-    delete rescriptJson['ppx-flags'];
+    rescriptJson['ppx-flags'] = [];
     writeFileSync(join(root, 'rescript.json'), JSON.stringify(rescriptJson));
     await expect(buildApp(root)).rejects.toThrow(
       /doesn't run ppx_weft: add "@e-cline\/ppx_weft\/ppx"/,

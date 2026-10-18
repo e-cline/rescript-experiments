@@ -2,49 +2,78 @@ import {
   cpSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
 } from 'node:fs';
 import {tmpdir} from 'node:os';
-import {dirname, join, resolve} from 'node:path';
+import {basename, dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import type {InlineConfig} from 'vite';
 
 import {weft, type Options} from '../src/index.js';
 
-const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), 'fixtures');
-
-/** `@e-cline/js_env`'s directory: `@e-cline/common` depends on it. */
-const jsEnv = realpathSync(
-  resolve(fixtures, '../../../common/node_modules/@e-cline/js_env'),
+/**
+ * The fixture apps: ReScript packages in the workspace, compiled through ppx_weft by the root
+ * `res` task (see `fixtures/README.md`).
+ */
+export const fixtures = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  'fixtures',
 );
+
+/** A fixture's package name. */
+export const fixtureName = (fixture: string) =>
+  `@e-cline/vite_plugin_weft_fixture_${fixture}`;
 
 const copies: string[] = [];
 
+/** Links `copy/node_modules` to the same packages as `original/node_modules`. */
+function linkDependencies(original: string, copy: string) {
+  const from = join(original, 'node_modules');
+  const add = (name: string) => {
+    const path = join(copy, 'node_modules', name);
+    mkdirSync(dirname(path), {recursive: true});
+    symlinkSync(realpathSync(join(from, name)), path, 'dir');
+  };
+  for (const entry of readdirSync(from)) {
+    if (entry.startsWith('.')) continue;
+    if (entry.startsWith('@')) {
+      for (const inner of readdirSync(join(from, entry)))
+        add(`${entry}/${inner}`);
+    } else {
+      add(entry);
+    }
+  }
+}
+
 /**
- * A copy of the fixture `name` in a temporary directory, with a `node_modules` linking its
- * dependencies: `widgets/` as `@fixtures/widgets`, and `@e-cline/js_env`.
+ * A copy of the fixture `name` in a temporary directory, which a test can build into or change.
+ * Its compiled files are the ones the root build wrote; its `node_modules` links to the same
+ * packages as the fixture's, the other fixtures (`widgets`) included.
  */
 export function copyFixture(name: string): string {
+  const original = join(fixtures, name);
   const root = realpathSync(mkdtempSync(join(tmpdir(), `weft-${name}-`)));
   copies.push(root);
-  cpSync(join(fixtures, name), root, {recursive: true});
-  const link = (packageName: string, target: string) => {
-    const path = join(root, 'node_modules', packageName);
-    mkdirSync(dirname(path), {recursive: true});
-    symlinkSync(target, path, 'dir');
-  };
-  link('@fixtures/widgets', join(root, 'widgets'));
-  link('@e-cline/js_env', jsEnv);
+  cpSync(original, root, {
+    recursive: true,
+    // ReScript's build cache, and the links made below.
+    filter: (source) =>
+      !['node_modules', 'lib', 'dist'].includes(basename(source)) ||
+      dirname(source) !== original,
+  });
+  linkDependencies(original, root);
   return root;
 }
 
 /** Removes every copy `copyFixture` made. */
 export function removeCopies() {
-  for (const copy of copies.splice(0))
+  for (const copy of copies.splice(0)) {
     rmSync(copy, {recursive: true, force: true});
+  }
 }
 
 export const defaultOptions: Options = {
@@ -62,5 +91,8 @@ export function config(
     configFile: false,
     logLevel: 'silent',
     plugins: [weft({...defaultOptions, ...options})],
+    // Dependency optimisation would reload the page when it finds a new dependency, which the dev
+    // tests would see as one of the plugin's reloads.
+    optimizeDeps: {noDiscovery: true, include: []},
   };
 }

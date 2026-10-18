@@ -1,0 +1,19 @@
+{
+  "name": "@e-cline/vite_plugin_weft_fixture_basic",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A fixture app for vite_plugin_weft's tests: entrypoints of every shape, server files, and files the scan must leave out.",
+  "type": "module",
+  "dependencies": {
+    "@e-cline/common": "workspace:*",
+    "@e-cline/vite_plugin_weft_fixture_widgets": "workspace:*",
+    "@e-cline/weft": "workspace:*",
+    "@e-cline/weft_core": "workspace:*",
+    "@e-cline/weft_dom": "workspace:*",
+    "@rescript/runtime": "catalog:"
+  },
+  "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
+    "rescript": "catalog:"
+  }
+}

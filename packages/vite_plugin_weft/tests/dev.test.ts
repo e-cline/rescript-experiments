@@ -1,4 +1,4 @@
-import {readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {readFileSync, renameSync, rmSync, writeFileSync} from 'node:fs';
 import type {AddressInfo} from 'node:net';
 import {join} from 'node:path';
 
@@ -13,7 +13,13 @@ import {
 } from 'vite-plus/test';
 
 import {clientEnvironment, serverEnvironment} from '../src/index.js';
-import {config, copyFixture, removeCopies} from './support.js';
+import {
+  config,
+  copyFixture,
+  fixtureName,
+  fixtures,
+  removeCopies,
+} from './support.js';
 
 afterAll(removeCopies);
 
@@ -23,8 +29,17 @@ let base: string;
 /** What the plugin and Vite sent on each environment's HMR channel. */
 let sent: Record<string, HotPayload[]>;
 
+const basic = fixtureName('basic');
+const widgets = fixtureName('widgets');
+
+/** `src/Later.res.js`'s compiled code, set aside before the server starts (see its test). */
+const later = '.later.res.js';
+
 async function start(fixture: string) {
   root = copyFixture(fixture);
+  if (fixture === 'basic') {
+    renameSync(join(root, 'src/Later.res.js'), join(root, later));
+  }
   server = await createServer({
     ...config(root),
     server: {host: '127.0.0.1', port: 0, ws: false},
@@ -56,12 +71,22 @@ async function clientMessage() {
   }
 }
 
-/** Changes `file` (from the root) as `rescript build -w` would, and has Vite see it now. */
-async function change(file: string, edit: (code: string) => string) {
+/**
+ * Has `file` (from the root) written again, as `rescript build -w` does when its source (or one it
+ * depends on) changes, and has Vite see it now. The code is the same: what's being tested is what's
+ * sent, and that the module runs again.
+ */
+async function rewrite(file: string) {
   const path = join(root, file);
-  writeFileSync(path, edit(readFileSync(path, 'utf8')));
+  writeFileSync(path, readFileSync(path, 'utf8'));
   server.watcher.emit('change', path);
   await clientMessage();
+}
+
+/** The value the server's `Notes` module had when it last ran. */
+async function notesInstance() {
+  const html = await (await fetch(`${base}/notes/1`)).text();
+  return html.match(/<p id="instance">([^<]*)<\/p>/)![1];
 }
 
 const events = (name: string) =>
@@ -87,7 +112,7 @@ describe('the dev server', () => {
       '<script type="module" src="/src/Client.res.js"></script>',
     );
     // An entrypoint the server imports has its mark.
-    expect(html).toContain('@fixtures/basic/src/Likes.res#');
+    expect(html).toContain(`${basic}/src/Likes.res#`);
   });
 
   test('answers a payload request with the payload', async () => {
@@ -101,10 +126,12 @@ describe('the dev server', () => {
   test('lists each entrypoint file in the assets, as the dev server serves it', async () => {
     const assets = await (await fetch(`${base}/assets.json`)).json();
     expect(assets.entrypoints).toEqual({
-      '@fixtures/basic/src/Likes.res': ['/src/Likes.res.js'],
-      '@fixtures/basic/src/Panels.res': ['/src/Panels.res.js'],
-      '@fixtures/basic/src/nested/Deep.res': ['/src/nested/Deep.res.js'],
-      '@fixtures/widgets/src/Widget.res': ['/widgets/src/Widget.res.js'],
+      [`${basic}/src/Likes.res`]: ['/src/Likes.res.js'],
+      [`${basic}/src/Panels.res`]: ['/src/Panels.res.js'],
+      [`${basic}/src/nested/Deep.res`]: ['/src/nested/Deep.res.js'],
+      [`${widgets}/src/Widget.res`]: [
+        `/@fs${join(fixtures, 'widgets/src/Widget.res.js')}`,
+      ],
     });
   });
 
@@ -124,10 +151,10 @@ describe('the dev server', () => {
     ]) {
       expect(references?.code).toContain(`import("/${file}")`);
     }
-    expect(references?.code).toContain('"@fixtures/widgets/src/Widget.res"');
+    expect(references?.code).toContain(`"${widgets}/src/Widget.res"`);
     const likes = await client.transformRequest('/src/Likes.res.js');
     expect(likes?.code).not.toContain('use weft');
-    expect(likes?.code).toContain('@fixtures/basic/src/Likes.res#');
+    expect(likes?.code).toContain(`${basic}/src/Likes.res#`);
   });
 
   test('refuses a server file to the client', async () => {
@@ -154,20 +181,16 @@ describe('the dev server', () => {
     ).rejects.toThrow('virtual:weft/client is only for the client');
   });
 
-  test('sends the refresh event when a file only the server has changes, and runs the new code', async () => {
-    await fetch(`${base}/notes/1`);
+  test('sends the refresh event when a file only the server has changes, and runs it again', async () => {
+    const before = await notesInstance();
     await server.environments[clientEnvironment]!.transformRequest(
       '/src/Likes.res.js',
     );
-    await change('src/Notes.res.js', (code) =>
-      code.replace('"Notes at "', '"Notes now at "'),
-    );
+    await rewrite('src/Notes.res.js');
     expect(events(clientEnvironment)).toEqual([
       'weft:refresh {"file":"src/Notes.res.js"}',
     ]);
-    expect(await (await fetch(`${base}/notes/1`)).text()).toContain(
-      'Notes now at /notes/1',
-    );
+    expect(await notesInstance()).not.toBe(before);
   });
 
   test('reloads the page when an entrypoint file changes', async () => {
@@ -175,29 +198,28 @@ describe('the dev server', () => {
     await server.environments[clientEnvironment]!.transformRequest(
       '/src/Likes.res.js',
     );
-    await change('src/Likes.res.js', (code) =>
-      code.replace('"likes"', '"hearts"'),
-    );
+    await rewrite('src/Likes.res.js');
     expect(events(clientEnvironment)).toEqual(['full-reload']);
   });
 
-  test('updates the references, and reloads, when a file becomes an entrypoint file', async () => {
+  test('updates the references, and reloads, when an entrypoint file appears', async () => {
     const client = server.environments[clientEnvironment]!;
-    await client.transformRequest('virtual:weft/client-references');
-    await change('src/Shared.res.js', (code) =>
-      `'use weft entrypoint'\n${code}`.replace(
-        'export {',
-        'M.mark(label, "@fixtures/basic/src/Shared.res#");\nexport {',
-      ),
-    );
-    expect(events(clientEnvironment)).toEqual(['full-reload']);
-    const references = await client.transformRequest(
+    const before = await client.transformRequest(
       'virtual:weft/client-references',
     );
-    expect(references?.code).toContain('"@fixtures/basic/src/Shared.res"');
+    expect(before?.code).not.toContain('Later.res');
+    const path = join(root, 'src/Later.res.js');
+    renameSync(join(root, later), path);
+    server.watcher.emit('add', path);
+    await clientMessage();
+    expect(events(clientEnvironment)).toEqual(['full-reload']);
+    const after = await client.transformRequest(
+      'virtual:weft/client-references',
+    );
+    expect(after?.code).toContain(`"${basic}/src/Later.res"`);
   });
 
-  test('updates the references when an entrypoint file is deleted', async () => {
+  test('updates the references, and reloads, when an entrypoint file is deleted', async () => {
     const client = server.environments[clientEnvironment]!;
     await client.transformRequest('virtual:weft/client-references');
     const path = join(root, 'src/nested/Deep.res.js');
@@ -213,7 +235,7 @@ describe('the dev server', () => {
 });
 
 describe('the dev server, with a client importing a server file', () => {
-  beforeEach(() => start('client-imports-server'));
+  beforeEach(() => start('client_imports_server'));
 
   test('fails the request for it, naming the chain of imports', async () => {
     const client = server.environments[clientEnvironment]!;

@@ -19,7 +19,7 @@
     "@e-cline/pretty_print_example",
     "@e-cline/tree_shaking_example",
     "@e-cline/http_server_example",
-    "@e-cline/server"
+    "@e-cline/servy"
   ],
   "package-specs": [
     {

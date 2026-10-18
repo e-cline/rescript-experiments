@@ -32,7 +32,7 @@ let middleware = (
     // With credentials, an allowed origin can act as a visitor who is logged
     // in here. These are origins that no deliberate list has on it: a
     // predicate that lets them through lets everything through.
-    ["null", "https://res-server-probe.invalid"]->Array.forEach(origin =>
+    ["null", "https://servy-probe.invalid"]->Array.forEach(origin =>
       if isAllowed(origin) {
         JsError.throwWithMessage(
           `Cors.middleware: with \`~credentials=true\`, \`~origins\` allows the origin "${origin}". "null" is what sandboxed pages and local files send, and the other belongs to nobody, so allowing either means any site can act as a visitor who is logged in here. Allow only the origins you mean to.`,

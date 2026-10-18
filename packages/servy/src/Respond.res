@@ -122,7 +122,7 @@ let ndjson = (
 // so this asks to remove a header that isn't there: nothing happens if they
 // can be, and it throws if they can't.
 let hasMutableHeaders = (response: Response.t): bool =>
-  switch response.headers->Headers.delete("x-res-server-mutability-probe") {
+  switch response.headers->Headers.delete("x-servy-mutability-probe") {
   | () => true
   | exception _ => false
   }

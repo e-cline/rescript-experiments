@@ -36,7 +36,7 @@
     "@e-cline/http_server_example": "workspace:*",
     "@e-cline/pretty_print_example": "workspace:*",
     "@e-cline/priority_queue": "workspace:*",
-    "@e-cline/server": "workspace:*",
+    "@e-cline/servy": "workspace:*",
     "@e-cline/signal_maps": "workspace:*",
     "@e-cline/signal_maps_benchmarks": "workspace:*",
     "@e-cline/signals": "workspace:*",

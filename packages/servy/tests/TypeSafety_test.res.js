@@ -10,7 +10,7 @@ let $$package = process.cwd();
 
 function check(source) {
   let directory = Nodefs.mkdtempSync(Nodepath.join(Nodeos.tmpdir(), "res-server-types-"));
-  Nodefs.writeFileSync(Nodepath.join(directory, "Case.res"), `open Server\n` + source + `\n`);
+  Nodefs.writeFileSync(Nodepath.join(directory, "Case.res"), `open Servy\n` + source + `\n`);
   let result = Nodechild_process.spawnSync(Nodepath.resolve($$package, "node_modules/.bin/bsc"), [
     "-bs-cmi-only",
     "-I",

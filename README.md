@@ -19,7 +19,7 @@ for reading `signals`), plus the `weft_app` example.
 | [`@e-cline/trees`](packages/trees)                   | Persistent sorted maps (a B+tree, an AVL tree and a chunked AVL tree), with mutable variants and diffing that takes advantage of structural sharing. |
 | [`@e-cline/signals`](packages/signals)               | Reactive signals: atoms, computeds and effects, with diff-driven history for incremental consumers.                                                  |
 | [`@e-cline/signal_maps`](packages/signal_maps)       | A sorted, signal-backed map whose derived views update incrementally. Built on the two packages above.                                               |
-| [`@e-cline/server`](packages/server)                 | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
+| [`@e-cline/servy`](packages/servy)                   | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
 | [`@e-cline/weft`](packages/weft)                     | Weft's public API: `weft_core` and `weft_dom` behind one `Weft` module. The package to depend on.                                                    |
 | [`@e-cline/weft_core`](packages/weft_core)           | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
 | [`@e-cline/weft_dom`](packages/weft_dom)             | The DOM renderer for `weft_core`: render components into a browser page.                                                                             |
@@ -48,7 +48,7 @@ Then list it in your `rescript.json`:
 ```
 
 Each package's modules sit under a namespace named after it (`Signals`, `Trees`, `Common`,
-`SignalMaps`, `Server`, `WeftCore`, `WeftDom`, `WeftSignals`), so `Signals.Atom.make` works without
+`SignalMaps`, `Servy`, `WeftCore`, `WeftDom`, `WeftSignals`), so `Signals.Atom.make` works without
 an `open`. (`weft` is the exception: a single `Weft` module.) The packages ship as ReScript source,
 and your project's `rescript build` compiles them along with your own code.
 
@@ -56,7 +56,7 @@ and your project's `rescript build` compiles them along with your own code.
 
 These aren't published:
 
-- [`examples/`](examples) -- an HTTP server built with `server`, a React component written in
+- [`examples/`](examples) -- an HTTP server built with `servy`, a React component written in
   ReScript and the TypeScript React app consuming it, a todo app built with `weft_core`, a
   tree-shaking check, and a use of the PPX below.
 - [`packages/trees/benchmarks`](packages/trees/benchmarks),

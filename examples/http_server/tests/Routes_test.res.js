@@ -3,9 +3,9 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as ByteStream$Servy from "@e-cline/servy/src/ByteStream.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as ByteStream$Server from "@e-cline/server/src/ByteStream.res.js";
-import * as HttpHeaders$Server from "@e-cline/server/src/HttpHeaders.res.js";
+import * as HttpHeaders$Servy from "@e-cline/servy/src/HttpHeaders.res.js";
 import * as Routes$HttpServerExample from "../src/Routes.res.js";
 
 function send(appOpt, methodOpt, headersOpt, body, path) {
@@ -20,7 +20,7 @@ function send(appOpt, methodOpt, headersOpt, body, path) {
 }
 
 function contentType(response) {
-  return HttpHeaders$Server.get(response.headers, "content-type");
+  return HttpHeaders$Servy.get(response.headers, "content-type");
 }
 
 async function json(response) {
@@ -32,12 +32,12 @@ Vitest.describe("Routes", undefined, undefined, undefined, undefined, undefined,
   Vitest.testAsync("GET / sends HTML", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let response = await send(undefined, undefined, undefined, undefined, "/");
     t.expect(response.status).toBe(200);
-    t.expect(HttpHeaders$Server.get(response.headers, "content-type")).toBe("text/html; charset=utf-8");
+    t.expect(HttpHeaders$Servy.get(response.headers, "content-type")).toBe("text/html; charset=utf-8");
     return t.expect(await response.text()).toContain("<code>/hello/:name</code>");
   });
   Vitest.testAsync("GET /hello sends text, using the query string", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let response = await send(undefined, undefined, undefined, undefined, "/hello");
-    t.expect(HttpHeaders$Server.get(response.headers, "content-type")).toBe("text/plain; charset=utf-8");
+    t.expect(HttpHeaders$Servy.get(response.headers, "content-type")).toBe("text/plain; charset=utf-8");
     t.expect(await response.text()).toBe("Hello, world!\n");
     let response$1 = await send(undefined, undefined, undefined, undefined, "/hello?name=Ada");
     return t.expect(await response$1.text()).toBe("Hello, Ada!\n");
@@ -48,7 +48,7 @@ Vitest.describe("Routes", undefined, undefined, undefined, undefined, undefined,
   });
   Vitest.testAsync("GET /time sends JSON", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let response = await send(undefined, undefined, undefined, undefined, "/time");
-    t.expect(HttpHeaders$Server.get(response.headers, "content-type")).toBe("application/json");
+    t.expect(HttpHeaders$Servy.get(response.headers, "content-type")).toBe("application/json");
     let field = await json(response);
     t.expect(Stdlib_Option.isSome(Stdlib_Option.flatMap(field("iso"), Stdlib_JSON.Decode.string))).toBe(true);
     return t.expect(Stdlib_Option.isSome(Stdlib_Option.flatMap(field("epochMs"), Stdlib_JSON.Decode.float))).toBe(true);
@@ -59,7 +59,7 @@ Vitest.describe("Routes", undefined, undefined, undefined, undefined, undefined,
       "content-type": "application/json"
     }, body, "/echo");
     t.expect(response.status).toBe(200);
-    t.expect(HttpHeaders$Server.get(response.headers, "content-type")).toBe("application/json");
+    t.expect(HttpHeaders$Servy.get(response.headers, "content-type")).toBe("application/json");
     return t.expect(await response.text()).toBe(body);
   });
   Vitest.testAsync("/inspect describes the request", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -81,9 +81,9 @@ Vitest.describe("Routes", undefined, undefined, undefined, undefined, undefined,
   });
   Vitest.testAsync("GET /events streams NDJSON, one line per chunk", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let response = await send(undefined, undefined, undefined, undefined, "/events?count=3&intervalMs=1");
-    t.expect(HttpHeaders$Server.get(response.headers, "content-type")).toBe("application/x-ndjson; charset=utf-8");
+    t.expect(HttpHeaders$Servy.get(response.headers, "content-type")).toBe("application/x-ndjson; charset=utf-8");
     let body = response.body;
-    let chunks = body !== null ? await ByteStream$Server.toTextChunks(body) : [];
+    let chunks = body !== null ? await ByteStream$Servy.toTextChunks(body) : [];
     return t.expect(chunks.map(line => Stdlib_Option.flatMap(Stdlib_JSON.Decode.object(JSON.parse(line)), __x => __x["index"]))).toEqual([
       0,
       1,
@@ -112,7 +112,7 @@ Vitest.describe("Routes", undefined, undefined, undefined, undefined, undefined,
     t.expect(await response.json()).toEqual(JSON.parse("[]"));
     let response$1 = await post(undefined, `{"text":"no token"}`);
     t.expect(response$1.status).toBe(401);
-    t.expect(HttpHeaders$Server.get(response$1.headers, "www-authenticate")).toBe("Bearer");
+    t.expect(HttpHeaders$Servy.get(response$1.headers, "www-authenticate")).toBe("Bearer");
     let response$2 = await post({
       authorization: "Bearer wrong",
       "content-type": "application/json"
@@ -210,7 +210,7 @@ Vitest.describe("Routes", undefined, undefined, undefined, undefined, undefined,
   Vitest.testAsync("HEAD gets a GET route's headers without its body", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let response = await send(undefined, "HEAD", undefined, undefined, "/hello/Ada");
     t.expect(response.status).toBe(200);
-    t.expect(HttpHeaders$Server.get(response.headers, "content-type")).toBe("text/plain; charset=utf-8");
+    t.expect(HttpHeaders$Servy.get(response.headers, "content-type")).toBe("text/plain; charset=utf-8");
     t.expect(await response.text()).toBe("");
     return t.expect((await send(undefined, "HEAD", undefined, undefined, "/nope")).status).toBe(404);
   });

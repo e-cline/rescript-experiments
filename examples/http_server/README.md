@@ -1,6 +1,6 @@
 # @e-cline/http_server_example
 
-An example HTTP server built with [`@e-cline/server`](../../packages/server), this workspace's small
+An example HTTP server built with [`@e-cline/servy`](../../packages/servy), this workspace's small
 framework over the Web-standard `Request` and `Response`. It shows routes declared with paths as
 lists of segments, HTML, text, JSON and streamed responses, a store shared between requests, and an
 auth middleware, with both attached to the request under typed keys. The whole application is put

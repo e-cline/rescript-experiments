@@ -9,27 +9,27 @@ Both kinds of component are marked explicitly:
 
 ```rescript
 // src/NotePage.res -- runs only on the server
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
+@@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 @weft.component({kind: Server})
 let make = async (~id: string) => {
   let note = await Db.note(id)
   <article>
-    <h1> {Jsx.string(note.title)} </h1>
+    <h1> {Weft.Jsx.string(note.title)} </h1>
     <LikeButton noteId=id initial=note.likes />
-    <WeftCore.Suspense fallback={<p> {Jsx.string("Loading comments...")} </p>}>
+    <Weft.Suspense fallback={<p> {Weft.Jsx.string("Loading comments...")} </p>}>
       <Comments noteId=id />
-    </WeftCore.Suspense>
+    </Weft.Suspense>
   </article>
 }
 
 // src/LikeButton.res -- an entrypoint: its code is loaded in the browser, in its own chunk
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
+@@jsxConfig({version: 4, module_: "Weft.Jsx"})
 
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~initial: int) => {
-  let (likes, setLikes) = WeftCore.Hooks.useState(() => initial)
-  <button onClick={_ => setLikes(n => n + 1)}> {Jsx.int(likes)} </button>
+  let (likes, setLikes) = Weft.Hooks.useState(() => initial)
+  <button onClick={_ => setLikes(n => n + 1)}> {Weft.Jsx.int(likes)} </button>
 }
 ```
 
@@ -79,8 +79,9 @@ throwaway ppxlib probe built from the existing `ppx_pretty_print` opam switch:
    That's what the PPX uses to mark files for the Vite plugin (§4).
 8. **Package-level `ppx-flags` work in the root build** (`examples/pretty_print` already relies on
    it), so only the packages using server components need the new PPX.
-9. **`WeftDom.Jsx` loads without a DOM**: its compiled module imports only `WeftCore.JsxCore`. So
-   server components can build host elements with it on the server.
+9. **`Weft.Jsx` loads without a DOM.** `Weft` is only aliases (its compiled module is empty), so
+   `Weft.Jsx` compiles to an import of `WeftDom.Jsx`, whose module imports only `WeftCore.JsxCore`.
+   So server components can build host elements with it on the server.
 10. **The bundled Vite (`vite-plus-core` 1.3.0) has the Environment API** (`buildApp`,
     `createRunnableDevEnvironment`, `createServerModuleRunner`), which the plugin is built on.
 
@@ -434,7 +435,7 @@ doesn't use the PPX) that a server component wraps around a subtree:
 
 // in any entrypoint below it, or elsewhere on the page
 let comments = WeftServer.Client.useFrame("comments")
-<button onClick={_ => comments.refetch()}> {Jsx.string("Reload")} </button>
+<button onClick={_ => comments.refetch()}> {Weft.Jsx.string("Reload")} </button>
 // comments.isPending is true until the new subtree has rendered
 ```
 
@@ -751,6 +752,7 @@ kept).
 ```
 tools/ppx/setup.sh, rescript_ppx.opam.locked   the shared OCaml toolchain (moved from pretty_print)
 tools/ppx/weft/                    @e-cline/ppx_weft: ppx_src/ppx_weft.ml, bin/main.ml, ppx script
+packages/weft/src/Weft.res(i)      gains a `Lazy` alias (useful in client-only apps too)
 packages/weft_core/src/
   Lazy.res(i)                      `Lazy.fromPromise`; Element.kind gains `Lazy`
   Entrypoint.res(i)                `mark` (what the PPX calls) and `idOf`, for renderers

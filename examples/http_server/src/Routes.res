@@ -1,5 +1,5 @@
 /***
-The example server, built with `@e-cline/server`.
+The example server, built with `@e-cline/servy`.
 
 `routes` declares every route, each a method, a path as a list of segments,
 and a handler. `make` puts the application together, middleware first and
@@ -7,16 +7,16 @@ routes last, as a standard fetch handler (a function from a Web `Request` to
 a `Response`) that `Main.res` serves.
 */
 
-module App = Server.App
-module RequestContext = Server.RequestContext
-module Context = Server.Context
-module Handler = Server.Handler
-module Html = Server.Html
-module Middleware = Server.Middleware
-module Query = Server.Query
-module Respond = Server.Respond
-module Route = Server.Route
-module Router = Server.Router
+module App = Servy.App
+module RequestContext = Servy.RequestContext
+module Context = Servy.Context
+module Handler = Servy.Handler
+module Html = Servy.Html
+module Middleware = Servy.Middleware
+module Query = Servy.Query
+module Respond = Servy.Respond
+module Route = Servy.Route
+module Router = Servy.Router
 
 /** What the index page lists. */
 let routeDescriptions = [
@@ -53,7 +53,7 @@ let index: Handler.t = async _ctx => {
   </head>
   <body>
     <h1>ReScript HTTP server</h1>
-    <p>Built with <code>@e-cline/server</code>.</p>
+    <p>Built with <code>@e-cline/servy</code>.</p>
     <table>
       <thead><tr><th>Method</th><th>Path</th><th>What it does</th></tr></thead>
       <tbody>
@@ -118,7 +118,7 @@ let inspect: Handler.t = async ctx => {
   Respond.json(
     JSON.Encode.object(
       dict{
-        "method": JSON.Encode.string(ctx.method->Server.Method.toString),
+        "method": JSON.Encode.string(ctx.method->Servy.Method.toString),
         "url": JSON.Encode.string(ctx.url.href),
         "path": JSON.Encode.string(ctx.url.pathname),
         "segments": RequestContext.pathSegments(ctx.url.pathname)
@@ -126,7 +126,7 @@ let inspect: Handler.t = async ctx => {
         ->Array.map(JSON.Encode.string)
         ->JSON.Encode.array,
         "query": ctx.query->Query.toMap->encodeStringMap,
-        "headers": ctx.request.headers->Server.HttpHeaders.toMap->encodeStringMap,
+        "headers": ctx.request.headers->Servy.HttpHeaders.toMap->encodeStringMap,
         "body": body == "" ? JSON.Encode.null : JSON.Encode.string(body),
       },
     ),
@@ -230,7 +230,7 @@ let createNote: Handler.t = async ctx => {
 }
 
 let notFound: Handler.t = async ctx =>
-  errorJson(~status=404, `No route for ${ctx.method->Server.Method.toString} ${ctx.url.pathname}`)
+  errorJson(~status=404, `No route for ${ctx.method->Servy.Method.toString} ${ctx.url.pathname}`)
 
 // -- Routing
 

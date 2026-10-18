@@ -1,4 +1,4 @@
-# @e-cline/server
+# @e-cline/servy
 
 A small ReScript framework for HTTP servers, built on the Web-standard
 [`Request`](https://developer.mozilla.org/docs/Web/API/Request) and
@@ -10,7 +10,7 @@ interface does. `NodeServer` runs one on Node with
 [`@hono/node-server`](https://github.com/honojs/node-server).
 
 ```rescript
-open Server
+open Servy
 
 let server =
   NodeServer.run(~port=3000)
@@ -31,10 +31,10 @@ let server =
 
 ## Using it
 
-List `@e-cline/server` and `@rescript/webapi` in the `dependencies` of both `package.json` and
-`rescript.json`. The modules are under the `Server` namespace. `@rescript/webapi`'s (`Request`,
+List `@e-cline/servy` and `@rescript/webapi` in the `dependencies` of both `package.json` and
+`rescript.json`. The modules are under the `Servy` namespace. `@rescript/webapi`'s (`Request`,
 `Response`, `Headers`, ...) are global; none of this package's modules share a name with them, so
-`open Server` is safe.
+`open Servy` is safe.
 
 `@rescript/webapi` is still experimental and has no stable release, so this package depends on one
 exact version of it (`0.1.0-experimental-0781ac8`). Install that same version, or the two copies'
@@ -563,7 +563,7 @@ In tests there's no need for a server at all: call the app with a `Request`.
   that depends on this package doesn't compile them, or need `rescript-vitest`.
 
 ```bash
-pnpm --filter @e-cline/server exec vp run test
+pnpm --filter @e-cline/servy exec vp run test
 ```
 
 ## Not included

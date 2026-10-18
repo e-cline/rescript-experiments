@@ -36,10 +36,10 @@ type outcome =
   | Compiles
   | Rejected(string)
 
-/** Type-checks `source` as a module that has done `open Server`. */
+/** Type-checks `source` as a module that has done `open Servy`. */
 let check = (source: string): outcome => {
   let directory = mkdtempSync(join(tmpdir(), "res-server-types-"))
-  writeFileSync(join(directory, "Case.res"), `open Server\n${source}\n`)
+  writeFileSync(join(directory, "Case.res"), `open Servy\n${source}\n`)
   let result = spawnSync(
     resolve(package, "node_modules/.bin/bsc"),
     [

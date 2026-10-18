@@ -18,7 +18,7 @@ let send = (~app=Routes.make(), ~method="GET", ~headers=dict{}, ~body=?, path) =
     ),
   )
 
-let contentType = (response: Response.t) => response.headers->Server.HttpHeaders.get("content-type")
+let contentType = (response: Response.t) => response.headers->Servy.HttpHeaders.get("content-type")
 
 /** Reads a JSON object body, returning a lookup of its fields. */
 let json = async (response: Response.t) => {
@@ -103,7 +103,7 @@ describe("Routes", () => {
     let response = await send("/events?count=3&intervalMs=1")
     t->expect(response->contentType)->Expect.toBe(Some("application/x-ndjson; charset=utf-8"))
     let chunks = switch response.body->Null.toOption {
-    | Some(body) => await body->Server.ByteStream.fromBody->Server.ByteStream.toTextChunks
+    | Some(body) => await body->Servy.ByteStream.fromBody->Servy.ByteStream.toTextChunks
     | None => []
     }
     t
@@ -140,7 +140,7 @@ describe("Routes", () => {
     let response = await post(`{"text":"no token"}`)
     t->expect(response.status)->Expect.toBe(401)
     t
-    ->expect(response.headers->Server.HttpHeaders.get("www-authenticate"))
+    ->expect(response.headers->Servy.HttpHeaders.get("www-authenticate"))
     ->Expect.toBe(Some("Bearer"))
     let response = await post(
       ~headers=dict{"authorization": "Bearer wrong", "content-type": "application/json"},

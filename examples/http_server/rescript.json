@@ -13,5 +13,5 @@
   "suffix": ".res.js",
   "namespace": "HttpServerExample",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/server", "@rescript/webapi"]
+  "dependencies": ["@e-cline/servy", "@rescript/webapi"]
 }

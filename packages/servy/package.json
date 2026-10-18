@@ -1,5 +1,5 @@
 {
-  "name": "@e-cline/server",
+  "name": "@e-cline/servy",
   "version": "0.0.1",
   "description": "A small ReScript framework for HTTP servers built on the Web-standard Request/Response APIs, composed from handlers, middleware and routes and set up as one pipe: routes with paths as lists of segments, typed query parameters, HTML/text/JSON/streaming responses, cookies, CORS, and typed values attached to the request. Runs on Node via @hono/node-server.",
   "keywords": [
@@ -8,9 +8,10 @@
     "middleware",
     "rescript",
     "router",
-    "server"
+    "server",
+    "servy"
   ],
-  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/server#readme",
+  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/servy#readme",
   "bugs": {
     "url": "https://github.com/e-cline/rescript-experiments/issues"
   },
@@ -19,7 +20,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/e-cline/rescript-experiments.git",
-    "directory": "packages/server"
+    "directory": "packages/servy"
   },
   "files": [
     "rescript.json",

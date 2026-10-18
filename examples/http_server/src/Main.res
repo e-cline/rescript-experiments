@@ -13,7 +13,7 @@ Starts the server on Node. Run with `vp run start` (or, after a build,
 let port = portEnv->Option.flatMap(Int.fromString(_))->Option.getOr(3000)
 
 let _server =
-  Routes.make(~log=Console.log)->Server.NodeServer.serve(
+  Routes.make(~log=Console.log)->Servy.NodeServer.serve(
     ~port,
     ~hostname=?hostEnv,
     ~onListen=address =>

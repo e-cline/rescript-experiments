@@ -1,5 +1,5 @@
 {
-  "name": "@e-cline/server",
+  "name": "@e-cline/servy",
   "sources": [
     {"dir": "src", "subdirs": true},
     {"dir": "tests", "subdirs": true, "type": "dev"}
@@ -11,7 +11,7 @@
     }
   ],
   "suffix": ".res.js",
-  "namespace": "Server",
+  "namespace": "Servy",
   "dev-dependencies": ["rescript-vitest"],
   "dependencies": ["@rescript/webapi"]
 }

@@ -1,5 +1,5 @@
 ---
-'@e-cline/fiber': patch
+'@e-cline/weft_core': patch
 ---
 
 New package: a React-like component library in ReScript. Components are `@jsx.component` functions

@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/weft_app_example",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "WeftAppExample",
+  "dev-dependencies": ["rescript-vitest"],
+  "dependencies": ["@e-cline/weft_core", "@e-cline/weft_dom"]
+}

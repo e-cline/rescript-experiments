@@ -247,21 +247,6 @@ importers:
       '@e-cline/common':
         specifier: workspace:*
         version: link:packages/common
-      '@e-cline/fiber':
-        specifier: workspace:*
-        version: link:packages/fiber
-      '@e-cline/fiber_app_example':
-        specifier: workspace:*
-        version: link:examples/fiber_app
-      '@e-cline/fiber_benchmarks':
-        specifier: workspace:*
-        version: link:packages/fiber/benchmarks
-      '@e-cline/fiber_dom':
-        specifier: workspace:*
-        version: link:packages/fiber_dom
-      '@e-cline/fiber_signals':
-        specifier: workspace:*
-        version: link:packages/fiber_signals
       '@e-cline/http_server_example':
         specifier: workspace:*
         version: link:examples/http_server
@@ -295,6 +280,21 @@ importers:
       '@e-cline/trees_benchmarks':
         specifier: workspace:*
         version: link:packages/trees/benchmarks
+      '@e-cline/weft_app_example':
+        specifier: workspace:*
+        version: link:examples/weft_app
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:packages/weft_core
+      '@e-cline/weft_core_benchmarks':
+        specifier: workspace:*
+        version: link:packages/weft_core/benchmarks
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:packages/weft_dom
+      '@e-cline/weft_signals':
+        specifier: workspace:*
+        version: link:packages/weft_signals
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -313,34 +313,6 @@ importers:
       vite-plus:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
-
-  examples/fiber_app:
-    dependencies:
-      '@e-cline/fiber':
-        specifier: workspace:*
-        version: link:../../packages/fiber
-      '@e-cline/fiber_dom':
-        specifier: workspace:*
-        version: link:../../packages/fiber_dom
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-    devDependencies:
-      jsdom:
-        specifier: 'catalog:'
-        version: 30.1.3
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript-vitest:
-        specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
-      vite:
-        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
-        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
-      vite-plus:
-        specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   examples/http_server:
     dependencies:
@@ -466,90 +438,18 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/common:
+  examples/weft_app:
     dependencies:
-      '@e-cline/js_env':
-        specifier: ^0.0.2
-        version: 0.0.2
-    devDependencies:
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript-vitest:
-        specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
-
-  packages/fiber:
-    dependencies:
-      '@e-cline/common':
-        specifier: workspace:^
-        version: link:../common
-      '@e-cline/priority_queue':
-        specifier: workspace:^
-        version: link:../priority_queue
-    devDependencies:
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript-vitest:
-        specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
-
-  packages/fiber/benchmarks:
-    dependencies:
-      '@e-cline/benchmarking':
+      '@e-cline/weft_core':
         specifier: workspace:*
-        version: link:../../../tools/benchmarking
-      '@e-cline/fiber':
+        version: link:../../packages/weft_core
+      '@e-cline/weft_dom':
         specifier: workspace:*
-        version: link:..
-      '@e-cline/fiber_dom':
-        specifier: workspace:*
-        version: link:../../fiber_dom
+        version: link:../../packages/weft_dom
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
-      mitata:
-        specifier: 'catalog:'
-        version: 1.0.34
     devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.5
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      terser:
-        specifier: 'catalog:'
-        version: 5.51.2
-      tsx:
-        specifier: 'catalog:'
-        version: 4.23.15
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
-      vite:
-        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
-        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
-      vite-plus:
-        specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
-
-  packages/fiber_dom:
-    dependencies:
-      '@e-cline/fiber':
-        specifier: workspace:^
-        version: link:../fiber
-    devDependencies:
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
       jsdom:
         specifier: 'catalog:'
         version: 30.1.3
@@ -559,15 +459,18 @@ importers:
       rescript-vitest:
         specifier: 'catalog:'
         version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/fiber_signals:
+  packages/common:
     dependencies:
-      '@e-cline/fiber':
-        specifier: workspace:^
-        version: link:../fiber
-      '@e-cline/signals':
-        specifier: workspace:^
-        version: link:../signals
+      '@e-cline/js_env':
+        specifier: ^0.0.2
+        version: 0.0.2
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -749,6 +652,103 @@ importers:
       vite-plus:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/weft_core:
+    dependencies:
+      '@e-cline/common':
+        specifier: workspace:^
+        version: link:../common
+      '@e-cline/priority_queue':
+        specifier: workspace:^
+        version: link:../priority_queue
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+
+  packages/weft_core/benchmarks:
+    dependencies:
+      '@e-cline/benchmarking':
+        specifier: workspace:*
+        version: link:../../../tools/benchmarking
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:..
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../weft_dom
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      mitata:
+        specifier: 'catalog:'
+        version: 1.0.34
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      terser:
+        specifier: 'catalog:'
+        version: 5.51.2
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.15
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/weft_dom:
+    dependencies:
+      '@e-cline/weft_core':
+        specifier: workspace:^
+        version: link:../weft_core
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+
+  packages/weft_signals:
+    dependencies:
+      '@e-cline/signals':
+        specifier: workspace:^
+        version: link:../signals
+      '@e-cline/weft_core':
+        specifier: workspace:^
+        version: link:../weft_core
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
   tools/benchmarking:
     dependencies:

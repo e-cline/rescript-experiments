@@ -28,14 +28,30 @@ let isLazy = (element: Element.t): bool =>
   | _ => false
   }
 
+type rethrowProps = {reason: unknown}
+
+/** Throws `reason` when rendered: what a rejected lazy element is replaced with. */
+let rethrow: JsxCore.component<rethrowProps> = props => JsExn.throw(props.reason)
+
 /**
 What `element` stands for: itself, unless it's a lazy element, which is replaced by what its promise
 resolved to (again and again, if that's a lazy too). Throws `Suspended` for a promise that hasn't
-settled, and a rejected promise's error.
+settled.
+
+A rejected promise's lazy is replaced by an element that throws the error when it renders, so the
+error comes from the lazy's position, in a fiber of its own: every boundary above it can catch it,
+the lazy's parent included (an `ErrorBoundary` whose child it is, say). Thrown from here, it would
+come from the parent's render, out of the parent's reach. (React does the same.)
 */
 let rec resolve = (element: Element.t): Element.t =>
   switch Element.classify(element) {
-  | Node({kind: Lazy} as node) => resolve(SuspenseImpl.use(promiseOf(node)))
+  | Node({kind: Lazy} as node) =>
+    let promise = promiseOf(node)
+    if SuspenseImpl.status(promise)->Nullable.toOption == Some(SuspenseImpl.rejected) {
+      JsxCore.jsx(rethrow, {reason: SuspenseImpl.reason(promise)})
+    } else {
+      resolve(SuspenseImpl.use(promise))
+    }
   | _ => element
   }
 

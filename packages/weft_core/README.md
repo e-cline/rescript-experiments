@@ -29,7 +29,8 @@ This is an early stage of the [plan](../../docs/weft_plan.md). What works:
   `Lazy.fromPromise`, an element that isn't ready yet, rendered in its place once it is.
 - For server renderers (see
   [the server components plan](../../docs/weft_server_components_plan.md)): `ServerRender.run`, to
-  call components outside the reconciler, and `Entrypoint` marks.
+  call components outside the reconciler, and `Entrypoint` marks; and `Deferred`, a promise whose
+  outcome `Hooks.use` and `Lazy` can read the moment it's settled.
 - `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
   through concurrent renders.
 
@@ -176,7 +177,12 @@ let chart = WeftCore.Lazy.fromPromise(loadChart()) // a promise of an element, m
 suspends as `Hooks.use` does until the promise settles (a promise that already has is read at once).
 It has no fiber of its own: what it resolves to is rendered in its place, so replacing a lazy
 element with that element, or the other way round, keeps everything below it, state included. It's
-what streamed server output uses for the parts that arrive later.
+what streamed server output uses for the parts that arrive later. A rejected one throws its error
+from its own position, so an `ErrorBoundary` whose child it is catches it.
+
+A plain promise's outcome can only be learned a microtask after it settles, so a render before then
+suspends once. `Deferred.make()` gives a promise settled from outside whose outcome is recorded the
+moment `resolve` or `reject` is called: what the server components client decodes rows into.
 
 ### Server renderers
 

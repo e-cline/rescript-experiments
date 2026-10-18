@@ -18,3 +18,9 @@ let run: (unit => 'a) => 'a
 
 /** Whether a server render (`run`) is in progress. */
 let isRunning: unit => bool
+
+/**
+The promise a server render suspended on, if `error` (what `run` threw) is a suspension: `Hooks.use`
+on a promise that hasn't settled. The renderer waits for it, and calls the component again.
+*/
+let suspendedOn: exn => option<promise<unknown>>

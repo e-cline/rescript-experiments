@@ -106,6 +106,31 @@ describe("Lazy: suspending", () => {
     t->expect(TestRenderer.toString(renderer))->Expect.toBe("no data")
   })
 
+  testAsync(
+    "a rejected lazy directly inside an error boundary is caught by that boundary",
+    async t => {
+      let data = deferred()
+      let lazy = Lazy.fromPromise(data.promise)
+      data.reject(JsError.make("no data"))
+      await tick()
+      let renderer = TestRenderer.create()
+      TestRenderer.render(
+        renderer,
+        <div>
+          <ErrorBoundary
+            fallback={(~error, ~reset as _) => TestJsx.string(ErrorBoundary.message(error))}
+          >
+            lazy
+          </ErrorBoundary>
+          <b id="sibling" />
+        </div>,
+      )
+      t
+      ->expect(TestRenderer.toString(renderer))
+      ->Expect.toBe(`<div>no data<b id="sibling"></b></div>`)
+    },
+  )
+
   testAsync("a lazy inside a host element suspends to the boundary above it", async t => {
     let data = deferred()
     let renderer = TestRenderer.create()

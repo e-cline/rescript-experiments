@@ -127,6 +127,25 @@ Vitest.describe("Lazy: suspending", undefined, undefined, undefined, undefined, 
     await settle();
     return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("no data");
   });
+  Vitest.testAsync("a rejected lazy directly inside an error boundary is caught by that boundary", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let data = deferred();
+    let lazy = Lazy$WeftCore.fromPromise(data.promise);
+    data.reject(new Error("no data"));
+    await tick();
+    let renderer = TestRenderer$WeftCore.create();
+    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.Elements.jsxs("div", {
+      children: [
+        TestJsx$WeftCore.jsx(ErrorBoundary$WeftCore.make, {
+          fallback: (error, param) => ErrorBoundary$WeftCore.message(error),
+          children: lazy
+        }),
+        TestJsx$WeftCore.Elements.jsx("b", {
+          id: "sibling"
+        })
+      ]
+    }));
+    return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<div>no data<b id="sibling"></b></div>`);
+  });
   Vitest.testAsync("a lazy inside a host element suspends to the boundary above it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let data = deferred();
     let renderer = TestRenderer$WeftCore.create();

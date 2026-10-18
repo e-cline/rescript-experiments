@@ -50,6 +50,7 @@
     "@e-cline/weft_core": "workspace:*",
     "@e-cline/weft_core_benchmarks": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
+    "@e-cline/weft_server": "workspace:*",
     "@e-cline/weft_signals": "workspace:*",
     "@types/node": "catalog:",
     "jsdom": "catalog:",

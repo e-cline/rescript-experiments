@@ -2,6 +2,9 @@
 
 import * as Env$Common from "@e-cline/common/src/Env.res.js";
 import * as Element$WeftCore from "../Element.res.js";
+import * as JsxCore$WeftCore from "../JsxCore.res.js";
+import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as KeyWarnings$WeftCore from "./KeyWarnings.res.js";
 import * as SuspenseImpl$WeftCore from "./SuspenseImpl.res.js";
 
@@ -28,6 +31,10 @@ function isLazy(element) {
   }
 }
 
+function rethrow(props) {
+  throw props.reason;
+}
+
 function resolve(_element) {
   while (true) {
     let element = _element;
@@ -42,7 +49,13 @@ function resolve(_element) {
     if (node$1.kind !== "Lazy") {
       return element;
     }
-    _element = SuspenseImpl$WeftCore.use(node$1.elementType);
+    let promise = node$1.elementType;
+    if (Primitive_object.equal(Primitive_option.fromNullable(promise.$$fiberStatus), SuspenseImpl$WeftCore.rejected)) {
+      return JsxCore$WeftCore.jsx(rethrow, {
+        reason: promise.$$fiberReason
+      });
+    }
+    _element = SuspenseImpl$WeftCore.use(promise);
     continue;
   };
 }
@@ -62,6 +75,7 @@ export {
   make,
   promiseOf,
   isLazy,
+  rethrow,
   resolve,
   resolveAll,
 }

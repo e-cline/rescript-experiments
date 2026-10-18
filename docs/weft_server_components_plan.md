@@ -141,6 +141,9 @@ Rules, enforced where noted:
   `useState`, effects, `useContext` and the rest fail with a message saying so (rather than "called
   outside a component"). `Hooks.use(promise)` works: it suspends the component, which the server
   renderer retries once the promise settles (§5).
+- **No context providers, error boundaries or portals in server output** (each fails with a message
+  saying to render it in an entrypoint): providers' values and boundaries' fallbacks are client-side
+  things, and a portal's container is a client object.
 - **No context on the server**, as in React. Request data reaches server components as props. (A
   server-side context stack would be easy in a tree walk, but it isn't needed for a first version.)
 
@@ -330,7 +333,11 @@ preserved (a cycle is an error); that keeps the encoder a plain recursive walk.
 
 **Rendering.** `Render.toStream(element, ~onError=?, ~signal=?)` walks the tree, with no fibers:
 
-- Server and shared components are called with their props, and their result walked.
+- Server and shared components are called with their props, and their result walked. A keyed one's
+  output is wrapped in a fragment with its key (`["$", "$F", key, {children}]`), as React does: the
+  component leaves no fiber on the client to carry its key, and without this a list of keyed server
+  components would lose its keys. A component that keeps suspending on a new promise every call is
+  given up on after 100 tries, with an error.
 - Host elements and their props are serialized (with the checks in §1).
 - An entrypoint element (its `make` has `$$weftEntrypoint`) becomes `["$", "$E3", key, props]`, with
   an `E` row the first time that id appears. Its props, including any element children, are walked
@@ -348,18 +355,31 @@ preserved (a cycle is an error); that keeps the encoder a plain recursive walk.
   component, which reads it with `Hooks.use`.
 - An exception in a component under a `Suspense` becomes an `X` row in place of that row (the client
   throws it there, for an `ErrorBoundary`); outside every boundary, it fails the root. `onError`
-  sees every one and returns the digest, as React's does. `signal` aborting (the client went away;
-  `ByteStream` already reports that as `Cancelled`) stops everything pending.
+  sees every one and returns the digest, as React's does. `signal` aborting, or the client
+  cancelling the stream (it went away), stops everything pending: nothing more is written, and
+  components waiting on promises aren't called again.
+- Elements are recognized in values by their shape (a plain object with exactly `kind`,
+  `elementType`, `key` and `props`), since `weft_core`'s elements carry no brand. A record of the
+  same shape would be taken for one.
 
 ### 6. The client decoder, and `WeftCore.Lazy`
 
-`WeftServer.Client.fromStream(stream, ~loadEntrypoint) : promise<Element.t>` resolves with row 0's
-element once it's decodable, and keeps decoding as rows arrive. `loadEntrypoint` (an id to a promise
-of the module) is what the bootstrap fills in from `virtual:weft/client-references`; taking it as an
-argument, like `navigate`'s `fetch` below, is also what lets tests run without Vite (§9).
+`let client = WeftServer.Client.make(~loadModule, ~fetch=?)` makes a client, and
+`client->Client.fromStream(stream) : promise<Element.t>` resolves with row 0's element once it's
+decodable, and keeps decoding as rows arrive. `loadModule` (a file id, the part of an entrypoint id
+before `#`, to a promise of the compiled file's module) is what the bootstrap fills in from
+`virtual:weft/client-references`; `fetch` (a URL to a payload stream) defaults to the global
+`fetch`. Taking both as arguments is also what lets tests run without Vite or a network (§9).
+`client->Client.fetchElement(url)` fetches and decodes; `Client.Latest` runs fetches that replace
+each other (the newest cancels the one before, and only its element is returned), which `navigate`
+and frames use.
 
-- Each row is a promise, created when the row is first referred to or first arrives, and marked with
-  `weft_core`'s `$$fiberStatus` when it settles, so `Hooks.use` can read it synchronously.
+- Each row is a `WeftCore.Deferred`: a promise settled from outside, whose outcome `Hooks.use` and
+  `Lazy` can read the moment it's settled (an ordinary promise's outcome is only known a microtask
+  later, so a render right after a row arrived would suspend once for nothing). A row is created
+  when it's first referred to or first arrives. Once the stream has ended, a row that never arrived
+  fails, including one first referred to afterwards (by a row decoded late, after its entrypoints
+  loaded).
 - An `E` row starts its `import()` immediately. A `J` row that refers to an entrypoint isn't turned
   into elements until that module has loaded (Flight's "blocked" chunks), so an entrypoint element's
   type is always the component's real `make`, never a loader wrapper. That matters for refetching:
@@ -367,7 +387,9 @@ argument, like `navigate`'s `fetch` below, is also what lets tests run without V
   keeps its state.
 - `"$L5"` becomes a `WeftCore.Lazy` element around row 5's promise. `"$@5"` becomes the promise
   itself. `"$S"` becomes a `WeftCore.Suspense` element; host types become `JsxCore.hostJsx`
-  elements.
+  elements. Children that arrive as a list are passed on as `jsxs` marks static children, since they
+  were written out in the server's JSX: no missing-key warnings for server output (duplicate keys
+  are still reported).
 
 **`WeftCore.Lazy` is the one change the reconciler needs.** A new `Element.kind`, `Lazy`, holds a
 promise of an element (`Lazy.fromPromise`). The child reconciler unwraps it before comparing types:
@@ -379,6 +401,12 @@ the same element type at the same position. (React's `lazy` is unwrapped the sam
 beyond server components, too: a client-only app can code-split a component by wrapping an
 `import(Chart.make)` in one. The server renderer sees `Lazy` elements as well: they're what async
 server components return.
+
+A rejected lazy is replaced, as it's resolved, by an element that throws its error when rendered, so
+the error comes from the lazy's own position: every boundary above it catches it, including an
+`ErrorBoundary` whose direct child it is (thrown from its parent's render, it would be out of that
+boundary's reach). React 19 does the same. A lazy that hasn't settled still suspends from its
+parent's render, which the Suspense machinery is built around.
 
 ### 7. Pages, streaming, navigation and refetching
 
@@ -813,8 +841,12 @@ the PPX is given, so the tests of the ids are that canary.
 
 **Phase 3 -- Wire format and renderer, no bundler.** `Payload`, `Render` and `Client`, each tested
 on its own and then together into the TestRenderer, including every in-place update test and the
-update fuzz test (§9), with `fetchElement` and request ordering. `WeftServer.Testing` (the tier 1
-helpers) comes with them.
+update fuzz test (§9), with `fetchElement` and request ordering (`Client.Latest`).
+`WeftServer.Testing` (the tier 1 helpers: a pipe the test controls, modules from a map) comes with
+them. `weft_core` gains `Deferred` (rows readable the moment they arrive),
+`ServerRender.suspendedOn` (so the renderer needn't reach into its internals), and rejected lazies
+throwing from their own position. The frames in §7 (`Frame`, `useFrame`) wait for phase 5, with
+pages and navigation; the frame cases of the in-place tests come with them.
 
 **Phase 4 -- The Vite plugin, and `weft_split`.** Environments, the virtual modules, the scan, the
 boundary check, the dev middleware and the build, with the plugin's unit, build and dev tests on its

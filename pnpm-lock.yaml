@@ -298,6 +298,9 @@ importers:
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:packages/weft_server
       '@e-cline/weft_signals':
         specifier: workspace:*
         version: link:packages/weft_signals
@@ -758,6 +761,25 @@ importers:
       jsdom:
         specifier: 'catalog:'
         version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+
+  packages/weft_server:
+    dependencies:
+      '@e-cline/common':
+        specifier: workspace:^
+        version: link:../common
+      '@e-cline/weft_core':
+        specifier: workspace:^
+        version: link:../weft_core
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
       rescript:
         specifier: 'catalog:'
         version: 12.3.1

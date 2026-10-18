@@ -41,6 +41,40 @@ component's output, in the browser inside an entrypoint's).
 `@jsx.component` for ReScript's JSX transform. The compiler doesn't know it, so forgetting the PPX
 is a compile error rather than a component that quietly does the wrong thing (verified point 2).
 
+## Status
+
+Phases 0--3 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
+the phases will go in one PR, not opened yet). Next is phase 4: the Vite plugin and `weft_split`.
+
+| Phase | What                                                         | Where                                                          |
+| ----- | ------------------------------------------------------------ | -------------------------------------------------------------- |
+| 0     | `ppx_weft` (attribute rename and checks), shared opam switch | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
+| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`            | `packages/weft_core`, `packages/weft`                          |
+| 2     | async server components, entrypoint ids and directives       | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
+| 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`         | `packages/weft_server`, `packages/weft_core`                   |
+
+Where the implementation went its own way, the sections below say so. Things learned on the way, for
+whoever picks this up:
+
+- **After changing a PPX, rebuild what uses it from scratch** (`pnpm rescript:clean`, or touch the
+  `.res` files): `rescript build` recompiles from changes to sources, not to the PPX executable, and
+  stale output would otherwise be committed. A clean build reproducing the committed `.res.js`
+  exactly is the check. (`rescript:clean` also removes `examples/react_ui`'s `.res.jsx`, which only
+  `pnpm run build` restores.)
+- **An async server component can't be rendered by the client reconciler**: every render calls it
+  again and starts a new promise, a loop that runs in microtasks and starves even a test runner's
+  timeout. Call it once and await it (as the server renderer does), or render it through `Render`.
+- **Rows are flushed in a macrotask** after they're written, so a test waiting for the server's
+  output needs a few `Testing.tick()`s, not one.
+- **A synchronous child process can hang the test runner**: `tools/ppx/weft_tests` gives each `bsc`
+  run a timeout. When running a suite by hand that might hang, put a time limit on it
+  (`perl -e 'alarm 120; exec @ARGV' vp test run`).
+- **`pnpm run test` can fail at random with `ENOTEMPTY` on `node_modules/.vitest-cache`** (parallel
+  Vitest processes sharing the cache directory). Running it again passes; a cache directory per
+  package would fix it.
+- **Test components shouldn't pass `undefined` host props** (`title=?note`): the TestRenderer prints
+  them as `title="undefined"`.
+
 ## What was verified before writing this
 
 Checked against ReScript 12.3.1 (the version this workspace pins) in a scratch project, with a

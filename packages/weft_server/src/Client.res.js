@@ -169,9 +169,10 @@ function decode(session, json) {
             return unexpected(elementType);
         }
       }
-    } else {
-      return json.map(item => decode(session, item));
     }
+    let decoded = json.map(item => decode(session, item));
+    JsxCore$WeftCore.markStaticList(decoded);
+    return decoded;
   }
   switch (typeof json) {
     case "string" :
@@ -249,7 +250,7 @@ async function read(session, stream, signal) {
   let reader = stream.getReader();
   Stdlib_Option.forEach(signal, signal => {
     signal.addEventListener("abort", () => {
-      reader.cancel();
+      Stdlib_Promise.$$catch(reader.cancel(), param => Promise.resolve());
     }, {
       once: true
     });
@@ -326,7 +327,7 @@ async function read(session, stream, signal) {
             let error$1 = Primitive_exceptions.internalToException(raw_error$1);
             failure.contents = error$1;
             finished = true;
-            reader.cancel();
+            Stdlib_Promise.$$catch(reader.cancel(), param => Promise.resolve());
           }
         } else {
           finished = true;
@@ -334,6 +335,7 @@ async function read(session, stream, signal) {
       }
     }
   };
+  let aborted = Stdlib_Option.mapOr(signal, false, prim => prim.aborted);
   let failure$1 = id => {
     let error = failure.contents;
     if (error !== undefined) {
@@ -342,12 +344,21 @@ async function read(session, stream, signal) {
       return new Error(Env$Common.isDev ? `WeftServer: the payload ended before its row ` + id.toString() + ` arrived` : Errors$WeftServer.message(13, ""));
     }
   };
-  session.ended = failure$1;
-  session.rows.forEach((row, id) => {
-    if (!session.arrived.has(id)) {
-      return row.reject(failure$1(id));
+  if (aborted) {
+    if (!session.arrived.has(0)) {
+      return row(session, 0).reject(failure$1(0));
+    } else {
+      return;
     }
-  });
+  } else {
+    session.ended = failure$1;
+    session.rows.forEach((row, id) => {
+      if (!session.arrived.has(id)) {
+        return row.reject(failure$1(id));
+      }
+    });
+    return;
+  }
 }
 
 function fromStream(client, stream, signal) {

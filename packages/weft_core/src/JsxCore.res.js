@@ -33,6 +33,14 @@ function markStaticChildren(props) {
   }
 }
 
+let isStaticList = KeyWarnings$WeftCore.isStatic;
+
+function markStaticList(children) {
+  if (Env$Common.isDev) {
+    return KeyWarnings$WeftCore.markStatic(children);
+  }
+}
+
 function jsx(component, props) {
   return make(component, props, null);
 }
@@ -85,6 +93,8 @@ export {
   jsxs,
   jsxKeyed,
   jsxsKeyed,
+  isStaticList,
+  markStaticList,
   $$null,
   jsxFragment,
   Fragment,

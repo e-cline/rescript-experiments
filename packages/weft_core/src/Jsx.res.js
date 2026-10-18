@@ -10,6 +10,10 @@ let jsxKeyed = JsxCore$WeftCore.jsxKeyed;
 
 let jsxsKeyed = JsxCore$WeftCore.jsxsKeyed;
 
+let isStaticList = JsxCore$WeftCore.isStaticList;
+
+let markStaticList = JsxCore$WeftCore.markStaticList;
+
 let $$null = JsxCore$WeftCore.$$null;
 
 let jsxFragment = JsxCore$WeftCore.jsxFragment;
@@ -29,6 +33,8 @@ export {
   jsxs,
   jsxKeyed,
   jsxsKeyed,
+  isStaticList,
+  markStaticList,
   $$null,
   jsxFragment,
   Fragment,

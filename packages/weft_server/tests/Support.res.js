@@ -5,12 +5,16 @@ import * as Lazy$WeftCore from "@e-cline/weft_core/src/Lazy.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
+import * as Context$WeftCore from "@e-cline/weft_core/src/Context.res.js";
+import * as Frame$WeftServer from "../src/Frame.res.js";
+import * as JsxCore$WeftCore from "@e-cline/weft_core/src/JsxCore.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
 import * as Client$WeftServer from "../src/Client.res.js";
 import * as Render$WeftServer from "../src/Render.res.js";
 import * as Testing$WeftServer from "../src/Testing.res.js";
 import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/Entrypoint.res.js";
+import * as Navigation$WeftServer from "../src/Navigation.res.js";
 import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
 import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/ErrorBoundary.res.js";
 import * as TestScheduler$WeftCore from "@e-cline/weft_core/src/TestScheduler.res.js";
@@ -140,6 +144,52 @@ let Inner = {
   make: Support$Inner
 };
 
+let frames = {};
+
+function Support$FrameButton(props) {
+  let name = props.name;
+  let frame = Navigation$WeftServer.useFrame(name);
+  frames[name] = frame;
+  return TestJsx$WeftCore.Elements.jsx("button", {
+    id: name + `-button`,
+    title: frame.isPending ? "pending" : "idle"
+  });
+}
+
+Entrypoint$WeftCore.mark(Support$FrameButton, "test/Entrypoints.res#FrameButton");
+
+let FrameButton = {
+  make: Support$FrameButton
+};
+
+let theme = Context$WeftCore.make("plain");
+
+function Support$Themed(props) {
+  return JsxCore$WeftCore.jsx(Context$WeftCore.provider(theme), {
+    value: props.value,
+    children: props.children
+  });
+}
+
+Entrypoint$WeftCore.mark(Support$Themed, "test/Entrypoints.res#Themed");
+
+let Themed = {
+  make: Support$Themed
+};
+
+function Support$ThemeReader(props) {
+  return TestJsx$WeftCore.Elements.jsx("q", {
+    id: props.id,
+    children: Hooks$WeftCore.useContext(theme)
+  });
+}
+
+Entrypoint$WeftCore.mark(Support$ThemeReader, "test/Entrypoints.res#ThemeReader");
+
+let ThemeReader = {
+  make: Support$ThemeReader
+};
+
 let entrypointFile = Testing$WeftServer.module_([
   [
     "Counter",
@@ -168,6 +218,27 @@ let entrypointFile = Testing$WeftServer.module_([
         "make",
         Support$Guard
       ]])
+  ],
+  [
+    "FrameButton",
+    Testing$WeftServer.module_([[
+        "make",
+        Support$FrameButton
+      ]])
+  ],
+  [
+    "Themed",
+    Testing$WeftServer.module_([[
+        "make",
+        Support$Themed
+      ]])
+  ],
+  [
+    "ThemeReader",
+    Testing$WeftServer.module_([[
+        "make",
+        Support$ThemeReader
+      ]])
   ]
 ]);
 
@@ -176,6 +247,13 @@ function makeModules() {
     [
       "test/Entrypoints.res",
       entrypointFile
+    ],
+    [
+      "@e-cline/weft_server/src/Frame.res",
+      Testing$WeftServer.module_([[
+          "make",
+          Frame$WeftServer.make
+        ]])
     ],
     [
       "test/Other.res",
@@ -269,6 +347,23 @@ async function renderRoundTrip(client, chunking, element) {
   return TestRenderer$WeftCore.toString(renderer);
 }
 
+function serve(deliveryOpt, route) {
+  let delivery = deliveryOpt !== undefined ? deliveryOpt : param => "Immediate";
+  let served = [];
+  let fetch = (url, signal) => {
+    let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(route(url), undefined, Primitive_option.some(signal)), delivery(url), undefined);
+    served.push({
+      url: url,
+      pipe: pipe
+    });
+    return Promise.resolve(Testing$WeftServer.stream(pipe));
+  };
+  return [
+    fetch,
+    served
+  ];
+}
+
 let TestRenderer;
 
 let TestJsx;
@@ -293,6 +388,11 @@ export {
   Reader,
   Guard,
   Inner,
+  frames,
+  FrameButton,
+  theme,
+  Themed,
+  ThemeReader,
   entrypointFile,
   makeModules,
   Async,
@@ -305,5 +405,6 @@ export {
   roundTrip,
   renderDirectly,
   renderRoundTrip,
+  serve,
 }
 /*  Not a pure module */

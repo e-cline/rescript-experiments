@@ -52,6 +52,9 @@ let finished: pipe => promise<unit>
 /** Everything the server has written so far, as text. */
 let written: pipe => string
 
+/** Whether the client cancelled the stream (a newer fetch replaced it, say). */
+let cancelled: pipe => bool
+
 /** Reads a whole payload as text, for tests of what the server writes. */
 let readAll: Streams.t => promise<string>
 

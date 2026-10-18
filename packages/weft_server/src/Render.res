@@ -141,6 +141,38 @@ external toNode: unknown => Element.node = "%identity"
 type suspenseProps = {fallback: Element.t, children: Element.t}
 external toSuspenseProps: unknown => suspenseProps = "%identity"
 
+/** The warnings given so far, so each is given once. */
+let warned: Set.t<string> = Set.make()
+
+@get external nodeKey: unknown => Nullable.t<string> = "key"
+
+/**
+Warns (in development) about a list of children built at runtime (`Jsx.array`), not written out in
+JSX, in which some elements have no key, as the reconciler would if it rendered it: the client
+doesn't check the lists it decodes, since the server wrote them.
+*/
+let checkKeys = (context, value: unknown) => {
+  let isChildList = switch context.path {
+  | list{".children", ..._} | list{_, ".children", ..._} => true
+  | _ => false
+  }
+  let items: array<unknown> = Values.fromUnknown(value)
+  if (
+    isChildList &&
+    Array.length(items) > 1 &&
+    !WeftCore.JsxCore.isStaticList(Values.fromUnknown(value)) &&
+    items->Array.some(item => Values.isElementNode(item) && Nullable.isNullable(nodeKey(item)))
+  ) {
+    let message = `WeftCore: Each child in a list should have a unique "key" prop. The list at ${where(
+        context,
+      )} (rendered on the server) has children without one.`
+    if !(warned->Set.has(message)) {
+      warned->Set.add(message)
+      Console.error(message)
+    }
+  }
+}
+
 let rec encodeValue = async (context, value: unknown): JSON.t =>
   switch Type.typeof(value) {
   | #undefined => Payload.undefined
@@ -159,6 +191,9 @@ let rec encodeValue = async (context, value: unknown): JSON.t =>
     if Values.isNull(value) {
       JSON.Encode.null
     } else if Array.isArray(value) {
+      if Common.Env.isDev {
+        checkKeys(context, value)
+      }
       let context = enterObject(context, value)
       let items: array<unknown> = Values.fromUnknown(value)
       JSON.Encode.array(

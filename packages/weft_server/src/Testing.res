@@ -14,6 +14,7 @@ type state = {
   queue: array<Uint8Array.t>,
   mutable sourceDone: bool,
   mutable closed: bool,
+  mutable cancelled: bool,
   mutable written: string,
   finished: WeftCore.Deferred.t<unit>,
 }
@@ -49,6 +50,7 @@ let pipe = (source, ~delivery=Immediate, ~chunking=AsWritten) => {
     queue: [],
     sourceDone: false,
     closed: false,
+    cancelled: false,
     written: "",
     finished: WeftCore.Deferred.make(),
   }
@@ -56,7 +58,8 @@ let pipe = (source, ~delivery=Immediate, ~chunking=AsWritten) => {
     start: controller => state.controller = Some(controller),
     cancel: _ => {
       state.closed = true
-      reader->Streams.Reader.cancel->ignore
+      state.cancelled = true
+      reader->Streams.Reader.cancel->Promise.catch(_ => Promise.resolve())->ignore
     },
   })
   let decoder = Streams.Decoder.make()
@@ -103,6 +106,7 @@ let deliverAll = pipe =>
 let waiting = ({state}) => Array.length(state.queue)
 let finished = ({state}) => state.finished.promise
 let written = ({state}) => state.written
+let cancelled = ({state}) => state.cancelled
 
 let readAll = async stream => {
   let reader = stream->Streams.getReader

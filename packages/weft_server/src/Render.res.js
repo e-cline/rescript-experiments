@@ -5,6 +5,7 @@ import * as Stdlib_List from "@rescript/runtime/lib/es6/Stdlib_List.js";
 import * as Lazy$WeftCore from "@e-cline/weft_core/src/Lazy.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Element$WeftCore from "@e-cline/weft_core/src/Element.res.js";
+import * as JsxCore$WeftCore from "@e-cline/weft_core/src/JsxCore.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Errors$WeftServer from "./internal/Errors.res.js";
 import * as Values$WeftServer from "./internal/Values.res.js";
@@ -160,6 +161,38 @@ function enterObject(context, value) {
   };
 }
 
+let warned = new Set();
+
+function checkKeys(context, value) {
+  let match = context.path;
+  let isChildList;
+  if (match !== 0) {
+    if (match.hd === ".children") {
+      isChildList = true;
+    } else {
+      let match$1 = match.tl;
+      isChildList = match$1 !== 0 ? match$1.hd === ".children" : false;
+    }
+  } else {
+    isChildList = false;
+  }
+  if (!(isChildList && value.length > 1 && !JsxCore$WeftCore.isStaticList(value) && value.some(item => {
+      if (Values$WeftServer.isElementNode(item)) {
+        return item.key == null;
+      } else {
+        return false;
+      }
+    }))) {
+    return;
+  }
+  let message = `WeftCore: Each child in a list should have a unique "key" prop. The list at ` + where(context) + ` (rendered on the server) has children without one.`;
+  if (!warned.has(message)) {
+    warned.add(message);
+    console.error(message);
+    return;
+  }
+}
+
 async function encodeValue(context, value) {
   let match = typeof value;
   if (match === "symbol") {
@@ -187,6 +220,9 @@ async function encodeValue(context, value) {
     return null;
   }
   if (Array.isArray(value)) {
+    if (Env$Common.isDev) {
+      checkKeys(context, value);
+    }
     let context$1 = enterObject(context, value);
     return await Promise.all(value.map((item, index) => encodeValue(enter(context$1, `[` + index.toString() + `]`), item)));
   }
@@ -460,4 +496,4 @@ function toStream(element, onErrorOpt, signal) {
 export {
   toStream,
 }
-/* Env-Common Not a pure module */
+/* warned Not a pure module */

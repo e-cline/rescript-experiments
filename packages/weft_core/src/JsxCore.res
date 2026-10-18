@@ -51,6 +51,12 @@ let markStaticChildren = (props: 'props) =>
     }
   }
 
+let isStaticList = children => KeyWarnings.isStatic(children)
+let markStaticList = children =>
+  if Common.Env.isDev {
+    KeyWarnings.markStatic(children)
+  }
+
 let jsx = (component, props) => make(component, props, Nullable.null)
 let jsxs = (component, props) => {
   markStaticChildren(props)

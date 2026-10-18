@@ -104,16 +104,54 @@ module Inner = {
   let () = WeftCore.Entrypoint.mark(make, "test/Other.res#")
 }
 
+/** The props each `FrameButton` saw last, by frame name: its frame's `refetch` and `isPending`. */
+let frames: dict<Navigation.frame> = Dict.make()
+
+module FrameButton = {
+  /** Shows whether the frame `name` is pending, and keeps its `refetch` where tests can call it. */
+  @jsx.component
+  let make = (~name: string) => {
+    let frame = Navigation.useFrame(name)
+    frames->Dict.set(name, frame)
+    <button id={`${name}-button`} title={frame.isPending ? "pending" : "idle"} />
+  }
+  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#FrameButton")
+}
+
+let theme = WeftCore.Context.make("plain")
+
+module Themed = {
+  /** Provides a theme to its children, as an entrypoint can. */
+  @jsx.component
+  let make = (~value: string, ~children: WeftCore.Element.t) =>
+    WeftCore.JsxCore.jsx(WeftCore.Context.provider(theme), {value, children})
+  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Themed")
+}
+
+module ThemeReader = {
+  /** Shows the theme it gets from above. */
+  @jsx.component
+  let make = (~id: string) => <q id> {text(WeftCore.Hooks.useContext(theme))} </q>
+  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#ThemeReader")
+}
+
 let entrypointFile = Testing.module_([
   ("Counter", Testing.module_([("make", Testing.component(Counter.make))])),
   ("Probe", Testing.module_([("make", Testing.component(Probe.make))])),
   ("Reader", Testing.module_([("make", Testing.component(Reader.make))])),
   ("Guard", Testing.module_([("make", Testing.component(Guard.make))])),
+  ("FrameButton", Testing.module_([("make", Testing.component(FrameButton.make))])),
+  ("Themed", Testing.module_([("make", Testing.component(Themed.make))])),
+  ("ThemeReader", Testing.module_([("make", Testing.component(ThemeReader.make))])),
 ])
 
 let makeModules = () =>
   Testing.modules([
     ("test/Entrypoints.res", entrypointFile),
+    (
+      "@e-cline/weft_server/src/Frame.res",
+      Testing.module_([("make", Testing.component(Frame.make))]),
+    ),
     ("test/Other.res", Testing.module_([("make", Testing.component(Inner.make))])),
   ])
 
@@ -185,4 +223,23 @@ let renderRoundTrip = async (~client=?, ~chunking=?, element) => {
   TestRenderer.render(renderer, decoded)
   await settle()
   TestRenderer.toString(renderer)
+}
+
+// An in-process server
+
+/** A request a `serve` client made: its URL, and the server's stream on its way back. */
+type served = {url: string, pipe: Testing.pipe}
+
+/**
+A `fetch` answering each URL with `route(url)`, rendered by the server, through a pipe delivered as
+`delivery(url)` says; and the requests it has served, in order.
+*/
+let serve = (~delivery=_ => Testing.Immediate, route: string => WeftCore.Element.t) => {
+  let served = []
+  let fetch = (url, ~signal) => {
+    let pipe = Testing.pipe(Render.toStream(route(url), ~signal), ~delivery=delivery(url))
+    served->Array.push({url, pipe})
+    Promise.resolve(Testing.stream(pipe))
+  }
+  (fetch, served)
 }

@@ -149,7 +149,11 @@ let rec decode = (session, json: JSON.t): unknown =>
   | Array(items) =>
     switch Payload.asElement(items) {
     | Some((elementType, key, props)) => decodeElement(session, elementType, key, props)
-    | None => toUnknown(items->Array.map(item => decode(session, item)))
+    | None =>
+      let decoded = items->Array.map(item => decode(session, item))
+      // The server checked the lists it wrote for keys (`Render`): no need to again.
+      WeftCore.JsxCore.markStaticList(fromUnknown(toUnknown(decoded)))
+      toUnknown(decoded)
     }
   | Object(fields) => toUnknown(fields->Dict.mapValues(value => decode(session, value)))
   }
@@ -271,7 +275,10 @@ let ended = id =>
 let read = async (session, stream, ~signal) => {
   let reader = stream->Streams.getReader
   signal->Option.forEach(signal =>
-    signal->Streams.Signal.onAbort(() => reader->Streams.Reader.cancel->ignore, {once: true})
+    signal->Streams.Signal.onAbort(
+      () => reader->Streams.Reader.cancel->Promise.catch(_ => Promise.resolve())->ignore,
+      {once: true},
+    )
   )
   let decoder = Streams.Decoder.make()
   let parser = Payload.Parser.make()
@@ -287,7 +294,7 @@ let read = async (session, stream, ~signal) => {
       | exception error =>
         failure := Some(error)
         finished := true
-        reader->Streams.Reader.cancel->ignore
+        reader->Streams.Reader.cancel->Promise.catch(_ => Promise.resolve())->ignore
       }
     | _ => finished := true
     | exception error =>
@@ -295,18 +302,30 @@ let read = async (session, stream, ~signal) => {
       finished := true
     }
   }
-  // Whatever never arrived won't now: it fails with what stopped the stream, if anything did.
+  // Aborted (a newer fetch replaced this one, say): what never arrived is left waiting, not failed,
+  // since what's waiting on it may still be on screen until whatever replaces it is ready. The root
+  // is the exception (below).
+  let aborted = signal->Option.mapOr(false, Streams.Signal.aborted)
+  // Otherwise, whatever never arrived won't now: it fails with what stopped the stream, if anything
+  // did.
   let failure = id =>
     switch failure.contents {
     | Some(error) => toJsError(error)
     | None => ended(id)
     }
-  session.ended = Some(failure)
-  session.rows->Map.forEachWithKey((row, id) =>
-    if !(session.arrived->Set.has(id)) {
-      row.reject(failure(id))
+  if aborted {
+    // Except the root: whoever's waiting for the element is told it isn't coming.
+    if !(session.arrived->Set.has(0)) {
+      row(session, 0).reject(failure(0))
     }
-  )
+  } else {
+    session.ended = Some(failure)
+    session.rows->Map.forEachWithKey((row, id) =>
+      if !(session.arrived->Set.has(id)) {
+        row.reject(failure(id))
+      }
+    )
+  }
 }
 
 let fromStream = (client, stream, ~signal=?) => {

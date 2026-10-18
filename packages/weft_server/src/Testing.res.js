@@ -4,6 +4,7 @@ import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
+import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Deferred$WeftCore from "@e-cline/weft_core/src/Deferred.res.js";
 
@@ -42,6 +43,7 @@ function pipe(source, deliveryOpt, chunkingOpt) {
     queue: [],
     sourceDone: false,
     closed: false,
+    cancelled: false,
     written: "",
     finished: Deferred$WeftCore.make()
   };
@@ -51,7 +53,8 @@ function pipe(source, deliveryOpt, chunkingOpt) {
     },
     cancel: param => {
       state.closed = true;
-      reader.cancel();
+      state.cancelled = true;
+      Stdlib_Promise.$$catch(reader.cancel(), param => Promise.resolve());
     }
   });
   let decoder = new TextDecoder();
@@ -130,6 +133,10 @@ function finished(param) {
 
 function written(param) {
   return param.state.written;
+}
+
+function cancelled(param) {
+  return param.state.cancelled;
 }
 
 async function readAll(stream) {
@@ -217,6 +224,7 @@ export {
   waiting,
   finished,
   written,
+  cancelled,
   readAll,
   modules,
   module_,

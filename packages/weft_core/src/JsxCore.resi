@@ -45,6 +45,16 @@ two children with the same key.
 */
 external array: array<element> => element = "%identity"
 
+/**
+Whether `children` were written out in JSX (passed to `jsxs`) rather than built as a list at
+runtime: in a development build, only the latter are checked for keys. For code that rebuilds
+elements elsewhere, as `WeftServer` does on the client (always `false` in a production build).
+*/
+let isStaticList: array<element> => bool
+
+/** Records `children` as written out in JSX, so they aren't checked for keys (development only). */
+let markStaticList: array<element> => unit
+
 /** Renders nothing. */
 let null: element
 

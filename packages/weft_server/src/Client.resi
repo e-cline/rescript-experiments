@@ -41,7 +41,9 @@ let make: (~loadModule: loadModule, ~fetch: fetch=?) => t
 
 /**
 The root element of the payload `stream`. Rejects if the root row is an error, or the stream ends
-before it arrives. Aborting `signal` cancels the stream: rows that haven't arrived then fail.
+before it arrives (or `signal` is aborted first). Aborting `signal` cancels the stream: the other
+rows that haven't arrived then never do, and what's waiting on them (a `Suspense` boundary's fallback, say) goes on waiting, rather than failing,
+since it may still be on screen until whatever replaces it is ready.
 */
 let fromStream: (t, stream, ~signal: signal=?) => promise<WeftCore.Element.t>
 

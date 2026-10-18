@@ -13,5 +13,10 @@
   "suffix": ".res.js",
   "namespace": "WeftServer",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/common", "@e-cline/weft_core"]
+  "dependencies": [
+    "@e-cline/common",
+    "@e-cline/weft_core",
+    "@e-cline/weft_dom",
+    "@rescript/webapi"
+  ]
 }

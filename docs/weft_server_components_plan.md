@@ -224,11 +224,11 @@ file's path by convention. The PPX makes the id impossible to get wrong, gives e
 `@weft.component` marking, and is needed anyway for `async`.
 
 **Toolchain.** The two PPXs need the same OCaml and ppxlib (the ReScript AST pins ppxlib 0.34, which
-needs OCaml < 5.4), so rather than a second opam switch that compiles OCaml again, move `setup.sh`
-and the lock file up to `tools/ppx/`, rename the switch to something shared (`rescript_ppx`), and
-have both packages' `build` tasks use it. That also means updating `.vscode/settings.json`'s
-`ocaml.sandbox`, the CI opam cache key, and the root `res` task's `dependsOn`, which gains
-`@e-cline/ppx_weft#build`.
+needs OCaml < 5.4), so rather than a second opam switch that compiles OCaml again (decided: see
+"Decisions"), move `setup.sh` and the lock file up to `tools/ppx/`, rename the switch to something
+shared (`rescript_ppx`), and have both packages' `build` tasks use it. That also means updating
+`.vscode/settings.json`'s `ocaml.sandbox`, the CI opam cache key, and the root `res` task's
+`dependsOn`, which gains `@e-cline/ppx_weft#build`.
 
 ### 3. Entrypoint ids and the client manifest
 
@@ -817,7 +817,19 @@ Out of scope: server functions/actions (mutations go through ordinary routes, th
 Flight wire format and interop with React, CSS handling beyond what Vite does already, shared
 references and cycles in payloads, context on the server, and caching rendered output.
 
-## Risks and open decisions
+## Decisions
+
+Settled before phase 0, since these names and this setup get built into everything after:
+
+- **The kind is `Entrypoint`**, not `Client`: the PPX parses the word and every entrypoint file
+  contains it. "Entrypoint" says more precisely what it is: where client code starts, with
+  everything it imports coming along.
+- **The package is `weft_server`** (namespace `WeftServer`), not `weft_rsc`. It can't be confused
+  with the HTTP framework, which is Servy.
+- **The two PPXs share one opam switch**, `rescript_ppx`, set up by `tools/ppx/setup.sh` from one
+  lock file (see §2's "Toolchain"), rather than each having its own and compiling OCaml twice.
+
+## Risks
 
 - **The PPX depends on compiler details**: that external PPXs run before the JSX transform, and the
   AST encoding ppxlib 0.34 reads. Phase 0's tests exist to catch a ReScript upgrade changing any of
@@ -845,6 +857,3 @@ references and cycles in payloads, context on the server, and caching rendered o
 - **Tiers 1 and 2 never run real HTML streaming or chunk loading.** The browser tests do, but only
   for a few scenarios, so a browser-only problem elsewhere could get through. Keeping the first
   page's HTML reading in tier 2 identical to the bootstrap's (one shared module) narrows it.
-- **Naming**: `weft_server` could be mistaken for an HTTP server (that's `@e-cline/servy`);
-  `weft_rsc` is the alternative. `kind: Entrypoint` could equally be `kind: Client`; "entrypoint"
-  says more precisely that it's where client code starts, and everything it imports comes along.

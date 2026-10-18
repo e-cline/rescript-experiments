@@ -22,6 +22,8 @@
     "@e-cline/tree_shaking_example",
     "@e-cline/http_server_example",
     "@e-cline/weft_split_example",
+    "@e-cline/weft_notes_example",
+    "@e-cline/vite_plugin_weft",
     "@e-cline/vite_plugin_weft_fixture_basic",
     "@e-cline/vite_plugin_weft_fixture_client_imports_server",
     "@e-cline/vite_plugin_weft_fixture_widgets",

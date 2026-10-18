@@ -17,6 +17,7 @@
   "scripts": {
     "build": "vp run -r build",
     "test": "vp run -r test",
+    "e2e": "vp run -r e2e",
     "bench": "vp run -r bench",
     "size": "vp run -r size",
     "fmt": "vp fmt && vp run -r res:fmt",
@@ -45,6 +46,7 @@
     "@e-cline/tree_shaking_example": "workspace:*",
     "@e-cline/trees": "workspace:*",
     "@e-cline/trees_benchmarks": "workspace:*",
+    "@e-cline/vite_plugin_weft": "workspace:*",
     "@e-cline/vite_plugin_weft_fixture_basic": "workspace:*",
     "@e-cline/vite_plugin_weft_fixture_client_imports_server": "workspace:*",
     "@e-cline/vite_plugin_weft_fixture_widgets": "workspace:*",
@@ -53,6 +55,7 @@
     "@e-cline/weft_core": "workspace:*",
     "@e-cline/weft_core_benchmarks": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
+    "@e-cline/weft_notes_example": "workspace:*",
     "@e-cline/weft_server": "workspace:*",
     "@e-cline/weft_signals": "workspace:*",
     "@e-cline/weft_split_example": "workspace:*",

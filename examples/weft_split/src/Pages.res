@@ -8,9 +8,9 @@ module Nav = {
   @weft.component({kind: Server})
   let make = () =>
     <nav>
-      <a href="/"> {Weft.Jsx.string("Home")} </a>
+      <Link id="home-link" href="/"> {Weft.Jsx.string("Home")} </Link>
       {Weft.Jsx.string(" ")}
-      <a href="/other"> {Weft.Jsx.string("Other")} </a>
+      <Link id="other-link" href="/other"> {Weft.Jsx.string("Other")} </Link>
     </nav>
 }
 

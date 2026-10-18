@@ -9,7 +9,7 @@ WARNING: None of this is intended for real production use.
 Weft is the UI framework in here: `weft` (its public API, re-exporting the next two), `weft_core`
 (components, hooks and a fiber reconciler), `weft_dom` (the DOM renderer) and `weft_signals` (hooks
 for reading `signals`), plus the `weft_app` example. Server components for it are under way:
-`weft_server` and `vite_plugin_weft`, with the `weft_split` example.
+`weft_server` and `vite_plugin_weft`, with the `weft_notes` and `weft_split` examples.
 
 ## Packages
 
@@ -60,8 +60,9 @@ ReScript source, and your project's `rescript build` compiles them along with yo
 These aren't published:
 
 - [`examples/`](examples) -- an HTTP server built with `servy`, a React component written in
-  ReScript and the TypeScript React app consuming it, a todo app built with `weft_core`, an app
-  code-split with Weft's server components, a tree-shaking check, and a use of the PPX below.
+  ReScript and the TypeScript React app consuming it, a todo app built with `weft_core`, a notes app
+  and an app code-split with Weft's server components (with tests through the plugin's harness, and
+  in a browser), a tree-shaking check, and a use of the PPX below.
 - [`packages/trees/benchmarks`](packages/trees/benchmarks),
   [`packages/signals/benchmarks`](packages/signals/benchmarks),
   [`packages/signal_maps/benchmarks`](packages/signal_maps/benchmarks) and

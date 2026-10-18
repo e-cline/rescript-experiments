@@ -1,0 +1,142 @@
+// The harness's server side (`src/testing.ts`): the app's server in a worker, reached over a port.
+
+import {writeFileSync, readFileSync} from 'node:fs';
+import {join} from 'node:path';
+
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from 'vite-plus/test';
+
+import {readPage, start, type App} from '../src/testing.js';
+import {config, copyFixture, fixtureName, removeCopies} from './support.js';
+
+afterAll(removeCopies);
+
+const basic = fixtureName('basic');
+
+let app: App;
+let root: string;
+
+beforeEach(async () => {
+  root = copyFixture('basic');
+  app = await start({root, configFile: false, config: config(root)});
+});
+
+afterEach(async () => {
+  await app.close();
+});
+
+describe('the harness, in source mode', () => {
+  test("answers a request with the app's server, in the worker", async () => {
+    const response = await app.fetch('/notes/1');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    const html = await response.text();
+    expect(html).toContain('Notes at /notes/1');
+    expect(html).toContain(`${basic}/src/Likes.res#`);
+    expect(app.requests).toEqual(['/notes/1']);
+  });
+
+  test("runs the server in a realm of its own, with none of the browser's globals", async () => {
+    expect(
+      await app.serverGlobals(['document', 'window', 'fetch', 'Response']),
+    ).toEqual(['fetch', 'Response']);
+  });
+
+  test('runs the server with the development conditions', async () => {
+    expect(await (await app.fetch('/env')).json()).toEqual({isDev: true});
+  });
+
+  test("calls into the server's modules: the same instances the app uses", async () => {
+    const instance = await app.callServer('src/Notes.res.js', 'title', ['/x']);
+    expect(instance).toBe('Notes at /x (20)');
+    const html = await (await app.fetch('/notes/1')).text();
+    const shown = html.match(/<p id="instance">([^<]*)<\/p>/)![1];
+    // `instance` is a value, not a function: read it through a function of the module's.
+    expect(shown).not.toBe('');
+  });
+
+  test('sends request bodies, and holds response chunks until delivered', async () => {
+    app.delivery = {type: 'manual'};
+    const response = await app.fetch('/notes/3', {
+      headers: {Accept: 'text/x-weft-payload'},
+    });
+    const reader = response.body!.getReader();
+    const read = reader.read();
+    let settled = false;
+    void read.then(() => {
+      settled = true;
+    });
+    await new Promise((done) => setTimeout(done, 20));
+    expect(settled).toBe(false);
+    expect(app.waiting).toBe(1);
+    app.deliverAll();
+    const {value} = await read;
+    expect(new TextDecoder().decode(value)).toBe(
+      '0:J"Notes at /notes/3 (20)"\n',
+    );
+    expect((await reader.read()).done).toBe(true);
+    expect(app.open).toBe(0);
+  });
+
+  test('re-chunks responses every n bytes', async () => {
+    app.delivery = {type: 'everyBytes', size: 4};
+    const response = await app.fetch('/notes/3', {
+      headers: {Accept: 'text/x-weft-payload'},
+    });
+    const reader = response.body!.getReader();
+    const chunks: string[] = [];
+    for (;;) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      chunks.push(new TextDecoder().decode(value));
+    }
+    expect(chunks.join('')).toBe('0:J"Notes at /notes/3 (20)"\n');
+    expect(chunks.every((chunk) => chunk.length <= 4)).toBe(true);
+  });
+
+  test('runs changed server code once Vite sees the change', async () => {
+    const before = await (await app.fetch('/notes/1')).text();
+    const path = join(root, 'src/Notes.res.js');
+    writeFileSync(path, readFileSync(path, 'utf8'));
+    app.vite!.watcher.emit('change', path);
+    let after = before;
+    for (let i = 0; i < 100 && after === before; i++) {
+      await new Promise((done) => setTimeout(done, 10));
+      after = await (await app.fetch('/notes/1')).text();
+    }
+    expect(after).not.toBe(before);
+  });
+});
+
+describe('readPage', () => {
+  const page = (chunks: string[]) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks)
+          controller.enqueue(new TextEncoder().encode(chunk));
+        controller.close();
+      },
+    });
+
+  test('takes the rows out of the inline scripts, however the HTML is cut', async () => {
+    const html =
+      '<!doctype html><body><div id="root"></div>' +
+      '<script>(self.__weft||=[]).push("0:J\\"a\\u003c/script>\\"\\n")</script>' +
+      '<script>(self.__weft||=[]).push(null)</script></body>';
+    for (const size of [1, 3, 7, html.length]) {
+      const chunks: string[] = [];
+      for (let at = 0; at < html.length; at += size)
+        chunks.push(html.slice(at, at + size));
+      const rows: (string | null)[] = [];
+      const shell = await readPage(page(chunks), (row) => rows.push(row));
+      expect(rows).toEqual(['0:J"a</script>"\n', null]);
+      expect(shell).toBe('<!doctype html><body><div id="root"></div></body>');
+    }
+  });
+});

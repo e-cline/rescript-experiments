@@ -28,12 +28,15 @@ afterAll(() => built.contents->Option.forEach(remove))
 let built = () => built.contents->Option.getOrThrow
 
 let source = name => `src/${name}.res.js`
-let entrypointFiles = ["Chart", "Counter", "Fancy", "Outer", "Plain", "Widgets"]->Array.map(source)
+/** The plugin's default bootstrap, a virtual module, as the manifest names it. */
+let bootstrap = "virtual:weft/bootstrap"
+let entrypointFiles =
+  ["Chart", "Counter", "Fancy", "Link", "Outer", "Plain", "Widgets"]->Array.map(source)
 let imports = key => chunk(built(), key).imports->Option.getOr([])
 
 describe("the client build", () => {
   test("has the bootstrap as its one entry, and each entrypoint file as a chunk of its own", t => {
-    t->expect(entries(built()))->Expect.toEqual([source("Client")])
+    t->expect(entries(built()))->Expect.toEqual([bootstrap])
     t
     ->expect(entrypointFiles->Array.map(key => chunk(built(), key).isDynamicEntry))
     ->Expect.toEqual(entrypointFiles->Array.map(_ => Some(true)))
@@ -86,7 +89,7 @@ describe("the client build", () => {
 describe("the server build", () => {
   testAsync("answers a page with the shell, loading the built bootstrap", async t => {
     let html = await page(built(), "/")
-    let script = `<script type="module" src="/${chunk(built(), source("Client")).file}"></script>`
+    let script = `<script type="module" async src="/${chunk(built(), bootstrap).file}"></script>`
     t->expect(html->String.includes(script))->Expect.toBe(true)
     t->expect(html->String.includes(`<div id="root"></div>`))->Expect.toBe(true)
   })
@@ -102,9 +105,12 @@ describe("the server build", () => {
     ->Expect.toEqual(entrypointFiles->Array.filter(key => key != source("Chart")))
   })
 
-  testAsync("answers `/other` with a payload using the chart's and the counter's only", async t => {
-    t
-    ->expect(await loadedFor(built(), "/other"))
-    ->Expect.toEqual([source("Chart"), source("Counter")])
-  })
+  testAsync(
+    "answers `/other` with a payload using the chart's, the counter's and the link's only",
+    async t => {
+      t
+      ->expect(await loadedFor(built(), "/other"))
+      ->Expect.toEqual([source("Chart"), source("Counter"), source("Link")])
+    },
+  )
 })

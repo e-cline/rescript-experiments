@@ -3,6 +3,7 @@
 
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/Jsx.res.js";
 import * as Lazy$WeftCore from "@e-cline/weft_core/src/Lazy.res.js";
+import * as Link$WeftSplit from "./Link.res.js";
 import * as Chart$WeftSplit from "./Chart.res.js";
 import * as Fancy$WeftSplit from "./Fancy.res.js";
 import * as Outer$WeftSplit from "./Outer.res.js";
@@ -14,13 +15,15 @@ import * as Widgets$WeftSplit from "./Widgets.res.js";
 function Pages$Nav(props) {
   return Jsx$WeftDom.Elements.jsxs("nav", {
     children: [
-      Jsx$WeftDom.Elements.jsx("a", {
+      Jsx$WeftDom.jsx(Link$WeftSplit.make, {
         href: "/",
+        id: "home-link",
         children: "Home"
       }),
       " ",
-      Jsx$WeftDom.Elements.jsx("a", {
+      Jsx$WeftDom.jsx(Link$WeftSplit.make, {
         href: "/other",
+        id: "other-link",
         children: "Other"
       })
     ]

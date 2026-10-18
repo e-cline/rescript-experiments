@@ -22,6 +22,10 @@
   },
   "files": [
     "dist",
+    "rescript.json",
+    "src/**/*.res",
+    "src/**/*.resi",
+    "src/**/*.res.js",
     "virtual.d.ts"
   ],
   "type": "module",
@@ -35,9 +39,14 @@
       "types": "./dist/node.d.ts",
       "default": "./dist/node.js"
     },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    },
     "./virtual": {
       "types": "./virtual.d.ts"
-    }
+    },
+    "./src/*.res.js": "./src/*.res.js"
   },
   "publishConfig": {
     "access": "public"
@@ -46,10 +55,15 @@
     "prepack": "vp pack"
   },
   "dependencies": {
+    "@e-cline/weft_core": "workspace:^",
+    "@e-cline/weft_dom": "workspace:^",
+    "@e-cline/weft_server": "workspace:^",
     "@hono/node-server": "catalog:"
   },
   "devDependencies": {
+    "@rescript/runtime": "catalog:",
     "@types/node": "catalog:",
+    "rescript": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"

@@ -3,7 +3,7 @@
 The Vite plugin for [Weft's server components](../weft_server): it runs the server entry in an `rsc`
 environment and the browser's code in the `client` one, makes every entrypoint file a chunk of its
 own, refuses to let client code import a server file, answers requests in development with the
-server entry, and builds both. This is phase 4 of
+server entry, and builds both. This is phases 4 and 5 of
 [the server components plan](../../docs/weft_server_components_plan.md).
 [`examples/weft_split`](../../examples/weft_split) is an app using it.
 
@@ -35,8 +35,10 @@ export default {
 
 - `server` is a compiled module whose default export is a fetch handler (`Request` to a promise of a
   `Response`), as an `@e-cline/servy` `App.t` is: `let default = app` in ReScript.
-- `client` is the bootstrap, the module the page loads first. It renders the payload into the page,
-  loading entrypoints with `virtual:weft/client`'s `loadModule`.
+- `client` (optional) is the bootstrap, the module the page loads first. It renders the payload into
+  the page, loading entrypoints with `virtual:weft/client`'s `loadModule`. By default it's
+  `virtual:weft/bootstrap`, which runs `WeftServer.Bootstrap.main`: the first page's rows rendered
+  into `#root`, navigation, and refetching the page when a server file changes in development.
 
 `vp dev` serves the app; `vp build` writes `dist/client` (static files) and `dist/server/index.js`
 (the handler), which `serve` from `@e-cline/vite_plugin_weft/node` runs:
@@ -52,6 +54,7 @@ await serve({dir: 'dist', port: 3000});
 | Module                           | Where  | What it is                                                                                                                                         |
 | -------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `virtual:weft/client`            | client | `loadModule(id)`, the module of an entrypoint file, for `WeftServer.Client.make`; `onRefresh(listener)`, called when a server file changes in dev. |
+| `virtual:weft/bootstrap`         | client | The default bootstrap: `WeftServer.Bootstrap.main`, with `virtual:weft/client`'s `loadModule` and `onRefresh`.                                     |
 | `virtual:weft/client-references` | client | Each entrypoint file's id, and a function `import()`ing it. The only files the client can be told to load.                                         |
 | `virtual:weft/assets`            | server | `{scripts, preloads, styles, entrypoints}`: the URLs a page loads the client with, and each entrypoint file's chunk and the chunks it imports.     |
 
@@ -82,7 +85,41 @@ Types for them are in `@e-cline/vite_plugin_weft/virtual`. A client environment 
 - **Building.** `vp build` builds the client first, with the bootstrap as its entry and the manifest
   on, then the server, whose `virtual:weft/assets` is made from that manifest.
 
-## Testing
+## Testing an app
+
+`@e-cline/vite_plugin_weft/testing`, with its ReScript bindings `WeftTesting`, tests an app the way
+a browser uses it, without one:
+
+```rescript
+let app = await WeftTesting.start(~root=packageRoot) // or ~mode=Build, ~buildDir
+let page = app->WeftTesting.open_(~container, "/notes/1")
+await page->WeftTesting.waitFor(() => page->WeftTesting.has("#title"))
+page->WeftTesting.click("#like")
+let _ = await app->WeftTesting.callServer("tests/FakeDbControl.res.js", "release", [JSON.String("body:1")])
+await page->WeftTesting.navigate("/notes/2")
+```
+
+- **The server runs in a worker thread**, its own realm, with no DOM: its modules come from the
+  app's sources through a Vite server in the test (whose `rsc` environment's module runner is in the
+  worker), or from a build. `callServer` calls a module of the server's, the same instance the app
+  uses (a fake database's controls, say).
+- **The page runs in the test's jsdom**, with the real bootstrap and the real reference map (the
+  test's Vite config has the weft plugin, as the app's own does). Its first request is the HTML,
+  whose rows are pushed as its inline scripts would push them; every request after that (payloads,
+  frames, an entrypoint's own `fetch`) goes to the worker too.
+- **The test decides when bytes arrive**: as they're sent, one chunk per `deliver`, or cut every _n_
+  bytes. Cancelling a response (a navigation away) aborts the request in the worker.
+- **What it checks**: `waitFor` a condition, `settle` until quiet, `loads` (and `holdLoads` to make
+  a chunk slow), `renderCount` of an entrypoint, `snapshot` and `removedSince` (that an update kept
+  the DOM's nodes), `pageRequests`.
+- **`Build` mode** runs the build: the worker imports `dist/server/index.js`, and the page is the
+  built client's own bootstrap and chunks. A file can open one page that way (the build's modules
+  are shared), and moves on by following links.
+
+[`examples/weft_notes`](../../examples/weft_notes) is tested this way, and
+[`examples/weft_split`](../../examples/weft_split) in both modes.
+
+## Testing the plugin
 
 The tests run against small apps in [`tests/fixtures`](tests/fixtures): ReScript packages compiled
 through the PPX by the workspace's build, with the output committed. A test copies one and builds
@@ -96,3 +133,6 @@ it, or changes its files as `rescript build -w` would:
   whose client imports a server file fails to build, naming the chain; so does one without the PPX.
 - **Dev:** a dev server in the test process: pages and payloads through the middleware, the
   development conditions, the boundary error, and the HMR messages for each kind of change.
+- **The harness:** the fixture's server in the worker (no browser globals there, the development
+  conditions, `callServer`, changed code running), chunks held and re-cut, and the HTML's rows read
+  back however the HTML is cut.

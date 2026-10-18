@@ -23,6 +23,8 @@ import {
 import {
   assetsCode,
   assetsId,
+  bootstrapCode,
+  bootstrapId,
   buildAssets,
   clientCode,
   clientId,
@@ -44,9 +46,10 @@ export type Options = {
   server: string;
   /**
    * The client entry (the bootstrap): the module the page loads first, which renders the payload
-   * into the document, using `virtual:weft/client`'s `loadModule`. Relative to the root.
+   * into the document, using `virtual:weft/client`'s `loadModule`. Relative to the root. Default:
+   * `virtual:weft/bootstrap`, which runs `WeftServer.Bootstrap.main`.
    */
-  client: string;
+  client?: string;
 };
 
 /** The environment server components run in. */
@@ -144,6 +147,8 @@ export function weft(options: Options): Plugin[] {
 
   const main: Plugin = {
     name: 'weft',
+    // For the test harness, which needs to know the server entry.
+    api: {options},
 
     config(userConfig) {
       const root = resolve(userConfig.root ?? process.cwd());
@@ -156,7 +161,14 @@ export function weft(options: Options): Plugin[] {
             build: {
               outDir: join(outDir, 'client'),
               manifest: true,
-              rolldownOptions: {input: {client: resolve(root, options.client)}},
+              rolldownOptions: {
+                input: {
+                  client:
+                    options.client === undefined
+                      ? bootstrapId
+                      : resolve(root, options.client),
+                },
+              },
             },
           },
           [serverEnvironment]: {
@@ -168,8 +180,13 @@ export function weft(options: Options): Plugin[] {
               noExternal: ['@e-cline/js_env'],
             },
             dev: {
-              createEnvironment: (name, environmentConfig) =>
-                createRunnableDevEnvironment(name, environmentConfig),
+              // One the config already has wins: the test harness runs this environment's modules
+              // in a worker.
+              createEnvironment:
+                userConfig.environments?.[serverEnvironment]?.dev
+                  ?.createEnvironment ??
+                ((name, environmentConfig) =>
+                  createRunnableDevEnvironment(name, environmentConfig)),
             },
             build: {
               outDir: join(outDir, 'server'),
@@ -193,7 +210,10 @@ export function weft(options: Options): Plugin[] {
     configResolved(resolved) {
       config = resolved;
       server = resolve(config.root, options.server);
-      client = resolve(config.root, options.client);
+      client =
+        options.client === undefined
+          ? resolvedId(bootstrapId)
+          : resolve(config.root, options.client);
       if (!hasPpx(config.root)) {
         throw new Error(
           `[weft] ${join(config.root, 'rescript.json')} doesn't run ppx_weft: add ` +
@@ -210,8 +230,14 @@ export function weft(options: Options): Plugin[] {
     },
 
     resolveId(id) {
-      if (id === clientReferencesId || id === clientId || id === assetsId) {
-        const isClient = this.environment.config.consumer === 'client';
+      if (
+        id === clientReferencesId ||
+        id === clientId ||
+        id === bootstrapId ||
+        id === assetsId
+      ) {
+        // Anything but the server's environment is a client: the browser's, and a test's.
+        const isClient = this.environment.name !== serverEnvironment;
         if (isClient === (id === assetsId)) {
           this.error(
             `[weft] ${id} is only for the ${isClient ? 'server' : 'client'}, but ` +
@@ -228,6 +254,8 @@ export function weft(options: Options): Plugin[] {
         return clientReferencesCode(entrypoints(scanned));
       } else if (id === resolvedId(clientId)) {
         return clientCode();
+      } else if (id === resolvedId(bootstrapId)) {
+        return bootstrapCode();
       } else if (id === resolvedId(assetsId)) {
         const files = entrypoints(scanned);
         if (this.environment.mode === 'dev') {
@@ -265,7 +293,7 @@ export function weft(options: Options): Plugin[] {
         if (directive === undefined) return undefined;
         if (
           directive.kind === 'server' &&
-          this.environment.config.consumer === 'client'
+          this.environment.name !== serverEnvironment
         ) {
           if (this.environment.mode === 'dev') {
             // The module graph already has whoever asked for this file.
@@ -279,7 +307,7 @@ export function weft(options: Options): Plugin[] {
     },
 
     buildEnd(error) {
-      if (error !== undefined || this.environment.config.consumer !== 'client')
+      if (error !== undefined || this.environment.name === serverEnvironment)
         return;
       const [first] = serverFilesInClient;
       serverFilesInClient.clear();
@@ -298,10 +326,10 @@ export function weft(options: Options): Plugin[] {
     configureServer(viteServer) {
       devServer = viteServer;
       const environment = viteServer.environments[serverEnvironment];
+      // An environment that runs its modules elsewhere (the test harness's, in a worker) is
+      // whoever made it's to call: no middleware.
       if (environment === undefined || !isRunnableDevEnvironment(environment)) {
-        throw new Error(
-          `[weft] the ${serverEnvironment} environment can't run modules`,
-        );
+        return undefined;
       }
       // After Vite's own middleware (so its modules and files are served first), every other
       // request goes to the server entry, imported afresh through the module runner each time, so

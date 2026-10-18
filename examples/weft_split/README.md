@@ -10,11 +10,14 @@ the plugin has to handle:
   `$$Error`;
 - `Fancy` and `Plain`: two entrypoints sharing a module (`Format`);
 - `Outer`: an entrypoint rendering another (`Counter`) itself;
-- `Chart`: one only `/other` uses, with a large module (`BigTable`) nothing else imports.
+- `Chart`: one only `/other` uses, with a large module (`BigTable`) nothing else imports;
+- `Link`: a link that navigates in place, on every page.
 
 The server components are in [`src/Pages.res`](src/Pages.res), and use a server-only module,
-[`src/Secrets.res`](src/Secrets.res). [`src/Server.res`](src/Server.res) is the server entry (an
-`@e-cline/servy` app), and [`src/Client.res`](src/Client.res) the bootstrap.
+[`src/Secrets.res`](src/Secrets.res). [`src/Server.res`](src/Server.res) is the server entry, an
+`@e-cline/servy` app whose routes answer with `WeftServer.Page.respond`: the HTML page with the
+payload streamed into it, or the bare payload when the client asks for it. The bootstrap is the
+plugin's default one.
 
 Run it:
 
@@ -35,4 +38,11 @@ refetches its payload, and the counters keep their counts.
 entrypoint file is a chunk of its own, `Format` is in a chunk `Fancy`'s and `Plain`'s both import,
 `BigTable` is only in `Chart`'s, and nothing of the server's is in the client. Then it asks the
 built server for each page's payload, and decodes it with the built chunks: `/` loads every
-entrypoint but `Chart`, and `/other` only `Chart` and `Counter`.
+entrypoint but `Chart`, and `/other` only `Chart`, `Counter` and `Link`.
+
+[`tests/Source_test.res`](tests/Source_test.res) and [`tests/Built_test.res`](tests/Built_test.res)
+open the pages through [the plugin's harness](../../packages/vite_plugin_weft#testing-an-app), from
+the sources and from a build: every entrypoint renders and works, a link navigates in place (the
+counter, in the same place on both pages, keeps its count), and, from the sources, the chart's file
+is loaded only once a page needs it. A difference between development and the build shows up as one
+passing and the other failing.

@@ -43,17 +43,19 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 
 ## Status
 
-Phases 0--4 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
-the phases will go in one PR, not opened yet). Next is phase 5: pages, navigation, frames, the tier
-2 harness and `weft_notes`.
+Phases 0--5 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
+the phases will go in one PR, not opened yet). Next is phase 6: HTML rendering and hydration, which
+may want a plan of its own.
 
-| Phase | What                                                         | Where                                                          |
-| ----- | ------------------------------------------------------------ | -------------------------------------------------------------- |
-| 0     | `ppx_weft` (attribute rename and checks), shared opam switch | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
-| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`            | `packages/weft_core`, `packages/weft`                          |
-| 2     | async server components, entrypoint ids and directives       | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
-| 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`         | `packages/weft_server`, `packages/weft_core`                   |
-| 4     | the Vite plugin, `serve`; the `weft_split` example           | `packages/vite_plugin_weft`, `examples/weft_split`             |
+| Phase | What                                                           | Where                                                          |
+| ----- | -------------------------------------------------------------- | -------------------------------------------------------------- |
+| 0     | `ppx_weft` (attribute rename and checks), shared opam switch   | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
+| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`              | `packages/weft_core`, `packages/weft`                          |
+| 2     | async server components, entrypoint ids and directives         | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
+| 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`           | `packages/weft_server`, `packages/weft_core`                   |
+| 4     | the Vite plugin, `serve`; the `weft_split` example             | `packages/vite_plugin_weft`, `examples/weft_split`             |
+| 5     | `Page`, `Bootstrap`, `Navigation`, `Frame`; the tier 2 harness | `packages/weft_server`, `packages/vite_plugin_weft`            |
+|       | `weft_notes` (tier 2 scenarios, tier 3 browser tests)          | `examples/weft_notes`, `examples/weft_split`                   |
 
 Where the implementation went its own way, the sections below say so. Things learned on the way, for
 whoever picks this up:
@@ -93,8 +95,16 @@ whoever picks this up:
 - **Rolldown doesn't know a module's importers yet in `transform`**: the plugin's build reports a
   client import of a server file at `buildEnd`, once the graph is complete.
 - **The built client's shared code is in the bootstrap's chunk**, so importing an entrypoint's chunk
-  runs the bootstrap: `weft_split`'s test does it under jsdom, with no `#root` for it to render
-  into.
+  runs the bootstrap: `weft_split`'s test does it under jsdom, with no `#root` for it to render into
+  (`Bootstrap.main` does nothing then).
+- **`vp run` loads every package's Vite config to make its task graph**, and an example's config
+  imports the plugin's `dist`: a stale or broken `dist` fails every `vp run`, even the plugin's own
+  build. `npx vp pack` in `packages/vite_plugin_weft` breaks the loop.
+- **jsdom's `click()` doesn't move the focus**, and a browser's does: a browser test that checks
+  focus submits a form with Enter, not by clicking its button.
+- **A page streams for as long as its gates are closed**, so the harness's `settle` can't wait for
+  responses to end: tests `waitFor` what they expect, and `settle` waits for quiet.
+- **Vite+'s formatter wraps TypeScript at 80 columns** (ReScript and Markdown at 100).
 
 ## What was verified before writing this
 
@@ -334,9 +344,10 @@ module whose default export is a fetch handler, as `@e-cline/servy`'s `App.t` is
 plugins: [weft({server: 'src/Server.res.js', client: 'src/Client.res.js'})],
 ```
 
-(As built in phase 4, the bootstrap is the app's own module, which imports what it needs from
-`virtual:weft/client`. Phase 5 can give `client` a default, a bootstrap in `weft_server` that does
-what's described below, once `Page` and navigation exist.)
+`client` is optional: by default the bootstrap is `virtual:weft/bootstrap`, which calls
+`WeftServer.Bootstrap.main` with `virtual:weft/client`'s `loadModule` and `onRefresh` (phase 5; in
+phase 4 the bootstrap had to be the app's own). An app with its own bootstrap imports what it needs
+from `virtual:weft/client`.
 
 What it does:
 
@@ -353,7 +364,8 @@ What it does:
     links) and stylesheets, and, for each entrypoint file, its chunk and the chunks it imports. In
     dev these are `/src/...` URLs; in a build, they come from the client build's `manifest.json`.
   - A client environment importing `virtual:weft/assets`, or the server one the client modules, is
-    an error.
+    an error. "Client" is any environment but `rsc` (the browser's, and a Vitest test's, which the
+    harness relies on); the boundary check applies to all of them too.
 - **Enforcing the boundary.** A module with the `'use weft server'` directive reaching the client
   environment's `transform` is an error, naming the chain of imports from the entry to it: in dev at
   once (the module graph knows who asked for it), in a build at `buildEnd` (Rolldown only knows a
@@ -362,6 +374,10 @@ What it does:
   keeps every position, so no source map is needed. A server-only module with no server components
   has no directive, so nothing stops the client importing it; the build test's sentinel is what
   checks that.
+- **The harness** (§9) supplies its own `rsc` environment, whose module runner is in a worker: the
+  plugin keeps a `createEnvironment` the config already has, adds no middleware for an environment
+  it can't run itself, and exposes its options (`api.options`) so the harness can find the server
+  entry.
 - **A missing PPX** is caught early: if the app's `rescript.json` doesn't list `ppx_weft` in its
   `ppx-flags`, the plugin stops with a message saying what to add (and what the compiler's error
   without it looks like).
@@ -494,23 +510,32 @@ parent's render, which the Suspense machinery is built around.
 ### 7. Pages, streaming, navigation and refetching
 
 **The first request** (before phase 6's HTML rendering) gets one streamed HTML response: the
-document shell, `<div id="root">`, the bootstrap `<script type="module">` and `modulepreload` links,
-then the payload's rows as they're produced, each as an inline `<script>__weft.push("...")</script>`
-(escaped with `Html.json`'s rules), until the payload ends. The bootstrap drains `__weft` and
-listens for more, so rows that arrive before or after it loads are both handled, and there's one
-request, not a page then a fetch. The page shows nothing until the bootstrap and row 0 are in, but
-everything under a `Suspense` boundary streams in after that.
+document shell, `<div id="root">`, the bootstrap `<script type="module" async>` (`async`, or it
+would wait for the whole document) and `modulepreload` links, then the payload's rows as they're
+produced, each as an inline `<script>(self.__weft||=[]).push("...")</script>` (`<` written as
+`\u003c`, and the line separators escaped, so nothing in a row can end the script), with a
+`modulepreload` for an entrypoint's chunk before the first row using it, until the payload ends
+(`push(null)`). The bootstrap drains `__weft` and listens for more, so rows that arrive before or
+after it loads are both handled, and there's one request, not a page then a fetch. The page shows
+nothing until the bootstrap and row 0 are in, but everything under a `Suspense` boundary streams in
+after that.
 
 **Navigation** fetches the same route with `Accept: text/x-weft-payload`, which the server answers
 with the bare payload, and renders the result into the root inside `Transition.start`: the old
 screen stays until the new tree can render (Suspense phase c), entrypoints in the same place keep
-their state, and the reconciler only touches what changed. `WeftServer.Client.navigate(url)` and
-`refresh()` are the API; a router (link interception, history) is the example's job, kept small.
-Both use a `fetch` the client is created with (the global one, from the bootstrap), so a test can
-give it one that goes to a stubbed server instead (§9).
+their state, and the reconciler only touches what changed. As built, it's `WeftServer.Navigation`
+(not functions in `Client`, which it builds on): a page (`Navigation.t`) made over any renderer,
+with `navigate(url)`, `load(url)` (no history entry), `refresh()`, and `useNavigation()` for
+entrypoints, provided by a context around what it renders. `Bootstrap.start` makes the browser's,
+with `history.pushState` after a navigation and `popstate` loading the URL gone back to; links are
+the app's own entrypoints calling `navigate` (`weft_notes`' and `weft_split`'s `Link`). They use a
+`fetch` the client is created with (the global one, from the bootstrap), so a test can give it one
+that goes to a stubbed server instead (§9).
 
-A helper in `weft_server` (or the example) puts this together for `@e-cline/servy`:
-`Page.respond(request, element)` picks HTML or payload from the `Accept` header.
+`WeftServer.Page.respond(request, element, ~assets)` picks HTML or payload from the `Accept` header,
+and stops rendering when the request is aborted. It takes and returns `@rescript/webapi`'s
+`Request.t` and `Response.t`, as `@e-cline/servy` does, so `weft_server` depends on that package
+(the renderer and the client still don't use it).
 
 **In-place updates.** A refetch is never a remount: the new payload is decoded into ordinary
 elements and rendered over the old ones, so the reconciler patches the screen as it would for any
@@ -536,12 +561,15 @@ The update is rendered in a transition, so boundaries already on screen don't fa
 fallbacks while the new payload streams in: the old content stays until the new content under it is
 ready (Suspense phase c). Boundaries that are new in the payload show their fallbacks as usual.
 Requests are numbered: a response that arrives after a newer one for the same place is dropped, and
-its stream cancelled.
+its stream cancelled. What the cancelled payload hadn't delivered yet is left waiting, not failed:
+it may still be on screen (under a fallback) until the newer payload has rendered, and failing it
+would throw there. Only its root row fails, so whoever awaited it is told.
 
 **Refetching part of the page.** A whole-page `refresh()` is the simple case. For a part of it,
-`WeftServer.Frame` is a built-in entrypoint (part of `weft_server`'s client modules, always in the
-plugin's reference map, and marked with `Entrypoint.mark` by hand, since `weft_server` itself
-doesn't use the PPX) that a server component wraps around a subtree:
+`WeftServer.Frame` is a built-in entrypoint (marked with `Entrypoint.mark` by hand, since
+`weft_server` itself doesn't use the PPX, and given the entrypoint directive with `@@directive`, so
+the plugin's scan finds it in any app depending on `weft_server`) that a server component wraps
+around a subtree:
 
 ```rescript
 // in a server component
@@ -550,7 +578,7 @@ doesn't use the PPX) that a server component wraps around a subtree:
 </WeftServer.Frame>
 
 // in any entrypoint below it, or elsewhere on the page
-let comments = WeftServer.Client.useFrame("comments")
+let comments = WeftServer.Navigation.useFrame("comments")
 <button onClick={_ => comments.refetch()}> {Weft.Jsx.string("Reload")} </button>
 // comments.isPending is true until the new subtree has rendered
 ```
@@ -561,7 +589,13 @@ in their place, in a transition, under the same rules. The route at `src` render
 with `Page.respond`. If a later full `refresh()` or `navigate` gives the frame new `children`, the
 newest content wins, whichever way it came. Underneath is `WeftServer.Client.fetchElement(url)`, a
 promise of a decoded element an entrypoint can keep in its own state, for anything `Frame` doesn't
-cover.
+cover. `useFrame` works from anywhere on the page: each frame registers its `refetch` and pending
+state with the page as it mounts.
+
+**Keys.** A list a server component builds at runtime (`Jsx.array`) and one written out in JSX look
+the same once they've been through the payload, so the client marks every list it decodes as written
+out (`JsxCore.markStaticList`, new in `weft_core`), and the server warns instead, in development,
+about a runtime list of children with elements missing keys, naming where it is.
 
 ### 8. Server-rendered HTML and hydration (phase 6)
 
@@ -764,14 +798,22 @@ One harness (a Vite server and a worker) is made per test file and reset between
 opens pages on it:
 
 ```rescript
-let app = await WeftTesting.start(~root=packageRoot, ~mode=Source) // or Build("dist")
-let page = await app->WeftTesting.open_(~container, ~delivery=Manual, "/notes/1")
-page->WeftTesting.deliver                          // hand the client the next chunk
-await page->WeftTesting.settle                     // deliver everything, finish loads and renders
-await app->WeftTesting.callServer("tests/FakeDbControl.res.js", "release", ["comments:1"])
-await page->WeftTesting.navigate("/notes/2")       // through the client's own navigate
+let app = await WeftTesting.start(~root=packageRoot) // or ~mode=Build, ~buildDir
+let page = app->WeftTesting.open_(~container, ~delivery=Manual, "/notes/1")
+page->WeftTesting.deliver->ignore                  // hand the client the next chunk
+await page->WeftTesting.waitFor(() => page->WeftTesting.has("#title"))
+await page->WeftTesting.settle                     // deliver everything, until it's quiet
+let _ = await app->WeftTesting.callServer("tests/FakeDbControl.res.js", "release", [JSON.String("comments:1")])
+await page->WeftTesting.navigate("/notes/2")       // through the page's own navigation
 await page->WeftTesting.refetchFrame("comments")   // as useFrame(name).refetch() would
 ```
+
+As built: the server side is TypeScript (`src/testing.ts`, and `src/testingWorker.ts`, the worker),
+and so is the page's DOM work, while `WeftTesting.res` passes in what only the test's module graph
+can import (the bootstrap, the reference map, `WeftDom.Client.act`). The rsc environment is a
+`DevEnvironment` whose hot channel posts to the worker, and the worker's `ModuleRunner` invokes
+`fetchModule` back over the port (`hot.handleInvoke`). A test file starts one app (`beforeAll`), and
+each test opens pages on it, in containers of its own.
 
 - **Two realms.** The server code runs in the worker with its own module instances (its own
   `HookImpl`, `Env` and entrypoint marks), its own globals and no DOM: server code touching
@@ -794,22 +836,25 @@ await page->WeftTesting.refetchFrame("comments")   // as useFrame(name).refetch(
   scripts and the rest checked to be the shell, so the HTML path is covered without a browser.
 - **Entrypoints** load through the real reference map; `page->WeftTesting.holdLoads` holds them, to
   test a slow chunk.
-- **Rendering** goes through `WeftDom.Client.act`, so effects have run when `settle` returns.
-- **Checking an update was in place**: `page->WeftTesting.snapshotNodes` records the DOM nodes under
-  the container, and `WeftTesting.sameNodes(before, after, ~except=?)` asserts that every one is
-  still the same node, except those named; `WeftTesting.renderCount(page, ~id)` counts an
-  entrypoint's renders (the harness wraps each loaded `make`).
-- **`Build` mode** runs the same tests against `vp build`'s output: the worker imports
-  `dist/server/index.js`, and the client loads the built chunks from `dist/client` by way of the
-  manifest, instead of the sources.
+- **Rendering** goes through `WeftDom.Client.act`. A page streams for as long as the server has
+  something to send, so "everything has arrived" isn't something to wait for: `waitFor(predicate)`
+  waits for what the test expects, and `settle` until nothing has changed for a while.
+- **Checking an update was in place**: `page->WeftTesting.snapshot` records the DOM nodes under the
+  container, and `removedSince(page, snapshot)` lists those no longer there (expected to be `[]`);
+  `renderCount(page, id)` counts an entrypoint's renders (the harness wraps each loaded `make`, the
+  same wrapper every time); `pageRequests` lists the page's requests.
+- **`Build` mode** runs the build: the worker imports its `server/index.js`, and the page is the
+  built client's own bootstrap and chunks (with their own copy of Weft, which is why the harness
+  can't hand the page a bootstrap of its own then). Since those modules are shared, a build-mode
+  test file opens one page and moves on by following links; `loads`, `holdLoads` and `renderCount`
+  are source-mode only.
 
 **Proving it out first.** This leans on less-trodden Vite APIs: a module runner in a worker with a
 custom transport, and Vitest applying a plugin's client environment to the test's own graph. Phase 5
-starts with a spike of two files (one server component, one entrypoint) through the whole harness.
-If it fights back, the fallback is two module runners in one thread: module instances are still
-separate, but globals aren't, so server code could see jsdom's `document`, which a development-mode
-guard in `Render` (fail if a server component touches `document` or `window`) would then have to
-catch.
+started with a spike of the transport against the plugin's `basic` fixture
+(`packages/vite_plugin_weft/tests/harness.test.ts`): the worker approach worked first time (the
+server has no `document` or `window`, runs with the development conditions, and runs changed code
+once Vite sees the change), so the one-thread fallback wasn't needed.
 
 #### Example apps
 
@@ -841,7 +886,7 @@ tier 2 harness, from source:
   its waiters abandoned) and none of its rows land;
 - saving in `NoteEditor` refetches the header frame: the new title and "saved at" arrive as props,
   the draft and the input's focus and selection are kept, the input is the same DOM node, and
-  nothing outside the frame changes (`sameNodes`, render counts);
+  nothing outside the frame changes (`removedSince`, render counts);
 - reloading the comments frame after another "user" adds a comment through the fake database: the
   new comment is inserted, the existing comment nodes are kept, and a comment whose text was edited
   is updated in place;
@@ -872,18 +917,19 @@ large client-only module (with a sentinel) imported by one entrypoint, and a ser
 #### Tier 3: browser smoke tests (`examples/weft_notes/e2e`)
 
 A few Playwright tests (`@playwright/test`, Chromium only) against `weft_notes` built and served
-over real HTTP on a free port, with a test-only route to open the gates, enabled by an environment
-variable the test server sets:
+over real HTTP (port 4317, or `WEFT_NOTES_E2E_PORT`), with test-only routes to open the gates,
+enabled by `WEFT_NOTES_TEST_ROUTES=1`, which the test server sets:
 
 - the first page streams: the shell and row 0 show, then each boundary fills in as its gate opens;
 - an entrypoint's chunk is requested only once a page uses it, and once only (from the network log);
 - saving in `NoteEditor` refetches its frame and keeps the input's focus and selection;
 - navigating between notes keeps the like button's state, and the back button works.
 
-They run in CI on one Node version, as a task of their own (`vp run e2e`), since they need a browser
-installed. They're few by design: anything that can be checked in tier 2 is, and these cover what
-only a browser can show. Phase 6 adds hydration's (no flash of client rendering, the server's nodes
-kept).
+They run in CI on one Node version, as a job of their own (`vp run e2e`, after
+`playwright install --with-deps chromium`), since they need a browser installed. (The job was
+written in phase 5 but hasn't run in CI yet: it'll first run on the PR.) They're few by design:
+anything that can be checked in tier 2 is, and these cover what only a browser can show. Phase 6
+adds hydration's (no flash of client rendering, the server's nodes kept).
 
 ## Packages and layout
 
@@ -898,12 +944,14 @@ packages/weft_core/src/
 packages/weft_server/              namespace WeftServer
   src/Payload.res(i)               the row and value encoding, shared by both ends
   src/Render.res(i)                server renderer: element => ReadableStream
-  src/Client.res(i)                stream => elements; navigate, refresh
-  src/Page.res(i)                  the HTML shell with inlined rows
+  src/Client.res(i)                stream => elements; fetchElement, Latest
+  src/Page.res(i)                  the HTML shell with inlined rows; respond (HTML or payload)
+  src/Bootstrap.res(i)             the browser's start: rows from the page, a root, history
+  src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useFrame
   src/Frame.res(i)                 the built-in entrypoint for refetching part of a page
   src/Testing.res(i)               tier 1 helpers: a stub stream, entrypoints served from a map
 packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
-  src/testing/                     the tier 2 harness (`/testing` export): Vite server, worker, port
+  src/testing.ts, testingWorker.ts the tier 2 harness (`/testing` export): Vite server, worker, port
   src/WeftTesting.res(i)           its ReScript bindings
   tests/fixtures/                  small ReScript apps, compiled by the root build
 tools/ppx/weft_tests/              fixtures that compile, fixtures that don't, compiler canaries
@@ -960,7 +1008,12 @@ bootstrap, which then fetches the payload; it works the same in `vp dev` and bui
 decides between the worker and the one-thread fallback. Then `Page`, the bootstrap,
 `navigate`/`refresh`, `Frame` and `useFrame`, and server HMR; the tier 2 harness and its bindings;
 `examples/weft_notes` with its scenario tests; `weft_split`'s harness tests, from source and built;
-and the tier 3 browser tests, with the `e2e` task wired into CI.
+and the tier 3 browser tests, with the `e2e` task wired into CI. Done. Along the way: navigation
+became a module of its own (`Navigation`, with `useFrame`), `Bootstrap` and the plugin's default
+bootstrap came with it, `weft_server` gained dependencies on `weft_dom` (the bootstrap) and
+`@rescript/webapi` (`Page.respond`), cancelled payloads leave their rows waiting rather than failing
+them, the server took over warning about missing keys, and `weft_split` switched to `Page` and the
+default bootstrap (with a `Link` entrypoint, for navigating in build mode).
 
 **Phase 6 -- HTML and hydration** (§8): the hook-less HTML renderer, streaming Suspense HTML, then
 hydration in the reconciler and the DOM host. Could be its own plan once phases 1--5 have settled.
@@ -1012,8 +1065,10 @@ Settled before phase 0, since these names and this setup get built into everythi
   equal, so `Memo` bails out; that's an optimisation for later, and the render-count assertions
   above pin down today's behaviour.
 - **The tier 2 harness depends on young Vite APIs** (a module runner in a worker, and a plugin's
-  client environment inside Vitest), which could change or not quite work. The phase 5 spike finds
-  out before anything is built on it; the fallback (§9) loses only the separation of globals.
+  client environment inside Vitest), which could change. The phase 5 spike showed they work today;
+  the harness's own tests (`tests/harness.test.ts`) would show it if they stop.
+- **jsdom isn't a browser**: focus follows clicks in one and not the other, for one. The browser
+  tests cover what the scenarios found jsdom getting differently.
 - **Tiers 1 and 2 never run real HTML streaming or chunk loading.** The browser tests do, but only
   for a few scenarios, so a browser-only problem elsewhere could get through. Keeping the first
   page's HTML reading in tier 2 identical to the bootstrap's (one shared module) narrows it.

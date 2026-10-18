@@ -62,6 +62,17 @@ pnpm run build
 pnpm run test
 ```
 
+Run the browser tests (a few, in [`examples/weft_notes/e2e`](examples/weft_notes/e2e), against the
+built app), which need Playwright's Chromium installed once:
+
+```bash
+pnpm --filter @e-cline/weft_notes_example exec playwright install chromium
+```
+
+```bash
+pnpm run e2e
+```
+
 Run every benchmark package (a package's `benchmarks/` directory is a package of its own, built on
 [`tools/benchmarking`](tools/benchmarking); `test` only checks that each one still runs, measuring a
 single benchmark):

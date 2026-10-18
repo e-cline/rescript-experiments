@@ -1,0 +1,349 @@
+/***
+The app's scenarios, through the plugin's harness: the server (with its fake database) in a worker,
+each page in jsdom, and the server's responses handed over when the test says. The database's
+queries wait on gates the test opens, so the order things stream in is the test's choice.
+*/
+
+open Vitest
+open NotesSupport
+
+let app = useApp()
+
+beforeEachAsync(async () => await reset(app()))
+
+let note1Fallbacks = ["#body-loading", "#comment-list-loading", "#related-loading"]
+
+describe("the first page", () => {
+  testAsync(
+    "comes in one request: the shell and the first row, then each boundary as its gate opens",
+    async t => {
+      let page = app()->open_("/notes/1")
+      await page->WeftTesting.waitFor(() => has(page, "#title"))
+      t->expect(text(page, "#title"))->Expect.toBe("Groceries")
+      t->expect(note1Fallbacks->Array.every(selector => has(page, selector)))->Expect.toBe(true)
+      t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
+      // Related notes first, then the body, then the comments.
+      await app()->release("related:1")
+      await page->WeftTesting.waitFor(() => has(page, "#related"))
+      t->expect(has(page, "#body-loading"))->Expect.toBe(true)
+      t->expect(has(page, "#comment-list-loading"))->Expect.toBe(true)
+      await app()->release("body:1")
+      await page->WeftTesting.waitFor(() => has(page, "#note-body"))
+      t->expect(text(page, "#note-body"))->Expect.toBe("Milk, eggs, bread.")
+      t->expect(has(page, "#comment-list-loading"))->Expect.toBe(true)
+      await app()->release("comments:1")
+      await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+      t->expect(text(page, "#comment-list"))->Expect.toBe("Ada: Don't forget coffee.")
+      // The page's HTML, once it has all come: the shell, then the rows (taken out), with a
+      // preload for each entrypoint's chunk before the first row using it.
+      let shell = await page->WeftTesting.shell
+      t->expect(shell->String.includes(`<div id="root"></div>`))->Expect.toBe(true)
+      t->expect(shell->String.endsWith(`</body></html>`))->Expect.toBe(true)
+      t->expect(shell->String.includes("__weft"))->Expect.toBe(false)
+      t
+      ->expect(shell->String.includes(`<link rel="modulepreload" href="/src/LikeButton.res.js">`))
+      ->Expect.toBe(true)
+    },
+  )
+})
+
+/** Opens every gate the note page waits on, for tests that aren't about streaming. */
+let openGates = async (~note="1") => {
+  await app()->release(`body:${note}`)
+  await app()->release(`comments:${note}`)
+  await app()->release(`related:${note}`)
+}
+
+/** Opens note `note`'s page with every gate open, once it has all rendered. */
+let openNote = async (~note="1", ~delivery=?) => {
+  await openGates(~note)
+  let page = app()->open_(~delivery?, `/notes/${note}`)
+  await page->WeftTesting.waitFor(() =>
+    has(page, "#note-body") &&
+    has(page, "#comment-list") &&
+    has(page, "#related") &&
+    has(page, "#like")
+  )
+  page
+}
+
+describe("the first page, in any order", () => {
+  testAsync("streams the boundaries in whichever order their gates open", async t => {
+    let page = app()->open_("/notes/1")
+    await page->WeftTesting.waitFor(() => has(page, "#title"))
+    await app()->release("comments:1")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+    t->expect(has(page, "#body-loading") && has(page, "#related-loading"))->Expect.toBe(true)
+    await app()->release("body:1")
+    await page->WeftTesting.waitFor(() => has(page, "#note-body"))
+    t->expect(has(page, "#related-loading"))->Expect.toBe(true)
+    await app()->release("related:1")
+    await page->WeftTesting.waitFor(() => has(page, "#related"))
+  })
+
+  testAsync("ends up the same however the HTML is cut up, or if it all comes at once", async t => {
+    let finals = []
+    for size in 0 to 3 {
+      await reset(app())
+      let delivery = switch size {
+      | 0 => WeftTesting.Immediate
+      | 1 => EveryBytes(1)
+      | 2 => EveryBytes(7)
+      | _ => EveryBytes(4096)
+      }
+      let page = await openNote(~delivery)
+      await page->WeftTesting.settle
+      finals->Array.push(page->WeftTesting.html)
+    }
+    t->expect(finals->Array.every(html => html == finals->Array.getUnsafe(0)))->Expect.toBe(true)
+    t->expect(finals->Array.getUnsafe(0)->String.includes("Milk, eggs, bread."))->Expect.toBe(true)
+  })
+
+  testAsync("shows the comments' own fallback until the promise they come as resolves", async t => {
+    let page = app()->open_("/notes/1")
+    // The list is an entrypoint, rendered with the page; what it's given is a promise of the
+    // comments, whose fallback is the list's own.
+    await page->WeftTesting.waitFor(() => has(page, "#comment-list-loading"))
+    t->expect(has(page, "#comment-list"))->Expect.toBe(false)
+    await app()->release("comments:1")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+    t->expect(has(page, "#comment-list-loading"))->Expect.toBe(false)
+  })
+
+  testAsync(
+    "shows a failing component's error in its error box, and the rest of the page",
+    async t => {
+      let page = await openNote()
+      t
+      ->expect(text(page, "#error-box"))
+      ->Expect.toBe("Couldn't show this: the recommendations service is down")
+      t->expect(text(page, "#title"))->Expect.toBe("Groceries")
+    },
+  )
+
+  testAsync("renders the rest of the page while an entrypoint's chunk loads, then it", async t => {
+    await openGates()
+    let page = app()->open_("/notes/1")
+    page->WeftTesting.holdLoads(~matching="LikeButton")
+    await page->WeftTesting.waitFor(() => has(page, "#note-body") && has(page, "#title"))
+    t->expect(has(page, "#likes-loading"))->Expect.toBe(true)
+    t->expect(has(page, "#like"))->Expect.toBe(false)
+    page->WeftTesting.releaseLoads
+    await page->WeftTesting.waitFor(() => has(page, "#like"))
+    t->expect(text(page, "#like"))->Expect.toBe("3 likes")
+    t
+    ->expect(page->WeftTesting.loads->Array.filter(id => id->String.includes("LikeButton")))
+    ->Expect.toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"])
+  })
+})
+
+let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#"
+let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#"
+
+describe("navigating", () => {
+  testAsync("keeps the like button's state across notes and a refresh", async t => {
+    await openGates(~note="2")
+    let page = await openNote()
+    page->WeftTesting.click("#like")
+    await page->WeftTesting.waitFor(() => text(page, "#like")->String.includes("you liked this"))
+    await page->WeftTesting.navigate("/notes/2")
+    await page->WeftTesting.waitFor(() => text(page, "#title") == "Ideas")
+    t->expect(text(page, "#like"))->Expect.toBe("5 likes (you liked this)")
+    await page->WeftTesting.refresh
+    await page->WeftTesting.settle
+    t->expect(text(page, "#like"))->Expect.toBe("5 likes (you liked this)")
+  })
+
+  testAsync("by a link, fetches the payload, not the page", async t => {
+    let page = app()->open_("/")
+    await page->WeftTesting.waitFor(() => has(page, "#note-link-2"))
+    page->WeftTesting.click("#note-link-2")
+    await page->WeftTesting.waitFor(() => text(page, "#title") == "Ideas")
+    t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/", "/notes/2"])
+  })
+
+  testAsync(
+    "away from a page still streaming cancels its response: its queries are abandoned, and none of its rows land",
+    async t => {
+      let page = app()->open_("/")
+      await page->WeftTesting.waitFor(() => has(page, "#notes"))
+      await page->WeftTesting.navigate("/notes/1")
+      await page->WeftTesting.waitFor(() => text(page, "#title") == "Groceries")
+      let waitingOn1 =
+        (await waiting(app()))->Array.filter(
+          id => id->String.endsWith(":1") || id->String.includes(":1#"),
+        )
+      t->expect(Array.length(waitingOn1))->Expect.toBe(3)
+      await page->WeftTesting.navigate("/notes/2")
+      await page->WeftTesting.waitFor(() => text(page, "#title") == "Ideas")
+      // The server saw note 1's queries abandoned when the client went away.
+      let rec abandonedOn1 = async tries => {
+        let found = (await abandoned(app()))->Array.filter(id => id->String.includes(":1#"))
+        Array.length(found) == 3 || tries == 0
+          ? found
+          : {
+              await page->WeftTesting.idle
+              await abandonedOn1(tries - 1)
+            }
+      }
+      t->expect(Array.length(await abandonedOn1(50)))->Expect.toBe(3)
+      await openGates(~note="1")
+      await page->WeftTesting.settle
+      t->expect(page->WeftTesting.html->String.includes("Milk, eggs, bread."))->Expect.toBe(false)
+      t->expect(text(page, "#title"))->Expect.toBe("Ideas")
+    },
+  )
+})
+
+describe("posting", () => {
+  testAsync("a comment, then refreshing, shows it, and keeps the form's other state", async t => {
+    let page = await openNote()
+    page->WeftTesting.input("#comment-author", "Me")
+    page->WeftTesting.input("#comment-text", "Hello!")
+    page->WeftTesting.click("#post-comment")
+    await page->WeftTesting.waitFor(
+      () => text(page, "#comment-list")->String.includes("Me: Hello!"),
+    )
+    t
+    ->expect(page->WeftTesting.query("#comment-author")->Option.map(Doc.value))
+    ->Expect.toEqual(Some("Me"))
+    t
+    ->expect(page->WeftTesting.query("#comment-text")->Option.map(Doc.value))
+    ->Expect.toEqual(Some(""))
+  })
+
+  testAsync(
+    "a new title refetches the header frame: new props, the draft, focus and selection kept, nothing else touched",
+    async t => {
+      let page = await openNote()
+      let input = page->WeftTesting.query("#title-input")->Option.getOrThrow
+      let likeRenders = page->WeftTesting.renderCount(likeButton)
+      let formRenders = page->WeftTesting.renderCount(commentForm)
+      page->WeftTesting.input("#title-input", "Groceries!")
+      input->Doc.focus
+      input->Doc.setSelectionRange(2, 5)
+      let before = page->WeftTesting.snapshot
+      page->WeftTesting.click("#save")
+      await page->WeftTesting.waitFor(() => text(page, "#saved-at") == "Saved: revision 1")
+      await page->WeftTesting.settle
+      t->expect(text(page, "#title"))->Expect.toBe("Groceries!")
+      t->expect(page->WeftTesting.query("#title-input") === Some(input))->Expect.toBe(true)
+      t->expect(Doc.value(input))->Expect.toBe("Groceries!")
+      t->expect(Doc.activeElement() === input)->Expect.toBe(true)
+      t->expect((Doc.selectionStart(input), Doc.selectionEnd(input)))->Expect.toEqual((2, 5))
+      t->expect(page->WeftTesting.removedSince(before))->Expect.toEqual([])
+      t->expect(page->WeftTesting.renderCount(likeButton))->Expect.toBe(likeRenders)
+      t->expect(page->WeftTesting.renderCount(commentForm))->Expect.toBe(formRenders)
+      t
+      ->expect(page->WeftTesting.pageRequests)
+      ->Expect.toEqual(["/notes/1", "/notes/1", "/notes/1/header"])
+    },
+  )
+})
+
+describe("the comments frame", () => {
+  testAsync(
+    "reloaded after another user's changes: the new comment inserted, the edited one updated in place",
+    async t => {
+      let page = await openNote()
+      let first = page->WeftTesting.query("#comment-c1")->Option.getOrThrow
+      let before = page->WeftTesting.snapshot
+      await app()->addComment(~noteId="1", ~author="Bob", ~text="New here")
+      await app()->editComment(~noteId="1", ~commentId="c1", ~text="Coffee too.")
+      page->WeftTesting.click("#reload-comments")
+      await page->WeftTesting.waitFor(
+        () => text(page, "#comment-list")->String.includes("Bob: New here"),
+      )
+      await page->WeftTesting.settle
+      t->expect(page->WeftTesting.query("#comment-c1") === Some(first))->Expect.toBe(true)
+      t->expect(text(page, "#comment-c1"))->Expect.toBe("Ada: Coffee too.")
+      t->expect(page->WeftTesting.removedSince(before))->Expect.toEqual([])
+    },
+  )
+
+  testAsync(
+    "reloading while its gate is held keeps the old comments, pending, until it opens",
+    async t => {
+      let page = app()->open_("/notes/1")
+      await page->WeftTesting.waitFor(() => has(page, "#comment-list-loading"))
+      // Let this first query through, but not the reload's.
+      await app()->release(await app()->waiterFor("comments:1"))
+      await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+      await app()->addComment(~noteId="1", ~author="Bob", ~text="Later")
+      page->WeftTesting.click("#reload-comments")
+      await page->WeftTesting.waitFor(
+        () => page->WeftTesting.query("#reload-comments")->Option.isSome,
+      )
+      let rec reloadWaiting = async tries =>
+        switch (await waiting(app()))->Array.find(id => id->String.startsWith("comments:1#")) {
+        | Some(id) => id
+        | None if tries > 0 =>
+          await page->WeftTesting.idle
+          await reloadWaiting(tries - 1)
+        | None => JsError.throwWithMessage("the reload never queried the comments")
+        }
+      let reload = await reloadWaiting(100)
+      await page->WeftTesting.settle
+      t->expect(has(page, "#comment-list"))->Expect.toBe(true)
+      t->expect(has(page, "#comment-list-loading"))->Expect.toBe(false)
+      t->expect(text(page, "#comment-list")->String.includes("Later"))->Expect.toBe(false)
+      t->expect(page->WeftTesting.textOf("#reload-comments"))->Expect.toEqual(Some("Reloading…"))
+      await app()->release(reload)
+      await page->WeftTesting.waitFor(
+        () => text(page, "#comment-list")->String.includes("Bob: Later"),
+      )
+      await page->WeftTesting.waitFor(() => text(page, "#reload-comments") == "Reload comments")
+    },
+  )
+
+  testAsync("reloaded twice, with the first held: the first never lands", async t => {
+    let page = app()->open_("/notes/1")
+    await page->WeftTesting.waitFor(() => has(page, "#comment-list-loading"))
+    await app()->release(await app()->waiterFor("comments:1"))
+    await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+    page->WeftTesting.click("#reload-comments")
+    let rec waiterCount = async (count, tries) => {
+      let found = (await waiting(app()))->Array.filter(id => id->String.startsWith("comments:1#"))
+      Array.length(found) >= count || tries == 0
+        ? found
+        : {
+            await page->WeftTesting.idle
+            await waiterCount(count, tries - 1)
+          }
+    }
+    let firstReload = (await waiterCount(1, 100))->Array.getUnsafe(0)
+    await app()->addComment(~noteId="1", ~author="Bob", ~text="Second")
+    page->WeftTesting.click("#reload-comments")
+    // The second reload cancels the first: its query is abandoned.
+    let rec firstAbandoned = async tries =>
+      (await abandoned(app()))->Array.includes(firstReload) || tries == 0
+        ? (await abandoned(app()))->Array.includes(firstReload)
+        : {
+            await page->WeftTesting.idle
+            await firstAbandoned(tries - 1)
+          }
+    t->expect(await firstAbandoned(100))->Expect.toBe(true)
+    await app()->release("comments:1")
+    await page->WeftTesting.waitFor(
+      () => text(page, "#comment-list")->String.includes("Bob: Second"),
+    )
+    await page->WeftTesting.settle
+    t->expect(text(page, "#reload-comments"))->Expect.toBe("Reload comments")
+  })
+})
+
+describe("the server's data changing", () => {
+  testAsync(
+    "shows the server's like count after a refresh, keeping the button's own state",
+    async _t => {
+      let page = await openNote()
+      page->WeftTesting.click("#like")
+      await page->WeftTesting.waitFor(() => text(page, "#like")->String.includes("you liked this"))
+      // The like has been posted.
+      await page->WeftTesting.settle
+      await app()->setLikes(~noteId="1", ~likes=10)
+      await page->WeftTesting.refresh
+      await page->WeftTesting.waitFor(() => text(page, "#like") == "10 likes (you liked this)")
+    },
+  )
+})

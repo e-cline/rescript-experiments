@@ -12,7 +12,7 @@
   ],
   "suffix": ".res.js",
   "namespace": "WeftSplit",
-  "dev-dependencies": ["rescript-vitest"],
+  "dev-dependencies": ["rescript-vitest", "@e-cline/vite_plugin_weft"],
   "dependencies": [
     "@e-cline/servy",
     "@e-cline/weft",

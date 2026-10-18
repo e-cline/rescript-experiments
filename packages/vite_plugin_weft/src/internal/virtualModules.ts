@@ -6,6 +6,7 @@ import type {CompiledFile} from './scan.js';
 
 export const clientReferencesId = 'virtual:weft/client-references';
 export const clientId = 'virtual:weft/client';
+export const bootstrapId = 'virtual:weft/bootstrap';
 export const assetsId = 'virtual:weft/assets';
 
 /** The custom HMR event that tells the client to refetch the page (a server-only file changed). */
@@ -61,6 +62,19 @@ if (import.meta.hot) {
 `;
 }
 
+/**
+ * `virtual:weft/bootstrap`: the default bootstrap, for an app that doesn't give one.
+ * `WeftServer.Bootstrap.main` reads the first page's rows and renders them into `#root`, and goes on
+ * from there (navigation, and refetching when a server file changes in development).
+ */
+export function bootstrapCode(): string {
+  return `import {loadModule, onRefresh} from ${JSON.stringify(clientId)};
+import {main} from "@e-cline/weft_server/src/Bootstrap.res.js";
+
+main(loadModule, onRefresh);
+`;
+}
+
 /** What a page needs to load the client: `virtual:weft/assets`' default export. */
 export type Assets = {
   /** The module scripts to load, in order: in development, Vite's client and then the bootstrap. */
@@ -81,6 +95,8 @@ const toPosix = (path: string) => path.split(sep).join('/');
 
 /** The URL the dev server serves `file` at. */
 export function devUrl(root: string, base: string, file: string): string {
+  // A virtual module, as Vite serves one.
+  if (file.startsWith('\0')) return `${base}@id/__x00__${file.slice(1)}`;
   const path = relative(root, file);
   return path.startsWith('..') || path === file
     ? `${base}@fs${toPosix(file).replace(/^(?!\/)/, '/')}`
@@ -118,6 +134,8 @@ export class ManifestError extends Error {}
 
 /** A file's key in the manifest: its path from the root. */
 export function manifestKey(root: string, file: string): string {
+  // A virtual module is in the manifest by its name.
+  if (file.startsWith('\0')) return file.slice(1);
   return toPosix(relative(root, file));
 }
 

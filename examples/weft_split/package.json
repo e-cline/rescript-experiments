@@ -17,6 +17,7 @@
     "@e-cline/ppx_weft": "workspace:*",
     "@e-cline/vite_plugin_weft": "workspace:*",
     "@types/node": "catalog:",
+    "jsdom": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:",
     "vite": "catalog:",

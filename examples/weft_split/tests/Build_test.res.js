@@ -64,10 +64,13 @@ function source(name) {
   return `src/` + name + `.res.js`;
 }
 
+let bootstrap = "virtual:weft/bootstrap";
+
 let entrypointFiles = [
   "Chart",
   "Counter",
   "Fancy",
+  "Link",
   "Outer",
   "Plain",
   "Widgets"
@@ -79,7 +82,7 @@ function imports(key) {
 
 Vitest.describe("the client build", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.test("has the bootstrap as its one entry, and each entrypoint file as a chunk of its own", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
-    t.expect(BuildSupportMjs.entries(built$1())).toEqual([`src/` + "Client" + `.res.js`]);
+    t.expect(BuildSupportMjs.entries(built$1())).toEqual([bootstrap]);
     t.expect(entrypointFiles.map(key => BuildSupportMjs.chunk(built$1(), key).isDynamicEntry)).toEqual(entrypointFiles.map(param => true));
     let files = entrypointFiles.map(key => BuildSupportMjs.chunk(built$1(), key).file);
     t.expect(new Set(files).size).toBe(entrypointFiles.length);
@@ -112,7 +115,7 @@ Vitest.describe("the client build", undefined, undefined, undefined, undefined, 
 Vitest.describe("the server build", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("answers a page with the shell, loading the built bootstrap", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let html = await BuildSupportMjs.page(built$1(), "/");
-    let script = `<script type="module" src="/` + BuildSupportMjs.chunk(built$1(), `src/` + "Client" + `.res.js`).file + `"></script>`;
+    let script = `<script type="module" async src="/` + BuildSupportMjs.chunk(built$1(), bootstrap).file + `"></script>`;
     t.expect(html.includes(script)).toBe(true);
     return t.expect(html.includes(`<div id="root"></div>`)).toBe(true);
   });
@@ -121,9 +124,10 @@ Vitest.describe("the server build", undefined, undefined, undefined, undefined, 
     t.expect(BuildSupportMjs.serverCode(built$1()).includes("use weft")).toBe(false);
   });
   Vitest.testAsync("answers `/` with a payload using every entrypoint file but the chart's", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => t.expect(await BuildSupportMjs.loadedFor(built$1(), "/")).toEqual(entrypointFiles.filter(key => key !== `src/` + "Chart" + `.res.js`)));
-  Vitest.testAsync("answers `/other` with a payload using the chart's and the counter's only", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => t.expect(await BuildSupportMjs.loadedFor(built$1(), "/other")).toEqual([
+  Vitest.testAsync("answers `/other` with a payload using the chart's, the counter's and the link's only", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => t.expect(await BuildSupportMjs.loadedFor(built$1(), "/other")).toEqual([
     `src/` + "Chart" + `.res.js`,
-    `src/` + "Counter" + `.res.js`
+    `src/` + "Counter" + `.res.js`,
+    `src/` + "Link" + `.res.js`
   ]));
 });
 
@@ -140,6 +144,7 @@ export {
   loadedFor,
   built$1 as built,
   source,
+  bootstrap,
   entrypointFiles,
   imports,
 }

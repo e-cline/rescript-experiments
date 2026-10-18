@@ -12,10 +12,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = '@e-cline/weft_split_example';
 
 /** Builds the app with its own config, returning where the build went and its client manifest. */
-export async function build() {
+export async function build(name = 'build') {
   // Under `node_modules`, so the server build finds its dependencies (`@rescript/runtime`, which a
   // server build leaves external) as it would in `dist`, without racing a `vp build` writing there.
-  const outDir = join(root, 'node_modules/.weft-split-test');
+  const outDir = join(root, `node_modules/.weft-split-${name}`);
   rmSync(outDir, {recursive: true, force: true});
   // Vite takes a build to be a production one when `NODE_ENV` is unset or `production`; Vitest sets
   // it to `test`.
@@ -89,7 +89,8 @@ export async function page(built, path) {
  * without one, so it does nothing.
  */
 function importClientChunk(file) {
-  globalThis.document ??= {body: {querySelector: () => null}};
+  // (Under jsdom, there's a document already: without a `#root` in it.)
+  globalThis.document ??= {getElementById: () => null};
   return import(/* @vite-ignore */ file);
 }
 

@@ -10,6 +10,7 @@ type kind =
   | Portal
   | Suspense
   | Offscreen
+  | Lazy
 
 type node = {
   kind: kind,

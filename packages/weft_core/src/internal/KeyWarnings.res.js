@@ -10,6 +10,10 @@ function markStatic(children) {
   staticLists.add(children);
 }
 
+function isStatic(children) {
+  return staticLists.has(children);
+}
+
 let warn = {
   contents: message => {
     console.error(message);
@@ -101,6 +105,7 @@ function check(returnFiber, children) {
 export {
   staticLists,
   markStatic,
+  isStatic,
   warn,
   componentName,
   owner,

@@ -25,7 +25,11 @@ This is an early stage of the [plan](../../docs/weft_plan.md). What works:
   in their original order.
 - `ErrorBoundary`, catching errors from rendering and effects below it, and `Portal`, rendering
   children into another container.
-- `Suspense` and `Hooks.use(promise)`: a fallback while components below wait for a promise.
+- `Suspense` and `Hooks.use(promise)`: a fallback while components below wait for a promise, and
+  `Lazy.fromPromise`, an element that isn't ready yet, rendered in its place once it is.
+- For server renderers (see
+  [the server components plan](../../docs/weft_server_components_plan.md)): `ServerRender.run`, to
+  call components outside the reconciler, and `Entrypoint` marks.
 - `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
   through concurrent renders.
 
@@ -160,6 +164,29 @@ away. Children that suspend after being shown stay mounted behind the fallback, 
 their state. In a transition, a boundary showing its children doesn't fall back at all: the screen
 keeps its previous state (and `useTransition`'s `isPending` stays `true`) until the data arrives.
 
+### Lazy
+
+```rescript
+let chart = WeftCore.Lazy.fromPromise(loadChart()) // a promise of an element, made once
+
+<WeftCore.Suspense fallback={<Spinner />}> chart </WeftCore.Suspense>
+```
+
+`Lazy.fromPromise(promise)` is an element standing for the one `promise` resolves to. Rendering it
+suspends as `Hooks.use` does until the promise settles (a promise that already has is read at once).
+It has no fiber of its own: what it resolves to is rendered in its place, so replacing a lazy
+element with that element, or the other way round, keeps everything below it, state included. It's
+what streamed server output uses for the parts that arrive later.
+
+### Server renderers
+
+A server renderer calls components itself, with no fibers. `ServerRender.run(f)` calls `f` as a
+server render: hooks that keep state or run effects fail with an error saying they can't be used on
+the server (code 14), while `Hooks.use` works, throwing its suspension for the renderer to wait on.
+`Entrypoint.mark(make, id)` marks a component as an entrypoint, which a server renderer sends to the
+client as a reference instead of rendering; `Entrypoint.idOf` reads the mark. Apps don't call
+either: the `ppx_weft` PPX and the server renderer do.
+
 ### Portals
 
 `Portal.create(~container, children)` renders `children` into another container of the same renderer
@@ -199,6 +226,8 @@ leave the messages out, throwing `WeftCore error <code>` instead:
 |   10 | Context stack underflow (a bug in WeftCore).                                                                 |
 |   11 | `jsxFragment` is a marker for `<>...</>`, not a component to call.                                           |
 |   12 | A value that isn't an element was rendered.                                                                  |
+|   13 | A lazy element reached the reconciler unresolved (a bug in WeftCore).                                        |
+|   14 | A hook that keeps state or runs effects was used in a component rendered on the server.                      |
 
 Codes don't change once published: a new error gets the next number.
 

@@ -38,13 +38,51 @@ function firstHook(fiber) {
   return Primitive_option.fromNullable(fiber.memoizedState);
 }
 
+let onServer = {
+  contents: false
+};
+
 function renderingFiber() {
   let fiber = state.fiber;
   if (fiber !== undefined) {
     return fiber;
+  } else if (onServer.contents) {
+    return Errors$WeftCore.fail(14, Env$Common.isDev ? "WeftCore: this hook can't be used in a component rendered on the server. Only Hooks.use works there; a component with state or effects has to run in the browser (an entrypoint)." : "");
   } else {
     return Errors$WeftCore.fail(1, Env$Common.isDev ? "WeftCore: hooks can only be called while a function component is rendering" : "");
   }
+}
+
+function checkCanSuspend() {
+  if (!onServer.contents) {
+    renderingFiber();
+    return;
+  }
+}
+
+function renderOnServer(f) {
+  let fiber = state.fiber;
+  let wasOnServer = onServer.contents;
+  state.fiber = undefined;
+  onServer.contents = true;
+  let restore = () => {
+    state.fiber = fiber;
+    onServer.contents = wasOnServer;
+  };
+  let result;
+  try {
+    result = f();
+  } catch (raw_thrown) {
+    let thrown = Primitive_exceptions.internalToException(raw_thrown);
+    if (thrown.RE_EXN_ID === "JsExn") {
+      restore();
+      throw thrown._1;
+    }
+    restore();
+    throw thrown;
+  }
+  restore();
+  return result;
 }
 
 function kindName(kind) {
@@ -551,7 +589,10 @@ export {
   updateLane,
   reset,
   firstHook,
+  onServer,
   renderingFiber,
+  checkCanSuspend,
+  renderOnServer,
   kindName,
   checkKind,
   appendHook,

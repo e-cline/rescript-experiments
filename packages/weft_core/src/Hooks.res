@@ -104,7 +104,8 @@ let useTransition = () => {
 let useDeferredValue = HookImpl.useDeferredValue
 
 let use = promise => {
-  // Only while rendering: a suspension anywhere else has no boundary to go to.
-  HookImpl.renderingFiber()->ignore
+  // Only while rendering (in the reconciler, or by a server renderer): a suspension anywhere else
+  // has no boundary to go to.
+  HookImpl.checkCanSuspend()
   SuspenseImpl.use(promise)
 }

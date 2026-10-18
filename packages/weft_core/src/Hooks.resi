@@ -106,6 +106,6 @@ let useDeferredValue: 'value => 'value
 What `promise` resolved to. Before it settles, the component suspends: the nearest `Suspense`
 boundary shows its fallback, and renders the component again once it has. A rejected promise throws
 its error. Pass the same promise every render. Unlike the other hooks, this one may be called
-conditionally. See `Suspense`.
+conditionally, and in a component rendered on the server (see `ServerRender`). See `Suspense`.
 */
 let use: promise<'value> => 'value

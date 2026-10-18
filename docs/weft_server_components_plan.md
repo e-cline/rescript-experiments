@@ -136,10 +136,11 @@ Rules, enforced where noted:
 - **Host elements rendered on the server can't have event handlers or refs.** Same error, with a
   hint to move the element into an entrypoint.
 - **Stateful hooks don't run on the server.** Server and shared components rendered by the server
-  renderer have no fiber; `HookImpl` gets a "rendering on the server" flag so `useState`, effects,
-  `useContext` and the rest fail with a message saying so (rather than "called outside a
-  component"). `Hooks.use(promise)` works: it suspends the component, which the server renderer
-  retries once the promise settles (§5).
+  renderer have no fiber; the renderer calls them through `WeftCore.ServerRender.run`, which sets a
+  "rendering on the server" flag in `HookImpl` (and sets aside any client render in progress) so
+  `useState`, effects, `useContext` and the rest fail with a message saying so (rather than "called
+  outside a component"). `Hooks.use(promise)` works: it suspends the component, which the server
+  renderer retries once the promise settles (§5).
 - **No context on the server**, as in React. Request data reaches server components as props. (A
   server-side context stack would be easy in a tree walk, but it isn't needed for a first version.)
 
@@ -762,6 +763,7 @@ packages/weft/src/Weft.res(i)      gains a `Lazy` alias (useful in client-only a
 packages/weft_core/src/
   Lazy.res(i)                      `Lazy.fromPromise`; Element.kind gains `Lazy`
   Entrypoint.res(i)                `mark` (what the PPX calls) and `idOf`, for renderers
+  ServerRender.res(i)              `run`: call a component as a server render (the hooks flag)
 packages/weft_server/              namespace WeftServer
   src/Payload.res(i)               the row and value encoding, shared by both ends
   src/Render.res(i)                server renderer: element => ReadableStream
@@ -794,7 +796,10 @@ The PPX test package with the first good fixtures, those errors and the compiler
 the opam setup moved to the shared switch.
 
 **Phase 1 -- `WeftCore.Lazy` and `Entrypoint`.** The new element kind, unwrapped in
-`ChildReconciler`; `Entrypoint.mark`; the server-render flag in `HookImpl`; with their tests (§9).
+`ChildReconciler`; `Entrypoint.mark`; the server-render flag in `HookImpl`, set through a public
+`ServerRender.run` (since `weft_server` is another package), with `Hooks.use` allowed under it;
+error codes 13 (an unresolved lazy reaching the reconciler) and 14 (a stateful hook on the server);
+the `Weft.Lazy` alias; with their tests (§9).
 
 **Phase 2 -- The PPX in full.** Async rewriting, marks, ids, directives and the rest of the errors
 in §2 (`async` outside a server component, server components and entrypoints in one file,

@@ -179,7 +179,7 @@ function useTransition() {
 }
 
 function use(promise) {
-  HookImpl$WeftCore.renderingFiber();
+  HookImpl$WeftCore.checkCanSuspend();
   return SuspenseImpl$WeftCore.use(promise);
 }
 

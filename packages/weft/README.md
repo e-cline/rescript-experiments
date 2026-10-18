@@ -49,6 +49,7 @@ switch Weft.Dom.document->Weft.Dom.body->Weft.Dom.querySelector("#app")->Nullabl
 | `Transition`    | `WeftCore.Transition`    | `start`: mark updates as non-urgent.                                |
 | `ErrorBoundary` | `WeftCore.ErrorBoundary` | Catch errors thrown while rendering below it.                       |
 | `Suspense`      | `WeftCore.Suspense`      | A fallback while a child waits on a promise (`Hooks.use`).          |
+| `Lazy`          | `WeftCore.Lazy`          | An element that isn't ready yet, rendered in its place once it is.  |
 | `Jsx`           | `WeftDom.Jsx`            | The JSX module; host tags take DOM props.                           |
 | `Portal`        | `WeftDom.Portal`         | Render children into another DOM element.                           |
 | `Client`        | `WeftDom.Client`         | `createRoot`, `render`, `unmount`, `flushSync`, `act`.              |

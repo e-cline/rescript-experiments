@@ -75,9 +75,19 @@ external unknownToHook: unknown => Nullable.t<hook> = "%identity"
 let firstHook = (fiber: Fiber.t): option<hook> =>
   unknownToHook(fiber.memoizedState)->Nullable.toOption
 
+/** Whether a server renderer is calling a component (`ServerRender.run`). */
+let onServer = ref(false)
+
 let renderingFiber = (): Fiber.t =>
   switch state.fiber {
   | Some(fiber) => fiber
+  | None if onServer.contents =>
+    Errors.fail(
+      14,
+      Common.Env.isDev
+        ? "WeftCore: this hook can't be used in a component rendered on the server. Only Hooks.use works there; a component with state or effects has to run in the browser (an entrypoint)."
+        : "",
+    )
   | None =>
     Errors.fail(
       1,
@@ -86,6 +96,42 @@ let renderingFiber = (): Fiber.t =>
         : "",
     )
   }
+
+/**
+Fails as `renderingFiber` does, unless a component is rendering on either side: what `Hooks.use`
+checks, since suspending is the one thing that works on the server too.
+*/
+let checkCanSuspend = () =>
+  if !onServer.contents {
+    renderingFiber()->ignore
+  }
+
+/**
+Calls `f` as a server render (`ServerRender.run`), with any render in progress set aside, so a hook
+called in `f` can't reach its fiber. Both are restored however `f` ends.
+*/
+let renderOnServer = (f: unit => 'a): 'a => {
+  let fiber = state.fiber
+  let wasOnServer = onServer.contents
+  state.fiber = None
+  onServer := true
+  let restore = () => {
+    state.fiber = fiber
+    onServer := wasOnServer
+  }
+  switch f() {
+  | result =>
+    restore()
+    result
+  // A JS error is rethrown as itself, not wrapped in `JsExn`.
+  | exception JsExn(thrown) =>
+    restore()
+    JsExn.throw(thrown)
+  | exception error =>
+    restore()
+    throw(error)
+  }
+}
 
 let kindName = (kind: kind) =>
   switch kind {

@@ -33,6 +33,12 @@ type kind =
   `props` is `{mode, children}`.
   */
   | Offscreen
+  /**
+  `Lazy.fromPromise`: an element that isn't ready yet. `elementType` is the promise of the element
+  it stands for. It never gets a fiber of its own: the reconciler renders what it resolves to in its
+  place, and suspends until then.
+  */
+  | Lazy
 
 /**
 An element that isn't text or a list. `props` is the record the JSX transform built (for host and

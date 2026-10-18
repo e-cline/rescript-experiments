@@ -21,6 +21,11 @@ let tagOfKind = (kind: Element.kind): Fiber.tag =>
   | Portal => HostPortal
   | Suspense => SuspenseComponent
   | Offscreen => OffscreenComponent
+  | Lazy =>
+    Errors.fail(
+      13,
+      Common.Env.isDev ? "WeftCore: a lazy element reached the reconciler unresolved" : "",
+    )
   }
 
 let createFiberFromText = (text: string): Fiber.t =>
@@ -52,7 +57,8 @@ let sameType = (fiber: Fiber.t, node: Element.node): bool =>
 let pendingPropsOf = (node: Element.node): unknown =>
   switch node.kind {
   | Fragment => Unsafe.toUnknown(Element.childrenOf(node.props))
-  | Host | Component | Provider | Memo | ErrorBoundary | Portal | Suspense | Offscreen => node.props
+  | Host | Component | Provider | Memo | ErrorBoundary | Portal | Suspense | Offscreen | Lazy =>
+    node.props
   }
 
 /** A work-in-progress copy of `weft_core` with new props, as the only child so far. */
@@ -215,6 +221,7 @@ let reconcileChildrenArray = (
   currentFirstChild: option<Fiber.t>,
   newChildren: array<Element.t>,
 ): option<Fiber.t> => {
+  let newChildren = LazyImpl.resolveAll(newChildren)
   if Common.Env.isDev {
     KeyWarnings.check(returnFiber, newChildren)
   }
@@ -335,6 +342,8 @@ let reconcileSingleTextNode = (
 /**
 The new first child of `returnFiber`, from its current first child and the element it rendered. An
 unkeyed `<>...</>` at the top is the same as its contents, so switching between the two keeps state.
+So is a lazy element and what it resolves to (see `LazyImpl`); one that hasn't settled throws
+`Suspended` from here, which suspends `returnFiber`'s render.
 */
 let reconcileChildFibers = (
   ~track,
@@ -342,8 +351,10 @@ let reconcileChildFibers = (
   currentFirstChild: option<Fiber.t>,
   newChild: Element.t,
 ): option<Fiber.t> => {
+  let newChild = LazyImpl.resolve(newChild)
   let newChild = switch Element.classify(newChild) {
-  | Node({kind: Fragment, key, props}) if Nullable.isNullable(key) => Element.childrenOf(props)
+  | Node({kind: Fragment, key, props}) if Nullable.isNullable(key) =>
+    LazyImpl.resolve(Element.childrenOf(props))
   | _ => newChild
   }
   switch Element.classify(newChild) {

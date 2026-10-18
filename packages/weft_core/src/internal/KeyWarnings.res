@@ -15,6 +15,9 @@ let staticLists: WeakSet.t<array<Element.t>> = WeakSet.make()
 /** Records `children` as written out in JSX (passed to `jsxs`), so they don't need keys. */
 let markStatic = (children: array<Element.t>) => staticLists->WeakSet.add(children)->ignore
 
+/** Whether `children` was recorded by `markStatic`. */
+let isStatic = (children: array<Element.t>) => staticLists->WeakSet.has(children)
+
 /**
 Where warnings go: `console.error`, as React's do. Tests replace it to capture them.
 */

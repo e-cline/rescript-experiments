@@ -3,7 +3,9 @@
 import * as Env$Common from "@e-cline/common/src/Env.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Fiber$WeftCore from "./Fiber.res.js";
+import * as Errors$WeftCore from "./Errors.res.js";
 import * as Element$WeftCore from "../Element.res.js";
+import * as LazyImpl$WeftCore from "./LazyImpl.res.js";
 import * as KeyWarnings$WeftCore from "./KeyWarnings.res.js";
 
 function tagOfKind(kind) {
@@ -26,6 +28,8 @@ function tagOfKind(kind) {
       return "SuspenseComponent";
     case "Offscreen" :
       return "OffscreenComponent";
+    case "Lazy" :
+      return Errors$WeftCore.fail(13, Env$Common.isDev ? "WeftCore: a lazy element reached the reconciler unresolved" : "");
   }
 }
 
@@ -234,10 +238,11 @@ function updateFromMap(existing, returnFiber, newIndex, child) {
 }
 
 function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildren) {
+  let newChildren$1 = LazyImpl$WeftCore.resolveAll(newChildren);
   if (Env$Common.isDev) {
-    KeyWarnings$WeftCore.check(returnFiber, newChildren);
+    KeyWarnings$WeftCore.check(returnFiber, newChildren$1);
   }
-  let length = newChildren.length;
+  let length = newChildren$1.length;
   let first = {
     contents: undefined
   };
@@ -267,7 +272,7 @@ function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildr
         old.sibling
       ];
     let slot = match[0];
-    let newFiber = updateSlot(returnFiber, slot, newChildren[newIndex]);
+    let newFiber = updateSlot(returnFiber, slot, newChildren$1[newIndex]);
     if (newFiber !== undefined) {
       if (slot !== undefined && track && Stdlib_Option.isNone(newFiber.alternate)) {
         deleteChild(track, returnFiber, slot);
@@ -287,7 +292,7 @@ function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildr
     if (remaining !== undefined) {
       let existing = mapRemainingChildren(remaining);
       for (let index = newIndex; index < length; ++index) {
-        let newFiber$1 = updateFromMap(existing, returnFiber, index, newChildren[index]);
+        let newFiber$1 = updateFromMap(existing, returnFiber, index, newChildren$1[index]);
         if (newFiber$1 !== undefined) {
           let reused = newFiber$1.alternate;
           if (reused !== undefined && track) {
@@ -300,7 +305,7 @@ function reconcileChildrenArray(track, returnFiber, currentFirstChild, newChildr
       existing.forEach(child => deleteChild(track, returnFiber, child));
     } else {
       for (let index$1 = newIndex; index$1 < length; ++index$1) {
-        let newFiber$2 = createChild(returnFiber, newChildren[index$1]);
+        let newFiber$2 = createChild(returnFiber, newChildren$1[index$1]);
         if (newFiber$2 !== undefined) {
           lastPlacedIndex = placeChild(track, newFiber$2, lastPlacedIndex, index$1);
           link(newFiber$2);
@@ -350,15 +355,16 @@ function reconcileSingleTextNode(track, returnFiber, currentFirstChild, text) {
 }
 
 function reconcileChildFibers(track, returnFiber, currentFirstChild, newChild) {
-  let match = Element$WeftCore.classify(newChild);
-  let newChild$1;
+  let newChild$1 = LazyImpl$WeftCore.resolve(newChild);
+  let match = Element$WeftCore.classify(newChild$1);
+  let newChild$2;
   if (typeof match !== "object" || match.TAG !== "Node") {
-    newChild$1 = newChild;
+    newChild$2 = newChild$1;
   } else {
     let match$1 = match._0;
-    newChild$1 = match$1.kind === "Fragment" && (match$1.key == null) ? match$1.props.children : newChild;
+    newChild$2 = match$1.kind === "Fragment" && (match$1.key == null) ? LazyImpl$WeftCore.resolve(match$1.props.children) : newChild$1;
   }
-  let node = Element$WeftCore.classify(newChild$1);
+  let node = Element$WeftCore.classify(newChild$2);
   if (typeof node !== "object") {
     deleteRemainingChildren(track, returnFiber, currentFirstChild);
     return;

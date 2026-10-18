@@ -787,7 +787,8 @@ Each package gets the usual wiring: root `rescript.json` `dependencies` and a `w
 
 ## Phases
 
-Each ends green (`pnpm run build`, `pnpm run test`, `pnpm run check`) and is a reviewable PR.
+Each ends green (`pnpm run build`, `pnpm run test`, `pnpm run check`) and is its own commit (or a
+few). For now they all go in one PR, `claude/weft-ppx-phase-0`, rather than a PR each.
 
 **Phase 0 -- Pin what the compiler does.** A `ppx_weft` that replaces `@weft.component` with
 `@jsx.component` (every kind compiling as a shared component for now), and already checks the

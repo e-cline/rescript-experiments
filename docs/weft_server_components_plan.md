@@ -45,7 +45,7 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 
 Phases 0--6 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
 the phases will go in one PR, not opened yet). Next is phase 7, HTML rendering and hydration (§9),
-which may want a plan of its own.
+which has a plan of its own: [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md).
 
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -875,6 +875,13 @@ second round trip, as Next's server actions can. All of these are possible later
 
 ### 9. Server-rendered HTML and hydration (phase 7)
 
+Planned in full in [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md), which supersedes this
+sketch: the HTML is rendered from the payload decoded on the server, in the `rsc` environment;
+entrypoints' hooks run there through `weft_core`'s mount path on fibers in no tree; boundaries
+stream as `<template>` segments swapped in by an inline script; and boundaries still pending when
+hydration reaches them stay as the server's HTML until their segment arrives. The sketch, as first
+written:
+
 Streaming rows without HTML means a blank page until the JavaScript runs. Proper first paint needs
 three more things, which are as big as everything above put together, so they come last:
 
@@ -1338,10 +1345,11 @@ older client; and in `weft_notes`, `ApiServer` for the handlers, with it, `Db`, 
 marked `@@weft.server`.
 
 **Phase 7 -- HTML and hydration** (§9): the hook-less HTML renderer, streaming Suspense HTML, then
-hydration in the reconciler and the DOM host. Could be its own plan once phases 1--6 have settled.
-The harness carries over: the first page's HTML is put into the container before the client starts,
-and `weft_notes`' scenarios are run again checking that hydration reused the server's nodes; the
-browser tests check the same in Chromium.
+hydration in the reconciler and the DOM host. Now its own plan,
+[`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md), in six phases (7.1 to 7.6). The harness
+carries over: the first page's HTML is put into the container before the client starts, and
+`weft_notes`' scenarios are run again checking that hydration reused the server's nodes; the browser
+tests check the same in Chromium.
 
 Out of scope: the Flight wire format and interop with React, CSS handling beyond what Vite does
 already, shared references and cycles in payloads, context on the server, and caching rendered

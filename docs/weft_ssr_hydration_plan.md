@@ -36,9 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Not started. This document is the plan; its decisions (Decisions, at the end) are recommendations
-waiting for review. The phases (7.1 to 7.6) go on the same branch as phases 0 to 6, a commit or a
-few each, each ending green, with a review before the next.
+Not started. This document is the plan; some of its decisions are settled, and the rest are
+recommendations waiting for review (Decisions, at the end). The phases (7.1 to 7.6, then the
+follow-ups 7.7 and 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending
+green, with a review before the next.
 
 ## What was verified before writing this
 
@@ -146,7 +147,7 @@ React has.
 
 ### 2. Hooks without the reconciler
 
-`weft_core` gains `ServerRender.renderComponent(component, props, ~contexts)`, for server renderers
+`weft_core` gains `ServerRender.renderComponent(component, props, options)`, for server renderers
 that call client components (entrypoints, and the shared and client components they render): it
 calls the component through `HookImpl.renderWithHooks` on a fiber made for the call and in no tree,
 as a mount (verified point 1). On top of what the spike showed works, it:
@@ -154,10 +155,10 @@ as a mount (verified point 1). On top of what the spike showed works, it:
 - sets aside any render in progress (as `ServerRender.run` does today), and restores it however the
   call ends, resetting `HookImpl.state` after a throw or a suspension;
 - clears the store reads `useSyncExternalStore` recorded, which only the reconciler's commit checks;
-- sets each context in `~contexts` (the providers above, as the walk has them) as its `currentValue`
-  for the synchronous call, and puts the previous values back after. The HTML renderer is
-  asynchronous (siblings render concurrently, §3), so `ContextImpl`'s push/pop stack can't be used:
-  each call gets its contexts explicitly, from an immutable list the walk carries.
+- sets each context in `options.contexts` (the providers above, as the walk has them) as its
+  `currentValue` for the synchronous call, and puts the previous values back after. The HTML
+  renderer is asynchronous (siblings render concurrently, §3), so `ContextImpl`'s push/pop stack
+  can't be used: each call gets its contexts explicitly, from an immutable list the walk carries.
 
 The hooks behave as they would on a first render that never commits: initial state, no effects,
 updates dropped. Two need changes of their own:
@@ -437,11 +438,11 @@ DOM in an effect sees the server's nodes, which are now its own.
 `Bootstrap.start` calls `hydrateRoot` when `#root` has `data-weft-html`, and `createRoot` otherwise
 (the shell failed, or the route opted out). `Navigation.show`'s first render is the hydrating one.
 
-**Events before hydration.** Weft attaches a listener to each element, so a click before an element
-has hydrated does nothing (links still navigate, as plain links; a form submits as an HTML form
-would, to its `action`, or by default to the page itself). React instead delegates events to the
-root and replays some of them after hydrating. Recommended for now: nothing (see Decisions); an
-inline capture-and-replay for clicks and submits can come later if it's missed.
+**Events before hydration.** Weft attaches a listener to each element, so until an element has
+hydrated, its handlers aren't there: a click on it does nothing (a link still navigates, as a plain
+link; a form submits as an HTML form would, to its `action`, or by default to the page itself).
+Phases 7.1 to 7.6 leave it at that; replaying those events once their elements hydrate is designed
+in §10, and comes after as phase 7.7. Nothing before it has to change for it.
 
 ### 8. Errors and mismatches, together
 
@@ -541,6 +542,102 @@ hydration algorithm is tested in Node, fast, and fuzzed:
   clicking after hydration works, and no console errors or warnings; and the existing four tests,
   now over hydrated pages.
 
+### 10. Event replay (phase 7.7, a follow-up)
+
+Recording the events that happen before their elements have hydrated, and dispatching them again
+once they have, as React does for "discrete" events. It's additive: it needs nothing from phases 7.1
+to 7.6 beyond what they already have (an inline runtime in the page, and hydrated elements carrying
+their stored props), so it's planned here and built after.
+
+**What's recorded.** The page's inline runtime (§4's, written in the head, before the shell) adds
+capture-phase listeners on `document` for `click`, `submit`, `input` and `change`. An event is
+recorded only if its target is inside `#root` and not hydrated yet: the nearest element at or above
+the target has no stored props (`DomHost` stores them on every element it creates or hydrates, so
+having them is what "hydrated" means, at the root and in a dehydrated boundary alike). Events on
+hydrated elements are left alone, to reach their handlers as usual.
+
+**Default actions**, which happen whether or not the event is recorded, and are only sometimes what
+the page wants:
+
+- A `click` on a link (`<a href>`) isn't recorded: the browser follows it, as it would with no
+  JavaScript. (A `Link` entrypoint would have navigated in place; following it costs a page load,
+  not a lost click.)
+- Any other `click` is recorded, and its default left alone (a button's default is nothing, or
+  submitting its form, which is the next case).
+- A `submit` is recorded, and its default prevented: otherwise the browser leaves the page to post
+  the form, losing it. If the submit came from a recorded click on its submit button (the event's
+  `submitter`), the replayed click submits again, so the `submit` itself isn't replayed.
+- `input` and `change` are recorded, and only the last for each element kept: what the user typed is
+  already in the element (§7 keeps it on hydration), and replaying the last event tells the
+  component, through its `onInput`, so its state matches what's on screen.
+
+**Replay.** After each commit that hydrated something (the root, or a boundary), `DomHost`'s
+`resetAfterCommit` (which runs after every commit already) goes through the queue in order. Each
+record whose target is now hydrated and still in the document is dispatched again, as a new event of
+the same type with the same properties (`clientX`, `key`, the modifiers; `bubbles` and `cancelable`
+as the original), so the handlers `DomHost` attached run, through `flushSync` as any event's do. A
+submit that wasn't a click's is replayed with `form.requestSubmit(submitter)`. A record whose target
+isn't hydrated yet stays queued, and holds back the ones after it, so a sequence ("add", then
+"save") isn't replayed out of order. If the page navigates or is refreshed before then, the queue is
+dropped: the elements it pointed at are gone.
+
+**Selective hydration, cheaply.** A record in a dehydrated boundary whose content has already been
+swapped in (it's waiting on a row or a chunk, §6) asks for that boundary to be tried again at once,
+at the sync lane rather than waiting its turn: the boundary the user is touching hydrates first.
+This uses the retry dehydrated boundaries already have (`onSuspenseReady`'s callback).
+
+**Not replayed**: `keydown` and pointer events other than clicks (shortcuts and drags make little
+sense replayed later), focus (the browser's own focus stays where the user put it, and hydration
+doesn't move it), and anything outside `#root`.
+
+**Tests.** The runtime's recording rules in jsdom (each event type, links, submitters, coalesced
+inputs); replay after the root hydrates and after a boundary does, in order, holding back behind an
+unhydrated target; a boundary touched before it has hydrated being hydrated first; the `weft_notes`
+like button and comment form used before the bootstrap has run (the harness opening the page with
+its bootstrap held back, then releasing it); and a browser test clicking before a slowed bootstrap.
+
+### 11. `useId` (phase 7.8, a follow-up)
+
+`Hooks.useId()`: a string unique on the page, the same in the server's HTML and on hydration, for
+linking elements (`htmlFor` and `id`, `aria-labelledby`, `aria-describedby`). It can't be a counter:
+the server and the client render components in different orders (the server concurrently, the client
+depth first, and only after the server's HTML has been streamed in pieces), so it has to come from
+where the component is in the tree, which both sides agree on, because both render the same decoded
+tree (§1).
+
+**The position.** Each function component's position is its nearest function-component ancestor's
+position, followed by the path from that ancestor's output down to it: one index per level, through
+hosts, fragments, providers, error boundaries and arrays (an element's index among its siblings),
+with a `Suspense` boundary's content and fallback told apart. Levels that only one side has are
+skipped: the reconciler's own `Offscreen` fiber (between a boundary and its content) and a
+fallback's wrapper fragment. A `Lazy` element is the element it resolves to, on both sides, so it
+adds nothing. A component's `n`th `useId` call appends `n`.
+
+- **On the server**, the HTML renderer's walk carries the position (as it already carries the path
+  for its messages, §3), and `ServerRender.renderComponent` takes it, for `useId` to read.
+- **In the reconciler**, a component mounting computes its position once, from its parent fibers'
+  `index` (each fiber's position among its siblings, which `Fiber` already keeps) up to the nearest
+  function component, skipping the levels above, and keeps it in its hook. A component mounted later
+  on the client has a position too, unique among what's mounted, which is all an ID needs.
+- **The ID** is the position, encoded compactly (base 32, separated), with a prefix: `w` by default,
+  and a root's own if there are several on one page (`hydrateRoot(~idPrefix)`,
+  `Page.respond( ~idPrefix)`), since each root's positions start from scratch.
+
+**Server components** don't hydrate (their output is in the payload, as values), so their IDs only
+need to be unique in the page: `useId` there could take a counter for each `Render`. That's left out
+until a server component needs one; for now it fails there, as other hooks do (error 14).
+
+**What it needs from the earlier phases**, which is why it can follow without changing them:
+`renderComponent` takes an options record (contexts now, a position later) rather than positional
+arguments; and the HTML renderer and the reconciler walk the same levels in the same order. That
+second one is a rule for phases 7.2 and 7.3, written here so they don't diverge: neither side may
+add or merge a level the other doesn't, except the two listed above.
+
+**Tests.** Positions computed by the HTML renderer and by the reconciler agreeing over the fuzz
+tests' random trees (every component's position, compared); IDs surviving a boundary that hydrates
+later, a keyed list reordered after hydration (positions are fixed at mount), and a boundary
+switching between fallback and content; and `weft_notes`' comment form linking its labels.
+
 ## Packages and layout
 
 ```
@@ -575,9 +672,9 @@ page).
 Each ends green (build, check, test, typecheck, e2e), the plan updated where the implementation went
 its own way, committed, pushed, and reviewed before the next.
 
-**Phase 7.1 -- Hooks on the server.** `ServerRender.renderComponent` and its resets;
-`useSyncExternalStore(~getServerSnapshot)` (and its use during hydration, wired in 7.3); with their
-tests. Small, and everything after depends on it.
+**Phase 7.1 -- Hooks on the server.** `ServerRender.renderComponent` (with an options record, which
+§11's position joins later) and its resets; `useSyncExternalStore(~getServerSnapshot)` (and its use
+during hydration, wired in 7.3); with their tests. Small, and everything after depends on it.
 
 **Phase 7.2 -- The HTML renderer.** `DomProps`' shared rules (with `DomHost` moved onto them, its
 tests unchanged), then `WeftDom.Server.renderToString`: every element kind, props, escaping, special
@@ -587,8 +684,9 @@ swap runtime, with their tests.
 **Phase 7.3 -- Hydration in the reconciler.** `HostConfig.Hydratable`, `MakeHydratable` and
 `hydrateRoot`; the cursor and claiming; text; complete, pending and failed boundaries; suspending
 while hydrating; mismatches and recovery; `TestRenderer`'s hydration and `fromMarkup`; the unit
-tests and the fuzz test. The largest phase, and the riskiest: the work loop's mount path gains a
-second way through every host fiber.
+tests and the fuzz test. It walks the same levels as 7.2's renderer (§11's rule, for `useId` later).
+The largest phase, and the riskiest: the work loop's mount path gains a second way through every
+host fiber.
 
 **Phase 7.4 -- Hydration in the DOM.** `DomHost`'s hydration operations,
 `WeftDom.Client.hydrateRoot`, the swap runtime's retry, the attribute warnings; the jsdom round
@@ -602,22 +700,30 @@ the failed-shell fallback, `~html`), `Navigation.makeForServer`, `Bootstrap` hyd
 page as a parser would, `hydrated`, `htmlNodes`, `warnings`, `~bootstrap=false`); `weft_notes`' and
 `weft_split`'s scenarios over hydrated pages, and the new ones; the browser tests.
 
+**Phase 7.7 -- Event replay** (§10), a follow-up: the runtime's recording, replay in
+`resetAfterCommit`, the cheap selective hydration, and their tests.
+
+**Phase 7.8 -- `useId`** (§11), a follow-up: positions on both sides, the hook, prefixes, and their
+tests. Independent of 7.7; either can come first.
+
 ## Decisions
 
-Recommendations, for review before phase 7.1:
+Settled in review: 3 (dehydrated boundaries, "option A"); 4 and 9 (event replay and `useId` are
+designed here, §10 and §11, and built after the rest, as phases 7.7 and 7.8). The rest are
+recommendations, for review before phase 7.1:
 
 1. **Render HTML from the payload decoded on the server** (§1), rather than from the original tree:
    server components run once, and the HTML is rendered from exactly the tree the client hydrates.
 2. **Run it in the `rsc` environment**, with a server copy of the reference map, rather than a third
    `ssr` environment: Weft has one `weft_core`, so one server build and module graph will do.
-3. **Dehydrated boundaries** (§6): a boundary still pending when hydration reaches it keeps the
-   server's HTML and hydrates once its segment is swapped in, rather than being rendered on the
-   client from scratch. More work in the reconciler, but no flash, and no throwing away HTML the
-   server already sent. No selective hydration by priority yet (React's hydrating a boundary first
-   because the user clicked in it).
-4. **No event replay for now** (§7): a click on an element before it has hydrated is lost. Links and
-   forms still work as HTML, and the bootstrap loads early (`async`, preloaded), so the window is
-   short. Replaying can be added later without changing anything else here.
+3. **Dehydrated boundaries** (§6), settled: a boundary still pending when hydration reaches it keeps
+   the server's HTML and hydrates once its segment is swapped in, rather than being rendered on the
+   client from scratch (which would throw away HTML the server already sent, and could flash the
+   client's fallback over it). Selective hydration by priority comes with event replay (§10),
+   cheaply.
+4. **Event replay** (§10), settled: designed now, built as phase 7.7. Until then a click on an
+   element before it has hydrated is lost (links and forms still work as HTML, and the bootstrap
+   loads early, so the window is short). It's additive: nothing in 7.1 to 7.6 changes for it.
 5. **Mismatch policy** (§8): text patched with a warning; anything structural renders the nearest
    boundary on the client, with a warning; attributes warned about, not changed. The same recovery
    in production, without the warnings.
@@ -627,10 +733,9 @@ Recommendations, for review before phase 7.1:
    `ErrorBoundary` can catch it if not.
 8. **Hydration renders in a transition lane**, so a suspension outside every boundary waits with the
    server's HTML on screen, rather than needing a boundary.
-9. **`useId` stays out of this plan.** IDs that match between the server's HTML and hydration
-   (`htmlFor`, `aria-*`) need a hook that derives them from the component's position in the tree,
-   the same on both sides. Weft has no `useId` today, and nothing in the repo needs one; it can be
-   its own small follow-up, built on this plan's walk.
+9. **`useId`** (§11), settled: designed now, built as phase 7.8. Its one demand on the earlier
+   phases is a rule for 7.2 and 7.3 (the HTML renderer and the reconciler walk the same levels), and
+   an options record for `renderComponent`; with those, it doesn't change the architecture.
 
 Questions:
 
@@ -664,8 +769,8 @@ Questions:
 
 ## Out of scope
 
-`useId`, event replay and selective hydration (see Decisions); RPCs called by forms without
-JavaScript (progressive enhancement, which this makes possible: §8 of the server components plan
-leaves it for later); static generation (rendering pages to files at build time, which
-`renderToString` would allow); caching rendered HTML; CSS beyond what Vite does; hydrating a page
-that wasn't rendered by Weft.
+Selective hydration beyond §10's (hydrating whatever the user is about to touch, by hover or focus);
+`useId` in server components (§11); RPCs called by forms without JavaScript (progressive
+enhancement, which this makes possible: §8 of the server components plan leaves it for later);
+static generation (rendering pages to files at build time, which `renderToString` would allow);
+caching rendered HTML; CSS beyond what Vite does; hydrating a page that wasn't rendered by Weft.

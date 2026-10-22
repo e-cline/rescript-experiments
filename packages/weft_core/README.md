@@ -213,6 +213,13 @@ module Row = {
 with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@jsx.component` only accepts a
 one-argument wrapper.
 
+## Where it runs
+
+Everything in `src/shared/` runs anywhere, in a browser or on a server, with no DOM: the reconciler
+and its hooks only ever touch a host through `HostConfig`. `ServerRender` is for server renderers
+calling components outside the reconciler. `src/testing/` has `TestRenderer`, `TestScheduler` and
+`TestJsx`, for tests.
+
 ## Error codes
 
 In development, misusing the library throws an error that says what went wrong. Production builds

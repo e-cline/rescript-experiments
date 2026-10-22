@@ -3,20 +3,20 @@
 
 import * as App$Servy from "@e-cline/servy/src/App.res.js";
 import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
-import * as Jsx$WeftDom from "@e-cline/weft_dom/src/Jsx.res.js";
+import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Route$Servy from "@e-cline/servy/src/Route.res.js";
 import * as Db$WeftNotes from "./Db.res.js";
 import * as Respond$Servy from "@e-cline/servy/src/Respond.res.js";
-import * as Rpc$WeftServer from "@e-cline/weft_server/src/Rpc.res.js";
 import * as Gates$WeftNotes from "./Gates.res.js";
-import * as Page$WeftServer from "@e-cline/weft_server/src/Page.res.js";
+import * as Page$WeftServer from "@e-cline/weft_server/src/server/Page.res.js";
 import * as Pages$WeftNotes from "./Pages.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as ApiServer$WeftNotes from "./ApiServer.res.js";
 import Assets from "virtual:weft/assets";
 import * as RequestContext$Servy from "@e-cline/servy/src/RequestContext.res.js";
-import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/ErrorBoundary.res.js";
+import * as RpcServer$WeftServer from "@e-cline/weft_server/src/server/RpcServer.res.js";
+import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/shared/ErrorBoundary.res.js";
 
 function onError(error) {
   console.error(`weft_notes: a component failed: ` + ErrorBoundary$WeftCore.message(error));
@@ -76,7 +76,7 @@ let noteRoutes = [
         tl: /* [] */0
       }
     }
-  }, async ctx => await Rpc$WeftServer.respond(ApiServer$WeftNotes.router, ctx.request, RequestContext$Servy.paramOrThrow(ctx, "id")))
+  }, async ctx => await RpcServer$WeftServer.respond(ApiServer$WeftNotes.router, ctx.request, RequestContext$Servy.paramOrThrow(ctx, "id")))
 ];
 
 let testRoutes = [

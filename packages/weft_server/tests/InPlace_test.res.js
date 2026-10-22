@@ -3,18 +3,18 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
+import * as Hooks$WeftCore from "@e-cline/weft_core/src/shared/Hooks.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
-import * as Client$WeftServer from "../src/Client.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/Deferred.res.js";
-import * as Render$WeftServer from "../src/Render.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/Suspense.res.js";
+import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
+import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
+import * as Render$WeftServer from "../src/server/Render.res.js";
+import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as Decoder$WeftServer from "../src/shared/Decoder.res.js";
 import * as Support$WeftServer from "./Support.res.js";
-import * as Testing$WeftServer from "../src/Testing.res.js";
-import * as Transition$WeftCore from "@e-cline/weft_core/src/Transition.res.js";
+import * as Testing$WeftServer from "../src/testing/Testing.res.js";
+import * as Transition$WeftCore from "@e-cline/weft_core/src/shared/Transition.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
+import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 async function mount(client, tree) {
   let element = await Support$WeftServer.roundTrip(Primitive_option.some(client), undefined, tree);
@@ -301,7 +301,7 @@ Vitest.describe("refetching over placeholders", undefined, undefined, undefined,
       })
     });
     let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(tree, undefined, undefined), undefined, undefined);
-    let element = Client$WeftServer.fromStream(client, Testing$WeftServer.stream(pipe), undefined);
+    let element = Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(pipe), undefined);
     await Testing$WeftServer.finished(pipe);
     await Testing$WeftServer.tick();
     let renderer = TestRenderer$WeftCore.create();
@@ -393,7 +393,7 @@ Vitest.describe("refetching, with errors", undefined, undefined, undefined, unde
     let render = Render$WeftServer.toStream(tree(TestJsx$WeftCore.jsx(Support$WeftServer.Fails.make, {
       message: "broken"
     })), param => {}, undefined);
-    let element = await Client$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(render, undefined, undefined)), undefined);
+    let element = await Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(render, undefined, undefined)), undefined);
     Transition$WeftCore.start(() => TestRenderer$WeftCore.scheduleRender(renderer, element));
     await Support$WeftServer.settle();
     return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<div><b id="a">a:1</b><p id="error">broken</p></div>`);
@@ -414,7 +414,7 @@ Vitest.describe("refetching, with errors", undefined, undefined, undefined, unde
     }), param => {}, undefined);
     let failed;
     try {
-      await Client$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(render, undefined, undefined)), undefined);
+      await Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(render, undefined, undefined)), undefined);
       failed = undefined;
     } catch (raw_error) {
       let error = Primitive_exceptions.internalToException(raw_error);
@@ -439,7 +439,7 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
       return Promise.resolve(Testing$WeftServer.stream(pipe));
     };
     return [
-      Client$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch),
+      Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch),
       pipes
     ];
   };
@@ -466,10 +466,10 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
       })
     });
     let client = match[0];
-    let latest = Client$WeftServer.Latest.make();
-    let old = Client$WeftServer.Latest.fetchElement(latest, client, "/old");
+    let latest = Decoder$WeftServer.Latest.make();
+    let old = Decoder$WeftServer.Latest.fetchElement(latest, client, "/old");
     await Testing$WeftServer.tick();
-    let $$new = Client$WeftServer.Latest.fetchElement(latest, client, "/new");
+    let $$new = Decoder$WeftServer.Latest.fetchElement(latest, client, "/new");
     await Support$WeftServer.settle();
     Testing$WeftServer.deliverAll(match[1]["/new"]);
     let newElement = await $$new;
@@ -485,10 +485,10 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
       "/two": () => Support$WeftServer.text("two")
     });
     let client = match[0];
-    let first = Client$WeftServer.Latest.make();
-    let second = Client$WeftServer.Latest.make();
-    let one = Client$WeftServer.Latest.fetchElement(first, client, "/one");
-    let two = Client$WeftServer.Latest.fetchElement(second, client, "/two");
+    let first = Decoder$WeftServer.Latest.make();
+    let second = Decoder$WeftServer.Latest.make();
+    let one = Decoder$WeftServer.Latest.fetchElement(first, client, "/one");
+    let two = Decoder$WeftServer.Latest.fetchElement(second, client, "/two");
     await Support$WeftServer.settle();
     Object.values(match[1]).forEach(Testing$WeftServer.deliverAll);
     t.expect(Stdlib_Option.map(await one, Support$WeftServer.renderDirectly)).toEqual("one");

@@ -36,9 +36,9 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Not started. This document is the plan, and its decisions are settled (Decisions, at the end). The
-phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same branch as phases 0 to 6, a
-commit or a few each, each ending green, with a review before the next.
+Phase 7.0 is done (§0 says where it went its own way); 7.1 is next. The decisions are settled
+(Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same
+branch as phases 0 to 6, a commit or a few each, each ending green, with a review before the next.
 
 ## What was verified before writing this
 
@@ -135,16 +135,21 @@ runs, and the build checks it:
   - `weft_server`: `client/` has `Bootstrap`; `server/` has `Render`, `Page` and `RpcServer`;
     `shared/` has `Payload`, `Decoder`, `Navigation`, `Rpc`, `RpcCodec` and the internals;
     `testing/` has `Testing`.
-- **Server-only modules are marked `@@weft.server`** (`Render`, `Page`, `RpcServer`, `Html`), the
-  attribute phase 6 added for apps' own server files, so the plugin refuses them to an app's client
-  build and names the chain of imports, exactly as it does an app's server files. The packages
-  compile through `ppx_weft` for this (it writes nothing else into a file without Weft's
-  attributes). Browser-only code (`Bootstrap`, `DomHost`) is harmless to import on the server (it
-  only touches `document` when called), so it isn't marked; calling it there fails at once, in
-  tests.
+- **Server-only modules start with `'use weft server'`** (`Render`, `Page`, `RpcServer`, and `Html`
+  when it comes), the directive phase 6's `@@weft.server` writes for apps' own server files, so the
+  plugin refuses them to an app's client build and names the chain of imports, exactly as it does an
+  app's server files. As built, the packages write it with the compiler's own
+  `@@directive("'use weft server'")` rather than `@@weft.server`: the effect is the same, and the
+  libraries then don't compile through `ppx_weft` (which every app building them from source would
+  otherwise need too, for no other reason). Browser-only code (`Bootstrap`, `DomHost`) is harmless
+  to import on the server (it only touches `document` when called), so it isn't marked; calling it
+  there fails at once, in tests.
 - **`Rpc` is split in two**: `Rpc` (shared: `t`, `make`, `makePrepared`, the errors, `call`, `use`)
-  and `RpcServer` (`handler`, `router`, `respond`, `ids`). An RPC's handler file then imports a
-  server-only module, which says what it is; and the client build no longer carries the router.
+  and `RpcServer` (`handler`, `router`, `respond`, `ids`). As built, the declaration's record lives
+  in an internal `RpcCore`, and `Rpc.t` re-exports it as a `private` record: `RpcServer` can read a
+  declaration's codec and checks, and only `Rpc.make` can build one. An RPC's handler file then
+  imports a server-only module, which says what it is; and the client build no longer carries the
+  router.
 - **`WeftServer.Client` becomes `WeftServer.Decoder`**: it decodes payloads into elements, in the
   browser and (from phase 7.5) on the server. `WeftDom.Client` keeps its name: it's the DOM's roots,
   client-only.
@@ -221,8 +226,8 @@ the server). `Navigation` gains `Navigation.makeForServer(decoder, ~url)` for th
 
 ### 3. The HTML renderer: `WeftDom.Html`
 
-A new module in `weft_dom`'s `server/` (§0), marked `@@weft.server`. It's in `weft_dom` because it
-follows the same prop rules as `DomHost` (in `shared/DomProps`), and doesn't depend on
+A new module in `weft_dom`'s `server/` (§0), starting with `'use weft server'`. It's in `weft_dom`
+because it follows the same prop rules as `DomHost` (in `shared/DomProps`), and doesn't depend on
 `weft_server`: a client-only app could use it for static pages.
 
 ```rescript
@@ -720,10 +725,10 @@ Each ends green (build, check, test, typecheck, e2e), the plan updated where the
 its own way, committed, pushed, and reviewed before the next.
 
 **Phase 7.0 -- Client and server, kept apart** (§0). The `client/`, `server/`, `shared/` and
-`testing/` directories; `@@weft.server` on the server-only modules, with the packages compiling
-through `ppx_weft`, and a plugin test that an app's client importing one is refused; `Rpc` split
-into `Rpc` and `RpcServer`; `WeftServer.Client` renamed `Decoder`; the "Where it runs" tables; the
-apps and the main plan updated for the names. No new behaviour.
+`testing/` directories; `'use weft server'` on the server-only modules, and a plugin test that an
+app's client importing one is refused; `Rpc` split into `Rpc` and `RpcServer`; `WeftServer.Client`
+renamed `Decoder`; the "Where it runs" tables; the apps and the main plan updated for the names. No
+new behaviour. Done.
 
 **Phase 7.1 -- Hooks on the server.** `ServerRender.renderComponent` (with an options record, which
 §11's position joins later) and its resets; `useSyncExternalStore(~getServerSnapshot)` (and its use

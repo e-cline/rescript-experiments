@@ -2,9 +2,9 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Pervasives from "@rescript/runtime/lib/es6/Pervasives.js";
-import * as Jsx$WeftCore from "../src/Jsx.res.js";
-import * as Element$WeftCore from "../src/Element.res.js";
-import * as JsxCore$WeftCore from "../src/JsxCore.res.js";
+import * as Jsx$WeftCore from "../src/shared/Jsx.res.js";
+import * as Element$WeftCore from "../src/shared/Element.res.js";
+import * as JsxCore$WeftCore from "../src/shared/JsxCore.res.js";
 
 function Jsx_test$Leaf(props) {
   return Jsx$WeftCore.$$null;

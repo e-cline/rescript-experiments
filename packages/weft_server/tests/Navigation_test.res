@@ -20,7 +20,7 @@ let textIn = (renderer, id) =>
 /** A page on `renderer`, its client fetching from `fetch`, started at `url` (rendered at once). */
 let start = async (~fetch, ~route, ~url, ~onNavigate=?) => {
   let renderer = TestRenderer.create()
-  let client = Client.make(~loadModule=Testing.loadModule(makeModules()), ~fetch)
+  let client = Decoder.make(~loadModule=Testing.loadModule(makeModules()), ~fetch)
   let navigation = Navigation.make(
     client,
     ~render=element => TestRenderer.scheduleRender(renderer, element),

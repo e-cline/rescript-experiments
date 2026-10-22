@@ -2,15 +2,15 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Vitest$1 from "vitest";
-import * as Hooks$WeftCore from "../src/Hooks.res.js";
+import * as Hooks$WeftCore from "../src/shared/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Vitest_Matchers from "rescript-vitest/src/Vitest_Matchers.res.js";
-import * as Context$WeftCore from "../src/Context.res.js";
-import * as TestJsx$WeftCore from "../src/TestJsx.res.js";
-import * as Transition$WeftCore from "../src/Transition.res.js";
-import * as TestRenderer$WeftCore from "../src/TestRenderer.res.js";
-import * as ErrorBoundary$WeftCore from "../src/ErrorBoundary.res.js";
-import * as TestScheduler$WeftCore from "../src/TestScheduler.res.js";
+import * as Context$WeftCore from "../src/shared/Context.res.js";
+import * as TestJsx$WeftCore from "../src/testing/TestJsx.res.js";
+import * as Transition$WeftCore from "../src/shared/Transition.res.js";
+import * as TestRenderer$WeftCore from "../src/testing/TestRenderer.res.js";
+import * as ErrorBoundary$WeftCore from "../src/shared/ErrorBoundary.res.js";
+import * as TestScheduler$WeftCore from "../src/testing/TestScheduler.res.js";
 
 function fallback(error, param) {
   return TestJsx$WeftCore.Elements.jsx("p", {

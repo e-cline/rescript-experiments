@@ -2,16 +2,16 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
-import * as Hooks$WeftCore from "../src/Hooks.res.js";
+import * as Hooks$WeftCore from "../src/shared/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
-import * as Context$WeftCore from "../src/Context.res.js";
+import * as Context$WeftCore from "../src/shared/Context.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "../src/TestJsx.res.js";
-import * as Entrypoint$WeftCore from "../src/Entrypoint.res.js";
+import * as TestJsx$WeftCore from "../src/testing/TestJsx.res.js";
+import * as Entrypoint$WeftCore from "../src/shared/Entrypoint.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
-import * as ServerRender$WeftCore from "../src/ServerRender.res.js";
-import * as SuspenseImpl$WeftCore from "../src/internal/SuspenseImpl.res.js";
-import * as TestRenderer$WeftCore from "../src/TestRenderer.res.js";
+import * as ServerRender$WeftCore from "../src/shared/ServerRender.res.js";
+import * as SuspenseImpl$WeftCore from "../src/shared/internal/SuspenseImpl.res.js";
+import * as TestRenderer$WeftCore from "../src/testing/TestRenderer.res.js";
 
 function errorOf(f) {
   try {

@@ -10,7 +10,7 @@ open Vitest
 open Support
 
 let assets: Page.assets = {
-  scripts: ["/@vite/client", "/src/Client.res.js"],
+  scripts: ["/@vite/client", "/src/Decoder.res.js"],
   preloads: ["/assets/runtime.js"],
   styles: ["/assets/app.css"],
   entrypoints: dict{"test/Entrypoints.res": ["/assets/Entrypoints.js", "/assets/shared.js"]},
@@ -50,7 +50,7 @@ describe("Page.toStream", () => {
     ->Expect.toBe(true)
     t
     ->expect(
-      html->String.includes(`<script type="module" async src="/src/Client.res.js"></script>`),
+      html->String.includes(`<script type="module" async src="/src/Decoder.res.js"></script>`),
     )
     ->Expect.toBe(true)
     t
@@ -189,7 +189,7 @@ describe("Bootstrap.rows", () => {
       </section>
     let html = await Testing.readAll(Page.toStream(element, ~assets))
     let target = {"__weft": pushedRows(html)->Array.map(Nullable.fromOption)}
-    let decoded = await makeClient()->Client.fromStream(Bootstrap.rows(target))
+    let decoded = await makeClient()->Decoder.fromStream(Bootstrap.rows(target))
     let renderer = TestRenderer.create()
     TestRenderer.render(renderer, decoded)
     await settle()

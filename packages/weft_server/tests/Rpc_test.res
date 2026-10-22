@@ -39,7 +39,7 @@ let sawAbort = ref(false)
 @get external signalOf: Request.t => EventTypes.abortSignal = "signal"
 external toSignal: EventTypes.abortSignal => Streams.Signal.t = "%identity"
 
-let addCommentHandler = Rpc.handler(addComment, async (comment, ~http) => {
+let addCommentHandler = RpcServer.handler(addComment, async (comment, ~http) => {
   calls->Array.push(comment)
   switch comment.text {
   | "throw" => JsError.throwWithMessage("the database is down")
@@ -56,7 +56,7 @@ let addCommentHandler = Rpc.handler(addComment, async (comment, ~http) => {
 type later = {label: string, later: promise<string>}
 
 let later: Rpc.t<string, string, later, unit> = Rpc.make(~id="notes.later", ~request=Codec.string)
-let laterHandler = Rpc.handler(later, async (label, ~http as _) => Ok({
+let laterHandler = RpcServer.handler(later, async (label, ~http as _) => Ok({
   label,
   later: gate.contents.promise->Promise.thenResolve(_ => `${label}, later`),
 }))
@@ -65,7 +65,7 @@ let render: Rpc.t<string, string, WeftCore.Element.t, unit> = Rpc.make(
   ~id="notes.render",
   ~request=Codec.string,
 )
-let renderHandler = Rpc.handler(render, async (id, ~http as _) => Ok(
+let renderHandler = RpcServer.handler(render, async (id, ~http as _) => Ok(
   <Wrap id>
     <Counter label=id />
   </Wrap>,
@@ -76,10 +76,10 @@ let small: Rpc.t<string, string, unit, unit> = Rpc.make(
   ~request=Codec.string,
   ~maxBytes=10,
 )
-let smallHandler = Rpc.handler(small, async (_, ~http as _) => Ok())
+let smallHandler = RpcServer.handler(small, async (_, ~http as _) => Ok())
 
 let digests = []
-let router = Rpc.router(
+let router = RpcServer.router(
   [addCommentHandler, laterHandler, renderHandler, smallHandler],
   ~onError=error => {
     digests->Array.push(Values.describeError(error))
@@ -100,7 +100,7 @@ type requestInit = {
 let rpcHeaders = () => dict{"content-type": "application/json", "x-weft-rpc": "1"}
 
 let post = (~id="notes.addComment", ~headers=rpcHeaders(), ~method="POST", body) =>
-  router->Rpc.respond(
+  router->RpcServer.respond(
     makeRequest(
       `${origin}/_weft/rpc/${id}`,
       method == "GET" ? {method, headers} : {method, headers, body},
@@ -259,11 +259,11 @@ describe("the router", () => {
   )
 
   testAsync("takes the origins it's given instead of its own", async t => {
-    let allowing = Rpc.router([smallHandler], ~origins=["http://app.test"])
+    let allowing = RpcServer.router([smallHandler], ~origins=["http://app.test"])
     let call = from => {
       let headers = rpcHeaders()
       headers->Dict.set("origin", from)
-      allowing->Rpc.respond(
+      allowing->RpcServer.respond(
         makeRequest(`${origin}/_weft/rpc/notes.small`, {method: "POST", headers, body: `"a"`}),
         ~id="notes.small",
       )
@@ -288,7 +288,7 @@ describe("the router", () => {
     let bytes = Uint8Array.fromArray([0x22, 0xff, 0xfe, 0x22])
     let request = %raw(`(origin, headers, body) =>
       new Request(origin + "/_weft/rpc/notes.small", {method: "POST", headers, body})`)
-    let response = await router->Rpc.respond(
+    let response = await router->RpcServer.respond(
       request(origin, rpcHeaders(), bytes),
       ~id="notes.small",
     )
@@ -309,7 +309,7 @@ describe("the router", () => {
 
   test("fails when it's made with two handlers for one ID", t => {
     t
-    ->expect(() => Rpc.router([smallHandler, addCommentHandler, smallHandler]))
+    ->expect(() => RpcServer.router([smallHandler, addCommentHandler, smallHandler]))
     ->Expect.toThrowError(
       ~message="WeftServer: the router has two handlers for the RPC notes.small",
     )
@@ -317,7 +317,7 @@ describe("the router", () => {
 
   test("lists its IDs", t => {
     t
-    ->expect(Rpc.ids(router))
+    ->expect(RpcServer.ids(router))
     ->Expect.toEqual(["notes.addComment", "notes.later", "notes.render", "notes.small"])
   })
 })
@@ -468,7 +468,7 @@ let fakeFetch = (url: string, init: fetchInit) => {
     rejectWith("offline")
   } else {
     let id = url->String.split("/")->Array.at(-1)->Option.getOr("")
-    let response = router->Rpc.respond(
+    let response = router->RpcServer.respond(
       makeRequest(
         `${origin}${url}`,
         {

@@ -4,7 +4,7 @@ import * as Env$Common from "@e-cline/common/src/Env.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Likes$FixtureBasic from "./Likes.res.js";
 import * as Notes$FixtureBasic from "./Notes.res.js";
-import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/Entrypoint.res.js";
+import * as Entrypoint$WeftCore from "@e-cline/weft_core/src/shared/Entrypoint.res.js";
 import Assets from "virtual:weft/assets";
 
 async function handle(request) {

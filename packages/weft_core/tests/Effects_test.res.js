@@ -2,12 +2,12 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Hooks$WeftCore from "../src/Hooks.res.js";
+import * as Hooks$WeftCore from "../src/shared/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Vitest_Matchers from "rescript-vitest/src/Vitest_Matchers.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "../src/TestJsx.res.js";
-import * as TestRenderer$WeftCore from "../src/TestRenderer.res.js";
+import * as TestJsx$WeftCore from "../src/testing/TestJsx.res.js";
+import * as TestRenderer$WeftCore from "../src/testing/TestRenderer.res.js";
 
 let entries = [];
 

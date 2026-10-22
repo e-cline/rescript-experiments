@@ -6,7 +6,7 @@ import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Result from "@rescript/runtime/lib/es6/Stdlib_Result.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as RpcCodec$WeftServer from "../src/RpcCodec.res.js";
+import * as RpcCodec$WeftServer from "../src/shared/RpcCodec.res.js";
 
 function make(seed) {
   return {

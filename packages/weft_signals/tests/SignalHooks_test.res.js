@@ -4,10 +4,10 @@ import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Atom$Signals from "@e-cline/signals/src/Atom.res.js";
 import * as Batch$Signals from "@e-cline/signals/src/Batch.res.js";
 import * as Computed$Signals from "@e-cline/signals/src/Computed.res.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
-import * as Transition$WeftCore from "@e-cline/weft_core/src/Transition.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
-import * as TestScheduler$WeftCore from "@e-cline/weft_core/src/TestScheduler.res.js";
+import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
+import * as Transition$WeftCore from "@e-cline/weft_core/src/shared/Transition.res.js";
+import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
+import * as TestScheduler$WeftCore from "@e-cline/weft_core/src/testing/TestScheduler.res.js";
 import * as SignalHooks$WeftSignals from "../src/SignalHooks.res.js";
 
 let renders = {

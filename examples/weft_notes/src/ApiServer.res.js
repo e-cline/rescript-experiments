@@ -4,10 +4,10 @@
 import * as Db$WeftNotes from "./Db.res.js";
 import * as Api$WeftNotes from "./Api.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Rpc$WeftServer from "@e-cline/weft_server/src/Rpc.res.js";
-import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/ErrorBoundary.res.js";
+import * as RpcServer$WeftServer from "@e-cline/weft_server/src/server/RpcServer.res.js";
+import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/shared/ErrorBoundary.res.js";
 
-let saveTitle = Rpc$WeftServer.handler(Api$WeftNotes.saveTitle, async (param, param$1) => {
+let saveTitle = RpcServer$WeftServer.handler(Api$WeftNotes.saveTitle, async (param, param$1) => {
   let noteId = param.noteId;
   let match = Db$WeftNotes.find(noteId);
   if (match !== undefined) {
@@ -24,7 +24,7 @@ let saveTitle = Rpc$WeftServer.handler(Api$WeftNotes.saveTitle, async (param, pa
   }
 });
 
-let addComment = Rpc$WeftServer.handler(Api$WeftNotes.addComment, async (param, param$1) => {
+let addComment = RpcServer$WeftServer.handler(Api$WeftNotes.addComment, async (param, param$1) => {
   let text = param.text;
   let author = param.author;
   let noteId = param.noteId;
@@ -46,7 +46,7 @@ let addComment = Rpc$WeftServer.handler(Api$WeftNotes.addComment, async (param, 
   };
 });
 
-let like = Rpc$WeftServer.handler(Api$WeftNotes.like, async (noteId, param) => {
+let like = RpcServer$WeftServer.handler(Api$WeftNotes.like, async (noteId, param) => {
   let match = Db$WeftNotes.find(noteId);
   if (match !== undefined) {
     Db$WeftNotes.like(noteId);
@@ -62,7 +62,7 @@ let like = Rpc$WeftServer.handler(Api$WeftNotes.like, async (noteId, param) => {
   }
 });
 
-let router = Rpc$WeftServer.router([
+let router = RpcServer$WeftServer.router([
   saveTitle,
   addComment,
   like
@@ -70,10 +70,10 @@ let router = Rpc$WeftServer.router([
   console.error(`weft_notes: an RPC failed: ` + ErrorBoundary$WeftCore.message(error));
 });
 
-let Rpc;
+let RpcServer;
 
 export {
-  Rpc,
+  RpcServer,
   saveTitle,
   addComment,
   like,

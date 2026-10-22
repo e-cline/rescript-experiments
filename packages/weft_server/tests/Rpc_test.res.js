@@ -6,18 +6,19 @@ import * as Stdlib_Dict from "@rescript/runtime/lib/es6/Stdlib_Dict.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Rpc$WeftServer from "../src/Rpc.res.js";
+import * as Rpc$WeftServer from "../src/shared/Rpc.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Vitest_Matchers from "rescript-vitest/src/Vitest_Matchers.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/Deferred.res.js";
-import * as Values$WeftServer from "../src/internal/Values.res.js";
-import * as Payload$WeftServer from "../src/Payload.res.js";
+import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
+import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
+import * as Values$WeftServer from "../src/shared/internal/Values.res.js";
+import * as Payload$WeftServer from "../src/shared/Payload.res.js";
 import * as Support$WeftServer from "./Support.res.js";
-import * as Testing$WeftServer from "../src/Testing.res.js";
-import * as RpcCodec$WeftServer from "../src/RpcCodec.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
+import * as Testing$WeftServer from "../src/testing/Testing.res.js";
+import * as RpcCodec$WeftServer from "../src/shared/RpcCodec.res.js";
+import * as RpcServer$WeftServer from "../src/server/RpcServer.res.js";
+import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 let commentCodec = RpcCodec$WeftServer.object2([
   "noteId",
@@ -57,7 +58,7 @@ let sawAbort = {
   contents: false
 };
 
-let addCommentHandler = Rpc$WeftServer.handler(addComment, async (comment, http) => {
+let addCommentHandler = RpcServer$WeftServer.handler(addComment, async (comment, http) => {
   calls.push(comment);
   let text = comment.text;
   switch (text) {
@@ -92,7 +93,7 @@ let addCommentHandler = Rpc$WeftServer.handler(addComment, async (comment, http)
 
 let later = Rpc$WeftServer.make("notes.later", RpcCodec$WeftServer.string, undefined, undefined);
 
-let laterHandler = Rpc$WeftServer.handler(later, async (label, param) => ({
+let laterHandler = RpcServer$WeftServer.handler(later, async (label, param) => ({
   TAG: "Ok",
   _0: {
     label: label,
@@ -102,7 +103,7 @@ let laterHandler = Rpc$WeftServer.handler(later, async (label, param) => ({
 
 let render = Rpc$WeftServer.make("notes.render", RpcCodec$WeftServer.string, undefined, undefined);
 
-let renderHandler = Rpc$WeftServer.handler(render, async (id, param) => ({
+let renderHandler = RpcServer$WeftServer.handler(render, async (id, param) => ({
   TAG: "Ok",
   _0: TestJsx$WeftCore.jsx(Support$WeftServer.Wrap.make, {
     id: id,
@@ -114,14 +115,14 @@ let renderHandler = Rpc$WeftServer.handler(render, async (id, param) => ({
 
 let small = Rpc$WeftServer.make("notes.small", RpcCodec$WeftServer.string, undefined, 10);
 
-let smallHandler = Rpc$WeftServer.handler(small, async (param, param$1) => ({
+let smallHandler = RpcServer$WeftServer.handler(small, async (param, param$1) => ({
   TAG: "Ok",
   _0: undefined
 }));
 
 let digests = [];
 
-let router = Rpc$WeftServer.router([
+let router = RpcServer$WeftServer.router([
   addCommentHandler,
   laterHandler,
   renderHandler,
@@ -147,7 +148,7 @@ function post(idOpt, headersOpt, methodOpt, body) {
       "x-weft-rpc": "1"
     });
   let method = methodOpt !== undefined ? methodOpt : "POST";
-  return Rpc$WeftServer.respond(router, new Request(origin + `/_weft/rpc/` + id, method === "GET" ? ({
+  return RpcServer$WeftServer.respond(router, new Request(origin + `/_weft/rpc/` + id, method === "GET" ? ({
       method: method,
       headers: headers
     }) : ({
@@ -259,14 +260,14 @@ Vitest.describe("the router", undefined, undefined, undefined, undefined, undefi
     return t.expect(ok.status).toBe(200);
   });
   Vitest.testAsync("takes the origins it's given instead of its own", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let allowing = Rpc$WeftServer.router([smallHandler], undefined, ["http://app.test"], undefined);
+    let allowing = RpcServer$WeftServer.router([smallHandler], undefined, ["http://app.test"], undefined);
     let call = from => {
       let headers = {
         "content-type": "application/json",
         "x-weft-rpc": "1"
       };
       headers["origin"] = from;
-      return Rpc$WeftServer.respond(allowing, new Request(origin + `/_weft/rpc/notes.small`, {
+      return RpcServer$WeftServer.respond(allowing, new Request(origin + `/_weft/rpc/notes.small`, {
         method: "POST",
         headers: headers,
         body: `"a"`
@@ -297,7 +298,7 @@ Vitest.describe("the router", undefined, undefined, undefined, undefined, undefi
     ]);
     let request = ((origin, headers, body) =>
       new Request(origin + "/_weft/rpc/notes.small", {method: "POST", headers, body}));
-    let response = await Rpc$WeftServer.respond(router, request(origin, {
+    let response = await RpcServer$WeftServer.respond(router, request(origin, {
       "content-type": "application/json",
       "x-weft-rpc": "1"
     }, bytes), "notes.small");
@@ -309,12 +310,12 @@ Vitest.describe("the router", undefined, undefined, undefined, undefined, undefi
     t.expect(await rowsOf(response)).toEqual([`0:X{"digest":"digest-1","message":"the database is down"}`]);
     return t.expect(digests).toEqual(["the database is down"]);
   });
-  Vitest.test("fails when it's made with two handlers for one ID", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => Vitest_Matchers.toThrowError("WeftServer: the router has two handlers for the RPC notes.small", t.expect(() => Rpc$WeftServer.router([
+  Vitest.test("fails when it's made with two handlers for one ID", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => Vitest_Matchers.toThrowError("WeftServer: the router has two handlers for the RPC notes.small", t.expect(() => RpcServer$WeftServer.router([
     smallHandler,
     addCommentHandler,
     smallHandler
   ], undefined, undefined, undefined))));
-  Vitest.test("lists its IDs", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => t.expect(Rpc$WeftServer.ids(router)).toEqual([
+  Vitest.test("lists its IDs", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => t.expect(RpcServer$WeftServer.ids(router)).toEqual([
     "notes.addComment",
     "notes.later",
     "notes.render",
@@ -494,7 +495,7 @@ function fakeFetch(url, init) {
     return rejectWith("offline");
   }
   let id = Stdlib_Option.getOr(url.split("/").at(-1), "");
-  let response = Rpc$WeftServer.respond(router, new Request(origin + url, {
+  let response = RpcServer$WeftServer.respond(router, new Request(origin + url, {
     method: init.method,
     headers: init.headers,
     body: init.body,

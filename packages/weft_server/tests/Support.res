@@ -200,13 +200,13 @@ let loading = <i id="loading"> {text("loading")} </i>
 
 /** A client for the test entrypoints. */
 let makeClient = (~modules=makeModules()) =>
-  Client.make(~loadModule=Testing.loadModule(modules), ~fetch=(_, ~signal as _) =>
+  Decoder.make(~loadModule=Testing.loadModule(modules), ~fetch=(_, ~signal as _) =>
     JsError.throwWithMessage("this test client doesn't fetch")
   )
 
 /** `element`, rendered on the server and decoded by `client`, with everything delivered at once. */
 let roundTrip = (~client=makeClient(), ~chunking=?, element) =>
-  client->Client.fromStream(Testing.stream(Testing.pipe(Render.toStream(element), ~chunking?)))
+  client->Decoder.fromStream(Testing.stream(Testing.pipe(Render.toStream(element), ~chunking?)))
 
 /** `element` rendered straight into a TestRenderer, for comparing with a round trip's. */
 let renderDirectly = element => {

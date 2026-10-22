@@ -98,14 +98,14 @@ It's handled in a server-only file, and the server answers the RPCs a router lis
 // src/ApiServer.res
 @@weft.server
 
-let addComment = WeftServer.Rpc.handler(Api.addComment, async ({noteId, text}, ~http as _) =>
+let addComment = WeftServer.RpcServer.handler(Api.addComment, async ({noteId, text}, ~http as _) =>
   Ok(Db.addComment(noteId, text))
 )
-let router = WeftServer.Rpc.router([addComment])
+let router = WeftServer.RpcServer.router([addComment])
 
 // src/Server.res
 Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
-  await ApiServer.router->WeftServer.Rpc.respond(ctx.request, ~id=ctx->RequestContext.paramOrThrow("id"))
+  await ApiServer.router->WeftServer.RpcServer.respond(ctx.request, ~id=ctx->RequestContext.paramOrThrow("id"))
 )
 ```
 
@@ -137,9 +137,28 @@ switch await addComment({noteId, text}) {
 ### The lower levels
 
 The lower levels are there too: `Render.toStream(element)` (the payload, as a `ReadableStream`), and
-`Client.make(~loadModule)` with `Client.fetchElement(url)` (a decoded element, to render anywhere).
-`loadModule` loads an entrypoint's compiled file, given its id: the Vite plugin provides it
-(`virtual:weft/client`); in tests, it's `Testing.loadModule`.
+`Decoder.make(~loadModule)` with `Decoder.fetchElement(url)` (a decoded element, to render
+anywhere). `loadModule` loads an entrypoint's compiled file, given its id: the Vite plugin provides
+it (`virtual:weft/client`); in tests, it's `Testing.loadModule`.
+
+## Where it runs
+
+The sources are in `src/client/`, `src/server/` and `src/shared/` by where they run (and
+`src/testing/`). The server-only modules start with the `'use weft server'` directive, so the Vite
+plugin refuses them to an app's client build, naming the chain of imports, as it does the app's own
+server files.
+
+| Module       | Where   | What it is                                                                      |
+| ------------ | ------- | ------------------------------------------------------------------------------- |
+| `Render`     | server  | The server renderer: an element tree into a payload.                            |
+| `Page`       | server  | A page's response: the HTML shell with the payload's rows, or the bare payload. |
+| `RpcServer`  | server  | RPCs' handlers, and the router that answers them.                               |
+| `Decoder`    | both    | A payload back into elements, entrypoints loaded on demand.                     |
+| `Navigation` | both    | The page: `navigate`, `refresh`, `useNavigation`, `useRefetchable`.             |
+| `Rpc`        | both    | Declaring RPCs, and calling them (`call`, `use`). `Rpc.Codec`: their codecs.    |
+| `Payload`    | both    | The wire format.                                                                |
+| `Bootstrap`  | browser | The browser's start: the rows from the page, rendered into `#root`.             |
+| `Testing`    | tests   | `Render` and `Decoder` connected in one process, with the test in control.      |
 
 ## How it works
 
@@ -152,11 +171,11 @@ The lower levels are there too: `Render.toStream(element)` (the payload, as a `R
 - **`Suspense` boundaries are the unit of streaming.** Work that isn't ready is waited for outside
   every boundary. Under one, it's sent as a placeholder, and its content follows in a row of its
   own. Errors under a boundary are sent in place, for an `ErrorBoundary` in an entrypoint to catch.
-- **`Client`** decodes rows as they come in. A row that has arrived can be read straight away
+- **`Decoder`** decodes rows as they come in. A row that has arrived can be read straight away
   (`WeftCore.Deferred`), so a payload that has fully arrived renders without suspending.
 - **Modules are cached per client, not per payload**, so rendering a refetched payload over the one
   on screen patches it in place: entrypoints in the same place keep their state and get the new
-  props, and host nodes are reused. `Client.Latest` runs fetches that replace each other, so a slow
+  props, and host nodes are reused. `Decoder.Latest` runs fetches that replace each other, so a slow
   response can't land after a newer one.
 - **`Payload`** documents the format: newline-separated rows, `<id>:<tag><json>`.
 - **`Page`** streams the HTML: the head (the bootstrap's script, `async`, so it runs before the page
@@ -166,7 +185,7 @@ The lower levels are there too: `Render.toStream(element)` (the payload, as a `R
   were pushed before it started or after.
 - **`Navigation`** renders each fetched payload over the screen in a transition, so boundaries
   already showing keep their content until what replaces it is ready. A fetch replaces the one
-  before (`Client.Latest`): the older is cancelled, and what it hadn't delivered is left waiting,
+  before (`Decoder.Latest`): the older is cancelled, and what it hadn't delivered is left waiting,
   not failed, since it may still be on screen until the newer has rendered.
 - **`useRefetchable`** shows its `children` until it's refetched, then what it fetched, until newer
   `children` come with a `navigate` or `refresh`: whichever is newer wins.
@@ -176,7 +195,7 @@ The lower levels are there too: `Render.toStream(element)` (the payload, as a `R
 
 ## Testing
 
-`WeftServer.Testing` connects `Render` to `Client` in one process. It has a pipe whose delivery the
+`WeftServer.Testing` connects `Render` to `Decoder` in one process. It has a pipe whose delivery the
 test controls (everything at once, one chunk at a time, or re-cut every _n_ bytes), and entrypoint
 modules served from a map, whose loads can be held. This package's own tests use it:
 

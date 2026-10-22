@@ -71,6 +71,19 @@ switch WeftDom.Dom.document->WeftDom.Dom.body->WeftDom.Dom.querySelector("#app")
 
 Not yet: SVG (elements are created without a namespace), delegated events, hydration.
 
+## Where it runs
+
+The sources are in `src/client/` and `src/shared/` by where they run.
+
+| Module     | Where   | What it is                                                                |
+| ---------- | ------- | ------------------------------------------------------------------------- |
+| `Client`   | browser | Roots: `createRoot`, `render`, `flushSync`, `act`.                        |
+| `DomHost`  | browser | The reconciler's host for the DOM (internal to `Client`).                 |
+| `DomProps` | both    | The props host elements take, and how each is applied.                    |
+| `Dom`      | both    | DOM bindings (only touching the DOM when called).                         |
+| `Jsx`      | both    | The JSX module for `@@jsxConfig`.                                         |
+| `Portal`   | both    | `Portal.make(container, children)`: made anywhere, rendered in a browser. |
+
 ## Testing
 
 `Client.act(f)` calls `f`, then renders every update and runs every effect before returning. The

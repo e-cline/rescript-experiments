@@ -3,23 +3,23 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Page$WeftServer from "../src/Page.res.js";
+import * as Page$WeftServer from "../src/server/Page.res.js";
 import * as Stdlib_Nullable from "@rescript/runtime/lib/es6/Stdlib_Nullable.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
-import * as Client$WeftServer from "../src/Client.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/Deferred.res.js";
-import * as Render$WeftServer from "../src/Render.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/Suspense.res.js";
-import * as Payload$WeftServer from "../src/Payload.res.js";
+import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
+import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
+import * as Render$WeftServer from "../src/server/Render.res.js";
+import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as Decoder$WeftServer from "../src/shared/Decoder.res.js";
+import * as Payload$WeftServer from "../src/shared/Payload.res.js";
 import * as Support$WeftServer from "./Support.res.js";
-import * as Testing$WeftServer from "../src/Testing.res.js";
-import * as Bootstrap$WeftServer from "../src/Bootstrap.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
+import * as Testing$WeftServer from "../src/testing/Testing.res.js";
+import * as Bootstrap$WeftServer from "../src/client/Bootstrap.res.js";
+import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 let assets_scripts = [
   "/@vite/client",
-  "/src/Client.res.js"
+  "/src/Decoder.res.js"
 ];
 
 let assets_preloads = ["/assets/runtime.js"];
@@ -59,7 +59,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     t.expect(html.includes("<title>A &lt;title&gt;</title>")).toBe(true);
     t.expect(html.includes(`<link rel="stylesheet" href="/assets/app.css">`)).toBe(true);
     t.expect(html.includes(`<link rel="modulepreload" href="/assets/runtime.js">`)).toBe(true);
-    t.expect(html.includes(`<script type="module" async src="/src/Client.res.js"></script>`)).toBe(true);
+    t.expect(html.includes(`<script type="module" async src="/src/Decoder.res.js"></script>`)).toBe(true);
     t.expect(html.includes(`</head><body><div id="root"></div><script>`)).toBe(true);
     t.expect(html.endsWith(`.push(null)</script></body></html>`)).toBe(true);
     let payload = await Testing$WeftServer.readAll(Render$WeftServer.toStream(TestJsx$WeftCore.Elements.jsx("p", {
@@ -196,7 +196,7 @@ Vitest.describe("Bootstrap.rows", undefined, undefined, undefined, undefined, un
     let target = {
       __weft: pushedRows(html).map(Stdlib_Nullable.fromOption)
     };
-    let decoded = await Client$WeftServer.fromStream(Support$WeftServer.makeClient(undefined), Bootstrap$WeftServer.rows(target), undefined);
+    let decoded = await Decoder$WeftServer.fromStream(Support$WeftServer.makeClient(undefined), Bootstrap$WeftServer.rows(target), undefined);
     let renderer = TestRenderer$WeftCore.create();
     TestRenderer$WeftCore.render(renderer, decoded);
     await Support$WeftServer.settle();

@@ -2,15 +2,15 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
-import * as Memo$WeftCore from "../src/Memo.res.js";
+import * as Memo$WeftCore from "../src/shared/Memo.res.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
-import * as Hooks$WeftCore from "../src/Hooks.res.js";
-import * as Context$WeftCore from "../src/Context.res.js";
+import * as Hooks$WeftCore from "../src/shared/Hooks.res.js";
+import * as Context$WeftCore from "../src/shared/Context.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "../src/TestJsx.res.js";
-import * as Transition$WeftCore from "../src/Transition.res.js";
-import * as TestRenderer$WeftCore from "../src/TestRenderer.res.js";
-import * as TestScheduler$WeftCore from "../src/TestScheduler.res.js";
+import * as TestJsx$WeftCore from "../src/testing/TestJsx.res.js";
+import * as Transition$WeftCore from "../src/shared/Transition.res.js";
+import * as TestRenderer$WeftCore from "../src/testing/TestRenderer.res.js";
+import * as TestScheduler$WeftCore from "../src/testing/TestScheduler.res.js";
 
 function make(seed) {
   return {

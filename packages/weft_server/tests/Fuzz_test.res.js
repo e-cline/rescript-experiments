@@ -3,17 +3,17 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
-import * as Lazy$WeftCore from "@e-cline/weft_core/src/Lazy.res.js";
+import * as Lazy$WeftCore from "@e-cline/weft_core/src/shared/Lazy.res.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as JsxCore$WeftCore from "@e-cline/weft_core/src/JsxCore.res.js";
+import * as JsxCore$WeftCore from "@e-cline/weft_core/src/shared/JsxCore.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/Suspense.res.js";
+import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
 import * as Support$WeftServer from "./Support.res.js";
-import * as Testing$WeftServer from "../src/Testing.res.js";
-import * as Transition$WeftCore from "@e-cline/weft_core/src/Transition.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
+import * as Testing$WeftServer from "../src/testing/Testing.res.js";
+import * as Transition$WeftCore from "@e-cline/weft_core/src/shared/Transition.res.js";
+import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 function make(seed) {
   return {

@@ -45,7 +45,10 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 
 Phases 0--6 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
 the phases will go in one PR, not opened yet). Next is phase 7, HTML rendering and hydration (§9),
-which has a plan of its own: [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md).
+which has a plan of its own: [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md). Its phase
+7.0 is done: the packages' sources sorted into `client/`, `server/` and `shared/`,
+`WeftServer.Client` renamed `Decoder`, and `Rpc`'s server half split out as `RpcServer`; the names
+here are the new ones.
 
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -168,7 +171,7 @@ throwaway ppxlib probe built from the existing `ppx_pretty_print` opam switch:
  request ──> route handler                           bootstrap chunk (virtual:weft/client)
               │                                        │
               ▼                                        ▼
- WeftServer.Render.toStream(<NotePage id />)         WeftServer.Client.fromStream(rows)
+ WeftServer.Render.toStream(<NotePage id />)         WeftServer.Decoder.fromStream(rows)
    walks the tree:                                     decodes rows into elements:
    - server/shared components: called                  - host elements, Suspense: as they are
    - host elements: serialized                         - entrypoint refs: import() the chunk,
@@ -473,7 +476,7 @@ preserved (a cycle is an error); that keeps the encoder a plain recursive walk.
 
 ### 6. The client decoder, and `WeftCore.Lazy`
 
-`let client = WeftServer.Client.make(~loadModule, ~fetch=?)` makes a client, and
+`let client = WeftServer.Decoder.make(~loadModule, ~fetch=?)` makes a client, and
 `client->Client.fromStream(stream) : promise<Element.t>` resolves with row 0's element once it's
 decodable, and keeps decoding as rows arrive. `loadModule` (a file id, the part of an entrypoint id
 before `#`, to a promise of the compiled file's module) is what the bootstrap fills in from
@@ -599,7 +602,7 @@ payload, and shows that element in their place, in a transition, under the same 
 `refresh()` or `navigate` win over what was refetched (state initialised from a prop would ignore
 them), a refetch cancels the one before (a slow response can't land after a newer one), and the
 render is a transition (boundaries don't flash their fallbacks, and `isPending` covers the fetch as
-well as the render). Underneath is `WeftServer.Client.fetchElement(url)`, a promise of a decoded
+well as the render). Underneath is `WeftServer.Decoder.fetchElement(url)`, a promise of a decoded
 element, for anything the hook doesn't cover.
 
 As first planned and built in phase 5, this was `WeftServer.Frame`, a built-in entrypoint a server
@@ -661,7 +664,7 @@ let addComment: WeftServer.Rpc.t<CommentForm.values, addComment, Types.comment, 
 // src/ApiServer.res: server only (the attribute makes the client build refuse it, see below)
 @@weft.server
 
-let addComment = WeftServer.Rpc.handler(Api.addComment, async (request, ~http as _) =>
+let addComment = WeftServer.RpcServer.handler(Api.addComment, async (request, ~http as _) =>
   switch Db.find(request.noteId) {
   | Some(_) => Ok(Db.addComment(request.noteId, ~author=request.author, ~text=request.text))
   | None => Error(Errors.NoSuchNote)
@@ -669,10 +672,10 @@ let addComment = WeftServer.Rpc.handler(Api.addComment, async (request, ~http as
 )
 
 // src/Server.res: the app mounts the RPCs it serves, by listing their handlers
-let rpcs = WeftServer.Rpc.router([ApiServer.addComment, ApiServer.saveTitle, ApiServer.like])
+let rpcs = WeftServer.RpcServer.router([ApiServer.addComment, ApiServer.saveTitle, ApiServer.like])
 let app = App.build()->App.router([
   Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
-    await rpcs->WeftServer.Rpc.respond(ctx.request, ~id=ctx->RequestContext.paramOrThrow("id"))
+    await rpcs->WeftServer.RpcServer.respond(ctx.request, ~id=ctx->RequestContext.paramOrThrow("id"))
   ),
   ...
 ])
@@ -783,9 +786,9 @@ type error<'error> =
   | Failed(problem)
 ```
 
-**On the server**, `Rpc.router(handlers)` makes the router, and `Rpc.respond(router, request, ~id)`
-answers the route (as built: a function the route calls, since `weft_server` doesn't depend on
-servy). In order, it:
+**On the server**, `RpcServer.router(handlers)` makes the router, and
+`RpcServer.respond(router, request, ~id)` answers the route (as built: a function the route calls,
+since `weft_server` doesn't depend on servy). In order, it:
 
 1. looks the ID up in a `Map` made from the handlers (duplicates fail at startup). An unknown ID is
    a 404. Never a property lookup on an object, which is how `"constructor"` or `"__proto__"` turn
@@ -1066,7 +1069,7 @@ stay in ReScript.
  the test                                               Vite module runner for the "rsc"
    │                                                    environment, fed by the harness's
    ▼                                                    in-process Vite server (middleware mode)
- client: WeftDom root, WeftServer.Client,                 │
+ client: WeftDom root, WeftServer.Decoder,                 │
    entrypoints from the real                              ▼
    virtual:weft/client-references                       the app's fetch handler
    (the plugin's client environment                     the fake database and its gates
@@ -1256,16 +1259,17 @@ packages/weft_core/src/
   Lazy.res(i)                      `Lazy.fromPromise`; Element.kind gains `Lazy`
   Entrypoint.res(i)                `mark` (what the PPX calls) and `idOf`, for renderers
   ServerRender.res(i)              `run`: call a component as a server render (the hooks flag)
-packages/weft_server/              namespace WeftServer
-  src/Payload.res(i)               the row and value encoding, shared by both ends
-  src/Render.res(i)                server renderer: element => ReadableStream
-  src/Client.res(i)                stream => elements; fetchElement, Latest
-  src/Page.res(i)                  the HTML shell with inlined rows; respond (HTML or payload)
-  src/Bootstrap.res(i)             the browser's start: rows from the page, a root, history
-  src/Navigation.res(i)            the page: navigate, refresh, useNavigation, useRefetchable
-  src/Rpc.res(i)                   Weft RPCs (phase 6): make, handler, router, respond, call, use
-  src/RpcCodec.res(i)              their codecs, as Rpc.Codec
-  src/Testing.res(i)               tier 1 helpers: a stub stream, entrypoints served from a map
+packages/weft_server/              namespace WeftServer (by where it runs, since phase 7.0)
+  src/shared/Payload.res(i)        the row and value encoding, shared by both ends
+  src/server/Render.res(i)         server renderer: element => ReadableStream
+  src/shared/Decoder.res(i)        stream => elements; fetchElement, Latest (was `Client`)
+  src/server/Page.res(i)           the HTML shell with inlined rows; respond (HTML or payload)
+  src/client/Bootstrap.res(i)      the browser's start: rows from the page, a root, history
+  src/shared/Navigation.res(i)     the page: navigate, refresh, useNavigation, useRefetchable
+  src/shared/Rpc.res(i)            Weft RPCs (phase 6): make, makePrepared, call, use
+  src/server/RpcServer.res(i)      handler, router, respond (split from `Rpc` in phase 7.0)
+  src/shared/RpcCodec.res(i)       their codecs, as Rpc.Codec
+  src/testing/Testing.res(i)       tier 1 helpers: a stub stream, entrypoints served from a map
 packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
   src/testing.ts, testingWorker.ts the tier 2 harness (`/testing` export): Vite server, worker, port
   src/WeftTesting.res(i)           its ReScript bindings
@@ -1338,7 +1342,7 @@ fixtures and errors; the plugin's scan collecting RPC IDs (duplicates fail the b
 `weft_notes`' posts (saving a title, adding a comment, liking) moved to RPCs, with the tests in §10.
 Done. Along the way (§8 says where): `Rpc.make` and `Rpc.makePrepared` (with `~prepare`) rather than
 one `make`; `check` returning `result<unit, 'error>`; one `'use weft rpc <id>'` directive per RPC,
-which the scan reads the IDs from; `Rpc.respond(router, request, ~id)` for the route;
+which the scan reads the IDs from; `RpcServer.respond(router, request, ~id)` for the route;
 `Render.valueToStream` and `Client.valueFromStream`, for payloads whose root isn't an element; error
 codes 18 (a bad ID) and 19 (an ID twice in a router); the harness's `rewriteBodies`, to play an
 older client; and in `weft_notes`, `ApiServer` for the handlers, with it, `Db`, `Gates` and `Server`
@@ -1377,8 +1381,8 @@ Settled before phase 6 (Weft RPCs, §8), as §8 recommended:
 - **Errors**: `Rejected('error)` for the RPC's own errors, from `prepare`, `check` and the handler
   alike (one type, so a form shows them the same way); `Invalid` for a request the server couldn't
   read; `Failed` for everything else. The promise never rejects.
-- **The app mounts its RPCs** by listing their handlers in `Rpc.router`, on a route of its own: the
-  list is what's callable. The plugin's scan only checks IDs for duplicates.
+- **The app mounts its RPCs** by listing their handlers in `RpcServer.router`, on a route of its
+  own: the list is what's callable. The plugin's scan only checks IDs for duplicates.
 - **`POST` and JSON only** for now; `GET` RPCs and `FormData` later.
 - **IDs are dot-separated names**, checked by the PPX; the default path is `/_weft/rpc/<id>`.
 - **`@@weft.server` comes in this phase**, for handler files and any other server-only module.

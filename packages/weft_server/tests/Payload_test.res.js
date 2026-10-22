@@ -6,7 +6,7 @@ import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Vitest_Matchers from "rescript-vitest/src/Vitest_Matchers.res.js";
-import * as Payload$WeftServer from "../src/Payload.res.js";
+import * as Payload$WeftServer from "../src/shared/Payload.res.js";
 
 function roundTrip(json) {
   switch (typeof json) {

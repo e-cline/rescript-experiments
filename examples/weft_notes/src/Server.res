@@ -52,7 +52,7 @@ let noteRoutes = [
   ),
   // The RPCs (`Api`'s, answered by `ApiServer`'s handlers).
   Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
-    await ApiServer.router->WeftServer.Rpc.respond(ctx.request, ~id=id(ctx))
+    await ApiServer.router->WeftServer.RpcServer.respond(ctx.request, ~id=id(ctx))
   ),
 ]
 

@@ -65,7 +65,22 @@ describe('scan', () => {
     // Compiled through the PPX, with the directive, but in a dev source.
     expect(paths).not.toContain(join(root, 'tests/Fake.res.js'));
     expect(paths).not.toContain(join(root, 'src/NotReScript.js'));
-    expect(scanned.files.size).toBe(7);
+    // The fixtures' own: the app's and the dependency's.
+    const own = [...scanned.files.values()].filter(
+      ({id}) => id.startsWith(basic) || id.startsWith(widgets),
+    );
+    expect(own).toHaveLength(7);
+    // And weft_server's own server-only modules, which an app's client mustn't import either.
+    expect(
+      [...scanned.files.values()]
+        .filter(({id}) => id.startsWith('@e-cline/weft_server/'))
+        .map(({id, kind}) => [id, kind])
+        .sort(([a], [b]) => (a! < b! ? -1 : 1)),
+    ).toEqual([
+      ['@e-cline/weft_server/src/server/Page.res', 'server'],
+      ['@e-cline/weft_server/src/server/Render.res', 'server'],
+      ['@e-cline/weft_server/src/server/RpcServer.res', 'server'],
+    ]);
   });
 
   test("collects the RPCs' IDs, the app's and its dependencies', with the files declaring them", () => {

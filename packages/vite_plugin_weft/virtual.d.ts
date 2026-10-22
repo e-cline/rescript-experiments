@@ -5,7 +5,7 @@ declare module 'virtual:weft/client-references' {
   /** Each entrypoint file's id, and a function importing it. */
   const modules: Record<string, () => Promise<unknown>>;
   export default modules;
-  /** The module of the entrypoint file `id`, as `WeftServer.Client.make`'s `loadModule` takes. */
+  /** The module of the entrypoint file `id`, as `WeftServer.Decoder.make`'s `loadModule` takes. */
   export function loadModule(id: string): Promise<unknown>;
 }
 

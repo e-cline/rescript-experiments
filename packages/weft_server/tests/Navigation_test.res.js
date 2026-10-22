@@ -4,14 +4,14 @@ import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_Dict from "@rescript/runtime/lib/es6/Stdlib_Dict.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
-import * as Client$WeftServer from "../src/Client.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/Deferred.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/Suspense.res.js";
+import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
+import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
+import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as Decoder$WeftServer from "../src/shared/Decoder.res.js";
 import * as Support$WeftServer from "./Support.res.js";
-import * as Testing$WeftServer from "../src/Testing.res.js";
-import * as Navigation$WeftServer from "../src/Navigation.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/TestRenderer.res.js";
+import * as Testing$WeftServer from "../src/testing/Testing.res.js";
+import * as Navigation$WeftServer from "../src/shared/Navigation.res.js";
+import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 function uid(renderer, id) {
   return Stdlib_Option.map(TestRenderer$WeftCore.findById(renderer, id), TestRenderer$WeftCore.uid);
@@ -23,7 +23,7 @@ function textIn(renderer, id) {
 
 async function start(fetch, route, url, onNavigate) {
   let renderer = TestRenderer$WeftCore.create();
-  let client = Client$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch);
+  let client = Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch);
   let navigation = Navigation$WeftServer.make(client, element => TestRenderer$WeftCore.scheduleRender(renderer, element), url, onNavigate);
   let element = await Support$WeftServer.roundTrip(Primitive_option.some(client), undefined, route(url));
   Navigation$WeftServer.show(navigation, element);

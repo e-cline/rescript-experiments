@@ -35,14 +35,14 @@ let toJs = delivery =>
   }
 
 type startClient = {
-  loadModule: WeftServer.Client.loadModule,
-  fetch: (string, WeftServer.Client.signal) => promise<WeftServer.Client.stream>,
+  loadModule: WeftServer.Decoder.loadModule,
+  fetch: (string, WeftServer.Decoder.signal) => promise<WeftServer.Decoder.stream>,
   container: WeftDom.Dom.element,
   url: string,
 }
 
 type clientSide = {
-  loadModule: WeftServer.Client.loadModule,
+  loadModule: WeftServer.Decoder.loadModule,
   start: startClient => promise<WeftServer.Navigation.t>,
   act: (unit => unit) => unit,
 }
@@ -59,7 +59,7 @@ external openPage: (app, openOptions) => page = "openPage"
 
 /** The reference map, as the browser's client has it. */
 @module("virtual:weft/client-references")
-external loadModule: WeftServer.Client.loadModule = "loadModule"
+external loadModule: WeftServer.Decoder.loadModule = "loadModule"
 
 let client = {
   loadModule: id => loadModule(id),

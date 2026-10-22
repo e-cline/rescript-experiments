@@ -3,7 +3,7 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Nodefs from "node:fs";
 import * as Nodepath from "node:path";
-import * as Rpc$WeftServer from "@e-cline/weft_server/src/Rpc.res.js";
+import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Rpcs$PpxWeftTests from "../fixtures/Rpcs.res.js";
 import * as NodeSupport$PpxWeftTests from "./NodeSupport.res.js";
 import * as EntrypointsAndRpcs$PpxWeftTests from "../fixtures/EntrypointsAndRpcs.res.js";

@@ -5,7 +5,7 @@ import {readdirSync, readFileSync, rmSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import * as Client from '@e-cline/weft_server/src/Client.res.js';
+import * as Decoder from '@e-cline/weft_server/src/shared/Decoder.res.js';
 import {createBuilder} from 'vite';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -111,6 +111,6 @@ export async function loadedFor(built, path) {
     loaded.push(key);
     return importClientChunk(join(built.clientDir, chunk(built, key).file));
   };
-  await Client.fromStream(Client.make(loadModule), response.body, undefined);
+  await Decoder.fromStream(Decoder.make(loadModule), response.body, undefined);
   return loaded.sort((a, b) => a.localeCompare(b));
 }

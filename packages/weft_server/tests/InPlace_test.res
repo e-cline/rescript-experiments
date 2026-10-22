@@ -285,7 +285,7 @@ describe("refetching over placeholders", () => {
         </Async>
       </WeftCore.Suspense>
     let pipe = Testing.pipe(Render.toStream(tree))
-    let element = client->Client.fromStream(Testing.stream(pipe))
+    let element = client->Decoder.fromStream(Testing.stream(pipe))
     await Testing.finished(pipe)
     await Testing.tick()
     let renderer = TestRenderer.create()
@@ -376,7 +376,7 @@ describe("refetching, with errors", () => {
       let renderer = await mount(~client, tree(<b id="fine" />))
       bump("a")
       let render = Render.toStream(tree(<Fails message="broken" />), ~onError=_ => None)
-      let element = await client->Client.fromStream(Testing.stream(Testing.pipe(render)))
+      let element = await client->Decoder.fromStream(Testing.stream(Testing.pipe(render)))
       WeftCore.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
       await settle()
       t
@@ -401,7 +401,7 @@ describe("refetching, with errors", () => {
       </div>,
       ~onError=_ => None,
     )
-    let failed = switch await client->Client.fromStream(Testing.stream(Testing.pipe(render))) {
+    let failed = switch await client->Decoder.fromStream(Testing.stream(Testing.pipe(render))) {
     | _ => None
     | exception JsExn(error) => JsExn.message(error)
     }
@@ -420,7 +420,7 @@ describe("refetching, in order", () => {
       pipes->Dict.set(url, pipe)
       Promise.resolve(Testing.stream(pipe))
     }
-    (Client.make(~loadModule=Testing.loadModule(makeModules()), ~fetch), pipes)
+    (Decoder.make(~loadModule=Testing.loadModule(makeModules()), ~fetch), pipes)
   }
 
   testAsync("only the latest of two fetches is returned, and the older is cancelled", async t => {
@@ -444,10 +444,10 @@ describe("refetching, in order", () => {
         "/new": () => <p> {text("new")} </p>,
       },
     )
-    let latest = Client.Latest.make()
-    let old = latest->Client.Latest.fetchElement(client, "/old")
+    let latest = Decoder.Latest.make()
+    let old = latest->Decoder.Latest.fetchElement(client, "/old")
     await Testing.tick()
-    let new = latest->Client.Latest.fetchElement(client, "/new")
+    let new = latest->Decoder.Latest.fetchElement(client, "/new")
     await settle()
     pipes->Dict.getUnsafe("/new")->Testing.deliverAll
     let newElement = await new
@@ -461,9 +461,9 @@ describe("refetching, in order", () => {
 
   testAsync("two separate sequences don't interfere", async t => {
     let (client, pipes) = fetching(dict{"/one": () => text("one"), "/two": () => text("two")})
-    let (first, second) = (Client.Latest.make(), Client.Latest.make())
-    let one = first->Client.Latest.fetchElement(client, "/one")
-    let two = second->Client.Latest.fetchElement(client, "/two")
+    let (first, second) = (Decoder.Latest.make(), Decoder.Latest.make())
+    let one = first->Decoder.Latest.fetchElement(client, "/one")
+    let two = second->Decoder.Latest.fetchElement(client, "/two")
     await settle()
     pipes->Dict.valuesToArray->Array.forEach(Testing.deliverAll)
     t->expect((await one)->Option.map(renderDirectly))->Expect.toEqual(Some("one"))

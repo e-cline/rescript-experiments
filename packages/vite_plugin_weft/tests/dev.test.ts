@@ -1,6 +1,7 @@
 import {
   copyFileSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -237,6 +238,41 @@ describe('the dev server', () => {
       'virtual:weft/client-references',
     );
     expect(references?.code).not.toContain('Deep.res');
+  });
+});
+
+describe("weft_server's own server-only modules", () => {
+  test("are refused to the client, as an app's server files are; the shared ones are not", async () => {
+    const root = copyFixture('basic');
+    // The copy is in a temporary directory, and weft_server outside it: let the dev server serve it.
+    const vite = await createServer({
+      ...config(root),
+      server: {fs: {strict: false}},
+    });
+    try {
+      const client = vite.environments[clientEnvironment]!;
+      const file = (path: string) =>
+        realpathSync(join(root, 'node_modules/@e-cline/weft_server/src', path));
+      // `Render`, `Page` and `RpcServer` are marked server-only.
+      for (const path of [
+        'server/Render.res.js',
+        'server/Page.res.js',
+        'server/RpcServer.res.js',
+      ]) {
+        await expect(client.transformRequest(file(path))).rejects.toThrow(
+          /is a server file \('use weft server'.*so the client can't import it/,
+        );
+      }
+      for (const path of [
+        'shared/Rpc.res.js',
+        'shared/Decoder.res.js',
+        'client/Bootstrap.res.js',
+      ]) {
+        await expect(client.transformRequest(file(path))).resolves.toBeTruthy();
+      }
+    } finally {
+      await vite.close();
+    }
   });
 });
 

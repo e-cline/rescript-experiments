@@ -28,7 +28,7 @@ ${lines.join('\n')}
 
 export default modules;
 
-/** The module of the entrypoint file \`id\`, as \`WeftServer.Client.make\`'s \`loadModule\` takes. */
+/** The module of the entrypoint file \`id\`, as \`WeftServer.Decoder.make\`'s \`loadModule\` takes. */
 export function loadModule(id) {
   return Object.hasOwn(modules, id)
     ? modules[id]()
@@ -69,7 +69,7 @@ if (import.meta.hot) {
  */
 export function bootstrapCode(): string {
   return `import {loadModule, onRefresh} from ${JSON.stringify(clientId)};
-import {main} from "@e-cline/weft_server/src/Bootstrap.res.js";
+import {main} from "@e-cline/weft_server/src/client/Bootstrap.res.js";
 
 main(loadModule, onRefresh);
 `;

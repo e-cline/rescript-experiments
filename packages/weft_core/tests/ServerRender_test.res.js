@@ -2,16 +2,19 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
+import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Hooks$WeftCore from "../src/shared/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Context$WeftCore from "../src/shared/Context.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as TestJsx$WeftCore from "../src/testing/TestJsx.res.js";
+import * as HookImpl$WeftCore from "../src/shared/internal/HookImpl.res.js";
 import * as Entrypoint$WeftCore from "../src/shared/Entrypoint.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
 import * as ServerRender$WeftCore from "../src/shared/ServerRender.res.js";
 import * as SuspenseImpl$WeftCore from "../src/shared/internal/SuspenseImpl.res.js";
 import * as TestRenderer$WeftCore from "../src/testing/TestRenderer.res.js";
+import * as TestScheduler$WeftCore from "../src/testing/TestScheduler.res.js";
 
 function errorOf(f) {
   try {
@@ -190,6 +193,233 @@ Vitest.describe("ServerRender.run", undefined, undefined, undefined, undefined, 
   });
 });
 
+function rendered(contextsOpt, component, props) {
+  let contexts = contextsOpt !== undefined ? contextsOpt : [];
+  let element = ServerRender$WeftCore.renderComponent(component, props, {
+    contexts: contexts
+  });
+  let renderer = TestRenderer$WeftCore.create();
+  TestRenderer$WeftCore.render(renderer, element);
+  return TestRenderer$WeftCore.toString(renderer);
+}
+
+let theme = Context$WeftCore.make("plain");
+
+function storeReads() {
+  return HookImpl$WeftCore.storeChecks.length;
+}
+
+Vitest.describe("ServerRender.renderComponent", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  Vitest.test("gives each hook its initial value, as a first render does", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let ServerRender_test = props => {
+      let start = props.start;
+      let match = Hooks$WeftCore.useState(() => start);
+      let count = match[0];
+      let match$1 = Hooks$WeftCore.useReducer((total, n) => total + n | 0, 10);
+      let ref = Hooks$WeftCore.useRef("ref");
+      let doubled = Hooks$WeftCore.useMemo1(() => (count << 1), [count]);
+      let callback = Hooks$WeftCore.useCallback0(() => "callback");
+      let match$2 = Hooks$WeftCore.useTransition();
+      let deferred = Hooks$WeftCore.useDeferredValue("deferred");
+      let match$3 = Hooks$WeftCore.useReducerWithMapState((state, param) => state, 2, n => n * 3 | 0);
+      return TestJsx$WeftCore.Elements.jsx("p", {
+        children: [
+          count.toString(),
+          match$1[0].toString(),
+          ref.current,
+          doubled.toString(),
+          callback(),
+          match$2[0] ? "pending" : "idle",
+          deferred,
+          match$3[0].toString()
+        ].join(" ")
+      });
+    };
+    t.expect(rendered(undefined, ServerRender_test, {
+      start: 4
+    })).toBe("<p>4 10 ref 8 callback idle deferred 6</p>");
+  });
+  Vitest.test("renders again when the component sets its own state while rendering", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let renders = {
+      contents: 0
+    };
+    let ServerRender_test = props => {
+      renders.contents = renders.contents + 1 | 0;
+      let match = Hooks$WeftCore.useState(() => 0);
+      let count = match[0];
+      if (count < 3) {
+        match[1](count => count + 1 | 0);
+      }
+      return TestJsx$WeftCore.Elements.jsx("b", {
+        children: count
+      });
+    };
+    t.expect(rendered(undefined, ServerRender_test, {})).toBe("<b>3</b>");
+    t.expect(renders.contents).toBe(4);
+  });
+  Vitest.test("reads contexts from its options, innermost last, and puts them back after", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let ServerRender_test = props => TestJsx$WeftCore.Elements.jsx("i", {
+      children: Hooks$WeftCore.useContext(theme)
+    });
+    t.expect(rendered(undefined, ServerRender_test, {})).toBe("<i>plain</i>");
+    t.expect(rendered([
+      ServerRender$WeftCore.contextValue(theme, "outer"),
+      ServerRender$WeftCore.contextValue(theme, "dark")
+    ], ServerRender_test, {})).toBe("<i>dark</i>");
+    t.expect(rendered(undefined, ServerRender_test, {})).toBe("<i>plain</i>");
+    let renderer = TestRenderer$WeftCore.create();
+    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(ServerRender_test, {}));
+    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<i>plain</i>");
+  });
+  Vitest.testAsync("never runs effects, and drops an update made later", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let ran = [];
+    let setLater = {
+      contents: undefined
+    };
+    let ServerRender_test = props => {
+      let match = Hooks$WeftCore.useState(() => 0);
+      setLater.contents = match[1];
+      Hooks$WeftCore.useEffect0(() => {
+        ran.push("effect");
+      });
+      Hooks$WeftCore.useLayoutEffect0(() => {
+        ran.push("layout");
+      });
+      return TestJsx$WeftCore.Elements.jsx("b", {
+        children: match[0]
+      });
+    };
+    t.expect(rendered(undefined, ServerRender_test, {})).toBe("<b>0</b>");
+    Stdlib_Option.forEach(setLater.contents, set => set(count => count + 1 | 0));
+    TestScheduler$WeftCore.flushAll();
+    await new Promise((resolve, param) => {
+      setTimeout(() => resolve(), 5);
+    });
+    return t.expect(ran).toEqual([]);
+  });
+  Vitest.test("reads useSyncExternalStore's server snapshot, and fails without one", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let subscribe = param => (() => {});
+    let ServerRender_test = props => {
+      let value = props.withServer ? Hooks$WeftCore.useSyncExternalStore(subscribe, () => "browser", () => "server") : Hooks$WeftCore.useSyncExternalStore(subscribe, () => "browser", undefined);
+      return TestJsx$WeftCore.Elements.jsx("s", {
+        children: value
+      });
+    };
+    let before = HookImpl$WeftCore.storeChecks.length;
+    let element = ServerRender$WeftCore.renderComponent(ServerRender_test, {
+      withServer: true
+    }, {
+      contexts: []
+    });
+    t.expect(HookImpl$WeftCore.storeChecks.length).toBe(before);
+    let renderer = TestRenderer$WeftCore.create();
+    TestRenderer$WeftCore.render(renderer, element);
+    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<s>server</s>");
+    t.expect(errorOf(() => rendered(undefined, ServerRender_test, {
+      withServer: false
+    }))).toEqual("WeftCore: useSyncExternalStore needs a ~getServerSnapshot to render on the server (the store is the browser's): the snapshot the HTML should show");
+    t.expect(HookImpl$WeftCore.storeChecks.length).toBe(before);
+  });
+  Vitest.testAsync("throws Suspended for a pending promise, and renders once it has settled", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let resolve = {
+      contents: param => {}
+    };
+    let promise = new Promise((done, param) => {
+      resolve.contents = done;
+    });
+    let ServerRender_test = props => {
+      let match = Hooks$WeftCore.useState(() => "got ");
+      return TestJsx$WeftCore.Elements.jsx("u", {
+        children: match[0] + Hooks$WeftCore.use(props.promise)
+      });
+    };
+    let suspendedOn;
+    try {
+      ServerRender$WeftCore.renderComponent(ServerRender_test, {
+        promise: promise
+      }, {
+        contexts: []
+      });
+      suspendedOn = undefined;
+    } catch (raw_error) {
+      suspendedOn = ServerRender$WeftCore.suspendedOn(Primitive_exceptions.internalToException(raw_error));
+    }
+    t.expect(Stdlib_Option.isSome(suspendedOn)).toBe(true);
+    t.expect(errorOf(() => Hooks$WeftCore.useState(() => 0))).toEqual("WeftCore: hooks can only be called while a function component is rendering");
+    resolve.contents("there");
+    await promise.then(param => {});
+    return t.expect(rendered(undefined, ServerRender_test, {
+      promise: promise
+    })).toBe("<u>got there</u>");
+  });
+  Vitest.test("rethrows a component's JS error as itself, and is only in effect during the call", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let ServerRender_test = props => {
+      Hooks$WeftCore.useState(() => 0);
+      return Stdlib_JsError.throwWithMessage("failed");
+    };
+    t.expect(errorOf(() => rendered(undefined, ServerRender_test, {}))).toEqual("failed");
+    t.expect(ServerRender$WeftCore.isRenderingComponent()).toBe(false);
+    let ServerRender_test$1 = props => TestJsx$WeftCore.Elements.jsx("b", {
+      children: ServerRender$WeftCore.isRenderingComponent() ? "yes" : "no"
+    });
+    t.expect(rendered(undefined, ServerRender_test$1, {})).toBe("<b>yes</b>");
+    t.expect(ServerRender$WeftCore.isRenderingComponent()).toBe(false);
+  });
+  Vitest.test("sets aside a client render it's called from, which carries on as before", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let ServerRender_test = props => {
+      let label = props.label;
+      let match = Hooks$WeftCore.useState(() => label);
+      return TestJsx$WeftCore.Elements.jsx("i", {
+        children: match[0]
+      });
+    };
+    let inner = {
+      contents: TestJsx$WeftCore.$$null
+    };
+    let ServerRender_test$1 = props => {
+      let match = Hooks$WeftCore.useState(() => 0);
+      inner.contents = ServerRender$WeftCore.renderComponent(ServerRender_test, {
+        label: "inner"
+      }, {
+        contexts: []
+      });
+      let match$1 = Hooks$WeftCore.useState(() => "host");
+      return TestJsx$WeftCore.Elements.jsx("b", {
+        children: match[0].toString() + ` ` + match$1[0]
+      });
+    };
+    let renderer = TestRenderer$WeftCore.create();
+    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(ServerRender_test$1, {}));
+    let innerRenderer = TestRenderer$WeftCore.create();
+    TestRenderer$WeftCore.render(innerRenderer, inner.contents);
+    t.expect(TestRenderer$WeftCore.toString(innerRenderer)).toBe("<i>inner</i>");
+    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<b>0 host</b>");
+    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(ServerRender_test$1, {}));
+    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<b>0 host</b>");
+  });
+  Vitest.test("sets aside a server component's run too: inside one, hooks work, and fail again after", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let ServerRender_test = props => {
+      let match = Hooks$WeftCore.useState(() => "client");
+      return TestJsx$WeftCore.Elements.jsx("i", {
+        children: match[0]
+      });
+    };
+    let result = ServerRender$WeftCore.run(() => {
+      let inner = rendered(undefined, ServerRender_test, {});
+      return [
+        inner,
+        ServerRender$WeftCore.isRunning(),
+        errorOf(() => Hooks$WeftCore.useState(() => 0))
+      ];
+    });
+    t.expect(result).toEqual([
+      "<i>client</i>",
+      true,
+      serverMessage
+    ]);
+  });
+});
+
 Vitest.describe("Entrypoint", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   let ServerRender_test = props => TestJsx$WeftCore.Elements.jsx("button", {
     children: props.label
@@ -220,5 +450,8 @@ export {
   errorOf,
   serverMessage,
   Stateful,
+  rendered,
+  theme,
+  storeReads,
 }
 /*  Not a pure module */

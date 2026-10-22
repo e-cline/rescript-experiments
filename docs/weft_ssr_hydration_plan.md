@@ -36,9 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phase 7.0 is done (§0 says where it went its own way); 7.1 is next. The decisions are settled
-(Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same
-branch as phases 0 to 6, a commit or a few each, each ending green, with a review before the next.
+Phases 7.0 and 7.1 are done (§0 and §2 say where they went their own way); 7.2 is next. The
+decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and
+7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
+review before the next.
 
 ## What was verified before writing this
 
@@ -217,6 +218,12 @@ updates dropped. Two need changes of their own:
 `ServerRender.run` (server components, which must not have state) is unchanged: its hooks still fail
 with error 14. The two are different calls on purpose: a server component that used `useState`
 should still be told it can't.
+
+As built (phase 7.1): `HookImpl.renderForServer` does the call, setting aside every field of the
+hook state (not only the fiber) and the server-component flag, so a client component can be rendered
+from inside a server component's `run` too; `ServerRender.isRenderingComponent` says whether one is
+being rendered; and error 15 is `useSyncExternalStore` without `~getServerSnapshot` on the server.
+(Hydration's use of the server snapshot is phase 7.3's.)
 
 **The page on the server.** Entrypoints read their page from context (`useNavigation`, and through
 it `Rpc.use` and `useRefetchable`). `Page` renders the HTML inside `Navigation.show`'s provider,
@@ -732,7 +739,7 @@ new behaviour. Done.
 
 **Phase 7.1 -- Hooks on the server.** `ServerRender.renderComponent` (with an options record, which
 §11's position joins later) and its resets; `useSyncExternalStore(~getServerSnapshot)` (and its use
-during hydration, wired in 7.3); with their tests. Small, and everything after depends on it.
+during hydration, wired in 7.3); with their tests. Small, and everything after depends on it. Done.
 
 **Phase 7.2 -- The HTML renderer.** `DomProps`' shared rules (with `DomHost` moved onto them, its
 tests unchanged), then `WeftDom.Html.renderToString`: every element kind, props, escaping, special

@@ -339,7 +339,7 @@ Vitest.describe("useSyncExternalStore", undefined, undefined, undefined, undefin
   };
   let getSnapshot = () => value.contents;
   let Effects_test = props => {
-    let value = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot);
+    let value = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined);
     return TestJsx$WeftCore.Elements.jsx("span", {
       id: "v",
       children: value
@@ -362,7 +362,7 @@ Vitest.describe("useSyncExternalStore", undefined, undefined, undefined, undefin
   });
   Vitest.test("a change between rendering and subscribing is caught", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let Effects_test = props => {
-      let value$1 = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot);
+      let value$1 = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined);
       Hooks$WeftCore.useLayoutEffect0(() => {
         if (value.contents === 10) {
           value.contents = 11;
@@ -396,7 +396,7 @@ Vitest.describe("useSyncExternalStore: more cases", undefined, undefined, undefi
     };
     let Effects_test$1 = props => TestJsx$WeftCore.Elements.jsx("i", {
       id: "value",
-      children: Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot)
+      children: Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined)
     });
     value.contents = 0;
     let renderer = TestRenderer$WeftCore.create();
@@ -416,7 +416,7 @@ Vitest.describe("useSyncExternalStore: more cases", undefined, undefined, undefi
       return TestJsx$WeftCore.$$null;
     };
     let Effects_test$1 = props => {
-      let value = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot);
+      let value = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined);
       return TestJsx$WeftCore.Elements.jsxs("i", {
         id: "value",
         children: [

@@ -63,7 +63,7 @@ function FullApi$App(props) {
   let match$2 = Hooks$WeftCore.useTransition();
   let startTransition = match$2[1];
   let deferred = Hooks$WeftCore.useDeferredValue(match$1[0]);
-  let stored = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot);
+  let stored = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined);
   Hooks$WeftCore.useEffect1(() => {
     dispatch(count);
   }, [count]);

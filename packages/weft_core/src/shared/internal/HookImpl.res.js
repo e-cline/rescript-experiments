@@ -439,6 +439,57 @@ function clearStoreReads() {
   storeChecks.splice(0, storeChecks.length);
 }
 
+let renderingForServer = {
+  contents: false
+};
+
+function renderForServer(component, props) {
+  let saved = {
+    fiber: state.fiber,
+    currentHook: state.currentHook,
+    workInProgressHook: state.workInProgressHook,
+    mode: state.mode,
+    didScheduleRenderPhaseUpdate: state.didScheduleRenderPhaseUpdate,
+    didReceiveUpdate: state.didReceiveUpdate,
+    renderLanes: state.renderLanes
+  };
+  let wasOnServer = onServer.contents;
+  let wasForServer = renderingForServer.contents;
+  let savedChecks = storeChecks.slice();
+  onServer.contents = false;
+  renderingForServer.contents = true;
+  let restore = () => {
+    state.fiber = saved.fiber;
+    state.currentHook = saved.currentHook;
+    state.workInProgressHook = saved.workInProgressHook;
+    state.mode = saved.mode;
+    state.didScheduleRenderPhaseUpdate = saved.didScheduleRenderPhaseUpdate;
+    state.didReceiveUpdate = saved.didReceiveUpdate;
+    state.renderLanes = saved.renderLanes;
+    onServer.contents = wasOnServer;
+    renderingForServer.contents = wasForServer;
+    clearStoreReads();
+    savedChecks.forEach(check => {
+      storeChecks.push(check);
+    });
+  };
+  let fiber = Fiber$WeftCore.make("FunctionComponent", null, props);
+  let element;
+  try {
+    element = renderWithHooks(undefined, fiber, component, props, Lanes$WeftCore.defaultLane);
+  } catch (raw_thrown) {
+    let thrown = Primitive_exceptions.internalToException(raw_thrown);
+    if (thrown.RE_EXN_ID === "JsExn") {
+      restore();
+      throw thrown._1;
+    }
+    restore();
+    throw thrown;
+  }
+  restore();
+  return element;
+}
+
 function depsEqual(previous, next) {
   if (previous !== undefined && next !== undefined && previous.length === next.length) {
     return previous.every((value, index) => Object.is(value, next[index]));
@@ -614,6 +665,8 @@ export {
   recordStoreRead,
   storesUnchanged,
   clearStoreReads,
+  renderingForServer,
+  renderForServer,
   depsEqual,
   useMemo,
   useRef,

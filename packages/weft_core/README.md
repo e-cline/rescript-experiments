@@ -217,8 +217,10 @@ one-argument wrapper.
 
 Everything in `src/shared/` runs anywhere, in a browser or on a server, with no DOM: the reconciler
 and its hooks only ever touch a host through `HostConfig`. `ServerRender` is for server renderers
-calling components outside the reconciler. `src/testing/` has `TestRenderer`, `TestScheduler` and
-`TestJsx`, for tests.
+calling components outside the reconciler: `run` for server components (whose stateful hooks fail),
+and `renderComponent` for client components rendered to HTML (whose hooks work as on a first render
+that never commits; `useSyncExternalStore` needs its `~getServerSnapshot` there). `src/testing/` has
+`TestRenderer`, `TestScheduler` and `TestJsx`, for tests.
 
 ## Error codes
 
@@ -241,6 +243,7 @@ leave the messages out, throwing `WeftCore error <code>` instead:
 |   12 | A value that isn't an element was rendered.                                                                  |
 |   13 | A lazy element reached the reconciler unresolved (a bug in WeftCore).                                        |
 |   14 | A hook that keeps state or runs effects was used in a component rendered on the server.                      |
+|   15 | `useSyncExternalStore` without a `~getServerSnapshot`, rendered on the server.                               |
 
 Codes don't change once published: a new error gets the next number.
 

@@ -55,8 +55,21 @@ type store<'snapshot> = {
   mutable getSnapshot: unit => 'snapshot,
 }
 
-let useSyncExternalStore = (~subscribe, ~getSnapshot) => {
-  let value = getSnapshot()
+let useSyncExternalStore = (~subscribe, ~getSnapshot, ~getServerSnapshot=?) => {
+  let value = if HookImpl.renderingForServer.contents {
+    switch getServerSnapshot {
+    | Some(getServerSnapshot) => getServerSnapshot()
+    | None =>
+      Errors.fail(
+        15,
+        Common.Env.isDev
+          ? "WeftCore: useSyncExternalStore needs a ~getServerSnapshot to render on the server (the store is the browser's): the snapshot the HTML should show"
+          : "",
+      )
+    }
+  } else {
+    getSnapshot()
+  }
   // Lets a render that paused partway check the store didn't change meanwhile.
   HookImpl.recordStoreRead(() => Object.is(getSnapshot(), value))
   let (_, dispatch) = useReducer((count, ()) => count + 1, 0)

@@ -246,7 +246,7 @@ Vitest.describe("useSyncExternalStore in a paused render", undefined, undefined,
   let subscribe = param => (() => {});
   let getSnapshot = () => value.contents;
   let Concurrent_test = props => {
-    let value = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot);
+    let value = Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined);
     TestScheduler$WeftCore.advanceTime(3.0);
     return TestJsx$WeftCore.Elements.jsx("i", {
       id: props.id,

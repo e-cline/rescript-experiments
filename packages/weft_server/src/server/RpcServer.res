@@ -5,8 +5,6 @@ Answering RPCs, on the server: see the interface. Server only: the directive kee
 build from importing this file (the Vite plugin refuses it, naming the chain of imports).
 */
 
-type signal = Streams.Signal.t
-
 module Codec = RpcCodec
 
 external toUnknown: 'a => unknown = "%identity"

@@ -24,7 +24,7 @@ function useSignal(signal) {
     return () => EffectBase$Signals.dispose(effect);
   }, [signal]);
   let getSnapshot = Hooks$WeftCore.useCallback1(() => Signal$Signals.peek(signal), [signal]);
-  return Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot);
+  return Hooks$WeftCore.useSyncExternalStore(subscribe, getSnapshot, undefined);
 }
 
 function useAtom(atom) {

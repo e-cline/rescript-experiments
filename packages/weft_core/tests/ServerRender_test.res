@@ -2,7 +2,8 @@
 
 /***
 What server renderers rely on: `ServerRender.run` (hooks fail with a message saying why, `use`
-suspends, and nothing leaks into client renders) and `Entrypoint` marks.
+suspends, and nothing leaks into client renders), `ServerRender.renderComponent` (client components
+on the server: hooks work as on a first render that never commits) and `Entrypoint` marks.
 */
 
 open Vitest
@@ -120,6 +121,259 @@ describe("ServerRender.run", () => {
     TestRenderer.render(renderer, <Host />)
     t->expect(TestRenderer.toString(renderer))->Expect.toBe("<b>0</b>")
   })
+})
+
+/** What `component` rendered with `props` through `renderComponent`, as the TestRenderer prints it. */
+let rendered = (~contexts=[], component, props) => {
+  let element = ServerRender.renderComponent(component, props, {contexts: contexts})
+  let renderer = TestRenderer.create()
+  TestRenderer.render(renderer, element)
+  TestRenderer.toString(renderer)
+}
+
+let theme = Context.make("plain")
+
+/** Store reads the reconciler would check before committing: none may be left behind. */
+let storeReads = () => Array.length(HookImpl.storeChecks)
+
+describe("ServerRender.renderComponent", () => {
+  test("gives each hook its initial value, as a first render does", t => {
+    module Everything = {
+      @jsx.component
+      let make = (~start: int) => {
+        let (count, _) = Hooks.useState(() => start)
+        let (total, _) = Hooks.useReducer((total, n) => total + n, 10)
+        let ref = Hooks.useRef("ref")
+        let doubled = Hooks.useMemo1(() => count * 2, [count])
+        let callback = Hooks.useCallback0(() => "callback")
+        let (isPending, _) = Hooks.useTransition()
+        let deferred = Hooks.useDeferredValue("deferred")
+        let (mapped, _) = Hooks.useReducerWithMapState((state, _: unit) => state, 2, n => n * 3)
+        <p>
+          {TestJsx.string(
+            [
+              Int.toString(count),
+              Int.toString(total),
+              ref.current,
+              Int.toString(doubled),
+              callback(),
+              isPending ? "pending" : "idle",
+              deferred,
+              Int.toString(mapped),
+            ]->Array.join(" "),
+          )}
+        </p>
+      }
+    }
+    t
+    ->expect(rendered(Everything.make, {start: 4}))
+    ->Expect.toBe("<p>4 10 ref 8 callback idle deferred 6</p>")
+  })
+
+  test("renders again when the component sets its own state while rendering", t => {
+    let renders = ref(0)
+    module Derived = {
+      @jsx.component
+      let make = () => {
+        renders := renders.contents + 1
+        let (count, setCount) = Hooks.useState(() => 0)
+        if count < 3 {
+          setCount(count => count + 1)
+        }
+        <b> {TestJsx.int(count)} </b>
+      }
+    }
+    t->expect(rendered(Derived.make, {}))->Expect.toBe("<b>3</b>")
+    t->expect(renders.contents)->Expect.toBe(4)
+  })
+
+  test("reads contexts from its options, innermost last, and puts them back after", t => {
+    module Themed = {
+      @jsx.component
+      let make = () => <i> {TestJsx.string(Hooks.useContext(theme))} </i>
+    }
+    t->expect(rendered(Themed.make, {}))->Expect.toBe("<i>plain</i>")
+    t
+    ->expect(
+      rendered(
+        ~contexts=[
+          ServerRender.contextValue(theme, "outer"),
+          ServerRender.contextValue(theme, "dark"),
+        ],
+        Themed.make,
+        {},
+      ),
+    )
+    ->Expect.toBe("<i>dark</i>")
+    // Back to the default for the next call, and for client renders.
+    t->expect(rendered(Themed.make, {}))->Expect.toBe("<i>plain</i>")
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, <Themed />)
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe("<i>plain</i>")
+  })
+
+  testAsync("never runs effects, and drops an update made later", async t => {
+    let ran = []
+    let setLater = ref(None)
+    module Effects = {
+      @jsx.component
+      let make = () => {
+        let (count, setCount) = Hooks.useState(() => 0)
+        setLater := Some(setCount)
+        Hooks.useEffect0(
+          () => {
+            ran->Array.push("effect")
+            None
+          },
+        )
+        Hooks.useLayoutEffect0(
+          () => {
+            ran->Array.push("layout")
+            None
+          },
+        )
+        <b> {TestJsx.int(count)} </b>
+      }
+    }
+    t->expect(rendered(Effects.make, {}))->Expect.toBe("<b>0</b>")
+    // An update from a handler kept somewhere: it reaches no root, and nothing renders.
+    setLater.contents->Option.forEach(set => set(count => count + 1))
+    TestScheduler.flushAll()
+    await Promise.make((resolve, _) => setTimeout(() => resolve(), 5)->ignore)
+    t->expect(ran)->Expect.toEqual([])
+  })
+
+  test("reads useSyncExternalStore's server snapshot, and fails without one", t => {
+    let subscribe = _ => () => ()
+    module Store = {
+      @jsx.component
+      let make = (~withServer: bool) => {
+        let value = withServer
+          ? Hooks.useSyncExternalStore(
+              ~subscribe,
+              ~getSnapshot=() => "browser",
+              ~getServerSnapshot=() => "server",
+            )
+          : Hooks.useSyncExternalStore(~subscribe, ~getSnapshot=() => "browser")
+        <s> {TestJsx.string(value)} </s>
+      }
+    }
+    let before = storeReads()
+    let element = ServerRender.renderComponent(Store.make, {withServer: true}, {contexts: []})
+    // The reads the reconciler would check before a commit aren't left behind (checked before
+    // anything renders, since a client render clears them too).
+    t->expect(storeReads())->Expect.toBe(before)
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, element)
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe("<s>server</s>")
+    t
+    ->expect(errorOf(() => rendered(Store.make, {withServer: false})))
+    ->Expect.toEqual(
+      Some(
+        "WeftCore: useSyncExternalStore needs a ~getServerSnapshot to render on the server (the store is the browser's): the snapshot the HTML should show",
+      ),
+    )
+    t->expect(storeReads())->Expect.toBe(before)
+  })
+
+  testAsync("throws Suspended for a pending promise, and renders once it has settled", async t => {
+    let (promise, resolve) = {
+      let resolve = ref(_ => ())
+      let promise = Promise.make((done, _) => resolve := done)
+      (promise, resolve)
+    }
+    module Waits = {
+      @jsx.component
+      let make = (~promise: promise<string>) => {
+        let (prefix, _) = Hooks.useState(() => "got ")
+        <u> {TestJsx.string(prefix ++ Hooks.use(promise))} </u>
+      }
+    }
+    let suspendedOn = switch ServerRender.renderComponent(
+      Waits.make,
+      {promise: promise},
+      {contexts: []},
+    ) {
+    | _ => None
+    | exception error => ServerRender.suspendedOn(error)
+    }
+    t->expect(Option.isSome(suspendedOn))->Expect.toBe(true)
+    // Nothing of the call is left: hooks outside a component say so.
+    t
+    ->expect(errorOf(() => Hooks.useState(() => 0)))
+    ->Expect.toEqual(
+      Some("WeftCore: hooks can only be called while a function component is rendering"),
+    )
+    resolve.contents("there")
+    await promise->Promise.thenResolve(_ => ())
+    t->expect(rendered(Waits.make, {promise: promise}))->Expect.toBe("<u>got there</u>")
+  })
+
+  test("rethrows a component's JS error as itself, and is only in effect during the call", t => {
+    module Fails = {
+      @jsx.component
+      let make = () => {
+        let (_, _) = Hooks.useState(() => 0)
+        JsError.throwWithMessage("failed")
+      }
+    }
+    t->expect(errorOf(() => rendered(Fails.make, {})))->Expect.toEqual(Some("failed"))
+    t->expect(ServerRender.isRenderingComponent())->Expect.toBe(false)
+    module Inside = {
+      @jsx.component
+      let make = () => <b> {TestJsx.string(ServerRender.isRenderingComponent() ? "yes" : "no")} </b>
+    }
+    t->expect(rendered(Inside.make, {}))->Expect.toBe("<b>yes</b>")
+    t->expect(ServerRender.isRenderingComponent())->Expect.toBe(false)
+  })
+
+  test("sets aside a client render it's called from, which carries on as before", t => {
+    module Stateful = {
+      @jsx.component
+      let make = (~label: string) => {
+        let (value, _) = Hooks.useState(() => label)
+        <i> {TestJsx.string(value)} </i>
+      }
+    }
+    let inner = ref(TestJsx.null)
+    module Host = {
+      @jsx.component
+      let make = () => {
+        let (count, _) = Hooks.useState(() => 0)
+        inner := ServerRender.renderComponent(Stateful.make, {label: "inner"}, {contexts: []})
+        let (other, _) = Hooks.useState(() => "host")
+        <b> {TestJsx.string(`${Int.toString(count)} ${other}`)} </b>
+      }
+    }
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, <Host />)
+    let innerRenderer = TestRenderer.create()
+    TestRenderer.render(innerRenderer, inner.contents)
+    t->expect(TestRenderer.toString(innerRenderer))->Expect.toBe("<i>inner</i>")
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe("<b>0 host</b>")
+    TestRenderer.render(renderer, <Host />)
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe("<b>0 host</b>")
+  })
+
+  test(
+    "sets aside a server component's run too: inside one, hooks work, and fail again after",
+    t => {
+      module Stateful = {
+        @jsx.component
+        let make = () => {
+          let (value, _) = Hooks.useState(() => "client")
+          <i> {TestJsx.string(value)} </i>
+        }
+      }
+      let result = ServerRender.run(
+        () => {
+          let inner = rendered(Stateful.make, {})
+          (inner, ServerRender.isRunning(), errorOf(() => Hooks.useState(() => 0)))
+        },
+      )
+      t->expect(result)->Expect.toEqual(("<i>client</i>", true, Some(serverMessage)))
+    },
+  )
 })
 
 describe("Entrypoint", () => {

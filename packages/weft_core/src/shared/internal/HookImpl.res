@@ -518,6 +518,56 @@ let storesUnchanged = () => storeChecks->Array.every(isUnchanged => isUnchanged(
 let clearStoreReads = () =>
   storeChecks->Array.splice(~start=0, ~remove=Array.length(storeChecks), ~insert=[])
 
+// Client components on the server
+
+/**
+Whether a server renderer is calling a client component (`ServerRender.renderComponent`): hooks
+work, as on a first render that never commits, and `useSyncExternalStore` reads its server snapshot.
+*/
+let renderingForServer = ref(false)
+
+/**
+Calls `component` with `props` as the mount of a fiber that's in no tree: its hooks give their
+initial state, its effects are recorded but never run (nothing commits), and an update it makes
+later reaches no root and is dropped. Whatever render was in progress (a client render, or a server
+component's `renderOnServer`) is set aside and restored however the call ends, with the store reads
+this call recorded cleared, since only a commit checks them.
+*/
+let renderForServer = (component: unknown => Element.t, props: unknown): Element.t => {
+  let saved = {...state, fiber: state.fiber}
+  let wasOnServer = onServer.contents
+  let wasForServer = renderingForServer.contents
+  let savedChecks = storeChecks->Array.copy
+  onServer := false
+  renderingForServer := true
+  let restore = () => {
+    state.fiber = saved.fiber
+    state.currentHook = saved.currentHook
+    state.workInProgressHook = saved.workInProgressHook
+    state.mode = saved.mode
+    state.didScheduleRenderPhaseUpdate = saved.didScheduleRenderPhaseUpdate
+    state.didReceiveUpdate = saved.didReceiveUpdate
+    state.renderLanes = saved.renderLanes
+    onServer := wasOnServer
+    renderingForServer := wasForServer
+    clearStoreReads()
+    savedChecks->Array.forEach(check => storeChecks->Array.push(check))
+  }
+  let fiber = Fiber.make(~tag=FunctionComponent, ~key=Nullable.null, ~pendingProps=props)
+  switch renderWithHooks(None, fiber, component, props, Lanes.defaultLane) {
+  | element =>
+    restore()
+    element
+  // A JS error is rethrown as itself, not wrapped in `JsExn`.
+  | exception JsExn(thrown) =>
+    restore()
+    JsExn.throw(thrown)
+  | exception error =>
+    restore()
+    throw(error)
+  }
+}
+
 // Memoization
 
 type memo<'value> = {value: 'value, deps: option<array<unknown>>}

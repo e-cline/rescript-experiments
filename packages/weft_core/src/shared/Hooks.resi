@@ -82,10 +82,14 @@ by `Object.is`, until the store changes); `subscribe` registers a listener for c
 function that unregisters it. The component renders again whenever the snapshot changes.
 `subscribe` is called again whenever its identity changes, so define it outside the component or
 memoize it.
+
+`getServerSnapshot` is what to render on the server (`ServerRender.renderComponent`), where the
+store isn't: the snapshot the page's HTML shows. Rendering there without one fails.
 */
 let useSyncExternalStore: (
   ~subscribe: (unit => unit) => unit => unit,
   ~getSnapshot: unit => 'snapshot,
+  ~getServerSnapshot: unit => 'snapshot=?,
 ) => 'snapshot
 
 /**

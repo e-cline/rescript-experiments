@@ -23,10 +23,10 @@ request ──► Render.toStream (server components run, once)
               │ payload rows
               ├──────────────► the page: <script>__weft.push(row)</script>, for the client
               ▼
-            Client.fromStream, on the server (entrypoints imported there)
+            Decoder.fromStream, on the server (entrypoints imported there)
               │ the element tree the browser will decode, row for row
               ▼
-            WeftDom.Server.renderToStream (entrypoints called, with their initial state)
+            WeftDom.Html.renderToStream (entrypoints called, with their initial state)
               │ HTML: the shell, then each boundary's segment
               ▼
             the page: <div id="root">shell</div>, rows, <template>segment</template><script>swap</script>
@@ -36,10 +36,9 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Not started. This document is the plan; some of its decisions are settled, and the rest are
-recommendations waiting for review (Decisions, at the end). The phases (7.1 to 7.6, then the
-follow-ups 7.7 and 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending
-green, with a review before the next.
+Not started. This document is the plan, and its decisions are settled (Decisions, at the end). The
+phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same branch as phases 0 to 6, a
+commit or a few each, each ending green, with a review before the next.
 
 ## What was verified before writing this
 
@@ -85,10 +84,10 @@ Spikes, against the code as phase 6 left it (scripts in the session's scratchpad
    `async`, and its preloads) at once.
 2. `Render.toStream` renders the element tree as today: server components run, once, and the payload
    streams out. The page tees it: one branch goes to the page as row scripts (as today), the other
-   to a `Client` on the server, which decodes it into elements exactly as the browser will,
-   importing entrypoint files from the server's own copy of the reference map
-   (`virtual:weft/ssr-references`).
-3. `WeftDom.Server.renderToStream` renders the decoded tree to HTML: host elements as tags, text as
+   to a `Decoder` on the server (today's `WeftServer.Client`, renamed in phase 7.0), which decodes
+   it into elements exactly as the browser will, importing entrypoint files from the server's own
+   copy of the reference map (`virtual:weft/ssr-references`).
+3. `WeftDom.Html.renderToStream` renders the decoded tree to HTML: host elements as tags, text as
    text, entrypoints and shared components called (their hooks giving initial state, their effects
    not running), providers providing. A `Lazy` element (a row that hasn't arrived) or a `Hooks.use`
    on a pending promise suspends, as on the client: outside every boundary, the shell waits for it;
@@ -115,6 +114,47 @@ Spikes, against the code as phase 6 left it (scripts in the session's scratchpad
 
 ## Design
 
+### 0. Client and server code, kept apart
+
+Phase 7 makes the question "where does this run?" harder: entrypoints start running on the server,
+the payload decoder (`WeftServer.Client`) runs on both sides, and an HTML renderer joins the DOM
+renderer. Today the packages don't say: `weft_server` has the browser's bootstrap in it, `Rpc` has
+the client's `call` and the server's `router` in one module, and "Client" means two different things
+(`WeftDom.Client`, a DOM root; `WeftServer.Client`, the payload decoder, which isn't only the
+client's any more). Phase 7.0 sorts this out before anything is added, so each module says where it
+runs, and the build checks it:
+
+- **Each package's `src` has `client/`, `server/` and `shared/`** (and `testing/` for the test
+  helpers). ReScript module names don't depend on directories, so this moves files without renaming
+  modules (except as below).
+  - `weft_core`: everything is `shared/` (the reconciler, hooks, elements, `ServerRender`), except
+    `TestRenderer`, `TestScheduler` and `TestJsx` in `testing/`.
+  - `weft_dom`: `client/` has `Client` (roots) and `DomHost`; `server/` has `Html` (the HTML
+    renderer, §3); `shared/` has `Dom`, `DomProps` (the prop rules both renderers follow), `Jsx` and
+    `Portal` (a portal element can be made anywhere, and renders nothing on the server).
+  - `weft_server`: `client/` has `Bootstrap`; `server/` has `Render`, `Page` and `RpcServer`;
+    `shared/` has `Payload`, `Decoder`, `Navigation`, `Rpc`, `RpcCodec` and the internals;
+    `testing/` has `Testing`.
+- **Server-only modules are marked `@@weft.server`** (`Render`, `Page`, `RpcServer`, `Html`), the
+  attribute phase 6 added for apps' own server files, so the plugin refuses them to an app's client
+  build and names the chain of imports, exactly as it does an app's server files. The packages
+  compile through `ppx_weft` for this (it writes nothing else into a file without Weft's
+  attributes). Browser-only code (`Bootstrap`, `DomHost`) is harmless to import on the server (it
+  only touches `document` when called), so it isn't marked; calling it there fails at once, in
+  tests.
+- **`Rpc` is split in two**: `Rpc` (shared: `t`, `make`, `makePrepared`, the errors, `call`, `use`)
+  and `RpcServer` (`handler`, `router`, `respond`, `ids`). An RPC's handler file then imports a
+  server-only module, which says what it is; and the client build no longer carries the router.
+- **`WeftServer.Client` becomes `WeftServer.Decoder`**: it decodes payloads into elements, in the
+  browser and (from phase 7.5) on the server. `WeftDom.Client` keeps its name: it's the DOM's roots,
+  client-only.
+- **Each package's README gets a "Where it runs" table**: every public module, and client, server or
+  both.
+
+Nothing changes in behaviour; the tests move with their modules and pass as they are, apart from the
+renames. The package names stay (`weft_server` is "server components", client half included), as
+decided before phase 0.
+
 ### 1. Rendering from the decoded payload
 
 The HTML is rendered from the payload decoded on the server, not from the element tree `Render`
@@ -125,7 +165,7 @@ reasons:
   component a second time (and wait on its database queries again), or need `Render` to produce HTML
   and payload at once from one walk, which tangles the two.
 - **The tree is the browser's, exactly.** Hydration only works if the client renders the same tree
-  the HTML came from. Decoding on the server with the same `Client` means the HTML is rendered from
+  the HTML came from. Decoding on the server with the same `Decoder` means the HTML is rendered from
   the tree the browser will decode, row for row: server components' output as values, keyed ones in
   their fragments, props as they came out of JSON (an `undefined` field gone, a date a new `Date`),
   entrypoints as the components the reference map loads. Nothing has to be kept in step by hand.
@@ -135,7 +175,7 @@ reasons:
 The cost is encoding and decoding the payload once more, on the server: JSON in memory, linear in
 the payload's size, and small next to rendering.
 
-**Where it runs: in the `rsc` environment.** The server's `Client` imports entrypoint files there,
+**Where it runs: in the `rsc` environment.** The server's `Decoder` imports entrypoint files there,
 through a new virtual module, `virtual:weft/ssr-references` (the same map as the client's
 `virtual:weft/client-references`, imported by the server), so the server build bundles the
 entrypoint files too. React's Vite plugin has a third environment (`ssr`) for this, because React
@@ -175,14 +215,15 @@ should still be told it can't.
 
 **The page on the server.** Entrypoints read their page from context (`useNavigation`, and through
 it `Rpc.use` and `useRefetchable`). `Page` renders the HTML inside `Navigation.show`'s provider,
-with a server-side `Navigation.t`: its URL is the request's, its client the server's decoding
-`Client`, and calling `navigate` or `refresh` on it fails (they're for handlers and effects, which
-don't run on the server). `Navigation` gains `Navigation.makeForServer(client, ~url)` for this.
+with a server-side `Navigation.t`: its URL is the request's, its decoder the server's own, and
+calling `navigate` or `refresh` on it fails (they're for handlers and effects, which don't run on
+the server). `Navigation` gains `Navigation.makeForServer(decoder, ~url)` for this.
 
-### 3. The HTML renderer: `WeftDom.Server`
+### 3. The HTML renderer: `WeftDom.Html`
 
-A new module in `weft_dom` (which owns the DOM's rules for props), with no dependency on
-`weft_server`:
+A new module in `weft_dom`'s `server/` (§0), marked `@@weft.server`. It's in `weft_dom` because it
+follows the same prop rules as `DomHost` (in `shared/DomProps`), and doesn't depend on
+`weft_server`: a client-only app could use it for static pages.
 
 ```rescript
 /** The HTML for `element`, streamed: the shell, then each boundary's content as it's ready. */
@@ -281,8 +322,8 @@ segment: `$weftSwap(n)` finds `wb:n`'s marker, removes the fallback's nodes up t
 inserts the template's content in their place, removes the template and the anchor, and rewrites the
 marker to `$`. Then, if hydration has already reached that boundary and left it waiting (§6), it
 tells it: the anchor's marker carries a callback (`marker.$weftRetry`) the hydrator set, which the
-swap calls. The runtime's source lives in `weft_dom` (`Server.swapRuntime`), and its own tests run
-it in jsdom.
+swap calls. The runtime's source lives in `weft_dom` (`Html.swapRuntime`), and its own tests run it
+in jsdom.
 
 **A boundary's segment waits for its rows.** The page writes payload rows as they come and a segment
 once the HTML renderer has it; the renderer can only finish a segment once the rows it needed had
@@ -512,7 +553,7 @@ hydration algorithm is tested in Node, fast, and fuzzed:
   before the shell for its entrypoints, a failed shell falling back to today's page, `~html=false`,
   and the server-side `Navigation.t` (an entrypoint calling `useNavigation` renders; one calling
   `navigate` while rendering fails).
-- End to end in one process: `Render` → `Client` → `WeftDom.Server` → jsdom → `Bootstrap` hydrating,
+- End to end in one process: `Render` → `Decoder` → `WeftDom.Html` → jsdom → `Bootstrap` hydrating,
   against `Support.serve`, with deliveries the test controls.
 
 #### The plugin and the harness
@@ -640,25 +681,31 @@ switching between fallback and content; and `weft_notes`' comment form linking i
 
 ## Packages and layout
 
+After phase 7.0 (§0), and with what phase 7 adds:
+
 ```
 packages/weft_core/src/
-  HostConfig.res                  gains `Hydratable`
-  Reconciler.res(i)               `MakeHydratable`, with `hydrateRoot`; hydration in the work loop
-  internal/Hydration.res          the cursor, claiming, mismatches, dehydrated boundaries
-  ServerRender.res(i)             gains `renderComponent` (client components, on the server)
-  Hooks.res(i)                    `useSyncExternalStore(~getServerSnapshot)`
-  TestRenderer.res(i)             hydratable; `fromMarkup`
+  shared/HostConfig.res             gains `Hydratable`
+  shared/Reconciler.res(i)          `MakeHydratable`, with `hydrateRoot`; hydration in the work loop
+  shared/internal/Hydration.res     the cursor, claiming, mismatches, dehydrated boundaries
+  shared/ServerRender.res(i)        gains `renderComponent` (client components, on the server)
+  shared/Hooks.res(i)               `useSyncExternalStore(~getServerSnapshot)`; `useId` (7.8)
+  testing/TestRenderer.res(i)       hydratable; `fromMarkup`
 packages/weft_dom/src/
-  DomProps.res                    the prop rules, shared by the host and the HTML renderer
-  DomHost.res                     `HostConfig.Hydratable`
-  Server.res(i)                   the HTML renderer: `renderToStream`, `renderToString`, the swap runtime
-  Client.res(i)                   gains `hydrateRoot`
+  shared/DomProps.res               the prop rules, shared by the host and the HTML renderer
+  client/DomHost.res                `HostConfig.Hydratable`; event replay (7.7)
+  client/Client.res(i)              gains `hydrateRoot`
+  server/Html.res(i)                the HTML renderer: `renderToStream`, `renderToString`, the runtime
 packages/weft_server/src/
-  Page.res(i)                     the HTML in the page: shell, rows, segments; `~html`
-  Bootstrap.res                   `hydrateRoot` when the page has HTML
-  Navigation.res(i)               `makeForServer`
-packages/vite_plugin_weft/        `virtual:weft/ssr-references`; the harness's HTML
-examples/weft_notes/, weft_split/ the scenarios again, over hydrated pages
+  shared/Decoder.res(i)             today's `Client`, renamed
+  shared/Rpc.res(i), RpcCodec       declaring and calling RPCs
+  shared/Navigation.res(i)          `makeForServer`
+  server/Render.res(i)              unchanged
+  server/RpcServer.res(i)           `handler`, `router`, `respond`: from today's `Rpc`
+  server/Page.res(i)                the HTML in the page: shell, rows, segments; `~html`
+  client/Bootstrap.res              `hydrateRoot` when the page has HTML
+packages/vite_plugin_weft/          `virtual:weft/ssr-references`; the harness's HTML
+examples/weft_notes/, weft_split/   the scenarios again, over hydrated pages
 ```
 
 New error codes: `weft_core` 15 (`useSyncExternalStore` without `~getServerSnapshot` on the server)
@@ -672,12 +719,18 @@ page).
 Each ends green (build, check, test, typecheck, e2e), the plan updated where the implementation went
 its own way, committed, pushed, and reviewed before the next.
 
+**Phase 7.0 -- Client and server, kept apart** (§0). The `client/`, `server/`, `shared/` and
+`testing/` directories; `@@weft.server` on the server-only modules, with the packages compiling
+through `ppx_weft`, and a plugin test that an app's client importing one is refused; `Rpc` split
+into `Rpc` and `RpcServer`; `WeftServer.Client` renamed `Decoder`; the "Where it runs" tables; the
+apps and the main plan updated for the names. No new behaviour.
+
 **Phase 7.1 -- Hooks on the server.** `ServerRender.renderComponent` (with an options record, which
 §11's position joins later) and its resets; `useSyncExternalStore(~getServerSnapshot)` (and its use
 during hydration, wired in 7.3); with their tests. Small, and everything after depends on it.
 
 **Phase 7.2 -- The HTML renderer.** `DomProps`' shared rules (with `DomHost` moved onto them, its
-tests unchanged), then `WeftDom.Server.renderToString`: every element kind, props, escaping, special
+tests unchanged), then `WeftDom.Html.renderToString`: every element kind, props, escaping, special
 elements, nesting warnings. Then streaming: `renderToStream`, boundaries, markers, segments and the
 swap runtime, with their tests.
 
@@ -692,9 +745,10 @@ host fiber.
 `WeftDom.Client.hydrateRoot`, the swap runtime's retry, the attribute warnings; the jsdom round
 trips and the DOM fuzz test.
 
-**Phase 7.5 -- Pages.** `Page`'s HTML (the server-side `Client`, the tee, the shell, rows, segments,
-the failed-shell fallback, `~html`), `Navigation.makeForServer`, `Bootstrap` hydrating, the plugin's
-`virtual:weft/ssr-references`; `weft_server`'s page tests and the one-process end-to-end tests.
+**Phase 7.5 -- Pages.** `Page`'s HTML (the server-side `Decoder`, the tee, the shell, rows,
+segments, the failed-shell fallback, `~html`), `Navigation.makeForServer`, `Bootstrap` hydrating,
+the plugin's `virtual:weft/ssr-references`; `weft_server`'s page tests and the one-process
+end-to-end tests.
 
 **Phase 7.6 -- The harness, the apps and the browser.** The harness's HTML (`openPage` applying the
 page as a parser would, `hydrated`, `htmlNodes`, `warnings`, `~bootstrap=false`); `weft_notes`' and
@@ -708,9 +762,8 @@ tests. Independent of 7.7; either can come first.
 
 ## Decisions
 
-Settled in review: 3 (dehydrated boundaries, "option A"); 4 and 9 (event replay and `useId` are
-designed here, §10 and §11, and built after the rest, as phases 7.7 and 7.8). The rest are
-recommendations, for review before phase 7.1:
+All settled in review: 3 (dehydrated boundaries, "option A"), 4 and 9 (event replay and `useId`,
+designed here and built after the rest, as phases 7.7 and 7.8), and the rest as recommended.
 
 1. **Render HTML from the payload decoded on the server** (§1), rather than from the original tree:
    server components run once, and the HTML is rendered from exactly the tree the client hydrates.
@@ -737,13 +790,11 @@ recommendations, for review before phase 7.1:
    phases is a rule for 7.2 and 7.3 (the HTML renderer and the reconciler walk the same levels), and
    an options record for `renderComponent`; with those, it doesn't change the architecture.
 
-Questions:
-
-- **`value` and `checked` typed before hydration** (§7): keep what the user typed (recommended, as
-  React does, though a controlled input then shows something other than its state until its next
-  update), or put the prop back at once?
-- **The HTML renderer's place**: `weft_dom` (recommended: it owns the DOM's prop rules, and a
-  client-only app could use it for static pages) or `weft_server`?
+10. **Input typed before hydration is kept** (§7), as React does: hydration doesn't put a controlled
+    `value` or `checked` back over what the user typed or ticked. Until event replay (7.7) tells the
+    component, its state lags what's on screen until its next update.
+11. **The HTML renderer is `weft_dom`'s**, as `WeftDom.Html`, in its `server/` (§0, §3), and the
+    code is reorganized first so client and server code are told apart (phase 7.0).
 
 ## Risks
 

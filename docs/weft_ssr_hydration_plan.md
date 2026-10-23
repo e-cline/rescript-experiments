@@ -281,14 +281,16 @@ client would have set:
 
 - event handlers (`on*`) and `ref` are left out (the hydrator attaches them);
 - `true` writes the attribute empty, `false` and absent leave it out, anything else is its string,
-  escaped (`&`, `<`, `>`, `"`, `'`) in a double-quoted attribute;
+  escaped (`&`, `<`, `>`, `"`, `'`) in a double-quoted attribute, and a `\r` (here, and in text) as
+  `&#13;`, which the parser keeps, where it would make a `\r` it reads a `\n`;
 - `style` writes a `style` attribute, each name in kebab case (`backgroundColor` as
   `background-color`; `--custom` as it is), each value escaped;
 - `value` and `checked`, which the client sets as properties, are written as the attributes that
   give the same initial state: `value="…"` on an `input`, the text of a `textarea` (with a newline
-  first if the value starts with one, since the parser drops the first, verified point 2), and
-  `selected` on the `option` of a `select` whose `value` it is (the renderer keeps the enclosing
-  `select`'s value in the walk, as React's does); `checked` as `checked`.
+  first if the value starts with one, since the parser drops the first, verified point 2; a `pre` or
+  `listing` always gets one, for the same reason, whatever its content starts with), and `selected`
+  on the `option` of a `select` whose `value` it is (the renderer keeps the enclosing `select`'s
+  value in the walk, as React's does); `checked` as `checked`.
 
 **What the parser would change, a development build warns about**, naming where it is (as `Render`'s
 messages do): invalid nesting the parser repairs (a block element in a `<p>`, an `<a>` in an `<a>`,

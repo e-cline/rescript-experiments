@@ -21,10 +21,10 @@ function textIn(renderer, id) {
   return Stdlib_Option.map(TestRenderer$Weft.findById(renderer, id), node => TestRenderer$Weft.children(node).map(TestRenderer$Weft.text).join(""));
 }
 
-async function start(fetch, route, url, onNavigate) {
+async function start(fetch, route, url, onNavigate, onFailed) {
   let renderer = TestRenderer$Weft.create();
   let client = Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch);
-  let navigation = Navigation$WeftServer.make(client, element => TestRenderer$Weft.scheduleRender(renderer, element), url, onNavigate);
+  let navigation = Navigation$WeftServer.make(client, element => TestRenderer$Weft.scheduleRender(renderer, element), url, onNavigate, onFailed);
   let element = await Support$WeftServer.roundTrip(Primitive_option.some(client), undefined, route(url));
   Navigation$WeftServer.show(navigation, element);
   await Support$WeftServer.settle();
@@ -114,7 +114,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let match = Support$WeftServer.serve(undefined, route);
     let match$1 = await start(match[0], route, "/a", url => {
       navigated.push(url);
-    });
+    }, undefined);
     let navigation = match$1[1];
     let renderer = match$1[0];
     Support$WeftServer.bump("outside");
@@ -134,7 +134,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let match = Support$WeftServer.serve(undefined, route);
     let match$1 = await start(match[0], route, "/a", url => {
       navigated.push(url);
-    });
+    }, undefined);
     titles["a"] = "A, renamed";
     await Navigation$WeftServer.refresh(match$1[1]);
     await Support$WeftServer.settle();
@@ -152,7 +152,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
       }
     }, route);
     let served = match[1];
-    let match$1 = await start(match[0], route, "/a", undefined);
+    let match$1 = await start(match[0], route, "/a", undefined, undefined);
     let navigation = match$1[1];
     let slow = Navigation$WeftServer.navigate(navigation, "/slow");
     await Support$WeftServer.settle();
@@ -196,7 +196,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
       }
     }, route$1);
     let served = match[1];
-    let match$1 = await start(match[0], route$1, "/a", undefined);
+    let match$1 = await start(match[0], route$1, "/a", undefined, undefined);
     let navigation = match$1[1];
     let renderer = match$1[0];
     await Navigation$WeftServer.navigate(navigation, "/streaming");
@@ -216,7 +216,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
   Vitest.testAsync("a page whose root fails rejects, and leaves the screen as it was", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
     let match = Support$WeftServer.serve(undefined, route);
-    let match$1 = await start(match[0], route, "/a", undefined);
+    let match$1 = await start(match[0], route, "/a", undefined, undefined);
     let navigation = match$1[1];
     let renderer = match$1[0];
     let before = TestRenderer$Weft.toString(renderer);
@@ -231,6 +231,179 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     t.expect(failed).toBe(true);
     t.expect(TestRenderer$Weft.toString(renderer)).toBe(before);
     return t.expect(Navigation$WeftServer.url(navigation)).toBe("/a");
+  });
+  Vitest.testAsync("a page that can't be shown goes to onFailed instead: navigate's pushed, load's not", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let match = Support$WeftServer.serve(undefined, route);
+    let failures = [];
+    let pushed = [];
+    let match$1 = await start(match[0], route, "/a", url => {
+      pushed.push(url);
+    }, (url, push) => {
+      failures.push([
+        url,
+        push
+      ]);
+    });
+    let navigation = match$1[1];
+    let renderer = match$1[0];
+    let before = TestRenderer$Weft.toString(renderer);
+    await Navigation$WeftServer.navigate(navigation, "/fails");
+    await Navigation$WeftServer.load(navigation, "/fails");
+    await Support$WeftServer.settle();
+    t.expect(failures).toEqual([
+      [
+        "/fails",
+        true
+      ],
+      [
+        "/fails",
+        false
+      ]
+    ]);
+    t.expect(pushed).toEqual([]);
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(before);
+    return t.expect(Navigation$WeftServer.url(navigation)).toBe("/a");
+  });
+  Vitest.testAsync("a fetch that fails (offline, say) goes to onFailed too", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let match = Support$WeftServer.serve(undefined, route);
+    let serverFetch = match[0];
+    let offline = {
+      contents: false
+    };
+    let fetch = (url, signal) => {
+      if (offline.contents) {
+        return Promise.reject({
+          RE_EXN_ID: "Failure",
+          _1: "offline"
+        });
+      } else {
+        return serverFetch(url, signal);
+      }
+    };
+    let failures = [];
+    let match$1 = await start(fetch, route, "/a", undefined, (url, push) => {
+      failures.push([
+        url,
+        push
+      ]);
+    });
+    offline.contents = true;
+    await Navigation$WeftServer.navigate(match$1[1], "/b");
+    return t.expect(failures).toEqual([[
+        "/b",
+        true
+      ]]);
+  });
+  Vitest.testAsync("refresh rejects when it fails, even with onFailed, keeping the page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let match = Support$WeftServer.serve(undefined, route);
+    let serverFetch = match[0];
+    let offline = {
+      contents: false
+    };
+    let fetch = (url, signal) => {
+      if (offline.contents) {
+        return Promise.reject({
+          RE_EXN_ID: "Failure",
+          _1: "offline"
+        });
+      } else {
+        return serverFetch(url, signal);
+      }
+    };
+    let failures = [];
+    let match$1 = await start(fetch, route, "/a", undefined, (url, push) => {
+      failures.push([
+        url,
+        push
+      ]);
+    });
+    let renderer = match$1[0];
+    let before = TestRenderer$Weft.toString(renderer);
+    offline.contents = true;
+    let rejected;
+    try {
+      await Navigation$WeftServer.refresh(match$1[1]);
+      rejected = false;
+    } catch (exn) {
+      rejected = true;
+    }
+    await Support$WeftServer.settle();
+    t.expect(rejected).toBe(true);
+    t.expect(failures).toEqual([]);
+    return t.expect(TestRenderer$Weft.toString(renderer)).toBe(before);
+  });
+});
+
+let click = (fields => {
+  const attributes = fields.attributes ?? {};
+  const link = {
+    getAttribute: name => (name in attributes ? attributes[name] : null),
+    hasAttribute: name => name in attributes,
+  };
+  return {
+    defaultPrevented: false,
+    button: 0,
+    metaKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+    altKey: false,
+    currentTarget: link,
+    ...fields,
+  };
+});
+
+Vitest.describe("following links", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  let from = "https://notes.test/notes/1?tab=comments";
+  Vitest.test("follows a plain click to this origin in place", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "/notes/2", from)).toBe(true);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "https://notes.test/", from)).toBe(true);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "2", from)).toBe(true);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "/notes/1", from)).toBe(true);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      attributes: {
+        target: "_self"
+      }
+    }), "/notes/2", from)).toBe(true);
+  });
+  Vitest.test("leaves a click opening a new tab or window to the browser", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      metaKey: true
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      ctrlKey: true
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      shiftKey: true
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      altKey: true
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      button: 1
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      attributes: {
+        target: "_blank"
+      }
+    }), "/notes/2", from)).toBe(false);
+  });
+  Vitest.test("leaves downloads, other origins, handled clicks and links within the page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      attributes: {
+        download: ""
+      }
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "https://elsewhere.test/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "mailto:someone@notes.test", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({
+      defaultPrevented: true
+    }), "/notes/2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "#comments", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "/notes/1?tab=comments#c2", from)).toBe(false);
+    t.expect(Navigation$WeftServer.staysInPage(click({}), "/notes/1?tab=likes#c2", from)).toBe(true);
   });
 });
 
@@ -253,7 +426,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
       }
     }, route);
     let served = match[1];
-    let match$1 = await start(match[0], route, "/a", undefined);
+    let match$1 = await start(match[0], route, "/a", undefined, undefined);
     let renderer = match$1[0];
     Support$WeftServer.bump("outside");
     Support$WeftServer.bump("in-part");
@@ -277,7 +450,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
   Vitest.testAsync("is replaced by newer children from a refresh, and those by a later refetch", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
     let match = Support$WeftServer.serve(undefined, route);
-    let match$1 = await start(match[0], route, "/a", undefined);
+    let match$1 = await start(match[0], route, "/a", undefined, undefined);
     let renderer = match$1[0];
     comments["a"] = "refetched";
     await Support$WeftServer.refetchers["/comments/a"](undefined);
@@ -308,7 +481,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
       }
     }, route);
     let served = match[1];
-    let match$1 = await start(match[0], route, "/a", undefined);
+    let match$1 = await start(match[0], route, "/a", undefined, undefined);
     comments["a"] = "older";
     let older = Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
@@ -324,7 +497,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
   Vitest.testAsync("a refetch whose root fails rejects, and leaves the part as it was", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
     let match = Support$WeftServer.serve(undefined, route);
-    let match$1 = await start(match[0], route, "/a", undefined);
+    let match$1 = await start(match[0], route, "/a", undefined, undefined);
     let renderer = match$1[0];
     let before = TestRenderer$Weft.toString(renderer);
     let failed;
@@ -406,7 +579,7 @@ Vitest.describe("two parts", undefined, undefined, undefined, undefined, undefin
     }
   };
   let match = Support$WeftServer.serve(undefined, route);
-  let match$1 = await start(match[0], route, "/", undefined);
+  let match$1 = await start(match[0], route, "/", undefined, undefined);
   let renderer = match$1[0];
   version.contents = "2";
   await Support$WeftServer.refetchers["/left"](undefined);
@@ -430,6 +603,7 @@ export {
   reset,
   CommentList,
   route,
+  click,
   refetch,
   pending,
   TwoParts,

@@ -12,8 +12,7 @@ function Link(props) {
     id: props.id,
     href: href,
     onClick: event => {
-      event.preventDefault();
-      Navigation$WeftServer.navigate(navigation, href);
+      Navigation$WeftServer.followLink(navigation, event, href);
     },
     children: props.children
   });

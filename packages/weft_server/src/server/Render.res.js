@@ -297,14 +297,26 @@ async function encodeNode(context, node) {
       let props$1 = node.props;
       let context$2 = enter(context, "<Suspense>");
       let init = enter(context$2, ".children");
+      let childrenContext_request = init.request;
+      let childrenContext_path = init.path;
+      let childrenContext_ancestors = init.ancestors;
+      let childrenContext = {
+        request: childrenContext_request,
+        inSuspense: true,
+        path: childrenContext_path,
+        ancestors: childrenContext_ancestors
+      };
+      let encodeChildren = async () => {
+        try {
+          return await encodeValue(childrenContext, props$1.children);
+        } catch (raw_error) {
+          let error = Primitive_exceptions.internalToException(raw_error);
+          return errorRow(childrenContext, error);
+        }
+      };
       let match$1 = await Promise.all([
         encodeValue(enter(context$2, ".fallback"), props$1.fallback),
-        encodeValue({
-          request: init.request,
-          inSuspense: true,
-          path: init.path,
-          ancestors: init.ancestors
-        }, props$1.children)
+        encodeChildren()
       ]);
       return Payload$WeftServer.element(Payload$WeftServer.suspenseType, node.key, {
         fallback: match$1[0],

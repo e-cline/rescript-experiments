@@ -33,12 +33,18 @@ type t
 A page, fetching with `client` and showing elements with `render` (a root's `render`). `url` is
 the URL of what's on screen; `onNavigate` is called with the new one when `navigate` has rendered
 it (the browser's pushes it onto the history).
+
+`onFailed` is what happens instead when `navigate` or `load` can't show a URL (its payload couldn't
+be fetched, or its root failed): the browser's loads the page the ordinary way, adding it to the
+history when `push` is true (a `navigate`), and in place of the current entry otherwise (a `load`,
+for going back or forward). Without it, they reject.
 */
 let make: (
   Decoder.t,
   ~render: Weft.Element.t => unit,
   ~url: string,
   ~onNavigate: string => unit=?,
+  ~onFailed: (string, ~push: bool) => unit=?,
 ) => t
 
 /**
@@ -60,16 +66,43 @@ let show: (t, Weft.Element.t) => unit
 
 /**
 Fetches `url`'s payload and renders it in a transition, then calls `onNavigate`. Resolves once
-it's been rendered, or straight away if a newer fetch replaced it; rejects if the payload's root
-failed, leaving the screen as it was.
+it's been rendered, or straight away if a newer fetch replaced it. If the payload can't be fetched
+or its root failed, the screen is left as it was, and `onFailed` is called (or, without it, the
+promise rejects).
 */
 let navigate: (t, string) => promise<unit>
 
 /** `navigate` without `onNavigate` (for going back or forward: the URL has changed already). */
 let load: (t, string) => promise<unit>
 
-/** Fetches what's on screen again (`load` of the current URL). */
+/**
+Fetches what's on screen again. If that fails, it rejects, even with `onFailed`: the page's state
+(what's been typed, say) stays, rather than being thrown away by a page load.
+*/
 let refresh: t => promise<unit>
+
+/**
+Whether a click on a link to `href` (relative to `from`, the current URL) should be followed in
+place, by `navigate`, rather than left to the browser: only a plain click (the main button, no
+modifier keys, so not one opening a new tab or window) not already handled (`preventDefault`), on
+a link to this origin without a `target` or `download`, and not one to a part of the page `from`
+is (`#comments`), which the browser scrolls to.
+*/
+let staysInPage: (WeftDom.Dom.event, ~href: string, ~from: string) => bool
+
+/**
+What a link's `onClick` does: `navigate`s to `href` in place of the browser's following it, if
+`staysInPage` (from the current URL) says so, and otherwise leaves the click to the browser.
+
+```rescript
+// in an entrypoint
+let navigation = WeftServer.Navigation.useNavigation()
+<a href onClick={event => navigation->WeftServer.Navigation.followLink(event, ~href)->ignore}>
+  children
+</a>
+```
+*/
+let followLink: (t, WeftDom.Dom.event, ~href: string) => promise<unit>
 
 /** The URL of what's on screen. */
 let url: t => string

@@ -22,6 +22,10 @@ let isThenable = (value => value != null && typeof value.then === "function");
 
 let isDate = (value => value instanceof Date);
 
+let defineField = ((object, name, value) => {
+  Object.defineProperty(object, name, {value, writable: true, enumerable: true, configurable: true})
+});
+
 let elementKinds = [
   "Host",
   "Component",
@@ -83,6 +87,7 @@ export {
   isPlainObject,
   isThenable,
   isDate,
+  defineField,
   elementKinds,
   isElementNode,
   componentName,

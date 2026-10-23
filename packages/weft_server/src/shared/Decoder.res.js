@@ -202,7 +202,9 @@ function decode(session, json) {
     case "number" :
       return json;
     case "object" :
-      return Stdlib_Dict.mapValues(json, value => decode(session, value));
+      let decoded$1 = {};
+      Stdlib_Dict.forEachWithKey(json, (value, name) => Values$WeftServer.defineField(decoded$1, name, decode(session, value)));
+      return decoded$1;
   }
 }
 

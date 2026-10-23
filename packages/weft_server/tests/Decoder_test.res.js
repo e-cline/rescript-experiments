@@ -43,6 +43,11 @@ async function show(element) {
   return TestRenderer$Weft.toString(renderer);
 }
 
+let hasPlainPrototype = (value => Object.getPrototypeOf(value) === Object.prototype);
+
+let inherited = ((value, name) =>
+  name in value && !Object.hasOwn(value, name));
+
 async function hasSettled(promise) {
   let settled = {
     contents: false
@@ -211,12 +216,27 @@ Vitest.describe("Client", undefined, undefined, undefined, undefined, undefined,
     }
     return t.expect(failed).toBe(true);
   });
+  Vitest.testAsync("decodes a `__proto__` key as a field, not as the object's prototype", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let input = source();
+    let value = Decoder$WeftServer.valueFromStream(Support$WeftServer.makeClient(undefined), input.stream, undefined);
+    input.push(`0:J{"__proto__":{"admin":true},"name":"x"}\n`);
+    input.end();
+    let decoded = await value;
+    t.expect(Object.keys(decoded)).toEqual([
+      "__proto__",
+      "name"
+    ]);
+    t.expect(hasPlainPrototype(decoded)).toBe(true);
+    return t.expect(inherited(decoded, "admin")).toBe(false);
+  });
 });
 
 export {
   source,
   counterRow,
   show,
+  hasPlainPrototype,
+  inherited,
   hasSettled,
 }
 /*  Not a pure module */

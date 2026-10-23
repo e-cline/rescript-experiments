@@ -141,6 +141,45 @@ describe("hydrating the server's HTML", () => {
   })
 
   testAsync(
+    "keeps the newline a <pre> or <listing> starts with, which the parser drops",
+    async t => {
+      module Code = {
+        @jsx.component
+        let make = () => string("\nfrom a component")
+      }
+      let element =
+        <div>
+          <pre id="text"> {string("\nfirst line")} </pre>
+          <pre id="component">
+            <Code />
+          </pre>
+          <pre id="plain"> {string("no newline")} </pre>
+          <listing id="listing"> {string("\nlisted")} </listing>
+        </div>
+      let container = page(await Html.renderToString(element))
+      let (_, warnings) = await logging(async () => hydrate(container, element))
+      t->expect(warnings)->Expect.toEqual([])
+      let text = selector => Dom.textContent(find(container, selector))
+      t->expect(text("#text"))->Expect.toBe("\nfirst line")
+      t->expect(text("#component"))->Expect.toBe("\nfrom a component")
+      t->expect(text("#plain"))->Expect.toBe("no newline")
+      t->expect(text("#listing"))->Expect.toBe("\nlisted")
+    },
+  )
+
+  testAsync("keeps the \\r in text and attributes, which the parser makes \\n", async t => {
+    let element = <p id="p" title="a\r\nb\rc"> {string("one\r\ntwo\rthree")} </p>
+    let container = page(await Html.renderToString(element))
+    let before = nodesOf(container)
+    let (_, warnings) = await logging(async () => hydrate(container, element))
+    t->expect(warnings)->Expect.toEqual([])
+    t->expect(sameNodes(before, nodesOf(container)))->Expect.toBe(true)
+    let p = find(container, "#p")
+    t->expect(Dom.textContent(p))->Expect.toBe("one\r\ntwo\rthree")
+    t->expect(Dom.getAttribute(p, "title")->Nullable.toOption)->Expect.toBe(Some("a\r\nb\rc"))
+  })
+
+  testAsync(
     "links labels to their inputs with the same IDs on the server and hydrating",
     async t => {
       let element =

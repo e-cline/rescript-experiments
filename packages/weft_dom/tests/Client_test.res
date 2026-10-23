@@ -219,6 +219,30 @@ describe("Events", () => {
     Dom.click(box)
     t->expect(toBool(Dom.getProperty(box, "checked")))->Expect.toBe(false)
   })
+
+  let select = (~value, options) =>
+    <select id="s" value>
+      {options
+      ->Array.map(option => <option key=option value=option> {Jsx.string(option)} </option>)
+      ->Jsx.array}
+    </select>
+
+  test("a select's value picks its option once the option is there", t => {
+    let (container, root) = mount(select(~value="b", ["b"]))
+    // The value changes first, to an option that isn't there yet...
+    rerender(root, select(~value="c", ["b"]))
+    // ...which comes in a later render, the value unchanged.
+    rerender(root, select(~value="c", ["b", "c"]))
+    t->expect(valueOf(find(container, "#s")))->Expect.toBe("c")
+  })
+
+  test("a select's value picks its option when the options load after it", t => {
+    let (container, root) = mount(select(~value="b", []))
+    rerender(root, select(~value="b", ["a", "b"]))
+    t->expect(valueOf(find(container, "#s")))->Expect.toBe("b")
+    rerender(root, select(~value="b", ["z", "a", "b"]))
+    t->expect(valueOf(find(container, "#s")))->Expect.toBe("b")
+  })
 })
 
 describe("Refs and focus", () => {

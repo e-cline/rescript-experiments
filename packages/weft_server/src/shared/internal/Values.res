@@ -24,6 +24,15 @@ let isDate: unknown => bool = %raw(`value => value instanceof Date`)
 @scope("Object") @val external keys: unknown => array<string> = "keys"
 @get_index external get: (unknown, string) => unknown = ""
 
+/**
+Sets `name` as an own property, whatever it is: assigning `__proto__` would change the object's
+prototype instead. Anything rebuilding an object from data (the payload's, an RPC's) sets its fields
+with this.
+*/
+let defineField: (dict<'a>, string, 'a) => unit = %raw(`(object, name, value) => {
+  Object.defineProperty(object, name, {value, writable: true, enumerable: true, configurable: true})
+}`)
+
 let elementKinds = [
   "Host",
   "Component",

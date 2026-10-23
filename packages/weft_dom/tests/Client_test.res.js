@@ -308,6 +308,44 @@ Vitest.describe("Events", undefined, undefined, undefined, undefined, undefined,
     box.click();
     t.expect(box["checked"]).toBe(false);
   });
+  let select = (value, options) => Jsx$WeftDom.Elements.jsx("select", {
+    id: "s",
+    value: value,
+    children: options.map(option => Jsx$WeftDom.Elements.jsxKeyed("option", {
+      value: option,
+      children: option
+    }, option, undefined))
+  });
+  Vitest.test("a select's value picks its option once the option is there", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let match = mount(select("b", ["b"]));
+    let root = match[1];
+    let element = select("c", ["b"]);
+    Client$WeftDom.act(() => Client$WeftDom.render(root, element));
+    let element$1 = select("c", [
+      "b",
+      "c"
+    ]);
+    Client$WeftDom.act(() => Client$WeftDom.render(root, element$1));
+    t.expect(find(match[0], "#s")["value"]).toBe("c");
+  });
+  Vitest.test("a select's value picks its option when the options load after it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let match = mount(select("b", []));
+    let root = match[1];
+    let container = match[0];
+    let element = select("b", [
+      "a",
+      "b"
+    ]);
+    Client$WeftDom.act(() => Client$WeftDom.render(root, element));
+    t.expect(find(container, "#s")["value"]).toBe("b");
+    let element$1 = select("b", [
+      "z",
+      "a",
+      "b"
+    ]);
+    Client$WeftDom.act(() => Client$WeftDom.render(root, element$1));
+    t.expect(find(container, "#s")["value"]).toBe("b");
+  });
 });
 
 Vitest.describe("Refs and focus", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {

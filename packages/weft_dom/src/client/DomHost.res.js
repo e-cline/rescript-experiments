@@ -182,8 +182,14 @@ function prepareUpdate(param, param$1, oldProps, newProps) {
   return changed;
 }
 
-function commitUpdate(element, changed, param, oldProps, newProps) {
+function commitUpdate(element, changed, tag, oldProps, newProps) {
   changed.forEach(name => setProp(element, name, Stdlib_Option.getOr(oldProps[name], undefined), Stdlib_Option.getOr(newProps[name], undefined)));
+  if (tag === "select" && !changed.includes("value")) {
+    let value = newProps.value;
+    if (value !== undefined) {
+      setProp(element, "value", undefined, value);
+    }
+  }
   element.$$resFiberProps = newProps;
 }
 

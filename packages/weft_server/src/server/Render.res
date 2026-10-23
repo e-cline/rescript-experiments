@@ -316,12 +316,17 @@ and encodeNode = async (context, node: Element.node): JSON.t =>
   | Suspense =>
     let props = toSuspenseProps(node.props)
     let context = enter(context, "<Suspense>")
+    let childrenContext = {...enter(context, ".children"), inSuspense: true}
+    // What fails in the content is the boundary's to show, wherever in it that is (the components
+    // in it catch their own; this is for what's straight inside, with no component between).
+    let encodeChildren = async () =>
+      switch await encodeValue(childrenContext, Values.toUnknown(props.children)) {
+      | json => json
+      | exception error => errorRow(childrenContext, error)
+      }
     let (fallback, children) = await Promise.all2((
       encodeValue(enter(context, ".fallback"), Values.toUnknown(props.fallback)),
-      encodeValue(
-        {...enter(context, ".children"), inSuspense: true},
-        Values.toUnknown(props.children),
-      ),
+      encodeChildren(),
     ))
     Payload.element(
       ~elementType=Payload.suspenseType,

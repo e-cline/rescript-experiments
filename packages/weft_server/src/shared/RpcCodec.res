@@ -113,13 +113,7 @@ let array = codec => {
 /** Whether `name` is one of `object`'s own properties (not one it inherits, like `constructor`). */
 let hasOwn: (dict<JSON.t>, string) => bool = %raw(`(object, name) => Object.hasOwn(object, name)`)
 
-/**
-Sets `name` as an own property, whatever it is: assigning `__proto__` would change the object's
-prototype instead.
-*/
-let defineField: (dict<'a>, string, 'a) => unit = %raw(`(object, name, value) => {
-  Object.defineProperty(object, name, {value, writable: true, enumerable: true, configurable: true})
-}`)
+let defineField = Values.defineField
 
 @scope("Object") @val external ownKeys: dict<JSON.t> => array<string> = "keys"
 

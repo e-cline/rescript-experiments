@@ -185,7 +185,7 @@ let prepareUpdate = (_: Dom.element, ~tag as _, ~oldProps, ~newProps) => {
   Some(changed)
 }
 
-let commitUpdate = (element, changed, ~tag as _, ~oldProps, ~newProps) => {
+let commitUpdate = (element, changed, ~tag, ~oldProps, ~newProps) => {
   let previous = propsToDict(oldProps)
   let next = propsToDict(newProps)
   changed->Array.forEach(name =>
@@ -196,6 +196,16 @@ let commitUpdate = (element, changed, ~tag as _, ~oldProps, ~newProps) => {
       ~next=next->Dict.get(name)->Option.getOr(nothing),
     )
   )
+
+  // A select's value picks one of its options, which may have changed even though the value
+  // didn't (one that wasn't there when it was set may be now): set it again. Its children are
+  // committed before it, so they're in place.
+  if tag == "select" && !(changed->Array.includes("value")) {
+    switch newProps.value {
+    | Some(value) => setProp(element, "value", ~previous=nothing, ~next=stringToUnknown(value))
+    | None => ()
+    }
+  }
   storeProps(element, newProps)
 }
 

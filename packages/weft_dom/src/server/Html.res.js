@@ -20,7 +20,7 @@ import * as ErrorBoundary$Weft from "@e-cline/weft/src/shared/ErrorBoundary.res.
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
 
 function escapeText(text) {
-  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\r", "&#13;");
 }
 
 function escapeAttribute(text) {
@@ -51,6 +51,11 @@ let voidElements = [
   "source",
   "track",
   "wbr"
+];
+
+let newlineDroppingElements = [
+  "pre",
+  "listing"
 ];
 
 let rawTextElements = [
@@ -423,6 +428,9 @@ function renderNode(request, attempt, context, node) {
           text.startsWith("\n") ? "\n" : ""
         ) + escapeText(text));
       } else {
+        if (newlineDroppingElements.includes(tag)) {
+          writeMarkup(attempt, "\n");
+        }
         renderChildren(request, attempt, context$1, children);
       }
       return writeMarkup(attempt, `</` + tag + `>`);

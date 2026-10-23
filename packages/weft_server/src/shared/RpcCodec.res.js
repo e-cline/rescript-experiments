@@ -3,6 +3,7 @@
 import * as Stdlib_List from "@rescript/runtime/lib/es6/Stdlib_List.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as Values$WeftServer from "./internal/Values.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
 
 let Mismatch = /* @__PURE__ */Primitive_exceptions.create("RpcCodec-WeftServer.Mismatch");
@@ -192,10 +193,6 @@ function array(codec) {
 
 let hasOwn = ((object, name) => Object.hasOwn(object, name));
 
-let defineField = ((object, name, value) => {
-  Object.defineProperty(object, name, {value, writable: true, enumerable: true, configurable: true})
-});
-
 function fieldName(name) {
   return `.` + name;
 }
@@ -204,7 +201,7 @@ function dict(codec) {
   return {
     write: values => {
       let fields = {};
-      Object.entries(values).forEach(param => defineField(fields, param[0], codec.write(param[1])));
+      Object.entries(values).forEach(param => Values$WeftServer.defineField(fields, param[0], codec.write(param[1])));
       return fields;
     },
     read: (json, path) => {
@@ -212,7 +209,7 @@ function dict(codec) {
         return mismatch(path, "an object", json);
       }
       let values = {};
-      Object.keys(json).forEach(name => defineField(values, name, codec.read(json[name], {
+      Object.keys(json).forEach(name => Values$WeftServer.defineField(values, name, codec.read(json[name], {
         hd: fieldName(name),
         tl: path
       })));
@@ -311,7 +308,7 @@ function readField(fields, path, param) {
 }
 
 function writeField(fields, param, value) {
-  defineField(fields, param[0], param[1].write(value));
+  Values$WeftServer.defineField(fields, param[0], param[1].write(value));
 }
 
 function object_(write, read) {
@@ -560,4 +557,4 @@ export {
   tag,
   variant,
 }
-/* No side effect */
+/* Values-WeftServer Not a pure module */

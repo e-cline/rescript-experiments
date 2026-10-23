@@ -145,6 +145,53 @@ test("navigating between notes keeps the like button's state, and the back butto
   await expect(page.locator('#like')).toHaveText('4 likes (you liked this)');
 });
 
+test('a link clicked to open in a new tab opens one, and leaves this page as it was', async ({
+  page,
+  context,
+  request,
+}) => {
+  await openGates(request, '1', '2');
+  await page.goto('/notes/1');
+  await hydrated(page, '#related-2');
+  const opened = context.waitForEvent('page');
+  await page.locator('#related-2').click({modifiers: ['ControlOrMeta']});
+  const tab = await opened;
+  await tab.waitForLoadState();
+  await expect(tab).toHaveURL(/\/notes\/2$/);
+  await expect(tab.locator('#title')).toHaveText('Ideas');
+  await tab.close();
+  await expect(page).toHaveURL(/\/notes\/1$/);
+  await expect(page.locator('#title')).toHaveText('Groceries');
+});
+
+test('a page whose payload fails to load is loaded the ordinary way instead', async ({
+  page,
+  request,
+}) => {
+  await openGates(request, '1', '2');
+  // The payload's request fails; the page's own still works.
+  await page.route('**/notes/2', (route) =>
+    route.request().headers()['accept']?.includes('text/x-weft-payload')
+      ? route.fulfill({status: 500, body: 'down'})
+      : route.continue(),
+  );
+  await page.goto('/notes/1');
+  await hydrated(page, '#related-2');
+  const documentRequest = page.waitForRequest(
+    (request) =>
+      request.resourceType() === 'document' &&
+      request.url().endsWith('/notes/2'),
+  );
+  await page.locator('#related-2').click();
+  await documentRequest;
+  await expect(page).toHaveURL(/\/notes\/2$/);
+  await expect(page.locator('#title')).toHaveText('Ideas');
+  await page.goBack();
+  await expect(page).toHaveURL(/\/notes\/1$/);
+  // The failed request's own complaint is expected.
+  complaints = complaints.filter((complaint) => !complaint.includes('500'));
+});
+
 test('posting a comment goes through its RPC, as JSON with its header, and a refresh shows it', async ({
   page,
   request,

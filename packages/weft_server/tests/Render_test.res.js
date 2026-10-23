@@ -5,6 +5,7 @@ import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Context$Weft from "@e-cline/weft/src/shared/Context.res.js";
 import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
 import * as Deferred$Weft from "@e-cline/weft/src/shared/Deferred.res.js";
+import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Render$WeftServer from "../src/server/Render.res.js";
@@ -224,6 +225,29 @@ Vitest.describe("Render: errors", undefined, undefined, undefined, undefined, un
       `0:J["$","div",null,{"children":[["$","$S",null,{"fallback":["$","i",null,{"id":"loading","children":"loading"}],"children":"$L1"}],["$","b",null,{"id":"fine"}]]}]`
     ]);
     return t.expect(seen.length).toBe(1);
+  });
+  Vitest.testAsync("so is one straight inside a Suspense, with no server component between (an entrypoint's prop)", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let rows = await payload(quietly, TestJsx$Weft.Elements.jsxs("div", {
+      children: [
+        TestJsx$Weft.jsx(Suspense$Weft.make, {
+          fallback: Support$WeftServer.loading,
+          children: TestJsx$Weft.jsx(Support$WeftServer.Probe.make, {
+            name: "p",
+            value: new Map()
+          })
+        }),
+        TestJsx$Weft.Elements.jsx("b", {
+          id: "fine"
+        })
+      ]
+    }));
+    t.expect(rows.length).toBe(3);
+    let errorRow = Stdlib_Option.getOr(rows.find(row => row.includes(":X")), "");
+    t.expect(errorRow.includes("not an instance of a class")).toBe(true);
+    let root = Stdlib_Option.getOr(rows.find(row => row.startsWith("0:J")), "");
+    let errorId = errorRow.split(":")[0];
+    t.expect(root.includes(`"children":"$L` + errorId + `"`)).toBe(true);
+    return t.expect(root.includes(`"id":"fine"`)).toBe(true);
   });
   Vitest.testAsync("an error outside every boundary fails the root", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => t.expect(await payload(quietly, TestJsx$Weft.Elements.jsx("div", {
     children: TestJsx$Weft.jsx(Support$WeftServer.Fails.make, {

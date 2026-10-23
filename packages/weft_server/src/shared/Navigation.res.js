@@ -14,13 +14,14 @@ let context = Context$Weft.make(undefined);
 
 let provider = Context$Weft.provider(context);
 
-function make(client, render, url, onNavigateOpt) {
+function make(client, render, url, onNavigateOpt, onFailed) {
   let onNavigate = onNavigateOpt !== undefined ? onNavigateOpt : param => {};
   return {
     client: client,
     render: render,
     url: url,
     onNavigate: onNavigate,
+    onFailed: onFailed,
     latest: Decoder$WeftServer.Latest.make(),
     onServer: false
   };
@@ -32,6 +33,7 @@ function makeForServer(client, url) {
     render: param => {},
     url: url,
     onNavigate: param => {},
+    onFailed: undefined,
     latest: Decoder$WeftServer.Latest.make(),
     onServer: true
   };
@@ -54,8 +56,20 @@ function show(navigation, element) {
   navigation.render(wrap(navigation, element));
 }
 
-async function fetchAndShowOnClient(navigation, url, push) {
-  let element = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
+async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
+  let element;
+  try {
+    element = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
+  } catch (error) {
+    let onFailed = navigation.onFailed;
+    if (onFailed !== undefined) {
+      if (canFallBack) {
+        return onFailed(url, push);
+      }
+      throw error;
+    }
+    throw error;
+  }
   if (element === undefined) {
     return;
   }
@@ -67,21 +81,21 @@ async function fetchAndShowOnClient(navigation, url, push) {
   }
 }
 
-function fetchAndShow(navigation, url, push) {
+function fetchAndShow(navigation, url, push, canFallBack) {
   checkOnClient(navigation);
-  return fetchAndShowOnClient(navigation, url, push);
+  return fetchAndShowOnClient(navigation, url, push, canFallBack);
 }
 
 function navigate(navigation, url) {
-  return fetchAndShow(navigation, url, true);
+  return fetchAndShow(navigation, url, true, true);
 }
 
 function load(navigation, url) {
-  return fetchAndShow(navigation, url, false);
+  return fetchAndShow(navigation, url, false, true);
 }
 
 function refresh(navigation) {
-  return load(navigation, navigation.url);
+  return fetchAndShow(navigation, navigation.url, false, false);
 }
 
 function url(navigation) {
@@ -90,6 +104,53 @@ function url(navigation) {
 
 function client(navigation) {
   return navigation.client;
+}
+
+function staysInPage(event, href, from) {
+  let link = event.currentTarget;
+  let link$1 = (link == null) ? undefined : Primitive_option.some(link);
+  let attribute = name => Stdlib_Option.flatMap(link$1, link => Primitive_option.fromNullable(link.getAttribute(name)));
+  let plainClick = !event.defaultPrevented && Stdlib_Option.getOr(Primitive_option.fromNullable(event.button), 0) === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+  let match = attribute("target");
+  let ownWindow;
+  if (match !== undefined) {
+    switch (match) {
+      case "" :
+      case "_self" :
+        ownWindow = true;
+        break;
+      default:
+        ownWindow = false;
+    }
+  } else {
+    ownWindow = true;
+  }
+  let download = Stdlib_Option.mapOr(link$1, false, link => link.hasAttribute("download"));
+  if (!(plainClick && ownWindow && !download)) {
+    return false;
+  }
+  let val;
+  let val$1;
+  try {
+    val = new URL(href, from);
+    val$1 = new URL(from, from);
+  } catch (exn) {
+    return false;
+  }
+  if (val.origin === val$1.origin) {
+    return val.pathname !== val$1.pathname || val.search !== val$1.search || val.hash === "";
+  } else {
+    return false;
+  }
+}
+
+function followLink(navigation, event, href) {
+  if (staysInPage(event, href, location.href)) {
+    event.preventDefault();
+    return navigate(navigation, href);
+  } else {
+    return Promise.resolve();
+  }
 }
 
 function useNavigation() {
@@ -157,6 +218,8 @@ export {
   navigate,
   load,
   refresh,
+  staysInPage,
+  followLink,
   url,
   client,
   useNavigation,

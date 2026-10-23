@@ -6,10 +6,8 @@ let make = (~href: string, ~id: string, ~children: Weft.Element.t) => {
   <a
     id
     href
-    onClick={event => {
-      WeftDom.Dom.Event.preventDefault(event)
-      navigation->WeftServer.Navigation.navigate(href)->ignore
-    }}
+    // A plain click navigates in place; one opening a new tab or window is left to the browser.
+    onClick={event => navigation->WeftServer.Navigation.followLink(event, ~href)->ignore}
   >
     children
   </a>

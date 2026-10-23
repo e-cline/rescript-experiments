@@ -248,6 +248,28 @@ describe("Render: errors", () => {
     },
   )
 
+  testAsync(
+    "so is one straight inside a Suspense, with no server component between (an entrypoint's prop)",
+    async t => {
+      let rows = await payload(
+        ~onError=quietly,
+        <div>
+          <Weft.Suspense fallback=loading>
+            <Probe name="p" value={Map.make()} />
+          </Weft.Suspense>
+          <b id="fine" />
+        </div>,
+      )
+      t->expect(Array.length(rows))->Expect.toBe(3)
+      let errorRow = rows->Array.find(row => row->String.includes(":X"))->Option.getOr("")
+      t->expect(errorRow->String.includes("not an instance of a class"))->Expect.toBe(true)
+      let root = rows->Array.find(row => row->String.startsWith("0:J"))->Option.getOr("")
+      let errorId = errorRow->String.split(":")->Array.getUnsafe(0)
+      t->expect(root->String.includes(`"children":"$L${errorId}"`))->Expect.toBe(true)
+      t->expect(root->String.includes(`"id":"fine"`))->Expect.toBe(true)
+    },
+  )
+
   testAsync("an error outside every boundary fails the root", async t => {
     t
     ->expect(

@@ -5,6 +5,8 @@ type t = {
   render: Element.t => unit,
   mutable url: string,
   onNavigate: string => unit,
+  /** What to do instead when `navigate` or `load` can't show a URL's payload, if anything. */
+  onFailed: option<(string, ~push: bool) => unit>,
   latest: Decoder.Latest.t,
   /** The server's page, which an HTML render reads: it can't fetch anything. */
   onServer: bool,
@@ -13,11 +15,12 @@ type t = {
 let context: Weft.Context.t<option<t>> = Weft.Context.make(None)
 let provider = Weft.Context.provider(context)
 
-let make = (client, ~render, ~url, ~onNavigate=_ => ()) => {
+let make = (client, ~render, ~url, ~onNavigate=_ => (), ~onFailed=?) => {
   client,
   render,
   url,
   onNavigate,
+  onFailed,
   latest: Decoder.Latest.make(),
   onServer: false,
 }
@@ -27,6 +30,7 @@ let makeForServer = (client, ~url) => {
   render: _ => (),
   url,
   onNavigate: _ => (),
+  onFailed: None,
   latest: Decoder.Latest.make(),
   onServer: true,
 }
@@ -46,7 +50,7 @@ let wrap = (navigation, element) =>
 
 let show = (navigation, element) => navigation.render(wrap(navigation, element))
 
-let fetchAndShowOnClient = async (navigation, url, ~push) =>
+let fetchAndShowOnClient = async (navigation, url, ~push, ~canFallBack) =>
   switch await navigation.latest->Decoder.Latest.fetchElement(navigation.client, url) {
   | Some(element) =>
     navigation.url = url
@@ -55,20 +59,80 @@ let fetchAndShowOnClient = async (navigation, url, ~push) =>
       navigation.onNavigate(url)
     }
   | None => ()
+  | exception error =>
+    switch navigation.onFailed {
+    | Some(onFailed) if canFallBack => onFailed(url, ~push)
+    | _ => throw(error)
+    }
   }
 
 // Not `async`, so that on the server the refusal is thrown where it's asked for, not as a
 // rejection nobody waits on.
-let fetchAndShow = (navigation, url, ~push) => {
+let fetchAndShow = (navigation, url, ~push, ~canFallBack) => {
   checkOnClient(navigation)
-  fetchAndShowOnClient(navigation, url, ~push)
+  fetchAndShowOnClient(navigation, url, ~push, ~canFallBack)
 }
 
-let navigate = (navigation, url) => fetchAndShow(navigation, url, ~push=true)
-let load = (navigation, url) => fetchAndShow(navigation, url, ~push=false)
-let refresh = navigation => load(navigation, navigation.url)
+let navigate = (navigation, url) => fetchAndShow(navigation, url, ~push=true, ~canFallBack=true)
+let load = (navigation, url) => fetchAndShow(navigation, url, ~push=false, ~canFallBack=true)
+// What's on screen stays, rather than being thrown away for a page load: the caller hears why.
+let refresh = navigation =>
+  fetchAndShow(navigation, navigation.url, ~push=false, ~canFallBack=false)
 let url = navigation => navigation.url
 let client = navigation => navigation.client
+
+// Following links
+
+@get external defaultPrevented: WeftDom.Dom.event => bool = "defaultPrevented"
+@get external button: WeftDom.Dom.event => Nullable.t<int> = "button"
+@get external metaKey: WeftDom.Dom.event => bool = "metaKey"
+@get external ctrlKey: WeftDom.Dom.event => bool = "ctrlKey"
+@get external shiftKey: WeftDom.Dom.event => bool = "shiftKey"
+@get external altKey: WeftDom.Dom.event => bool = "altKey"
+@get
+external eventCurrentTarget: WeftDom.Dom.event => Nullable.t<WeftDom.Dom.element> = "currentTarget"
+@send
+external getAttribute: (WeftDom.Dom.element, string) => Nullable.t<string> = "getAttribute"
+@send external hasAttribute: (WeftDom.Dom.element, string) => bool = "hasAttribute"
+
+type parsedUrl = {origin: string, pathname: string, search: string, hash: string}
+@new external parseUrl: (string, string) => parsedUrl = "URL"
+@val @scope("location") external locationHref: string = "href"
+
+let staysInPage = (event, ~href, ~from) => {
+  let link = eventCurrentTarget(event)->Nullable.toOption
+  let attribute = name => link->Option.flatMap(link => getAttribute(link, name)->Nullable.toOption)
+  let plainClick =
+    !defaultPrevented(event) &&
+    button(event)->Nullable.toOption->Option.getOr(0) == 0 &&
+    !metaKey(event) &&
+    !ctrlKey(event) &&
+    !shiftKey(event) &&
+    !altKey(event)
+  let ownWindow = switch attribute("target") {
+  | None | Some("") | Some("_self") => true
+  | Some(_) => false
+  }
+  let download = link->Option.mapOr(false, link => link->hasAttribute("download"))
+  plainClick &&
+  ownWindow &&
+  !download &&
+  switch (parseUrl(href, from), parseUrl(from, from)) {
+  | (target, current) =>
+    target.origin == current.origin &&
+      // A link to a part of this page (`#comments`) scrolls there, as the browser does it.
+      !(target.pathname == current.pathname && target.search == current.search && target.hash != "")
+  | exception _ => false
+  }
+}
+
+let followLink = (navigation, event, ~href) =>
+  if staysInPage(event, ~href, ~from=locationHref) {
+    WeftDom.Dom.Event.preventDefault(event)
+    navigate(navigation, href)
+  } else {
+    Promise.resolve()
+  }
 
 let useNavigation = () =>
   switch Weft.Hooks.useContext(context) {

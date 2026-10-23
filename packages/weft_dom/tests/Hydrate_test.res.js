@@ -206,6 +206,51 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
     t.expect(container.innerHTML).toBe(html);
     return t.expect(clicked(container, "#c")).toBe("1");
   });
+  Vitest.testAsync("keeps the newline a <pre> or <listing> starts with, which the parser drops", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let Hydrate_test = props => "\nfrom a component";
+    let element = Jsx$WeftDom.Elements.jsxs("div", {
+      children: [
+        Jsx$WeftDom.Elements.jsx("pre", {
+          id: "text",
+          children: "\nfirst line"
+        }),
+        Jsx$WeftDom.Elements.jsx("pre", {
+          id: "component",
+          children: Jsx$WeftDom.jsx(Hydrate_test, {})
+        }),
+        Jsx$WeftDom.Elements.jsx("pre", {
+          id: "plain",
+          children: "no newline"
+        }),
+        Jsx$WeftDom.Elements.jsx("listing", {
+          id: "listing",
+          children: "\nlisted"
+        })
+      ]
+    });
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(element, undefined, undefined));
+    let match = await logging(async () => hydrate(container, element));
+    t.expect(match[1]).toEqual([]);
+    t.expect(find(container, "#text").textContent).toBe("\nfirst line");
+    t.expect(find(container, "#component").textContent).toBe("\nfrom a component");
+    t.expect(find(container, "#plain").textContent).toBe("no newline");
+    return t.expect(find(container, "#listing").textContent).toBe("\nlisted");
+  });
+  Vitest.testAsync("keeps the \\r in text and attributes, which the parser makes \\n", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let element = Jsx$WeftDom.Elements.jsx("p", {
+      id: "p",
+      title: "a\r\nb\rc",
+      children: "one\r\ntwo\rthree"
+    });
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(element, undefined, undefined));
+    let before = nodesOf(container);
+    let match = await logging(async () => hydrate(container, element));
+    t.expect(match[1]).toEqual([]);
+    t.expect(sameNodes(before, nodesOf(container))).toBe(true);
+    let p = find(container, "#p");
+    t.expect(p.textContent).toBe("one\r\ntwo\rthree");
+    return t.expect(Primitive_option.fromNullable(p.getAttribute("title"))).toBe("a\r\nb\rc");
+  });
   Vitest.testAsync("links labels to their inputs with the same IDs on the server and hydrating", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let element = Jsx$WeftDom.Elements.jsxs("form", {
       children: [

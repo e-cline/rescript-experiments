@@ -34,6 +34,12 @@ let show = async element => {
   TestRenderer.toString(renderer)
 }
 
+@scope("Object") @val external ownKeys: unknown => array<string> = "keys"
+let hasPlainPrototype: unknown => bool = %raw(`value => Object.getPrototypeOf(value) === Object.prototype`)
+/** Whether `value` has `name` without it being its own (so it came from its prototype). */
+let inherited: (unknown, string) => bool = %raw(`(value, name) =>
+  name in value && !Object.hasOwn(value, name)`)
+
 /** Whether `promise` has settled yet. */
 let hasSettled = async promise => {
   let settled = ref(false)
@@ -196,5 +202,16 @@ describe("Client", () => {
     | exception JsExn(_) => true
     }
     t->expect(failed)->Expect.toBe(true)
+  })
+
+  testAsync("decodes a `__proto__` key as a field, not as the object's prototype", async t => {
+    let input = source()
+    let value = makeClient()->Decoder.valueFromStream(input.stream)
+    input.push(`0:J{"__proto__":{"admin":true},"name":"x"}\n`)
+    input.end()
+    let decoded = await value
+    t->expect(ownKeys(decoded))->Expect.toEqual(["__proto__", "name"])
+    t->expect(hasPlainPrototype(decoded))->Expect.toBe(true)
+    t->expect(inherited(decoded, "admin"))->Expect.toBe(false)
   })
 })

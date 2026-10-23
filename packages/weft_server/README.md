@@ -59,6 +59,20 @@ navigation->WeftServer.Navigation.navigate("/notes/2") // fetch the payload, ren
 navigation->WeftServer.Navigation.refresh              // fetch this page's again
 ```
 
+A link's `onClick` should use `followLink`, which navigates in place only for a plain click on a
+link to this origin, and leaves the rest to the browser (one opening a new tab or window, a
+`download`, a `target`, a link to a part of the page):
+
+```rescript
+<a href onClick={event => navigation->WeftServer.Navigation.followLink(event, ~href)->ignore}>
+  children
+</a>
+```
+
+If a page can't be shown in place (its payload couldn't be fetched, or its root failed), the
+browser's navigation loads it the ordinary way instead, so the server's own answer is what's seen. A
+`refresh` that fails rejects instead, keeping what's on the page.
+
 Part of the page can be fetched again by itself. In an entrypoint, `useRefetchable` does it with the
 parts that are easy to get wrong by hand done (newer `children` from a refresh winning over what was
 refetched, fetches replacing each other, rendering in a transition):

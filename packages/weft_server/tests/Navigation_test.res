@@ -18,7 +18,7 @@ let textIn = (renderer, id) =>
   )
 
 /** A page on `renderer`, its client fetching from `fetch`, started at `url` (rendered at once). */
-let start = async (~fetch, ~route, ~url, ~onNavigate=?) => {
+let start = async (~fetch, ~route, ~url, ~onNavigate=?, ~onFailed=?) => {
   let renderer = TestRenderer.create()
   let client = Decoder.make(~loadModule=Testing.loadModule(makeModules()), ~fetch)
   let navigation = Navigation.make(
@@ -26,6 +26,7 @@ let start = async (~fetch, ~route, ~url, ~onNavigate=?) => {
     ~render=element => TestRenderer.scheduleRender(renderer, element),
     ~url,
     ~onNavigate?,
+    ~onFailed?,
   )
   let element = await roundTrip(~client, route(url))
   navigation->Navigation.show(element)
@@ -183,6 +184,137 @@ describe("navigating", () => {
     t->expect(failed)->Expect.toBe(true)
     t->expect(shows(renderer))->Expect.toBe(before)
     t->expect(navigation->Navigation.url)->Expect.toBe("/a")
+  })
+
+  testAsync(
+    "a page that can't be shown goes to onFailed instead: navigate's pushed, load's not",
+    async t => {
+      reset()
+      let (fetch, _) = serve(route)
+      let failures = []
+      let pushed = []
+      let (renderer, navigation) = await start(
+        ~fetch,
+        ~route,
+        ~url="/a",
+        ~onNavigate=url => pushed->Array.push(url),
+        ~onFailed=(url, ~push) => failures->Array.push((url, push)),
+      )
+      let before = shows(renderer)
+      // Neither rejects: the page is loaded the ordinary way instead.
+      await navigation->Navigation.navigate("/fails")
+      await navigation->Navigation.load("/fails")
+      await settle()
+      t->expect(failures)->Expect.toEqual([("/fails", true), ("/fails", false)])
+      t->expect(pushed)->Expect.toEqual([])
+      t->expect(shows(renderer))->Expect.toBe(before)
+      t->expect(navigation->Navigation.url)->Expect.toBe("/a")
+    },
+  )
+
+  testAsync("a fetch that fails (offline, say) goes to onFailed too", async t => {
+    reset()
+    let (serverFetch, _) = serve(route)
+    let offline = ref(false)
+    let fetch = (url, ~signal) =>
+      offline.contents ? Promise.reject(Failure("offline")) : serverFetch(url, ~signal)
+    let failures = []
+    let (_, navigation) = await start(
+      ~fetch,
+      ~route,
+      ~url="/a",
+      ~onFailed=(url, ~push) => failures->Array.push((url, push)),
+    )
+    offline := true
+    await navigation->Navigation.navigate("/b")
+    t->expect(failures)->Expect.toEqual([("/b", true)])
+  })
+
+  testAsync("refresh rejects when it fails, even with onFailed, keeping the page", async t => {
+    reset()
+    let (serverFetch, _) = serve(route)
+    let offline = ref(false)
+    let fetch = (url, ~signal) =>
+      offline.contents ? Promise.reject(Failure("offline")) : serverFetch(url, ~signal)
+    let failures = []
+    let (renderer, navigation) = await start(
+      ~fetch,
+      ~route,
+      ~url="/a",
+      ~onFailed=(url, ~push) => failures->Array.push((url, push)),
+    )
+    let before = shows(renderer)
+    offline := true
+    let rejected = switch await navigation->Navigation.refresh {
+    | () => false
+    | exception _ => true
+    }
+    await settle()
+    t->expect(rejected)->Expect.toBe(true)
+    t->expect(failures)->Expect.toEqual([])
+    t->expect(shows(renderer))->Expect.toBe(before)
+  })
+})
+
+/** A click on a link, as the browser gives it: `fields` over a plain left click's. */
+type clickFields = {
+  defaultPrevented?: bool,
+  button?: int,
+  metaKey?: bool,
+  ctrlKey?: bool,
+  shiftKey?: bool,
+  altKey?: bool,
+  attributes?: dict<string>,
+}
+
+let click: clickFields => WeftDom.Dom.event = %raw(`fields => {
+  const attributes = fields.attributes ?? {};
+  const link = {
+    getAttribute: name => (name in attributes ? attributes[name] : null),
+    hasAttribute: name => name in attributes,
+  };
+  return {
+    defaultPrevented: false,
+    button: 0,
+    metaKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+    altKey: false,
+    currentTarget: link,
+    ...fields,
+  };
+}`)
+
+describe("following links", () => {
+  let from = "https://notes.test/notes/1?tab=comments"
+  let stays = (event, href) => Navigation.staysInPage(event, ~href, ~from)
+
+  test("follows a plain click to this origin in place", t => {
+    t->expect(stays(click({}), "/notes/2"))->Expect.toBe(true)
+    t->expect(stays(click({}), "https://notes.test/"))->Expect.toBe(true)
+    t->expect(stays(click({}), "2"))->Expect.toBe(true)
+    t->expect(stays(click({}), "/notes/1"))->Expect.toBe(true)
+    t->expect(stays(click({attributes: dict{"target": "_self"}}), "/notes/2"))->Expect.toBe(true)
+  })
+
+  test("leaves a click opening a new tab or window to the browser", t => {
+    t->expect(stays(click({metaKey: true}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({ctrlKey: true}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({shiftKey: true}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({altKey: true}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({button: 1}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({attributes: dict{"target": "_blank"}}), "/notes/2"))->Expect.toBe(false)
+  })
+
+  test("leaves downloads, other origins, handled clicks and links within the page", t => {
+    t->expect(stays(click({attributes: dict{"download": ""}}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({}), "https://elsewhere.test/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({}), "mailto:someone@notes.test"))->Expect.toBe(false)
+    t->expect(stays(click({defaultPrevented: true}), "/notes/2"))->Expect.toBe(false)
+    t->expect(stays(click({}), "#comments"))->Expect.toBe(false)
+    t->expect(stays(click({}), "/notes/1?tab=comments#c2"))->Expect.toBe(false)
+    // The same path with another query is another page.
+    t->expect(stays(click({}), "/notes/1?tab=likes#c2"))->Expect.toBe(true)
   })
 })
 

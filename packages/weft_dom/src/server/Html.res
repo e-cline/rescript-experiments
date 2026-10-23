@@ -38,6 +38,9 @@ let escapeText = text =>
   ->String.replaceAll("&", "&amp;")
   ->String.replaceAll("<", "&lt;")
   ->String.replaceAll(">", "&gt;")
+  // The parser makes a `\r` (alone, or in `\r\n`) a `\n`, but not one written as a reference: the
+  // node then has the text the client renders.
+  ->String.replaceAll("\r", "&#13;")
 
 let escapeAttribute = text =>
   escapeText(text)->String.replaceAll(`"`, "&quot;")->String.replaceAll("'", "&#39;")
@@ -82,6 +85,9 @@ let voidElements = [
   "track",
   "wbr",
 ]
+
+/** Elements the parser drops a newline straight after the start tag of (`textarea` too). */
+let newlineDroppingElements = ["pre", "listing"]
 
 /** Elements whose content isn't HTML text, which Weft has no way to write. */
 let rawTextElements = ["script", "style"]
@@ -478,6 +484,11 @@ and renderHost = (request, attempt, context, node) => {
       // The parser drops a newline straight after `<textarea>`: one more keeps the value's own.
       writeMarkup(attempt, (text->String.startsWith("\n") ? "\n" : "") ++ escapeText(text))
     } else {
+      // The same goes for `<pre>` and `<listing>`, whatever their content starts with (text from a
+      // component, say): the newline is always written, and dropped by the parser.
+      if newlineDroppingElements->Array.includes(tag) {
+        writeMarkup(attempt, "\n")
+      }
       renderChildren(request, attempt, context, children)
     }
     writeMarkup(attempt, `</${tag}>`)

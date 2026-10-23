@@ -154,7 +154,13 @@ let rec decode = (session, json: JSON.t): unknown =>
       Weft.JsxCore.markStaticList(fromUnknown(toUnknown(decoded)))
       toUnknown(decoded)
     }
-  | Object(fields) => toUnknown(fields->Dict.mapValues(value => decode(session, value)))
+  | Object(fields) =>
+    // Each field set as its own (a `__proto__` key in the data is a field, not the prototype).
+    let decoded = Dict.make()
+    fields->Dict.forEachWithKey((value, name) =>
+      decoded->Values.defineField(name, decode(session, value))
+    )
+    toUnknown(decoded)
   }
 
 and decodeElement = (session, elementType, key, props): unknown => {

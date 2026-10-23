@@ -60,17 +60,46 @@ type delivery =
 type page
 
 /**
-Opens `url` in `container`: its HTML is requested from the server, the rows in it are pushed as its
-inline scripts would push them, and `WeftServer.Bootstrap` starts on them. In `Build` mode the
-build's own bootstrap does (and a test file can open one page: move on by following links), and
-`container` has to be the document's `#root`.
+Opens `url` in `container`: its HTML is requested from the server and applied as the browser's
+parser would, as it's delivered: the shell into `container` (which stands for `#root`), then each
+inline script and segment in order, so the rows are pushed and boundaries swapped in. Once the shell
+is in, `WeftServer.Bootstrap` starts, and hydrates it. In `Build` mode the build's own bootstrap does
+(and a test file can open one page: move on by following links), and `container` has to be the
+document's `#root`.
+
+With `~bootstrap=false` the bootstrap waits for `startBootstrap`, as if its chunk loaded late, or
+never: what the HTML shows by itself (the page's inline scripts still run). A boundary's segment goes
+in the document's body, found by its id, so one page is open in a document at a time.
 */
-let open_: (app, ~container: WeftDom.Dom.element, ~delivery: delivery=?, string) => page
+let open_: (
+  app,
+  ~container: WeftDom.Dom.element,
+  ~delivery: delivery=?,
+  ~bootstrap: bool=?,
+  string,
+) => page
+
+/** Starts the bootstrap of a page opened with `~bootstrap=false`: now, or once the shell is in. */
+let startBootstrap: page => unit
+
+/**
+Waits until the bootstrap has hydrated the page (or rendered it, if there was no HTML): it has
+started, the entrypoints it needed have loaded (but those `holdLoads` holds), and the renders after
+are done. A boundary still streaming hydrates later, as its content arrives, and one waiting on a
+held load once it's released. Fails after `timeout` milliseconds (5000).
+*/
+let hydrated: (page, ~timeout: int=?) => promise<unit>
+
+/**
+What `console.error` and `console.warn` said since the page opened (until the next page opens): in a
+development build, where hydration found the HTML and the client's render disagreeing.
+*/
+let warnings: page => array<string>
 
 /** The requests made since the page opened (its own first), by path (with the query), in order. */
 let pageRequests: page => array<string>
 
-/** The page's navigation (`Source` mode), once its first payload has rendered. */
+/** The page's navigation (`Source` mode), once the bootstrap has started on its first payload. */
 let navigation: page => promise<WeftServer.Navigation.t>
 
 /** The HTML the page came in, with the rows taken out, once it has all arrived. */
@@ -122,6 +151,13 @@ let snapshot: page => snapshot
 
 /** The nodes in `snapshot` no longer under the container (`tag#id`, or quoted text). */
 let removedSince: (page, snapshot) => array<string>
+
+/**
+The nodes the HTML has made under the container: the shell's, and each segment's as it's swapped in,
+less those the swaps took out (the fallbacks). `removedSince` it is empty once a page has hydrated
+with nothing rendered again on the client.
+*/
+let htmlNodes: page => snapshot
 
 /** The container's HTML. */
 let html: page => string

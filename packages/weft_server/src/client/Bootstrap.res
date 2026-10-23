@@ -81,11 +81,48 @@ let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ()
 }
 
 @val external maybeDocument: Nullable.t<WeftDom.Dom.document> = "globalThis.document"
+@get external readyState: WeftDom.Dom.document => string = "readyState"
+@get external documentElement: WeftDom.Dom.document => WeftDom.Dom.element = "documentElement"
+
+type observer
+type observing = {childList: bool, subtree: bool}
+@new external makeObserver: (unit => unit) => observer = "MutationObserver"
+@send external observe: (observer, WeftDom.Dom.element, observing) => unit = "observe"
+@send external disconnect: observer => unit = "disconnect"
+@send
+external addDocumentListener: (WeftDom.Dom.document, string, unit => unit) => unit =
+  "addEventListener"
 
 let main = (loadModule, onRefresh) =>
-  switch maybeDocument
-  ->Nullable.toOption
-  ->Option.flatMap(document => document->getElementById("root")->Nullable.toOption) {
-  | Some(container) => start(~loadModule, ~container, ~onRefresh, ())->ignore
+  switch maybeDocument->Nullable.toOption {
+  | Some(document) =>
+    let rootOf = () => document->getElementById("root")->Nullable.toOption
+    let begin = container => start(~loadModule, ~container, ~onRefresh, ())->ignore
+    switch rootOf() {
+    | Some(container) => begin(container)
+    // The bootstrap's script is `async`, so it can run before the parser reaches `#root` (which
+    // `Page` writes once the shell is ready): it starts once `#root` is there. (Its rows come after
+    // it, so it has been parsed by the time the bootstrap has the root row.)
+    | None if document->readyState == "loading" =>
+      let started = ref(false)
+      let observer = ref(None)
+      let stop = () => observer.contents->Option.forEach(disconnect)
+      let check = () =>
+        switch rootOf() {
+        | Some(container) if !started.contents =>
+          started := true
+          stop()
+          begin(container)
+        | _ => ()
+        }
+      let watching = makeObserver(check)
+      observer := Some(watching)
+      watching->observe(document->documentElement, {childList: true, subtree: true})
+      document->addDocumentListener("DOMContentLoaded", () => {
+        check()
+        stop()
+      })
+    | None => ()
+    }
   | None => ()
   }

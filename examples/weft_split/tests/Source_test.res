@@ -14,19 +14,24 @@ let app = () => app.contents->Option.getOrThrow
 let file = name => `@e-cline/weft_split_example/src/${name}.res`
 
 describe("from the sources", () => {
-  testAsync("the home page renders every entrypoint, loading all but the chart's file", async t => {
-    let page = app()->WeftTesting.open_(~container=rootElement(), "/")
-    await page->WeftTesting.waitFor(() => homeShows(page))
-    t
-    ->expect(page->WeftTesting.loads->Array.toSorted(String.compare))
-    ->Expect.toEqual(["Counter", "Fancy", "Link", "Outer", "Plain", "Widgets"]->Array.map(file))
-  })
+  testAsync(
+    "the home page hydrates every entrypoint, loading all but the chart's file",
+    async t => {
+      let page = app()->WeftTesting.open_(~container=rootElement(), "/")
+      await page->WeftTesting.waitFor(() => homeShows(page))
+      t->expect(await hydratedAsServed(page))->Expect.toBe(true)
+      t
+      ->expect(page->WeftTesting.loads->Array.toSorted(String.compare))
+      ->Expect.toEqual(["Counter", "Fancy", "Link", "Outer", "Plain", "Widgets"]->Array.map(file))
+    },
+  )
 
   testAsync(
     "an entrypoint is interactive, and a link navigates in place, loading the chart then",
     async t => {
       let page = app()->WeftTesting.open_(~container=rootElement(), "/")
       await page->WeftTesting.waitFor(() => homeShows(page))
+      await page->WeftTesting.hydrated
       page->WeftTesting.click(".counter")
       await page->WeftTesting.waitFor(() => text(page, ".counter") == "clicks: 1")
       page->WeftTesting.click("#other-link")

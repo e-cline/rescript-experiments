@@ -175,7 +175,7 @@ Vitest.describe("hydrating", undefined, undefined, undefined, undefined, undefin
     let renderer = match[0];
     t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<p>12:01</p>");
     t.expect(created(renderer)).toEqual([]);
-    t.expect(match[1]).toEqual([`WeftCore: the server's HTML doesn't match the client's render: the text the text "12:00" is "12:01" on the client`]);
+    t.expect(match[1]).toEqual([`WeftCore: the server's HTML doesn't match the client's render: the text "12:00" is "12:01" on the client`]);
   });
   Vitest.test("removes what the client doesn't render, and warns", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let match = logging(() => TestRenderer$WeftCore.hydrate(`<div><p>kept</p><span>extra</span></div><i>extra too</i>`, TestJsx$WeftCore.Elements.jsx("div", {
@@ -315,6 +315,28 @@ Vitest.describe("hydrating boundaries", undefined, undefined, undefined, undefin
     TestRenderer$WeftCore.click(renderer, "c");
     t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<div><button id=\"c\">1</button><p>after</p></div>");
   });
+  Vitest.test("renders a pending boundary on the client when its content arrives not matching", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let element = TestJsx$WeftCore.Elements.jsxs("div", {
+      children: [
+        TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+          fallback: "loading",
+          children: TestJsx$WeftCore.Elements.jsx("p", {
+            children: "client"
+          })
+        }),
+        TestJsx$WeftCore.Elements.jsx("p", {
+          children: "after"
+        })
+      ]
+    });
+    let match = logging(() => {
+      let renderer = TestRenderer$WeftCore.hydrate(`<div><!--$?--><i>loading</i><!--/$--><p>after</p></div>`, element);
+      TestRenderer$WeftCore.resolveBoundary(renderer, `<b>server</b>`);
+      return renderer;
+    });
+    t.expect(TestRenderer$WeftCore.toString(match[0])).toBe(direct(element));
+    t.expect(match[1]).toEqual(["WeftCore: the server's HTML doesn't match the client's render: expected <p>, found <b>. The boundary is rendered on the client instead."]);
+  });
   Vitest.test("renders a boundary that failed on the server on the client", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let element = TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
       fallback: "loading",
@@ -325,6 +347,72 @@ Vitest.describe("hydrating boundaries", undefined, undefined, undefined, undefin
     let renderer = TestRenderer$WeftCore.hydrate(`<!--$!--><b>fallback</b><!--/$-->`, element);
     t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(direct(element));
     t.expect(TestRenderer$WeftCore.ops(renderer).includes("clear a boundary's server content")).toBe(true);
+  });
+  Vitest.describe("a boundary that failed on the server, whose error an error boundary above catches", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+    let Hydration_test = props => Stdlib_JsError.throwWithMessage("broken");
+    let caught = TestJsx$WeftCore.jsx(ErrorBoundary$WeftCore.make, {
+      fallback: (error, param) => TestJsx$WeftCore.Elements.jsx("em", {
+        children: ErrorBoundary$WeftCore.message(error)
+      }),
+      children: TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+        fallback: "loading",
+        children: TestJsx$WeftCore.jsx(Hydration_test, {})
+      })
+    });
+    Vitest.test("renders the boundary around the error boundary on the client", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+      let element = TestJsx$WeftCore.Elements.jsxs("div", {
+        children: [
+          TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+            fallback: "outer",
+            children: caught
+          }),
+          TestJsx$WeftCore.Elements.jsx("p", {
+            children: "kept"
+          })
+        ]
+      });
+      let match = logging(() => TestRenderer$WeftCore.hydrate(`<div><!--$--><!--$!-->loading<!--/$--><!--/$--><p>kept</p></div>`, element));
+      let renderer = match[0];
+      t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<div><em>broken</em><p>kept</p></div>");
+      t.expect(TestRenderer$WeftCore.ops(renderer).includes("hydrate p")).toBe(true);
+      t.expect(created(renderer)).toEqual([
+        `create "broken"`,
+        "create em"
+      ]);
+    });
+    Vitest.test("renders the boundary around it on the client when its content streams in later", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+      let element = TestJsx$WeftCore.Elements.jsxs("div", {
+        children: [
+          TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+            fallback: "outer",
+            children: caught
+          }),
+          TestJsx$WeftCore.Elements.jsx("p", {
+            children: "kept"
+          })
+        ]
+      });
+      let match = logging(() => {
+        let renderer = TestRenderer$WeftCore.hydrate(`<div><!--$?-->outer<!--/$--><p>kept</p></div>`, element);
+        TestRenderer$WeftCore.resolveBoundary(renderer, `<!--$!-->loading<!--/$-->`);
+        return renderer;
+      });
+      let renderer = match[0];
+      t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<div><em>broken</em><p>kept</p></div>");
+      t.expect(TestRenderer$WeftCore.ops(renderer).includes("hydrate p")).toBe(true);
+    });
+    Vitest.test("renders the root on the client, with no boundary around the error boundary", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+      let element = TestJsx$WeftCore.Elements.jsxs("div", {
+        children: [
+          caught,
+          TestJsx$WeftCore.Elements.jsx("p", {
+            children: "kept"
+          })
+        ]
+      });
+      let match = logging(() => TestRenderer$WeftCore.hydrate(`<div><!--$!-->loading<!--/$--><p>kept</p></div>`, element));
+      t.expect(TestRenderer$WeftCore.toString(match[0])).toBe("<div><em>broken</em><p>kept</p></div>");
+    });
   });
   Vitest.test("renders a pending boundary that fails later on the client", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let element = TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
@@ -351,6 +439,36 @@ Vitest.describe("hydrating boundaries", undefined, undefined, undefined, undefin
     data.resolve("ready");
     await settle();
     t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<b id="r">ready</b>`);
+    t.expect(created(renderer)).toEqual([]);
+    return t.expect(TestRenderer$WeftCore.ops(renderer).includes("hydrate b#r")).toBe(true);
+  });
+  Vitest.testAsync("keeps a boundary waiting to hydrate as the server rendered it while something beside it updates", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let data = deferred();
+    let element = TestJsx$WeftCore.Elements.jsxs("div", {
+      children: [
+        TestJsx$WeftCore.jsx(Hydration_test$Counter, {
+          id: "c"
+        }),
+        TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+          fallback: "loading",
+          children: TestJsx$WeftCore.jsx(Hydration_test$Reads, {
+            promise: data.promise,
+            id: "r"
+          })
+        })
+      ]
+    });
+    let match = logging(() => {
+      let renderer = TestRenderer$WeftCore.hydrate(`<div><button id="c">0</button><!--$--><b id="r">ready</b><!--/$--></div>`, element);
+      TestRenderer$WeftCore.click(renderer, "c");
+      return renderer;
+    });
+    let renderer = match[0];
+    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<div><button id="c">1</button><b id="r">ready</b></div>`);
+    t.expect(match[1]).toEqual([]);
+    data.resolve("ready");
+    await settle();
+    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<div><button id="c">1</button><b id="r">ready</b></div>`);
     t.expect(created(renderer)).toEqual([]);
     return t.expect(TestRenderer$WeftCore.ops(renderer).includes("hydrate b#r")).toBe(true);
   });

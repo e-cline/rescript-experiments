@@ -30,6 +30,7 @@ let start: (
 
 /**
 What the Vite plugin's default bootstrap calls, with its `loadModule` and `onRefresh`: `start`, on a
-page that has a `#root` (and nothing, on one that doesn't).
+page that has a `#root` (and nothing, on one that doesn't). Run while the page is still being parsed
+(its script is `async`) before `#root` has arrived, it starts once it has.
 */
 let main: (Decoder.loadModule, (unit => unit) => unit) => unit

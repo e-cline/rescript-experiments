@@ -7,6 +7,7 @@ import * as Lazy$WeftCore from "@e-cline/weft_core/src/shared/Lazy.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Link$WeftNotes from "./Link.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
+import * as Today$WeftNotes from "./Today.res.js";
 import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
 import * as ErrorBox$WeftNotes from "./ErrorBox.res.js";
 import * as LikeButton$WeftNotes from "./LikeButton.res.js";
@@ -19,12 +20,15 @@ function Pages$Layout(props) {
   return Jsx$WeftDom.Elements.jsxs("div", {
     id: "app",
     children: [
-      Jsx$WeftDom.Elements.jsx("nav", {
-        children: Jsx$WeftDom.jsx(Link$WeftNotes.make, {
-          href: "/",
-          id: "home-link",
-          children: "All notes"
-        })
+      Jsx$WeftDom.Elements.jsxs("nav", {
+        children: [
+          Jsx$WeftDom.jsx(Link$WeftNotes.make, {
+            href: "/",
+            id: "home-link",
+            children: "All notes"
+          }),
+          Jsx$WeftDom.jsx(Today$WeftNotes.make, {})
+        ]
       }),
       props.children
     ]
@@ -229,10 +233,13 @@ function Pages$NotePage(props) {
           signal: signal
         })
       }),
-      Jsx$WeftDom.jsx(ErrorBox$WeftNotes.make, {
-        children: Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
-          fallback: loading("broken-loading", "…"),
-          children: Jsx$WeftDom.jsx(Pages$Broken, {})
+      Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+        fallback: loading("recommendations-loading", "…"),
+        children: Jsx$WeftDom.jsx(ErrorBox$WeftNotes.make, {
+          children: Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+            fallback: loading("broken-loading", "…"),
+            children: Jsx$WeftDom.jsx(Pages$Broken, {})
+          })
         })
       })
     ]

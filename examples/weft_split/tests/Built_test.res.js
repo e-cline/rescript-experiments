@@ -34,9 +34,13 @@ Vitest.afterAllAsync(undefined, async () => {
   return Stdlib_Option.forEach(built.contents, remove);
 });
 
-Vitest.describe("from the build", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("the home page renders, its entrypoints work, and a link navigates", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-  let page = WeftTesting.open_(Stdlib_Option.getOrThrow(app.contents, undefined), SplitSupport$WeftSplit.rootElement(), undefined, "/");
+Vitest.describe("from the build", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("the home page hydrates, its entrypoints work, and a link navigates", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  let page = WeftTesting.open_(Stdlib_Option.getOrThrow(app.contents, undefined), SplitSupport$WeftSplit.rootElement(), undefined, undefined, "/");
   await WeftTesting.waitFor(page, undefined, () => SplitSupport$WeftSplit.homeShows(page));
+  t.expect(await SplitSupport$WeftSplit.hydratedAsServed(page)).toBe(true);
+  let shell = await WeftTesting.shell(page);
+  t.expect(shell.includes(`<link rel="modulepreload" href="/assets/Counter`)).toBe(true);
+  t.expect(shell.includes(`href="/assets/Chart`)).toBe(false);
   WeftTesting.click(page, ".counter");
   await WeftTesting.waitFor(page, undefined, () => SplitSupport$WeftSplit.text(page, ".counter") === "clicks: 1");
   WeftTesting.click(page, "#other-link");

@@ -8,6 +8,7 @@ import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
 import * as WeftTesting from "@e-cline/vite_plugin_weft/src/WeftTesting.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
 let packageRoot = Nodepath.dirname(Nodepath.dirname(Nodeurl.fileURLToPath(import.meta.url)));
@@ -40,17 +41,20 @@ let Doc = {
 
 let containers = [];
 
-Vitest$1.afterEach(() => {
+function removeContainers() {
   containers.forEach(prim => {
     prim.remove();
   });
   containers.splice(0, containers.length);
-});
+}
 
-function open_(app, delivery, url) {
+Vitest$1.afterEach(removeContainers);
+
+function open_(app, delivery, bootstrap, url) {
+  removeContainers();
   let container = make();
   containers.push(container);
-  return WeftTesting.open_(app, container, delivery, url);
+  return WeftTesting.open_(app, container, delivery, bootstrap, url);
 }
 
 let control = "tests/FakeDbControl.res.js";
@@ -118,6 +122,41 @@ function removeNote(app, noteId) {
   return WeftTesting.callServer(app, control, "removeNote", [noteId]).then(param => {});
 }
 
+let errorBoxPart = [
+  "<!--$-->",
+  "<!--$!-->",
+  "template",
+  "p#broken-loading",
+  `"…"`,
+  "<!--/$-->",
+  "<!--/$-->"
+];
+
+async function hydratedAsServed(page, replacedOpt) {
+  let replaced = replacedOpt !== undefined ? replacedOpt : [];
+  await WeftTesting.hydrated(page, undefined);
+  let unexpected = WeftTesting.removedSince(page, WeftTesting.htmlNodes(page)).filter(node => !replaced.includes(node));
+  if (unexpected.length !== 0) {
+    Stdlib_JsError.throwWithMessage(`hydrating replaced the HTML's ` + unexpected.join(", "));
+  }
+  let warnings = WeftTesting.warnings(page);
+  if (warnings.length !== 0) {
+    return Stdlib_JsError.throwWithMessage(`hydrating warned: ` + warnings.join("\n"));
+  }
+}
+
+let turnClockBack = (days => {
+  const now = Date.now;
+  Date.now = () => now() - days * 86400000;
+  return () => {
+    Date.now = now;
+  };
+});
+
+function today() {
+  return new Date(Date.now()).toISOString().slice(0, 10);
+}
+
 let has = WeftTesting.has;
 
 export {
@@ -125,6 +164,7 @@ export {
   useApp,
   Doc,
   containers,
+  removeContainers,
   open_,
   control,
   strings,
@@ -141,5 +181,9 @@ export {
   likes,
   commentCount,
   removeNote,
+  errorBoxPart,
+  hydratedAsServed,
+  turnClockBack,
+  today,
 }
 /* packageRoot Not a pure module */

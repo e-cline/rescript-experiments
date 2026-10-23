@@ -52,6 +52,7 @@ type openOptions = {
   container: WeftDom.Dom.element,
   delivery: jsDelivery,
   client: clientSide,
+  bootstrap: bool,
 }
 
 @module("@e-cline/vite_plugin_weft/testing")
@@ -74,8 +75,13 @@ let client = {
   act: WeftDom.Client.act,
 }
 
-let open_ = (app, ~container, ~delivery=Immediate, url) =>
-  openPage(app, {url, container, delivery: toJs(delivery), client})
+let open_ = (app, ~container, ~delivery=Immediate, ~bootstrap=true, url) =>
+  openPage(app, {url, container, delivery: toJs(delivery), client, bootstrap})
+
+@send external startBootstrap: page => unit = "startBootstrap"
+@send external hydratedJs: (page, Nullable.t<int>) => promise<unit> = "hydrated"
+let hydrated = (page, ~timeout=?) => hydratedJs(page, Nullable.fromOption(timeout))
+@get external warnings: page => array<string> = "warnings"
 
 @get external started: page => promise<WeftServer.Navigation.t> = "started"
 let navigation = started
@@ -101,6 +107,7 @@ let refresh = async page => await (await started(page))->WeftServer.Navigation.r
 type snapshot
 @send external snapshot: page => snapshot = "snapshot"
 @send external removedSince: (page, snapshot) => array<string> = "removedSince"
+@get external htmlNodes: page => snapshot = "htmlNodes"
 
 @get external container: page => WeftDom.Dom.element = "container"
 @send

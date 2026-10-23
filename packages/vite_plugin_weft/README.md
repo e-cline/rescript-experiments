@@ -102,6 +102,7 @@ a browser uses it, without one:
 let app = await WeftTesting.start(~root=packageRoot) // or ~mode=Build, ~buildDir
 let page = app->WeftTesting.open_(~container, "/notes/1")
 await page->WeftTesting.waitFor(() => page->WeftTesting.has("#title"))
+await page->WeftTesting.hydrated // a click before hydration does nothing
 page->WeftTesting.click("#like")
 let _ = await app->WeftTesting.callServer("tests/FakeDbControl.res.js", "release", [JSON.String("body:1")])
 await page->WeftTesting.navigate("/notes/2")
@@ -113,14 +114,20 @@ await page->WeftTesting.navigate("/notes/2")
   uses (a fake database's controls, say).
 - **The page runs in the test's jsdom**, with the real bootstrap and the real reference map (the
   test's Vite config has the weft plugin, as the app's own does). Its first request is the HTML,
-  whose rows are pushed as its inline scripts would push them; every request after that (payloads,
-  refetches, an entrypoint's own `fetch`) goes to the worker too.
+  applied as a browser's parser would, as it arrives (jsdom can't parse a stream): the shell into
+  the container, which stands for `#root`, then each inline script (the rows pushed, boundaries
+  swapped in) and segment, in order. The bootstrap starts once the shell is in, and hydrates it.
+  Every request after that (payloads, refetches, an entrypoint's own `fetch`) goes to the worker
+  too. A segment is found by its id in the whole document, so one page is open at a time.
 - **The test decides when bytes arrive**: as they're sent, one chunk per `deliver`, or cut every _n_
   bytes. Cancelling a response (a navigation away) aborts the request in the worker.
 - **What it checks**: `waitFor` a condition, `settle` until quiet, `loads` (and `holdLoads` to make
   a chunk slow), `renderCount` of an entrypoint, `snapshot` and `removedSince` (that an update kept
-  the DOM's nodes), `pageRequests`. `rewriteBodies` changes requests on their way to the server, to
-  play a client older or newer than it (an RPC's request with other fields), or a forged one.
+  the DOM's nodes), `pageRequests`. For hydration: `hydrated` waits for it, `htmlNodes` is what the
+  HTML made (`removedSince` it is what hydration replaced), `warnings` what the console said, and
+  `~bootstrap=false` (then `startBootstrap`) opens a page as if the bootstrap's chunk hadn't loaded.
+  `rewriteBodies` changes requests on their way to the server, to play a client older or newer than
+  it (an RPC's request with other fields), or a forged one.
 - **`Build` mode** runs the build: the worker imports `dist/server/index.js`, and the page is the
   built client's own bootstrap and chunks. A file can open one page that way (the build's modules
   are shared), and moves on by following links.

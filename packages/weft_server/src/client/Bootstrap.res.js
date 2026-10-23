@@ -74,11 +74,47 @@ async function start(loadModule, fetch, container, url, onRefresh, param) {
 }
 
 function main(loadModule, onRefresh) {
-  let container = Stdlib_Option.flatMap((globalThis.document == null) ? undefined : Primitive_option.some(globalThis.document), document => Primitive_option.fromNullable(document.getElementById("root")));
-  if (container !== undefined) {
-    start(loadModule, undefined, Primitive_option.some(Primitive_option.valFromOption(container)), undefined, onRefresh, undefined);
+  let document = globalThis.document;
+  if (document == null) {
     return;
   }
+  let begin = container => {
+    start(loadModule, undefined, Primitive_option.some(container), undefined, onRefresh, undefined);
+  };
+  let container = Primitive_option.fromNullable(document.getElementById("root"));
+  if (container !== undefined) {
+    return begin(Primitive_option.valFromOption(container));
+  }
+  if (document.readyState !== "loading") {
+    return;
+  }
+  let started = {
+    contents: false
+  };
+  let observer = {
+    contents: undefined
+  };
+  let stop = () => Stdlib_Option.forEach(observer.contents, prim => {
+    prim.disconnect();
+  });
+  let check = () => {
+    let container = Primitive_option.fromNullable(document.getElementById("root"));
+    if (container !== undefined && !started.contents) {
+      started.contents = true;
+      stop();
+      return begin(Primitive_option.valFromOption(container));
+    }
+  };
+  let watching = new MutationObserver(check);
+  observer.contents = Primitive_option.some(watching);
+  watching.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    check();
+    stop();
+  });
 }
 
 export {

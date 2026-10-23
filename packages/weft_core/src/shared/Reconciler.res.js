@@ -304,7 +304,7 @@ function MakeHydratableWithScheduler(Host) {
                 unit.stateNode = instance$2;
                 Fiber$WeftCore.addFlag(unit, Fiber$WeftCore.Flags.hydrated);
                 if (!Host.textMatches(instance$2, text)) {
-                  warnHydration(`the text ` + describeCursor() + ` is "` + text + `" on the client`);
+                  warnHydration(describeCursor() + ` is "` + text + `" on the client`);
                   hydration.effects.push(() => Host.commitTextUpdate(instance$2, "", text));
                 }
                 hydration.cursor = Host.nextHydratableSibling(match$1[0]);
@@ -365,27 +365,30 @@ function MakeHydratableWithScheduler(Host) {
         }
       } else {
         let match$5 = unit.alternate;
-        let match$6 = dehydratedInstance(unit);
+        let match$6 = clientRendered.get(unit);
+        let match$7 = dehydratedInstance(unit);
         if (match$5 === undefined) {
           return "Begin";
         }
-        if (match$6 === undefined) {
+        if (match$6 !== undefined) {
+          renderBoundaryOnClient(unit, Primitive_option.valFromOption(match$6));
           return "Begin";
         }
-        let instance$5 = Primitive_option.valFromOption(match$6);
-        let match$7 = clientRendered.get(unit);
+        if (match$7 === undefined) {
+          return "Begin";
+        }
+        let instance$5 = Primitive_option.valFromOption(match$7);
+        let retrying = Lanes$WeftCore.intersects(unit.lanes, workInProgressLanes.contents);
         let match$8 = leftDehydrated.has(unit);
         let match$9 = Host.suspenseState(instance$5);
-        if (match$7 !== undefined) {
-          renderBoundaryOnClient(unit, instance$5);
-          return "Begin";
-        }
         if (match$8) {
           return "Skip";
         }
         switch (match$9) {
           case "Complete" :
-            if (match$5.memoizedProps === unit.pendingProps) {
+            if (match$5.memoizedProps === unit.pendingProps && !retrying) {
+              return "Skip";
+            } else if (match$5.memoizedProps === unit.pendingProps) {
               unit.memoizedState = null;
               hydration.active = true;
               hydration.cursor = Host.firstHydratableInSuspense(instance$5);
@@ -585,14 +588,18 @@ function MakeHydratableWithScheduler(Host) {
         Fiber$WeftCore.removeFlag(boundary, Fiber$WeftCore.Flags.childDeletion);
         boundary.deletions = undefined;
         boundary.child = Stdlib_Option.flatMap(boundary.alternate, current => current.child);
+        let renderOnClient = () => {
+          clientRendered.set(boundary, instance);
+          boundary.lanes = Lanes$WeftCore.merge(boundary.lanes, workInProgressLanes.contents);
+        };
         if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
           leftDehydrated.set(boundary, instance);
           SuspenseImpl$WeftCore.retryWhenSettled(boundary, error._1);
         } else if (error.RE_EXN_ID === HydrationMismatch) {
           warnHydration(error._1 + `. The boundary is rendered on the client instead.`);
-          clientRendered.set(boundary, instance);
+          renderOnClient();
         } else {
-          clientRendered.set(boundary, instance);
+          renderOnClient();
         }
         hydration.active = Stdlib_Option.isNone(boundary.alternate);
         hydration.cursor = undefined;
@@ -613,25 +620,62 @@ function MakeHydratableWithScheduler(Host) {
         return Primitive_option.some(undefined);
       }
     };
+    let beingHydrated = fiber => {
+      let inRegion = hydration.stack.some(param => {
+        if (param[1].TAG === "RegionEntry") {
+          return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+        } else {
+          return false;
+        }
+      });
+      let inClientPart = hydration.stack.some(param => {
+        if (param[1].TAG === "PausedEntry") {
+          return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+        } else {
+          return false;
+        }
+      });
+      if (Stdlib_Option.isNone(fiber.alternate) && !inClientPart) {
+        if (inRegion) {
+          return true;
+        } else {
+          return Stdlib_Option.mapOr(workInProgressRoot.contents, false, root => hydratingRoots.has(root));
+        }
+      } else {
+        return false;
+      }
+    };
     let handleOrdinaryError = (thrower, error) => {
-      if (error.RE_EXN_ID !== SuspenseImpl$WeftCore.Suspended) {
+      if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
+        let promise = error._1;
+        let boundary = SuspenseImpl$WeftCore.find(thrower);
+        let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
+          boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
+        );
+        if (keepScreen) {
+          suspendedOn.contents = promise;
+          workInProgress.contents = undefined;
+          return;
+        } else if (boundary !== undefined) {
+          SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
+          renderAgainWithFallback(boundary);
+          return;
+        } else {
+          return catchError(thrower, noSuspenseBoundary());
+        }
+      }
+      let errorBoundary = ErrorBoundaryImpl$WeftCore.find(thrower, true);
+      if (errorBoundary === undefined) {
         return catchError(thrower, error);
       }
-      let promise = error._1;
-      let boundary = SuspenseImpl$WeftCore.find(thrower);
-      let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
-        boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
-      );
-      if (keepScreen) {
-        suspendedOn.contents = promise;
-        workInProgress.contents = undefined;
-        return;
-      } else if (boundary !== undefined) {
-        SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
-        renderAgainWithFallback(boundary);
-        return;
+      if (!beingHydrated(errorBoundary)) {
+        return catchError(thrower, error);
+      }
+      let outcome = handleHydrationError(errorBoundary, error);
+      if (outcome !== undefined) {
+        return Primitive_option.valFromOption(outcome);
       } else {
-        return catchError(thrower, noSuspenseBoundary());
+        return catchError(thrower, error);
       }
     };
     let handleRenderError = error => {
@@ -1597,7 +1641,7 @@ function MakeWithScheduler(Host) {
                 unit.stateNode = instance$2;
                 Fiber$WeftCore.addFlag(unit, Fiber$WeftCore.Flags.hydrated);
                 if (!textMatches(instance$2, text)) {
-                  warnHydration(`the text ` + describeCursor() + ` is "` + text + `" on the client`);
+                  warnHydration(describeCursor() + ` is "` + text + `" on the client`);
                   hydration.effects.push(() => commitTextUpdate(instance$2, "", text));
                 }
                 hydration.cursor = nextHydratableSibling(match$1[0]);
@@ -1658,27 +1702,30 @@ function MakeWithScheduler(Host) {
         }
       } else {
         let match$5 = unit.alternate;
-        let match$6 = dehydratedInstance(unit);
+        let match$6 = clientRendered.get(unit);
+        let match$7 = dehydratedInstance(unit);
         if (match$5 === undefined) {
           return "Begin";
         }
-        if (match$6 === undefined) {
+        if (match$6 !== undefined) {
+          renderBoundaryOnClient(unit, Primitive_option.valFromOption(match$6));
           return "Begin";
         }
-        let instance$5 = Primitive_option.valFromOption(match$6);
-        let match$7 = clientRendered.get(unit);
+        if (match$7 === undefined) {
+          return "Begin";
+        }
+        let instance$5 = Primitive_option.valFromOption(match$7);
+        let retrying = Lanes$WeftCore.intersects(unit.lanes, workInProgressLanes.contents);
         let match$8 = leftDehydrated.has(unit);
         let match$9 = suspenseState(instance$5);
-        if (match$7 !== undefined) {
-          renderBoundaryOnClient(unit, instance$5);
-          return "Begin";
-        }
         if (match$8) {
           return "Skip";
         }
         switch (match$9) {
           case "Complete" :
-            if (match$5.memoizedProps === unit.pendingProps) {
+            if (match$5.memoizedProps === unit.pendingProps && !retrying) {
+              return "Skip";
+            } else if (match$5.memoizedProps === unit.pendingProps) {
               unit.memoizedState = null;
               hydration.active = true;
               hydration.cursor = firstHydratableInSuspense(instance$5);
@@ -1878,14 +1925,18 @@ function MakeWithScheduler(Host) {
         Fiber$WeftCore.removeFlag(boundary, Fiber$WeftCore.Flags.childDeletion);
         boundary.deletions = undefined;
         boundary.child = Stdlib_Option.flatMap(boundary.alternate, current => current.child);
+        let renderOnClient = () => {
+          clientRendered.set(boundary, instance);
+          boundary.lanes = Lanes$WeftCore.merge(boundary.lanes, workInProgressLanes.contents);
+        };
         if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
           leftDehydrated.set(boundary, instance);
           SuspenseImpl$WeftCore.retryWhenSettled(boundary, error._1);
         } else if (error.RE_EXN_ID === HydrationMismatch) {
           warnHydration(error._1 + `. The boundary is rendered on the client instead.`);
-          clientRendered.set(boundary, instance);
+          renderOnClient();
         } else {
-          clientRendered.set(boundary, instance);
+          renderOnClient();
         }
         hydration.active = Stdlib_Option.isNone(boundary.alternate);
         hydration.cursor = undefined;
@@ -1906,25 +1957,62 @@ function MakeWithScheduler(Host) {
         return Primitive_option.some(undefined);
       }
     };
+    let beingHydrated = fiber => {
+      let inRegion = hydration.stack.some(param => {
+        if (param[1].TAG === "RegionEntry") {
+          return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+        } else {
+          return false;
+        }
+      });
+      let inClientPart = hydration.stack.some(param => {
+        if (param[1].TAG === "PausedEntry") {
+          return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+        } else {
+          return false;
+        }
+      });
+      if (Stdlib_Option.isNone(fiber.alternate) && !inClientPart) {
+        if (inRegion) {
+          return true;
+        } else {
+          return Stdlib_Option.mapOr(workInProgressRoot.contents, false, root => hydratingRoots.has(root));
+        }
+      } else {
+        return false;
+      }
+    };
     let handleOrdinaryError = (thrower, error) => {
-      if (error.RE_EXN_ID !== SuspenseImpl$WeftCore.Suspended) {
+      if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
+        let promise = error._1;
+        let boundary = SuspenseImpl$WeftCore.find(thrower);
+        let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
+          boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
+        );
+        if (keepScreen) {
+          suspendedOn.contents = promise;
+          workInProgress.contents = undefined;
+          return;
+        } else if (boundary !== undefined) {
+          SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
+          renderAgainWithFallback(boundary);
+          return;
+        } else {
+          return catchError(thrower, noSuspenseBoundary());
+        }
+      }
+      let errorBoundary = ErrorBoundaryImpl$WeftCore.find(thrower, true);
+      if (errorBoundary === undefined) {
         return catchError(thrower, error);
       }
-      let promise = error._1;
-      let boundary = SuspenseImpl$WeftCore.find(thrower);
-      let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
-        boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
-      );
-      if (keepScreen) {
-        suspendedOn.contents = promise;
-        workInProgress.contents = undefined;
-        return;
-      } else if (boundary !== undefined) {
-        SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
-        renderAgainWithFallback(boundary);
-        return;
+      if (!beingHydrated(errorBoundary)) {
+        return catchError(thrower, error);
+      }
+      let outcome = handleHydrationError(errorBoundary, error);
+      if (outcome !== undefined) {
+        return Primitive_option.valFromOption(outcome);
       } else {
-        return catchError(thrower, noSuspenseBoundary());
+        return catchError(thrower, error);
       }
     };
     let handleRenderError = error => {
@@ -2891,7 +2979,7 @@ function Make(Host) {
               unit.stateNode = instance$2;
               Fiber$WeftCore.addFlag(unit, Fiber$WeftCore.Flags.hydrated);
               if (!textMatches(instance$2, text)) {
-                warnHydration(`the text ` + describeCursor() + ` is "` + text + `" on the client`);
+                warnHydration(describeCursor() + ` is "` + text + `" on the client`);
                 hydration.effects.push(() => commitTextUpdate(instance$2, "", text));
               }
               hydration.cursor = nextHydratableSibling(match$1[0]);
@@ -2952,27 +3040,30 @@ function Make(Host) {
       }
     } else {
       let match$5 = unit.alternate;
-      let match$6 = dehydratedInstance(unit);
+      let match$6 = clientRendered.get(unit);
+      let match$7 = dehydratedInstance(unit);
       if (match$5 === undefined) {
         return "Begin";
       }
-      if (match$6 === undefined) {
+      if (match$6 !== undefined) {
+        renderBoundaryOnClient(unit, Primitive_option.valFromOption(match$6));
         return "Begin";
       }
-      let instance$5 = Primitive_option.valFromOption(match$6);
-      let match$7 = clientRendered.get(unit);
+      if (match$7 === undefined) {
+        return "Begin";
+      }
+      let instance$5 = Primitive_option.valFromOption(match$7);
+      let retrying = Lanes$WeftCore.intersects(unit.lanes, workInProgressLanes.contents);
       let match$8 = leftDehydrated.has(unit);
       let match$9 = suspenseState(instance$5);
-      if (match$7 !== undefined) {
-        renderBoundaryOnClient(unit, instance$5);
-        return "Begin";
-      }
       if (match$8) {
         return "Skip";
       }
       switch (match$9) {
         case "Complete" :
-          if (match$5.memoizedProps === unit.pendingProps) {
+          if (match$5.memoizedProps === unit.pendingProps && !retrying) {
+            return "Skip";
+          } else if (match$5.memoizedProps === unit.pendingProps) {
             unit.memoizedState = null;
             hydration.active = true;
             hydration.cursor = firstHydratableInSuspense(instance$5);
@@ -3172,14 +3263,18 @@ function Make(Host) {
       Fiber$WeftCore.removeFlag(boundary, Fiber$WeftCore.Flags.childDeletion);
       boundary.deletions = undefined;
       boundary.child = Stdlib_Option.flatMap(boundary.alternate, current => current.child);
+      let renderOnClient = () => {
+        clientRendered.set(boundary, instance);
+        boundary.lanes = Lanes$WeftCore.merge(boundary.lanes, workInProgressLanes.contents);
+      };
       if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
         leftDehydrated.set(boundary, instance);
         SuspenseImpl$WeftCore.retryWhenSettled(boundary, error._1);
       } else if (error.RE_EXN_ID === HydrationMismatch) {
         warnHydration(error._1 + `. The boundary is rendered on the client instead.`);
-        clientRendered.set(boundary, instance);
+        renderOnClient();
       } else {
-        clientRendered.set(boundary, instance);
+        renderOnClient();
       }
       hydration.active = Stdlib_Option.isNone(boundary.alternate);
       hydration.cursor = undefined;
@@ -3200,25 +3295,62 @@ function Make(Host) {
       return Primitive_option.some(undefined);
     }
   };
+  let beingHydrated = fiber => {
+    let inRegion = hydration.stack.some(param => {
+      if (param[1].TAG === "RegionEntry") {
+        return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+      } else {
+        return false;
+      }
+    });
+    let inClientPart = hydration.stack.some(param => {
+      if (param[1].TAG === "PausedEntry") {
+        return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+      } else {
+        return false;
+      }
+    });
+    if (Stdlib_Option.isNone(fiber.alternate) && !inClientPart) {
+      if (inRegion) {
+        return true;
+      } else {
+        return Stdlib_Option.mapOr(workInProgressRoot.contents, false, root => hydratingRoots.has(root));
+      }
+    } else {
+      return false;
+    }
+  };
   let handleOrdinaryError = (thrower, error) => {
-    if (error.RE_EXN_ID !== SuspenseImpl$WeftCore.Suspended) {
+    if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
+      let promise = error._1;
+      let boundary = SuspenseImpl$WeftCore.find(thrower);
+      let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
+        boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
+      );
+      if (keepScreen) {
+        suspendedOn.contents = promise;
+        workInProgress.contents = undefined;
+        return;
+      } else if (boundary !== undefined) {
+        SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
+        renderAgainWithFallback(boundary);
+        return;
+      } else {
+        return catchError(thrower, noSuspenseBoundary());
+      }
+    }
+    let errorBoundary = ErrorBoundaryImpl$WeftCore.find(thrower, true);
+    if (errorBoundary === undefined) {
       return catchError(thrower, error);
     }
-    let promise = error._1;
-    let boundary = SuspenseImpl$WeftCore.find(thrower);
-    let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
-      boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
-    );
-    if (keepScreen) {
-      suspendedOn.contents = promise;
-      workInProgress.contents = undefined;
-      return;
-    } else if (boundary !== undefined) {
-      SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
-      renderAgainWithFallback(boundary);
-      return;
+    if (!beingHydrated(errorBoundary)) {
+      return catchError(thrower, error);
+    }
+    let outcome = handleHydrationError(errorBoundary, error);
+    if (outcome !== undefined) {
+      return Primitive_option.valFromOption(outcome);
     } else {
-      return catchError(thrower, noSuspenseBoundary());
+      return catchError(thrower, error);
     }
   };
   let handleRenderError = error => {
@@ -4144,7 +4276,7 @@ function MakeHydratable(Host) {
               unit.stateNode = instance$2;
               Fiber$WeftCore.addFlag(unit, Fiber$WeftCore.Flags.hydrated);
               if (!Host.textMatches(instance$2, text)) {
-                warnHydration(`the text ` + describeCursor() + ` is "` + text + `" on the client`);
+                warnHydration(describeCursor() + ` is "` + text + `" on the client`);
                 hydration.effects.push(() => Host.commitTextUpdate(instance$2, "", text));
               }
               hydration.cursor = Host.nextHydratableSibling(match$1[0]);
@@ -4205,27 +4337,30 @@ function MakeHydratable(Host) {
       }
     } else {
       let match$5 = unit.alternate;
-      let match$6 = dehydratedInstance(unit);
+      let match$6 = clientRendered.get(unit);
+      let match$7 = dehydratedInstance(unit);
       if (match$5 === undefined) {
         return "Begin";
       }
-      if (match$6 === undefined) {
+      if (match$6 !== undefined) {
+        renderBoundaryOnClient(unit, Primitive_option.valFromOption(match$6));
         return "Begin";
       }
-      let instance$5 = Primitive_option.valFromOption(match$6);
-      let match$7 = clientRendered.get(unit);
+      if (match$7 === undefined) {
+        return "Begin";
+      }
+      let instance$5 = Primitive_option.valFromOption(match$7);
+      let retrying = Lanes$WeftCore.intersects(unit.lanes, workInProgressLanes.contents);
       let match$8 = leftDehydrated.has(unit);
       let match$9 = Host.suspenseState(instance$5);
-      if (match$7 !== undefined) {
-        renderBoundaryOnClient(unit, instance$5);
-        return "Begin";
-      }
       if (match$8) {
         return "Skip";
       }
       switch (match$9) {
         case "Complete" :
-          if (match$5.memoizedProps === unit.pendingProps) {
+          if (match$5.memoizedProps === unit.pendingProps && !retrying) {
+            return "Skip";
+          } else if (match$5.memoizedProps === unit.pendingProps) {
             unit.memoizedState = null;
             hydration.active = true;
             hydration.cursor = Host.firstHydratableInSuspense(instance$5);
@@ -4425,14 +4560,18 @@ function MakeHydratable(Host) {
       Fiber$WeftCore.removeFlag(boundary, Fiber$WeftCore.Flags.childDeletion);
       boundary.deletions = undefined;
       boundary.child = Stdlib_Option.flatMap(boundary.alternate, current => current.child);
+      let renderOnClient = () => {
+        clientRendered.set(boundary, instance);
+        boundary.lanes = Lanes$WeftCore.merge(boundary.lanes, workInProgressLanes.contents);
+      };
       if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
         leftDehydrated.set(boundary, instance);
         SuspenseImpl$WeftCore.retryWhenSettled(boundary, error._1);
       } else if (error.RE_EXN_ID === HydrationMismatch) {
         warnHydration(error._1 + `. The boundary is rendered on the client instead.`);
-        clientRendered.set(boundary, instance);
+        renderOnClient();
       } else {
-        clientRendered.set(boundary, instance);
+        renderOnClient();
       }
       hydration.active = Stdlib_Option.isNone(boundary.alternate);
       hydration.cursor = undefined;
@@ -4453,25 +4592,62 @@ function MakeHydratable(Host) {
       return Primitive_option.some(undefined);
     }
   };
+  let beingHydrated = fiber => {
+    let inRegion = hydration.stack.some(param => {
+      if (param[1].TAG === "RegionEntry") {
+        return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+      } else {
+        return false;
+      }
+    });
+    let inClientPart = hydration.stack.some(param => {
+      if (param[1].TAG === "PausedEntry") {
+        return ContextImpl$WeftCore.isWithin(fiber, param[0]);
+      } else {
+        return false;
+      }
+    });
+    if (Stdlib_Option.isNone(fiber.alternate) && !inClientPart) {
+      if (inRegion) {
+        return true;
+      } else {
+        return Stdlib_Option.mapOr(workInProgressRoot.contents, false, root => hydratingRoots.has(root));
+      }
+    } else {
+      return false;
+    }
+  };
   let handleOrdinaryError = (thrower, error) => {
-    if (error.RE_EXN_ID !== SuspenseImpl$WeftCore.Suspended) {
+    if (error.RE_EXN_ID === SuspenseImpl$WeftCore.Suspended) {
+      let promise = error._1;
+      let boundary = SuspenseImpl$WeftCore.find(thrower);
+      let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
+        boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
+      );
+      if (keepScreen) {
+        suspendedOn.contents = promise;
+        workInProgress.contents = undefined;
+        return;
+      } else if (boundary !== undefined) {
+        SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
+        renderAgainWithFallback(boundary);
+        return;
+      } else {
+        return catchError(thrower, noSuspenseBoundary());
+      }
+    }
+    let errorBoundary = ErrorBoundaryImpl$WeftCore.find(thrower, true);
+    if (errorBoundary === undefined) {
       return catchError(thrower, error);
     }
-    let promise = error._1;
-    let boundary = SuspenseImpl$WeftCore.find(thrower);
-    let keepScreen = !Lanes$WeftCore.isBlocking(workInProgressLanes.contents) && (
-      boundary !== undefined ? SuspenseImpl$WeftCore.isShowingChildren(boundary.alternate) : true
-    );
-    if (keepScreen) {
-      suspendedOn.contents = promise;
-      workInProgress.contents = undefined;
-      return;
-    } else if (boundary !== undefined) {
-      SuspenseImpl$WeftCore.retryWhenSettled(boundary, promise);
-      renderAgainWithFallback(boundary);
-      return;
+    if (!beingHydrated(errorBoundary)) {
+      return catchError(thrower, error);
+    }
+    let outcome = handleHydrationError(errorBoundary, error);
+    if (outcome !== undefined) {
+      return Primitive_option.valFromOption(outcome);
     } else {
-      return catchError(thrower, noSuspenseBoundary());
+      return catchError(thrower, error);
     }
   };
   let handleRenderError = error => {

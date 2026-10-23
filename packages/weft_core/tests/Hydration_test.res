@@ -155,7 +155,7 @@ describe("hydrating", () => {
     t
     ->expect(warnings)
     ->Expect.toEqual([
-      `WeftCore: the server's HTML doesn't match the client's render: the text the text "12:00" is "12:01" on the client`,
+      `WeftCore: the server's HTML doesn't match the client's render: the text "12:00" is "12:01" on the client`,
     ])
   })
 
@@ -316,6 +316,32 @@ describe("hydrating boundaries", () => {
     },
   )
 
+  test("renders a pending boundary on the client when its content arrives not matching", t => {
+    let element =
+      <div>
+        <Suspense fallback={text("loading")}>
+          <p> {text("client")} </p>
+        </Suspense>
+        <p> {text("after")} </p>
+      </div>
+    let (renderer, warnings) = logging(
+      () => {
+        let renderer = TestRenderer.hydrate(
+          `<div><!--$?--><i>loading</i><!--/$--><p>after</p></div>`,
+          element,
+        )
+        TestRenderer.resolveBoundary(renderer, `<b>server</b>`)
+        renderer
+      },
+    )
+    t->expect(TestRenderer.toString(renderer))->Expect.toBe(direct(element))
+    t
+    ->expect(warnings)
+    ->Expect.toEqual([
+      "WeftCore: the server's HTML doesn't match the client's render: expected <p>, found <b>. The boundary is rendered on the client instead.",
+    ])
+  })
+
   test("renders a boundary that failed on the server on the client", t => {
     let element =
       <Suspense fallback={text("loading")}>
@@ -327,6 +353,89 @@ describe("hydrating boundaries", () => {
     ->expect(TestRenderer.ops(renderer)->Array.includes("clear a boundary's server content"))
     ->Expect.toBe(true)
   })
+
+  describe(
+    "a boundary that failed on the server, whose error an error boundary above catches",
+    () => {
+      module Throws = {
+        @jsx.component
+        let make = () => JsError.throwWithMessage("broken")
+      }
+      let caught =
+        <ErrorBoundary
+          fallback={(~error, ~reset as _) => <em> {text(ErrorBoundary.message(error))} </em>}
+        >
+          <Suspense fallback={text("loading")}>
+            <Throws />
+          </Suspense>
+        </ErrorBoundary>
+
+      test(
+        "renders the boundary around the error boundary on the client",
+        t => {
+          let element =
+            <div>
+              <Suspense fallback={text("outer")}> caught </Suspense>
+              <p> {text("kept")} </p>
+            </div>
+          let (renderer, _) = logging(
+            () =>
+              TestRenderer.hydrate(
+                `<div><!--$--><!--$!-->loading<!--/$--><!--/$--><p>kept</p></div>`,
+                element,
+              ),
+          )
+          t
+          ->expect(TestRenderer.toString(renderer))
+          ->Expect.toBe("<div><em>broken</em><p>kept</p></div>")
+          t->expect(TestRenderer.ops(renderer)->Array.includes("hydrate p"))->Expect.toBe(true)
+          t->expect(created(renderer))->Expect.toEqual([`create "broken"`, "create em"])
+        },
+      )
+
+      test(
+        "renders the boundary around it on the client when its content streams in later",
+        t => {
+          let element =
+            <div>
+              <Suspense fallback={text("outer")}> caught </Suspense>
+              <p> {text("kept")} </p>
+            </div>
+          let (renderer, _) = logging(
+            () => {
+              let renderer = TestRenderer.hydrate(
+                `<div><!--$?-->outer<!--/$--><p>kept</p></div>`,
+                element,
+              )
+              TestRenderer.resolveBoundary(renderer, `<!--$!-->loading<!--/$-->`)
+              renderer
+            },
+          )
+          t
+          ->expect(TestRenderer.toString(renderer))
+          ->Expect.toBe("<div><em>broken</em><p>kept</p></div>")
+          t->expect(TestRenderer.ops(renderer)->Array.includes("hydrate p"))->Expect.toBe(true)
+        },
+      )
+
+      test(
+        "renders the root on the client, with no boundary around the error boundary",
+        t => {
+          let element =
+            <div>
+              caught
+              <p> {text("kept")} </p>
+            </div>
+          let (renderer, _) = logging(
+            () => TestRenderer.hydrate(`<div><!--$!-->loading<!--/$--><p>kept</p></div>`, element),
+          )
+          t
+          ->expect(TestRenderer.toString(renderer))
+          ->Expect.toBe("<div><em>broken</em><p>kept</p></div>")
+        },
+      )
+    },
+  )
 
   test("renders a pending boundary that fails later on the client", t => {
     let element =
@@ -352,6 +461,41 @@ describe("hydrating boundaries", () => {
       data.resolve("ready")
       await settle()
       t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<b id="r">ready</b>`)
+      t->expect(created(renderer))->Expect.toEqual([])
+      t->expect(TestRenderer.ops(renderer)->Array.includes("hydrate b#r"))->Expect.toBe(true)
+    },
+  )
+
+  testAsync(
+    "keeps a boundary waiting to hydrate as the server rendered it while something beside it updates",
+    async t => {
+      let data = deferred()
+      let element =
+        <div>
+          <Counter id="c" />
+          <Suspense fallback={text("loading")}>
+            <Reads promise=data.promise id="r" />
+          </Suspense>
+        </div>
+      let (renderer, warnings) = logging(
+        () => {
+          let renderer = TestRenderer.hydrate(
+            `<div><button id="c">0</button><!--$--><b id="r">ready</b><!--/$--></div>`,
+            element,
+          )
+          TestRenderer.click(renderer, "c")
+          renderer
+        },
+      )
+      t
+      ->expect(TestRenderer.toString(renderer))
+      ->Expect.toBe(`<div><button id="c">1</button><b id="r">ready</b></div>`)
+      t->expect(warnings)->Expect.toEqual([])
+      data.resolve("ready")
+      await settle()
+      t
+      ->expect(TestRenderer.toString(renderer))
+      ->Expect.toBe(`<div><button id="c">1</button><b id="r">ready</b></div>`)
       t->expect(created(renderer))->Expect.toEqual([])
       t->expect(TestRenderer.ops(renderer)->Array.includes("hydrate b#r"))->Expect.toBe(true)
     },

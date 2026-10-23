@@ -21,6 +21,7 @@ describe("the first page", () => {
       await page->WeftTesting.waitFor(() => has(page, "#title"))
       t->expect(text(page, "#title"))->Expect.toBe("Groceries")
       t->expect(note1Fallbacks->Array.every(selector => has(page, selector)))->Expect.toBe(true)
+      await hydratedAsServed(page, ~replaced=errorBoxPart)
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
       // Related notes first, then the body, then the comments.
       await app()->release("related:1")
@@ -58,7 +59,7 @@ let openGates = async (~note="1") => {
   await app()->release(`related:${note}`)
 }
 
-/** Opens note `note`'s page with every gate open, once it has all rendered. */
+/** Opens note `note`'s page with every gate open, once it has all rendered, and hydrated. */
 let openNote = async (~note="1", ~delivery=?) => {
   await openGates(~note)
   let page = app()->open_(~delivery?, `/notes/${note}`)
@@ -68,8 +69,127 @@ let openNote = async (~note="1", ~delivery=?) => {
     has(page, "#related") &&
     has(page, "#like")
   )
+  await hydratedAsServed(page, ~replaced=errorBoxPart)
   page
 }
+
+let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#"
+let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#"
+
+describe("hydrating the first page", () => {
+  testAsync(
+    "isn't needed to read it: the title, then each boundary as its gate opens, with nothing working",
+    async t => {
+      let page = app()->open_(~bootstrap=false, "/notes/1")
+      await page->WeftTesting.waitFor(() => has(page, "#title") && has(page, "#like"))
+      t->expect(text(page, "#title"))->Expect.toBe("Groceries")
+      t->expect(text(page, "#like"))->Expect.toBe("3 likes")
+      t->expect(note1Fallbacks->Array.every(selector => has(page, selector)))->Expect.toBe(true)
+      await openGates()
+      await page->WeftTesting.waitFor(
+        () => has(page, "#note-body") && has(page, "#comment-list") && has(page, "#related"),
+      )
+      t->expect(text(page, "#note-body"))->Expect.toBe("Milk, eggs, bread.")
+      t->expect(text(page, "#comment-list"))->Expect.toBe("Ada: Don't forget coffee.")
+      // The failed part shows the server's fallback: the error box is the client's to render.
+      t->expect(has(page, "#broken-loading"))->Expect.toBe(true)
+      t->expect(has(page, "#error-box"))->Expect.toBe(false)
+      page->WeftTesting.click("#like")
+      await page->WeftTesting.idle
+      t->expect(text(page, "#like"))->Expect.toBe("3 likes")
+      t->expect(page->WeftTesting.renderCount(likeButton))->Expect.toBe(0)
+      t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
+    },
+  )
+
+  testAsync(
+    "hydrates what was swapped in before the bootstrap ran, and what's swapped in after",
+    async t => {
+      let page = app()->open_(~bootstrap=false, "/notes/1")
+      await page->WeftTesting.waitFor(() => has(page, "#title"))
+      await app()->release("body:1")
+      await page->WeftTesting.waitFor(() => has(page, "#note-body"))
+      // The bootstrap's chunk loading late: the body's already there, and hydrated with the rest.
+      page->WeftTesting.startBootstrap
+      await hydratedAsServed(page, ~replaced=errorBoxPart)
+      t->expect(has(page, "#comment-list-loading"))->Expect.toBe(true)
+      await app()->release("comments:1")
+      await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+      let swapped = page->WeftTesting.snapshot
+      await page->WeftTesting.settle
+      // The comments, from their segment: kept, not rendered again.
+      t->expect(page->WeftTesting.removedSince(swapped))->Expect.toEqual([])
+      t->expect(text(page, "#comment-list"))->Expect.toBe("Ada: Don't forget coffee.")
+      page->WeftTesting.click("#like")
+      await page->WeftTesting.waitFor(() => text(page, "#like") == "3 likes (you liked this)")
+      t->expect(page->WeftTesting.warnings)->Expect.toEqual([])
+    },
+  )
+
+  testAsync(
+    "hydrates the rest while an entrypoint's chunk loads, and a boundary arriving meanwhile, then it",
+    async t => {
+      await app()->release("comments:1")
+      await app()->release("related:1")
+      let page = app()->open_("/notes/1")
+      page->WeftTesting.holdLoads(~matching="LikeButton")
+      await page->WeftTesting.waitFor(() => has(page, "#title") && has(page, "#like"))
+      await page->WeftTesting.hydrated
+      // The server's button, while its chunk loads.
+      t->expect(text(page, "#like"))->Expect.toBe("3 likes")
+      t->expect(has(page, "#likes-loading"))->Expect.toBe(false)
+      t->expect(page->WeftTesting.renderCount(likeButton))->Expect.toBe(0)
+      // The editor is hydrated: it refuses an empty title.
+      page->WeftTesting.input("#title-input", "   ")
+      page->WeftTesting.click("#save")
+      await page->WeftTesting.waitFor(() => has(page, "#title-error"))
+      await app()->release("body:1")
+      await page->WeftTesting.waitFor(() => has(page, "#note-body"))
+      page->WeftTesting.releaseLoads
+      await hydratedAsServed(page, ~replaced=errorBoxPart)
+      page->WeftTesting.click("#like")
+      await page->WeftTesting.waitFor(() => text(page, "#like") == "3 likes (you liked this)")
+      t
+      ->expect(page->WeftTesting.loads->Array.filter(id => id->String.includes("LikeButton")))
+      ->Expect.toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"])
+    },
+  )
+
+  testAsync("renders the failing component's error box on the client, and only that", async t => {
+    let page = await openNote()
+    t
+    ->expect(text(page, "#error-box"))
+    ->Expect.toBe("Couldn't show this: the recommendations service is down")
+    t
+    ->expect(
+      page
+      ->WeftTesting.removedSince(page->WeftTesting.htmlNodes)
+      ->Array.every(node => errorBoxPart->Array.includes(node)),
+    )
+    ->Expect.toBe(true)
+  })
+
+  testAsync("patches a text the client renders differently, and warns about it", async t => {
+    await openGates()
+    let serverDay = today()
+    // The browser's clock says another day than the server's.
+    let restore = turnClockBack(400)
+    let clientDay = today()
+    let page = app()->open_("/notes/1")
+    await page->WeftTesting.waitFor(() => has(page, "#note-body"))
+    let fromServer = page->WeftTesting.query("#today")
+    await page->WeftTesting.hydrated
+    restore()
+    t->expect((await page->WeftTesting.shell)->String.includes(serverDay))->Expect.toBe(true)
+    t->expect(text(page, "#today"))->Expect.toBe(clientDay)
+    t->expect(page->WeftTesting.query("#today") === fromServer)->Expect.toBe(true)
+    t
+    ->expect(page->WeftTesting.warnings)
+    ->Expect.toEqual([
+      `WeftCore: the server's HTML doesn't match the client's render: the text "${serverDay}" is "${clientDay}" on the client`,
+    ])
+  })
+})
 
 describe("the first page, in any order", () => {
   testAsync("streams the boundaries in whichever order their gates open", async t => {
@@ -124,25 +244,7 @@ describe("the first page, in any order", () => {
       t->expect(text(page, "#title"))->Expect.toBe("Groceries")
     },
   )
-
-  testAsync("renders the rest of the page while an entrypoint's chunk loads, then it", async t => {
-    await openGates()
-    let page = app()->open_("/notes/1")
-    page->WeftTesting.holdLoads(~matching="LikeButton")
-    await page->WeftTesting.waitFor(() => has(page, "#note-body") && has(page, "#title"))
-    t->expect(has(page, "#likes-loading"))->Expect.toBe(true)
-    t->expect(has(page, "#like"))->Expect.toBe(false)
-    page->WeftTesting.releaseLoads
-    await page->WeftTesting.waitFor(() => has(page, "#like"))
-    t->expect(text(page, "#like"))->Expect.toBe("3 likes")
-    t
-    ->expect(page->WeftTesting.loads->Array.filter(id => id->String.includes("LikeButton")))
-    ->Expect.toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"])
-  })
 })
-
-let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#"
-let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#"
 
 describe("navigating", () => {
   testAsync("keeps the like button's state across notes and a refresh", async t => {
@@ -161,6 +263,7 @@ describe("navigating", () => {
   testAsync("by a link, fetches the payload, not the page", async t => {
     let page = app()->open_("/")
     await page->WeftTesting.waitFor(() => has(page, "#note-link-2"))
+    await hydratedAsServed(page)
     page->WeftTesting.click("#note-link-2")
     await page->WeftTesting.waitFor(() => text(page, "#title") == "Ideas")
     t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/", "/notes/2"])
@@ -358,6 +461,7 @@ describe("the comments, refetched by themselves", () => {
       // Let this first query through, but not the reload's.
       await app()->release(await app()->waiterFor("comments:1"))
       await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+      await page->WeftTesting.hydrated
       await app()->addComment(~noteId="1", ~author="Bob", ~text="Later")
       page->WeftTesting.click("#reload-comments")
       await page->WeftTesting.waitFor(
@@ -390,6 +494,7 @@ describe("the comments, refetched by themselves", () => {
     await page->WeftTesting.waitFor(() => has(page, "#comment-list-loading"))
     await app()->release(await app()->waiterFor("comments:1"))
     await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+    await page->WeftTesting.hydrated
     page->WeftTesting.click("#reload-comments")
     let rec waiterCount = async (count, tries) => {
       let found = (await waiting(app()))->Array.filter(id => id->String.startsWith("comments:1#"))

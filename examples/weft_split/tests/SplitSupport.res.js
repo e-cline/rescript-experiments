@@ -4,6 +4,7 @@ import * as Nodeurl from "node:url";
 import * as Nodepath from "node:path";
 import * as WeftTesting from "@e-cline/vite_plugin_weft/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 
 let packageRoot = Nodepath.dirname(Nodepath.dirname(Nodeurl.fileURLToPath(import.meta.url)));
 
@@ -38,11 +39,21 @@ function otherShows(page, clicks) {
   }
 }
 
+async function hydratedAsServed(page) {
+  await WeftTesting.hydrated(page, undefined);
+  if (Primitive_object.equal(WeftTesting.removedSince(page, WeftTesting.htmlNodes(page)), [])) {
+    return Primitive_object.equal(WeftTesting.warnings(page), []);
+  } else {
+    return false;
+  }
+}
+
 export {
   packageRoot,
   rootElement,
   text,
   homeShows,
   otherShows,
+  hydratedAsServed,
 }
 /* packageRoot Not a pure module */

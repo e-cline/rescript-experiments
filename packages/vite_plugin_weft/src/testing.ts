@@ -506,50 +506,154 @@ export function builtEntrypoints(
   });
 }
 
+/** A piece of a page's body, as its parser would come to it: one top-level node at a time. */
+export type Piece =
+  /** `#root`, with the shell's HTML in it (if the server rendered one). */
+  | {type: 'root'; attributes: [string, string][]; html: string}
+  /** An inline script: a row, the swap runtime, or a swap. */
+  | {type: 'script'; code: string}
+  /** Anything else: a preload, a boundary's segment, the end of the body. */
+  | {type: 'markup'; html: string};
+
+const voidElements = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'source',
+  'track',
+  'wbr',
+]);
+const rawTextElements = new Set(['script', 'style', 'textarea', 'title']);
+
+/** A comment, a closing tag, an opening tag (its name and attributes), or a run of text. */
+const token =
+  /<!--[\s\S]*?-->|<\/([a-zA-Z][^\s/>]*)\s*>|<([a-zA-Z][^\s/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>|[^<]+/y;
+
+/** How long the node at the start of `text` is, or `undefined` if it hasn't all arrived. */
+function nodeLength(text: string): number | undefined {
+  let depth = 0;
+  let at = 0;
+  for (;;) {
+    token.lastIndex = at;
+    const match = token.exec(text);
+    if (match === null) return undefined;
+    at = token.lastIndex;
+    const [whole, close, open, attributes] = match;
+    if (open !== undefined) {
+      const name = open.toLowerCase();
+      if (rawTextElements.has(name)) {
+        // Its text runs to its closing tag, whatever it looks like.
+        const end = text.toLowerCase().indexOf(`</${name}`, at);
+        const closed = end === -1 ? -1 : text.indexOf('>', end);
+        if (closed === -1) return undefined;
+        at = closed + 1;
+        if (depth === 0) return at;
+      } else if (!voidElements.has(name) && !attributes!.endsWith('/')) {
+        depth++;
+      } else if (depth === 0) {
+        return at;
+      }
+    } else if (close !== undefined) {
+      depth--;
+      if (depth <= 0) return at;
+    } else if (depth === 0) {
+      // A comment is whole; a run of text only once something follows it.
+      return whole.startsWith('<!--') || at < text.length ? at : undefined;
+    }
+  }
+}
+
+const attribute = /([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+
+const decodeEntities = (text: string) =>
+  text
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+
+function toPiece(node: string): Piece {
+  const open = /^<([a-zA-Z][^\s/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/.exec(node);
+  const name = open?.[1]!.toLowerCase();
+  if (name === 'script' && open![2]!.trim() === '') {
+    return {
+      type: 'script',
+      code: node.slice(open![0].length, node.lastIndexOf('</')),
+    };
+  }
+  if (name === 'div') {
+    const attributes = [...open![2]!.matchAll(attribute)].map(
+      ([, key, ...values]): [string, string] => [
+        key!.toLowerCase(),
+        decodeEntities(values.find((value) => value !== undefined) ?? ''),
+      ],
+    );
+    if (attributes.some(([key, value]) => key === 'id' && value === 'root')) {
+      return {
+        type: 'root',
+        attributes,
+        html: node.slice(open![0].length, node.lastIndexOf('</')),
+      };
+    }
+  }
+  return {type: 'markup', html: node};
+}
+
+const rowScript =
+  /<script>\(self\.__weft\|\|=\[\]\)\.push\((?:"(?:[^"\\]|\\.)*"|null)\)<\/script>/g;
+
 /**
- * The rows a page's HTML carries (`WeftServer.Page`'s inline scripts), read from `html` as it
- * arrives: `onRow` gets each row's text, then `null` once the payload is complete. Resolves with
- * the HTML with the scripts taken out (the shell), once it has all arrived.
+ * Reads a page's HTML as it arrives, as a streaming parser would: `onPiece` gets each top-level
+ * node of the body once it has all arrived (`#root` with the shell in it, each inline script, each
+ * segment), in order. Resolves with the whole HTML, with the rows' scripts taken out, once it has
+ * all arrived.
  */
 export async function readPage(
   html: ReadableStream<Uint8Array>,
-  onRow: (row: string | null) => void,
+  onPiece: (piece: Piece) => void,
 ): Promise<string> {
   const decoder = new TextDecoder();
   const reader = html.getReader();
+  let whole = '';
   let text = '';
-  let shell = '';
-  const script =
-    /<script>\(self\.__weft\|\|=\[\]\)\.push\(("(?:[^"\\]|\\.)*"|null)\)<\/script>/y;
+  let inBody = false;
   const take = () => {
+    if (!inBody) {
+      const body = /<body(?:[^>"']|"[^"]*"|'[^']*')*>/.exec(text);
+      if (body === null) return;
+      text = text.slice(body.index + body[0].length);
+      inBody = true;
+    }
     for (;;) {
-      const start = text.indexOf('<script>(self.__weft');
-      if (start === -1) {
-        // Keep what might be the start of a script for the next chunk.
-        const keep = text.lastIndexOf('<');
-        const cut = keep === -1 ? text.length : keep;
-        shell += text.slice(0, cut);
-        text = text.slice(cut);
-        return;
-      }
-      shell += text.slice(0, start);
-      text = text.slice(start);
-      script.lastIndex = 0;
-      const match = script.exec(text);
-      if (match === null) return;
-      onRow(JSON.parse(match[1]!) as string | null);
-      text = text.slice(match[0].length);
+      const length = text === '' ? undefined : nodeLength(text);
+      if (length === undefined) return;
+      const node = text.slice(0, length);
+      text = text.slice(length);
+      onPiece(toPiece(node));
     }
   };
   for (;;) {
     const {done, value} = await reader.read();
     if (done) break;
-    text += decoder.decode(value, {stream: true});
+    const chunk = decoder.decode(value, {stream: true});
+    whole += chunk;
+    text += chunk;
     take();
   }
-  text += decoder.decode();
+  const last = decoder.decode();
+  whole += last;
+  text += last;
   take();
-  return shell + text;
+  if (inBody && text !== '') onPiece({type: 'markup', html: text});
+  return whole.replace(rowScript, '');
 }
 
 // The client side: a page in the test's DOM.
@@ -577,7 +681,29 @@ export type OpenOptions = {
   container: Element;
   delivery?: Delivery;
   client: ClientSide;
+  /**
+   * Whether the bootstrap runs, once `#root` has arrived (the default), or only when the test calls
+   * `startBootstrap`: as if its chunk loaded late, or never. The page's own inline scripts run
+   * either way.
+   */
+  bootstrap?: boolean;
 };
+
+/** Where `console.error` and `console.warn` are collected: the page opened last's `warnings`. */
+let collecting: string[] | undefined;
+let consoleWrapped = false;
+
+function collectConsole() {
+  if (consoleWrapped) return;
+  consoleWrapped = true;
+  for (const level of ['error', 'warn'] as const) {
+    const original = console[level];
+    console[level] = (...args: unknown[]) => {
+      collecting?.push(args.map(String).join(' '));
+      original.apply(console, args);
+    };
+  }
+}
 
 /** A plain object (a module, or a module inside one, as ReScript compiles it). */
 const isPlain = (value: unknown): value is Record<string, unknown> =>
@@ -588,6 +714,7 @@ const isPlain = (value: unknown): value is Record<string, unknown> =>
 /** A node, as a test reads it in a list of what changed. */
 function describeNode(node: Node): string {
   if (node.nodeType === 3) return JSON.stringify(node.textContent);
+  if (node.nodeType === 8) return `<!--${node.textContent}-->`;
   const element = node as Element;
   return element.id === ''
     ? element.tagName.toLowerCase()
@@ -597,8 +724,18 @@ function describeNode(node: Node): string {
 export class Page {
   readonly app: App;
   readonly container: Element;
-  /** The page's `Navigation.t` (`source` mode), once its first payload has rendered. */
+  /**
+   * The page's `Navigation.t` (`source` mode), once the bootstrap has started on its first payload
+   * (in `build` mode, once the bootstrap's chunk has run).
+   */
   readonly started: Promise<unknown>;
+  /** What `console.error` and `console.warn` said since the page opened: hydration's warnings. */
+  readonly warnings: string[] = [];
+  /**
+   * The nodes the HTML has made under the container: the shell's, and each segment's as it's
+   * swapped in, less those the swaps took out (the fallbacks). Hydration should keep them all.
+   */
+  htmlNodes: Node[] = [];
   /** The HTML with the rows taken out, once it has all arrived. */
   readonly shell: Promise<string>;
   /** Each entrypoint's renders, by id (`source` mode). */
@@ -612,25 +749,118 @@ export class Page {
   /** Which loads `holdLoads` holds: those whose id contains this. */
   private holding = '';
   private loading = 0;
+  /** How many of the loads under way are held by `holdLoads`. */
+  private heldLoads = 0;
   private readonly wrapped = new Map<unknown, unknown>();
+  private readonly start: (page: Page) => Promise<unknown>;
+  private rootArrived = false;
+  private wantsBootstrap: boolean;
+  private bootstrapped = false;
+  private resolveStarted!: (started: Promise<unknown>) => void;
 
   constructor(
     app: App,
     container: Element,
     act: (f: () => void) => void,
     start: (page: Page) => Promise<unknown>,
-    shell: Promise<string>,
+    html: Promise<Response>,
     firstRequest: number,
+    bootstrap: boolean,
   ) {
     this.app = app;
     this.container = container;
     this.act = act;
     this.firstRequest = firstRequest;
-    this.shell = shell;
-    this.shell.catch(() => {});
-    this.started = start(this);
+    this.start = start;
+    this.wantsBootstrap = bootstrap;
+    this.started = new Promise((resolve) => {
+      this.resolveStarted = resolve;
+    });
     // A page that fails to start fails the test through `started`, not as an unhandled rejection.
     this.started.catch(() => {});
+    this.shell = html.then((response) =>
+      readPage(response.body!, (piece) => this.apply(piece)),
+    );
+    this.shell.catch(() => {});
+  }
+
+  /** A piece of the page's body, put in the document as the parser would. */
+  private apply(piece: Piece) {
+    const document = this.container.ownerDocument;
+    switch (piece.type) {
+      case 'root':
+        // The test's container stands for `#root`, without taking its id.
+        for (const [name, value] of piece.attributes) {
+          if (name !== 'id') this.container.setAttribute(name, value);
+        }
+        this.container.innerHTML = piece.html;
+        this.htmlNodes = this.snapshot();
+        this.rootArrived = true;
+        this.bootstrapIfWanted();
+        break;
+      case 'script': {
+        // As an inline script runs: in the global scope. What it changes under the container (a
+        // swap: nothing renders while it runs) is the HTML's doing.
+        const before = this.rootArrived ? this.snapshot() : [];
+        (0, eval)(piece.code);
+        if (this.rootArrived) {
+          const after = this.snapshot();
+          const kept = new Set(after);
+          const was = new Set(before);
+          this.htmlNodes = [
+            ...this.htmlNodes.filter((node) => kept.has(node)),
+            ...after.filter((node) => !was.has(node)),
+          ];
+        }
+        break;
+      }
+      case 'markup': {
+        const holder = document.createElement('template');
+        holder.innerHTML = piece.html;
+        document.body.append(holder.content);
+        break;
+      }
+    }
+  }
+
+  private bootstrapIfWanted() {
+    if (!this.wantsBootstrap || !this.rootArrived || this.bootstrapped) return;
+    this.bootstrapped = true;
+    this.resolveStarted(this.start(this));
+  }
+
+  /** Runs the bootstrap (on a page opened without it), now or once `#root` arrives. */
+  startBootstrap() {
+    this.wantsBootstrap = true;
+    this.bootstrapIfWanted();
+  }
+
+  /**
+   * Waits until the bootstrap has hydrated the page (or rendered it, with no HTML to hydrate): it
+   * has started, every entrypoint it's loading has loaded (but those `holdLoads` holds), and the
+   * renders that follow are done. A boundary still streaming hydrates later, once its content
+   * arrives, as does one waiting on a held load.
+   */
+  async hydrated(timeout = 5000): Promise<void> {
+    const deadline = Date.now() + timeout;
+    await this.started;
+    for (let quiet = 0; quiet < 3;) {
+      this.act(() => {});
+      await new Promise((done) => setTimeout(done, 5));
+      // In `build` mode the loads are the build's own: its first element having its props says
+      // hydration got there.
+      const loaded =
+        this.app.mode === 'source'
+          ? this.loading === this.heldLoads
+          : this.container.firstElementChild === null ||
+            '$$resFiberProps' in this.container.firstElementChild;
+      quiet = loaded ? quiet + 1 : 0;
+      if (Date.now() > deadline) {
+        throw new Error(
+          `[weft] timed out waiting for hydration; the page shows: ${this.container.innerHTML}`,
+        );
+      }
+    }
   }
 
   /**
@@ -670,7 +900,9 @@ export class Page {
       try {
         if (this.held !== undefined && id.includes(this.holding)) {
           const held = this.held;
+          this.heldLoads++;
           await new Promise<void>((resolve) => held.push(resolve));
+          this.heldLoads--;
         }
         // Entrypoint ids are `<file>#<module path>`, and renders are counted by them.
         return this.wrapModule(await loadModule(id), `${id}#`);
@@ -791,23 +1023,26 @@ export class Page {
 let builtBootstrapImported = false;
 
 /**
- * Opens `url` in `container`: requests its HTML through the server, pushes the rows it carries as
- * the page's inline scripts would, and starts the client on them. In `build` mode, the client is
- * the build's own bootstrap, which can only be imported once per test file (its modules are
- * shared), so a build-mode test file opens one page, and moves on by following links.
+ * Opens `url` in `container`: requests its HTML through the server and applies it as the browser's
+ * parser would, as it arrives (the shell into the container, then each inline script and segment, in
+ * order: the rows pushed, boundaries swapped in), and once the shell's in, starts the client, which
+ * hydrates it. In `build` mode, the client is the build's own bootstrap, which can only be imported
+ * once per test file (its modules are shared), so a build-mode test file opens one page, and moves
+ * on by following links. Segments go in the document's body, and the page's runtime finds them by
+ * id, so one page is open in a document at a time.
  */
 export function openPage(app: App, options: OpenOptions): Page {
   app.delivery = options.delivery ?? {type: 'immediate'};
   const self = globalThis as {__weft?: unknown};
   delete self.__weft;
-  const push = (row: string | null) => {
-    ((self.__weft ??= []) as {push: (row: string | null) => void}).push(row);
-  };
+  const container = options.container;
+  container.removeAttribute('data-weft-html');
+  container.innerHTML = '';
+  collectConsole();
   const firstRequest = app.requests.length;
   // Entrypoints' own requests (a form posting, say) go to the server too.
   (globalThis as {fetch: typeof fetch}).fetch = app.fetch as typeof fetch;
   const html = app.fetch(options.url, {headers: {Accept: 'text/html'}});
-  const shell = html.then((response) => readPage(response.body!, push));
   const payloadFetch = async (url: string, signal: AbortSignal) => {
     const response = await app.fetch(url, {
       headers: {Accept: 'text/x-weft-payload'},
@@ -820,20 +1055,27 @@ export function openPage(app: App, options: OpenOptions): Page {
     }
     return response.body!;
   };
-  if (app.mode === 'source') {
-    return new Page(
+  const opened = (start: (page: Page) => Promise<unknown>) => {
+    const page = new Page(
       app,
-      options.container,
+      container,
       options.client.act,
-      (page) =>
-        options.client.start({
-          loadModule: page.loader(options.client.loadModule),
-          fetch: payloadFetch,
-          container: options.container,
-          url: options.url,
-        }),
-      shell,
+      start,
+      html,
       firstRequest,
+      options.bootstrap ?? true,
+    );
+    collecting = page.warnings;
+    return page;
+  };
+  if (app.mode === 'source') {
+    return opened((page) =>
+      options.client.start({
+        loadModule: page.loader(options.client.loadModule),
+        fetch: payloadFetch,
+        container,
+        url: options.url,
+      }),
     );
   }
   if (builtBootstrapImported) {
@@ -842,11 +1084,8 @@ export function openPage(app: App, options: OpenOptions): Page {
     );
   }
   builtBootstrapImported = true;
-  const document = options.container.ownerDocument;
-  if (
-    options.container.id !== 'root' ||
-    !document.body.contains(options.container)
-  ) {
+  const document = container.ownerDocument;
+  if (container.id !== 'root' || !document.body.contains(container)) {
     throw new Error(
       "[weft] in build mode, the container is the document's #root",
     );
@@ -856,18 +1095,11 @@ export function openPage(app: App, options: OpenOptions): Page {
     fetch: typeof fetch;
   };
   window.history.replaceState(null, '', options.url);
-  return new Page(
-    app,
-    options.container,
-    options.client.act,
-    async () => {
-      const bootstrap = builtBootstrap(app.buildDir);
-      await import(/* @vite-ignore */ bootstrap);
-      return undefined;
-    },
-    shell,
-    firstRequest,
-  );
+  return opened(async () => {
+    const bootstrap = builtBootstrap(app.buildDir);
+    await import(/* @vite-ignore */ bootstrap);
+    return undefined;
+  });
 }
 
 /** The built bootstrap's chunk: the client build's one entry. */

@@ -18,10 +18,11 @@ let note1Fallbacks = [
 ];
 
 Vitest.describe("the first page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("comes in one request: the shell and the first row, then each boundary as its gate opens", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-  let page = NotesSupport$WeftNotes.open_(app(), undefined, "/notes/1");
+  let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
   await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#title"));
   t.expect(NotesSupport$WeftNotes.text(page, "#title")).toBe("Groceries");
   t.expect(note1Fallbacks.every(selector => NotesSupport$WeftNotes.has(page, selector))).toBe(true);
+  await NotesSupport$WeftNotes.hydratedAsServed(page, NotesSupport$WeftNotes.errorBoxPart);
   t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
   await NotesSupport$WeftNotes.release(app(), "related:1");
   await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#related"));
@@ -53,7 +54,7 @@ async function openGates(noteOpt) {
 async function openNote(noteOpt, delivery) {
   let note = noteOpt !== undefined ? noteOpt : "1";
   await openGates(note);
-  let page = NotesSupport$WeftNotes.open_(app(), delivery, `/notes/` + note);
+  let page = NotesSupport$WeftNotes.open_(app(), delivery, undefined, `/notes/` + note);
   await WeftTesting.waitFor(page, undefined, () => {
     if (NotesSupport$WeftNotes.has(page, "#note-body") && NotesSupport$WeftNotes.has(page, "#comment-list") && NotesSupport$WeftNotes.has(page, "#related")) {
       return NotesSupport$WeftNotes.has(page, "#like");
@@ -61,12 +62,115 @@ async function openNote(noteOpt, delivery) {
       return false;
     }
   });
+  await NotesSupport$WeftNotes.hydratedAsServed(page, NotesSupport$WeftNotes.errorBoxPart);
   return page;
 }
 
+let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#";
+
+let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#";
+
+Vitest.describe("hydrating the first page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  Vitest.testAsync("isn't needed to read it: the title, then each boundary as its gate opens, with nothing working", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, false, "/notes/1");
+    await WeftTesting.waitFor(page, undefined, () => {
+      if (NotesSupport$WeftNotes.has(page, "#title")) {
+        return NotesSupport$WeftNotes.has(page, "#like");
+      } else {
+        return false;
+      }
+    });
+    t.expect(NotesSupport$WeftNotes.text(page, "#title")).toBe("Groceries");
+    t.expect(NotesSupport$WeftNotes.text(page, "#like")).toBe("3 likes");
+    t.expect(note1Fallbacks.every(selector => NotesSupport$WeftNotes.has(page, selector))).toBe(true);
+    await openGates(undefined);
+    await WeftTesting.waitFor(page, undefined, () => {
+      if (NotesSupport$WeftNotes.has(page, "#note-body") && NotesSupport$WeftNotes.has(page, "#comment-list")) {
+        return NotesSupport$WeftNotes.has(page, "#related");
+      } else {
+        return false;
+      }
+    });
+    t.expect(NotesSupport$WeftNotes.text(page, "#note-body")).toBe("Milk, eggs, bread.");
+    t.expect(NotesSupport$WeftNotes.text(page, "#comment-list")).toBe("Ada: Don't forget coffee.");
+    t.expect(NotesSupport$WeftNotes.has(page, "#broken-loading")).toBe(true);
+    t.expect(NotesSupport$WeftNotes.has(page, "#error-box")).toBe(false);
+    WeftTesting.click(page, "#like");
+    await WeftTesting.idle(page);
+    t.expect(NotesSupport$WeftNotes.text(page, "#like")).toBe("3 likes");
+    t.expect(WeftTesting.renderCount(page, likeButton)).toBe(0);
+    return t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
+  });
+  Vitest.testAsync("hydrates what was swapped in before the bootstrap ran, and what's swapped in after", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, false, "/notes/1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#title"));
+    await NotesSupport$WeftNotes.release(app(), "body:1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#note-body"));
+    WeftTesting.startBootstrap(page);
+    await NotesSupport$WeftNotes.hydratedAsServed(page, NotesSupport$WeftNotes.errorBoxPart);
+    t.expect(NotesSupport$WeftNotes.has(page, "#comment-list-loading")).toBe(true);
+    await NotesSupport$WeftNotes.release(app(), "comments:1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list"));
+    let swapped = WeftTesting.snapshot(page);
+    await WeftTesting.settle(page);
+    t.expect(WeftTesting.removedSince(page, swapped)).toEqual([]);
+    t.expect(NotesSupport$WeftNotes.text(page, "#comment-list")).toBe("Ada: Don't forget coffee.");
+    WeftTesting.click(page, "#like");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "3 likes (you liked this)");
+    return t.expect(WeftTesting.warnings(page)).toEqual([]);
+  });
+  Vitest.testAsync("hydrates the rest while an entrypoint's chunk loads, and a boundary arriving meanwhile, then it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    await NotesSupport$WeftNotes.release(app(), "comments:1");
+    await NotesSupport$WeftNotes.release(app(), "related:1");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
+    WeftTesting.holdLoads(page, "LikeButton");
+    await WeftTesting.waitFor(page, undefined, () => {
+      if (NotesSupport$WeftNotes.has(page, "#title")) {
+        return NotesSupport$WeftNotes.has(page, "#like");
+      } else {
+        return false;
+      }
+    });
+    await WeftTesting.hydrated(page, undefined);
+    t.expect(NotesSupport$WeftNotes.text(page, "#like")).toBe("3 likes");
+    t.expect(NotesSupport$WeftNotes.has(page, "#likes-loading")).toBe(false);
+    t.expect(WeftTesting.renderCount(page, likeButton)).toBe(0);
+    WeftTesting.input(page, "#title-input", "   ");
+    WeftTesting.click(page, "#save");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#title-error"));
+    await NotesSupport$WeftNotes.release(app(), "body:1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#note-body"));
+    WeftTesting.releaseLoads(page);
+    await NotesSupport$WeftNotes.hydratedAsServed(page, NotesSupport$WeftNotes.errorBoxPart);
+    WeftTesting.click(page, "#like");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "3 likes (you liked this)");
+    return t.expect(WeftTesting.loads(page).filter(id => id.includes("LikeButton"))).toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"]);
+  });
+  Vitest.testAsync("renders the failing component's error box on the client, and only that", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    t.expect(NotesSupport$WeftNotes.text(page, "#error-box")).toBe("Couldn't show this: the recommendations service is down");
+    return t.expect(WeftTesting.removedSince(page, WeftTesting.htmlNodes(page)).every(node => NotesSupport$WeftNotes.errorBoxPart.includes(node))).toBe(true);
+  });
+  Vitest.testAsync("patches a text the client renders differently, and warns about it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    await openGates(undefined);
+    let serverDay = NotesSupport$WeftNotes.today();
+    let restore = NotesSupport$WeftNotes.turnClockBack(400);
+    let clientDay = NotesSupport$WeftNotes.today();
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#note-body"));
+    let fromServer = WeftTesting.query(page, "#today");
+    await WeftTesting.hydrated(page, undefined);
+    restore();
+    t.expect((await WeftTesting.shell(page)).includes(serverDay)).toBe(true);
+    t.expect(NotesSupport$WeftNotes.text(page, "#today")).toBe(clientDay);
+    t.expect(WeftTesting.query(page, "#today") === fromServer).toBe(true);
+    return t.expect(WeftTesting.warnings(page)).toEqual([`WeftCore: the server's HTML doesn't match the client's render: the text "` + serverDay + `" is "` + clientDay + `" on the client`]);
+  });
+});
+
 Vitest.describe("the first page, in any order", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("streams the boundaries in whichever order their gates open", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/notes/1");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#title"));
     await NotesSupport$WeftNotes.release(app(), "comments:1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list"));
@@ -112,7 +216,7 @@ Vitest.describe("the first page, in any order", undefined, undefined, undefined,
     return t.expect(finals[0].includes("Milk, eggs, bread.")).toBe(true);
   });
   Vitest.testAsync("shows the comments' own fallback until the promise they come as resolves", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/notes/1");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list-loading"));
     t.expect(NotesSupport$WeftNotes.has(page, "#comment-list")).toBe(false);
     await NotesSupport$WeftNotes.release(app(), "comments:1");
@@ -124,29 +228,7 @@ Vitest.describe("the first page, in any order", undefined, undefined, undefined,
     t.expect(NotesSupport$WeftNotes.text(page, "#error-box")).toBe("Couldn't show this: the recommendations service is down");
     return t.expect(NotesSupport$WeftNotes.text(page, "#title")).toBe("Groceries");
   });
-  Vitest.testAsync("renders the rest of the page while an entrypoint's chunk loads, then it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    await openGates(undefined);
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/notes/1");
-    WeftTesting.holdLoads(page, "LikeButton");
-    await WeftTesting.waitFor(page, undefined, () => {
-      if (NotesSupport$WeftNotes.has(page, "#note-body")) {
-        return NotesSupport$WeftNotes.has(page, "#title");
-      } else {
-        return false;
-      }
-    });
-    t.expect(NotesSupport$WeftNotes.has(page, "#likes-loading")).toBe(true);
-    t.expect(NotesSupport$WeftNotes.has(page, "#like")).toBe(false);
-    WeftTesting.releaseLoads(page);
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#like"));
-    t.expect(NotesSupport$WeftNotes.text(page, "#like")).toBe("3 likes");
-    return t.expect(WeftTesting.loads(page).filter(id => id.includes("LikeButton"))).toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"]);
-  });
 });
-
-let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#";
-
-let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#";
 
 Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("keeps the like button's state across notes and a refresh", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -162,8 +244,9 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     return t.expect(NotesSupport$WeftNotes.text(page, "#like")).toBe("5 likes (you liked this)");
   });
   Vitest.testAsync("by a link, fetches the payload, not the page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#note-link-2"));
+    await NotesSupport$WeftNotes.hydratedAsServed(page, undefined);
     WeftTesting.click(page, "#note-link-2");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#title") === "Ideas");
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
@@ -172,7 +255,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     ]);
   });
   Vitest.testAsync("away from a page still streaming cancels its response: its queries are abandoned, and none of its rows land", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#notes"));
     await WeftTesting.navigate(page, "/notes/1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#title") === "Groceries");
@@ -338,10 +421,11 @@ Vitest.describe("the comments, refetched by themselves", undefined, undefined, u
     return t.expect(WeftTesting.removedSince(page, before)).toEqual([]);
   });
   Vitest.testAsync("reloading while its gate is held keeps the old comments, pending, until it opens", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/notes/1");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list-loading"));
     await NotesSupport$WeftNotes.release(app(), await NotesSupport$WeftNotes.waiterFor(app(), "comments:1"));
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list"));
+    await WeftTesting.hydrated(page, undefined);
     await NotesSupport$WeftNotes.addComment(app(), "1", "Bob", "Later");
     WeftTesting.click(page, "#reload-comments");
     await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(WeftTesting.query(page, "#reload-comments")));
@@ -367,10 +451,11 @@ Vitest.describe("the comments, refetched by themselves", undefined, undefined, u
     return await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#reload-comments") === "Reload comments");
   });
   Vitest.testAsync("reloaded twice, with the first held: the first never lands", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = NotesSupport$WeftNotes.open_(app(), undefined, "/notes/1");
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list-loading"));
     await NotesSupport$WeftNotes.release(app(), await NotesSupport$WeftNotes.waiterFor(app(), "comments:1"));
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list"));
+    await WeftTesting.hydrated(page, undefined);
     WeftTesting.click(page, "#reload-comments");
     let waiterCount = async (count, tries) => {
       let found = (await NotesSupport$WeftNotes.waiting(app())).filter(id => id.startsWith("comments:1#"));

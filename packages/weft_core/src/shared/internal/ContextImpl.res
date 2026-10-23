@@ -37,7 +37,7 @@ let pop = () =>
   | None => Errors.fail(10, Common.Env.isDev ? "WeftCore: context stack underflow" : "")
   }
 
-/** Whether `weft_core` is `ancestor` or below it in the tree being rendered. */
+/** Whether `fiber` is `ancestor` or below it in the tree being rendered. */
 let isWithin = (fiber: Fiber.t, ancestor: Fiber.t) => {
   let node = ref(Some(fiber))
   let found = ref(false)

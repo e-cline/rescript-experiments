@@ -40,3 +40,10 @@ let otherShows = (page, ~clicks) =>
   text(page, "h1") == "Other" &&
   text(page, ".chart li")->String.includes("WEFT_SPLIT_CLIENT_SENTINEL row 0000") &&
   text(page, ".counter") == `other clicks: ${Int.toString(clicks)}`
+
+/** Waits for `page` to hydrate, and whether it did over the server's HTML: every node kept, no warnings. */
+let hydratedAsServed = async page => {
+  await page->WeftTesting.hydrated
+  page->WeftTesting.removedSince(page->WeftTesting.htmlNodes) == [] &&
+    page->WeftTesting.warnings == []
+}

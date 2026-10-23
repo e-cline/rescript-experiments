@@ -26,9 +26,10 @@ function file(name) {
 }
 
 Vitest.describe("from the sources", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
-  Vitest.testAsync("the home page renders every entrypoint, loading all but the chart's file", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = WeftTesting.open_(app$1(), SplitSupport$WeftSplit.rootElement(), undefined, "/");
+  Vitest.testAsync("the home page hydrates every entrypoint, loading all but the chart's file", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = WeftTesting.open_(app$1(), SplitSupport$WeftSplit.rootElement(), undefined, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => SplitSupport$WeftSplit.homeShows(page));
+    t.expect(await SplitSupport$WeftSplit.hydratedAsServed(page)).toBe(true);
     return t.expect(WeftTesting.loads(page).toSorted(Primitive_string.compare)).toEqual([
       "Counter",
       "Fancy",
@@ -39,8 +40,9 @@ Vitest.describe("from the sources", undefined, undefined, undefined, undefined, 
     ].map(file));
   });
   Vitest.testAsync("an entrypoint is interactive, and a link navigates in place, loading the chart then", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let page = WeftTesting.open_(app$1(), SplitSupport$WeftSplit.rootElement(), undefined, "/");
+    let page = WeftTesting.open_(app$1(), SplitSupport$WeftSplit.rootElement(), undefined, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => SplitSupport$WeftSplit.homeShows(page));
+    await WeftTesting.hydrated(page, undefined);
     WeftTesting.click(page, ".counter");
     await WeftTesting.waitFor(page, undefined, () => SplitSupport$WeftSplit.text(page, ".counter") === "clicks: 1");
     WeftTesting.click(page, "#other-link");

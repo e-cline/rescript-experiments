@@ -24,6 +24,11 @@ let reset = (() => {
   document.body.innerHTML = "";
 });
 
+let stillLoading = (() => {
+  Object.defineProperty(document, "readyState", {configurable: true, get: () => "loading"});
+  return () => { delete document.readyState };
+});
+
 let rootOf = (() => document.getElementById("root"));
 
 let query = (selector => document.querySelector(selector));
@@ -47,94 +52,112 @@ function clicked(selector) {
   return query(selector).textContent;
 }
 
-Vitest.describe("a server-rendered page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("is hydrated by the bootstrap, as it streams in", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-  reset();
-  let warnings = [];
-  let original = console.error;
-  console.error = message => {
-    warnings.push(message);
-  };
-  let resolve = {
-    contents: () => {}
-  };
-  let promise = new Promise((done, param) => {
-    resolve.contents = () => done();
-  });
-  let assets = PageSupport$WeftServer.assets();
-  let page = Page$WeftServer.toStream(Jsx$WeftDom.Elements.jsxs("main", {
-    children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        children: PageSupport$WeftServer.string("Notes")
-      }),
-      Jsx$WeftDom.Elements.jsx("span", {
-        id: "outer",
-        children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
-          label: "outer"
-        })
-      }),
-      Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
-        fallback: Jsx$WeftDom.Elements.jsx("i", {
-          children: PageSupport$WeftServer.string("loading")
+Vitest.describe("a server-rendered page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  Vitest.testAsync("is hydrated by the bootstrap, as it streams in", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let warnings = [];
+    let original = console.error;
+    console.error = message => {
+      warnings.push(message);
+    };
+    let resolve = {
+      contents: () => {}
+    };
+    let promise = new Promise((done, param) => {
+      resolve.contents = () => done();
+    });
+    let assets = PageSupport$WeftServer.assets();
+    let page = Page$WeftServer.toStream(Jsx$WeftDom.Elements.jsxs("main", {
+      children: [
+        Jsx$WeftDom.Elements.jsx("h1", {
+          children: PageSupport$WeftServer.string("Notes")
         }),
-        children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Later.make, {
-          ready: promise,
-          children: Jsx$WeftDom.Elements.jsx("section", {
-            id: "inner",
-            children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
-              label: "inner"
+        Jsx$WeftDom.Elements.jsx("span", {
+          id: "outer",
+          children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
+            label: "outer"
+          })
+        }),
+        Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+          fallback: Jsx$WeftDom.Elements.jsx("i", {
+            children: PageSupport$WeftServer.string("loading")
+          }),
+          children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Later.make, {
+            ready: promise,
+            children: Jsx$WeftDom.Elements.jsx("section", {
+              id: "inner",
+              children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
+                label: "inner"
+              })
             })
           })
         })
-      })
-    ]
-  }), assets, undefined, undefined, undefined, undefined, undefined, undefined);
-  let reader = page.getReader();
-  let decoder = new TextDecoder();
-  let next = async () => {
-    let match = await reader.read();
-    if (match.done) {
-      return;
-    }
-    let value = match.value;
-    if (value !== undefined) {
-      return decoder.decode(value, {
-        stream: true
-      });
-    }
-  };
-  await next();
-  let body = await next();
-  if (body !== undefined) {
-    apply(body);
-  } else {
-    Stdlib_JsError.throwWithMessage("the page ended early");
-  }
-  let fromServer = allElements();
-  await Bootstrap$WeftServer.start(assets.loadModule, undefined, Primitive_option.some(rootOf()), "/", undefined, undefined);
-  await settle();
-  t.expect(sameElements(fromServer, allElements())).toBe(true);
-  t.expect(clicked("#outer button")).toBe("outer: 1");
-  t.expect(query("#root i").textContent).toBe("loading");
-  resolve.contents();
-  let finished = false;
-  while (!finished) {
-    let chunk = await next();
-    if (chunk !== undefined) {
-      apply(chunk);
+      ]
+    }), assets, undefined, undefined, undefined, undefined, undefined, undefined);
+    let reader = page.getReader();
+    let decoder = new TextDecoder();
+    let next = async () => {
+      let match = await reader.read();
+      if (match.done) {
+        return;
+      }
+      let value = match.value;
+      if (value !== undefined) {
+        return decoder.decode(value, {
+          stream: true
+        });
+      }
+    };
+    await next();
+    let body = await next();
+    if (body !== undefined) {
+      apply(body);
     } else {
-      finished = true;
+      Stdlib_JsError.throwWithMessage("the page ended early");
     }
-  };
-  await settle();
-  t.expect(clicked("#inner button")).toBe("inner: 1");
-  t.expect(query("#outer button").textContent).toBe("outer: 1");
-  console.error = original;
-  return t.expect(warnings).toEqual([]);
-}));
+    let fromServer = allElements();
+    await Bootstrap$WeftServer.start(assets.loadModule, undefined, Primitive_option.some(rootOf()), "/", undefined, undefined);
+    await settle();
+    t.expect(sameElements(fromServer, allElements())).toBe(true);
+    t.expect(clicked("#outer button")).toBe("outer: 1");
+    t.expect(query("#root i").textContent).toBe("loading");
+    resolve.contents();
+    let finished = false;
+    while (!finished) {
+      let chunk = await next();
+      if (chunk !== undefined) {
+        apply(chunk);
+      } else {
+        finished = true;
+      }
+    };
+    await settle();
+    t.expect(clicked("#inner button")).toBe("inner: 1");
+    t.expect(query("#outer button").textContent).toBe("outer: 1");
+    console.error = original;
+    return t.expect(warnings).toEqual([]);
+  });
+  Vitest.testAsync("starts, when its script runs before #root has arrived, once it has", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let loaded = stillLoading();
+    let assets = PageSupport$WeftServer.assets();
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(Jsx$WeftDom.Elements.jsx("main", {
+      children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
+        label: "early"
+      })
+    }), assets, undefined, undefined, undefined, undefined, undefined, undefined));
+    Bootstrap$WeftServer.main(assets.loadModule, param => {});
+    apply(html.slice(html.indexOf("<body>") + "<body>".length | 0));
+    await settle();
+    loaded();
+    return t.expect(clicked("#root button")).toBe("early: 1");
+  });
+});
 
 export {
   apply,
   reset,
+  stillLoading,
   rootOf,
   query,
   allElements,

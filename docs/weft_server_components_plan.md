@@ -44,11 +44,12 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 ## Status
 
 Phases 0--6 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
-the phases will go in one PR, not opened yet). Next is phase 7, HTML rendering and hydration (§9),
-which has a plan of its own: [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md). Its phase
-7.0 is done: the packages' sources sorted into `client/`, `server/` and `shared/`,
-`WeftServer.Client` renamed `Decoder`, and `Rpc`'s server half split out as `RpcServer`; the names
-here are the new ones.
+the phases will go in one PR, not opened yet). Phase 7, HTML rendering and hydration (§9), has a
+plan of its own, [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md): its phases 7.0 to 7.6
+are done (pages are rendered on the server and hydrated, the harness applies their HTML, and the
+apps and browser tests run over hydrated pages), and its follow-ups 7.7 and 7.8 are next. Phase 7.0
+sorted the packages' sources into `client/`, `server/` and `shared/`, renamed `WeftServer.Client`
+`Decoder`, and split `Rpc`'s server half out as `RpcServer`; the names here are the new ones.
 
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -1352,10 +1353,11 @@ marked `@@weft.server`.
 
 **Phase 7 -- HTML and hydration** (§9): the hook-less HTML renderer, streaming Suspense HTML, then
 hydration in the reconciler and the DOM host. Now its own plan,
-[`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md), in six phases (7.1 to 7.6). The harness
-carries over: the first page's HTML is put into the container before the client starts, and
-`weft_notes`' scenarios are run again checking that hydration reused the server's nodes; the browser
-tests check the same in Chromium.
+[`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md), in seven phases (7.0 to 7.6, all done)
+and two follow-ups (7.7, replaying events made before hydration, and 7.8, `useId`). The harness
+carried over: it applies the first page's HTML as a parser would, the bootstrap hydrates it, and
+`weft_notes`' scenarios check that hydration kept the server's nodes; the browser tests check the
+same in Chromium.
 
 Out of scope: the Flight wire format and interop with React, CSS handling beyond what Vite does
 already, shared references and cycles in payloads, context on the server, and caching rendered

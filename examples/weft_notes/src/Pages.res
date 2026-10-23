@@ -16,6 +16,7 @@ module Layout = {
     <div id="app">
       <nav>
         <Link id="home-link" href="/"> {Weft.Jsx.string("All notes")} </Link>
+        <Today />
       </nav>
       children
     </div>
@@ -135,10 +136,15 @@ module NotePage = {
       <Weft.Suspense fallback={loading("related-loading", "Finding related notes…")}>
         <Related id signal />
       </Weft.Suspense>
-      <ErrorBox>
-        <Weft.Suspense fallback={loading("broken-loading", "…")}>
-          <Broken />
-        </Weft.Suspense>
-      </ErrorBox>
+      // A boundary of its own around the error box: the server's error is thrown again on the
+      // client, for the box to catch, and the part rendered on the client to show it is this
+      // boundary, not the whole page.
+      <Weft.Suspense fallback={loading("recommendations-loading", "…")}>
+        <ErrorBox>
+          <Weft.Suspense fallback={loading("broken-loading", "…")}>
+            <Broken />
+          </Weft.Suspense>
+        </ErrorBox>
+      </Weft.Suspense>
     </Layout>
 }

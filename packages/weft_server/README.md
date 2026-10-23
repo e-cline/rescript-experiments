@@ -2,11 +2,11 @@
 
 Server components for Weft: render a component tree on the server into a streamed payload, and turn
 it back into elements on the client as it arrives, with interactive components (entrypoints) loaded
-on demand, pages that stream, navigate and fetch parts of themselves again, and RPCs. It's phases 3,
-5 and 6 of [the server components plan](../../docs/weft_server_components_plan.md).
-[The Vite plugin](../vite_plugin_weft) bundles an app using it, and
-[`examples/weft_notes`](../../examples/weft_notes) is one. HTML rendering (and hydration) comes
-later.
+on demand, pages that stream, navigate and fetch parts of themselves again, and RPCs; and the pages
+rendered as HTML on the server, then hydrated. It's phases 3, 5 and 6 of
+[the server components plan](../../docs/weft_server_components_plan.md), and the pages' HTML is
+[its own plan](../../docs/weft_ssr_hydration_plan.md). [The Vite plugin](../vite_plugin_weft)
+bundles an app using it, and [`examples/weft_notes`](../../examples/weft_notes) is one.
 
 ## Installing
 
@@ -184,10 +184,11 @@ server files.
   response can't land after a newer one.
 - **`Payload`** documents the format: newline-separated rows, `<id>:<tag><json>`.
 - **`Page`** streams the HTML: the head (the bootstrap's script, `async`, so it runs before the page
-  has finished streaming), `<div id="root">`, then each row as an inline script that pushes it onto
-  `self.__weft`, escaped so nothing in it can end the script, with a `modulepreload` for an
-  entrypoint's chunk before the first row using it. `Bootstrap.rows` reads them back, whether they
-  were pushed before it started or after.
+  has finished streaming), `<div id="root">` with the shell in it, then each row as an inline script
+  that pushes it onto `self.__weft`, escaped so nothing in it can end the script, with a
+  `modulepreload` for an entrypoint's chunk before the first row using it, and each boundary's
+  segment as it's ready. `Bootstrap.rows` reads the rows back, whether they were pushed before it
+  started or after; `Bootstrap.main`, run before `#root` has been parsed, waits for it.
 - **`Navigation`** renders each fetched payload over the screen in a transition, so boundaries
   already showing keep their content until what replaces it is ready. A fetch replaces the one
   before (`Decoder.Latest`): the older is cancelled, and what it hadn't delivered is left waiting,

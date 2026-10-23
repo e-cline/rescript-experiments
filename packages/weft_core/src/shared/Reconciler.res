@@ -317,26 +317,28 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
   /** What hydration does as `unit` begins: claim its node, or decide it isn't rendered yet. */
   let beginHydration = (unit: Fiber.t): beginning =>
     if !hydration.active {
-      switch (unit.alternate, dehydratedInstance(unit)) {
+      switch (unit.alternate, clientRendered->Map.get(unit), dehydratedInstance(unit)) {
+      // A dehydrated boundary hydration gave up on in this render: its region didn't match, or
+      // an error was thrown in it. (Hydrating it began, so it no longer looks dehydrated.)
+      | (Some(_), Some(instance), _) =>
+        renderBoundaryOnClient(unit, instance)
+        Begin
       // A dehydrated boundary rendering again: its content has arrived, it failed, or it got
       // new props first.
-      | (Some(current), Some(instance)) =>
-        switch (
-          clientRendered->Map.get(unit),
-          leftDehydrated->Map.has(unit),
-          Host.suspenseState(instance),
-        ) {
-        | (Some(_), _, _) =>
-          renderBoundaryOnClient(unit, instance)
-          Begin
-        | (None, true, _) => Skip
-        | (None, false, Complete) if current.memoizedProps === unit.pendingProps =>
+      | (Some(current), None, Some(instance)) =>
+        // Its own retry (scheduled when its content arrived, or what it waited on settled) is
+        // what hydrates it: a render passing by for an update elsewhere leaves it as it is.
+        let retrying = Lanes.intersects(unit.lanes, workInProgressLanes.contents)
+        switch (leftDehydrated->Map.has(unit), Host.suspenseState(instance)) {
+        | (true, _) => Skip
+        | (false, Complete) if current.memoizedProps === unit.pendingProps && !retrying => Skip
+        | (false, Complete) if current.memoizedProps === unit.pendingProps =>
           unit.memoizedState = Unsafe.nothing
           hydration.active = true
           hydration.cursor = Host.firstHydratableInSuspense(instance)
           hydration.stack->Array.push((unit, RegionEntry(instance)))
           Begin
-        | (None, false, Pending) if current.memoizedProps === unit.pendingProps => Skip
+        | (false, Pending) if current.memoizedProps === unit.pendingProps => Skip
         | _ =>
           renderBoundaryOnClient(unit, instance)
           Begin
@@ -376,7 +378,7 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
             unit.stateNode = Unsafe.toUnknown(instance)
             addFlag(unit, Flags.hydrated)
             if !Host.textMatches(instance, ~text) {
-              warnHydration(`the text ${describeCursor()} is "${text}" on the client`)
+              warnHydration(`${describeCursor()} is "${text}" on the client`)
               hydration.effects->Array.push(() =>
                 Host.commitTextUpdate(instance, ~oldText="", ~newText=text)
               )
@@ -603,14 +605,20 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
       removeFlag(boundary, Flags.childDeletion)
       boundary.deletions = None
       boundary.child = boundary.alternate->Option.flatMap(current => current.child)
+      // A retry's boundary used up its update when it began: rendered on the client, it needs one
+      // again, or it would bail out, unchanged, when it begins again.
+      let renderOnClient = () => {
+        clientRendered->Map.set(boundary, instance)
+        boundary.lanes = Lanes.merge(boundary.lanes, workInProgressLanes.contents)
+      }
       switch error {
       | SuspenseImpl.Suspended(promise) =>
         leftDehydrated->Map.set(boundary, instance)
         SuspenseImpl.retryWhenSettled(boundary, promise)
       | HydrationMismatch(message) =>
         warnHydration(`${message}. The boundary is rendered on the client instead.`)
-        clientRendered->Map.set(boundary, instance)
-      | _ => clientRendered->Map.set(boundary, instance)
+        renderOnClient()
+      | _ => renderOnClient()
       }
 
       // The boundary begins again, and goes the way just decided (which sets the cursor). A retry's
@@ -638,6 +646,29 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
         }
       }
     }
+
+  /**
+  Whether `fiber` is being hydrated in this render: it's new, in the hydrating root or a dehydrated
+  boundary's region, and in no part of it rendered on the client.
+  */
+  let beingHydrated = (fiber: Fiber.t) => {
+    let inRegion = hydration.stack->Array.some(((entryFiber, entry)) =>
+      switch entry {
+      | RegionEntry(_) => ContextImpl.isWithin(fiber, entryFiber)
+      | _ => false
+      }
+    )
+    let inClientPart = hydration.stack->Array.some(((entryFiber, entry)) =>
+      switch entry {
+      | PausedEntry(_) => ContextImpl.isWithin(fiber, entryFiber)
+      | _ => false
+      }
+    )
+    Option.isNone(fiber.alternate) &&
+    !inClientPart &&
+    (inRegion ||
+    workInProgressRoot.contents->Option.mapOr(false, root => hydratingRoots->Set.has(root)))
+  }
 
   /**
   For an exception from rendering `thrower`. A suspension goes to the nearest `Suspense`
@@ -669,7 +700,19 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
         None
       | None => catchError(thrower, noSuspenseBoundary())
       }
-    | _ => catchError(thrower, error)
+    | _ =>
+      switch ErrorBoundaryImpl.find(thrower, ~skipCaptured=true) {
+      // Thrown in a part rendered on the client (a boundary that failed on the server, say), to an
+      // error boundary that's being hydrated: its fallback would have to replace server content it
+      // can't tell the extent of. So hydration gives up on the boundary around the error boundary
+      // (or the root), as for an error while hydrating, and the error is thrown again there.
+      | Some(errorBoundary) if beingHydrated(errorBoundary) =>
+        switch handleHydrationError(errorBoundary, error) {
+        | Some(outcome) => outcome
+        | None => catchError(thrower, error)
+        }
+      | _ => catchError(thrower, error)
+      }
     }
 
   let handleRenderError = (error: exn): option<exn> =>

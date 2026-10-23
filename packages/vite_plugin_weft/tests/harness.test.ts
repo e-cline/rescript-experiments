@@ -12,7 +12,7 @@ import {
   test,
 } from 'vite-plus/test';
 
-import {readPage, start, type App} from '../src/testing.js';
+import {readPage, start, type App, type Piece} from '../src/testing.js';
 import {config, copyFixture, fixtureName, removeCopies} from './support.js';
 
 afterAll(removeCopies);
@@ -124,19 +124,51 @@ describe('readPage', () => {
       },
     });
 
-  test('takes the rows out of the inline scripts, however the HTML is cut', async () => {
+  test("hands over the body's nodes as they complete, however the HTML is cut", async () => {
     const html =
-      '<!doctype html><body><div id="root"></div>' +
+      '<!doctype html><html><head><script type="module" async src="/b.js"></script></head>' +
+      '<body><link rel="modulepreload" href="/c.js">' +
+      '<div id="root" data-weft-html="" title="a &quot;b&quot; &gt; c"><div><p>x</p></div>' +
+      '<!--$?--><template id="wb:0"></template><i>…</i><!--/$--><input value="v"></div>' +
       '<script>(self.__weft||=[]).push("0:J\\"a\\u003c/script>\\"\\n")</script>' +
-      '<script>(self.__weft||=[]).push(null)</script></body>';
+      '<script>$weftSwap=function(n){}</script>' +
+      '<template id="ws:0"><p>later <template data-x="1"></template></p></template>' +
+      '<script>$weftSwap(0)</script>' +
+      '<script>(self.__weft||=[]).push(null)</script></body></html>';
     for (const size of [1, 3, 7, html.length]) {
       const chunks: string[] = [];
       for (let at = 0; at < html.length; at += size)
         chunks.push(html.slice(at, at + size));
-      const rows: (string | null)[] = [];
-      const shell = await readPage(page(chunks), (row) => rows.push(row));
-      expect(rows).toEqual(['0:J"a</script>"\n', null]);
-      expect(shell).toBe('<!doctype html><body><div id="root"></div></body>');
+      const pieces: Piece[] = [];
+      const shell = await readPage(page(chunks), (piece) => pieces.push(piece));
+      expect(pieces).toEqual([
+        {type: 'markup', html: '<link rel="modulepreload" href="/c.js">'},
+        {
+          type: 'root',
+          attributes: [
+            ['id', 'root'],
+            ['data-weft-html', ''],
+            ['title', 'a "b" > c'],
+          ],
+          html: '<div><p>x</p></div><!--$?--><template id="wb:0"></template><i>…</i><!--/$--><input value="v">',
+        },
+        {
+          type: 'script',
+          code: '(self.__weft||=[]).push("0:J\\"a\\u003c/script>\\"\\n")',
+        },
+        {type: 'script', code: '$weftSwap=function(n){}'},
+        {
+          type: 'markup',
+          html: '<template id="ws:0"><p>later <template data-x="1"></template></p></template>',
+        },
+        {type: 'script', code: '$weftSwap(0)'},
+        {type: 'script', code: '(self.__weft||=[]).push(null)'},
+        {type: 'markup', html: '</body>'},
+        {type: 'markup', html: '</html>'},
+      ]);
+      // The rows taken out.
+      expect(shell).not.toContain('__weft');
+      expect(shell).toContain('<script>$weftSwap(0)</script></body></html>');
     }
   });
 });

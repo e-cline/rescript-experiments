@@ -36,10 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 to 7.5 are done (§0, §2 to §7 say where they went their own way); 7.6 is next. The
-decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and
-7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
-review before the next.
+Phases 7.0 to 7.6 are done (§0, §2 to §9 say where they went their own way); the follow-ups 7.7
+(event replay) and 7.8 (`useId`) are next, each after a review. The decisions are settled
+(Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same
+branch as phases 0 to 6, a commit or a few each, each ending green, with a review before the next.
 
 ## What was verified before writing this
 
@@ -408,6 +408,13 @@ page's order, fallbacks, errors reported once, the server's page) and `HydratedP
 jsdom: a streamed page applied piece by piece, hydrated by the real bootstrap, the server's elements
 kept and working, a boundary hydrating when its segment arrives).
 
+**Found in phase 7.6.** Rule 3's "nothing for it to wait on" missed one thing: the bootstrap's
+script is `async`, so it can run before the parser has reached `#root`, which the page only writes
+once the shell is ready. `Bootstrap.main` used to find no `#root` and do nothing. Now, while the
+document is still loading, it watches for `#root` (a `MutationObserver`, given up at
+`DOMContentLoaded`) and starts once it's there; its rows come after it, so it's whole by the time
+the root row decodes.
+
 ### 6. Hydration in the reconciler
 
 `weft_core`'s reconciler learns to render over nodes that are already there.
@@ -527,6 +534,27 @@ it if it's deleted, and something inserted before it goes before its start marke
 dehydrated boundary inside content a `Suspense` boundary hides behind its fallback isn't hidden with
 it.
 
+**Found in phase 7.6**, by the apps' scenarios, each now a test in `Hydration_test.res`:
+
+- A dehydrated boundary whose content is complete was hydrated by any render that passed it (an
+  update elsewhere, with the bailout cloning it). It bailed out, with no children, and hydration
+  then took the server's content for extra and removed it. A dehydrated boundary now begins
+  hydrating only in a render that carries its own retry (its content arriving, or what it waited on
+  settling); other renders leave it as it is.
+- When hydration gave up on a dehydrated boundary's retry (a mismatch, or an error), the boundary
+  began again with its update used up and bailed out: its server content was cleared, and nothing
+  rendered in its place. It gets its lane back, and the boundary's begin checks whether hydration
+  gave up on it before checking whether it's dehydrated (hydrating it began, so it no longer looks
+  dehydrated).
+- An error thrown in a part rendered on the client (typically a boundary that failed on the server,
+  rendered again for its error to be thrown) and caught by an `ErrorBoundary` that is itself being
+  hydrated: the error boundary's fallback was created but never placed, since it would have to
+  replace server content whose extent it can't know. As React does, hydration gives up on the
+  boundary being hydrated around the error boundary (or the root, if there's none), as for any error
+  while hydrating, and the error is thrown again there, in a client render. So an app with an error
+  boundary around a part that can fail on the server puts a `Suspense` boundary around the error
+  boundary, to keep what's rendered on the client to that part (`weft_notes` does).
+
 The tests (`weft_core/tests/Hydration_test.res`) run over `TestRenderer`'s nodes: each case above,
 and a fuzz test where random trees hydrate over markup made from them into exactly what a direct
 render makes (no node created but empty texts), and still do with the markup broken at random (a
@@ -575,6 +603,9 @@ in §10, and comes after as phase 7.7. Nothing before it has to change for it.
   `onError` seeing it.
 - **Either, outside every boundary**: the shell fails, and the page is today's (§5): the client
   renders it with `createRoot`, and the error is thrown where it's thrown today.
+- **The error is caught by an `ErrorBoundary` that's itself being hydrated** (one around the failed
+  boundary): the boundary being hydrated around that error boundary, or the root, is rendered on the
+  client (§6, found in phase 7.6), where the error boundary catches it.
 - **A text differs**: patched, with a warning in development.
 - **A node is missing, or has another tag**: the nearest boundary (or the root) renders on the
   client, with a warning.
@@ -647,6 +678,24 @@ hydration algorithm is tested in Node, fast, and fuzzed:
   bootstrap's hydration, `page.htmlNodes` snapshots what the HTML made, and `page.warnings` collects
   the console's mismatch warnings. A page can be opened with JavaScript off (`~bootstrap=false`), to
   check what the HTML alone shows.
+
+**As built (phase 7.6).** The harness's `readPage` hands over the body one top-level node at a time,
+once each has all arrived (it counts elements, skipping comments and raw text), as a parser would
+reach them: `#root` with the shell (its attributes copied onto the test's container, which stands
+for it), inline scripts (run in the global scope, so the rows push and the swaps run), and other
+markup (segments, preloads) into the body. The bootstrap starts once `#root` has arrived, as the
+browser's would. `~bootstrap=false` means "the bootstrap's chunk hasn't loaded": the page's own
+inline scripts still run, and `startBootstrap` loads it later; JavaScript really off is the browser
+tests' job. `htmlNodes` follows the HTML: the shell's nodes, plus each segment's as it's swapped in,
+less the fallbacks the swaps take out, so `removedSince(htmlNodes)` is what hydration replaced.
+`hydrated` waits for the bootstrap to have started, its loads (but those `holdLoads` holds) and the
+renders after; in `build` mode, for the first element to have its props. Segments are found by id in
+the whole document, so one page is open in a document at a time (`weft_notes`' tests remove the last
+page's container when they open the next). The apps' scenarios that click right after a page shows
+now wait for `hydrated` first: a click before hydration does nothing until phase 7.7. The mismatch
+scenario uses a `Today` entrypoint in `weft_notes` (the date by the clock where it renders), with
+the test's clock (the browser's, not the worker's) turned back. The browser tests wait for an
+element to have its props before clicking it, and fail on any console error or warning.
 
 #### Example apps
 
@@ -833,7 +882,9 @@ end-to-end tests. Done.
 
 **Phase 7.6 -- The harness, the apps and the browser.** The harness's HTML (`openPage` applying the
 page as a parser would, `hydrated`, `htmlNodes`, `warnings`, `~bootstrap=false`); `weft_notes`' and
-`weft_split`'s scenarios over hydrated pages, and the new ones; the browser tests.
+`weft_split`'s scenarios over hydrated pages, and the new ones; the browser tests. Done; it also
+found and fixed three hydration bugs in the reconciler (§6) and the bootstrap running before `#root`
+(§5).
 
 **Phase 7.7 -- Event replay** (§10), a follow-up: the runtime's recording, replay in
 `resetAfterCommit`, the cheap selective hydration, and their tests.

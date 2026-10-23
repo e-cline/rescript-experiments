@@ -27,6 +27,12 @@ let reset: unit => unit = %raw(`() => {
   document.body.innerHTML = "";
 }`)
 
+/** Makes the document look still parsed, until the function it returns is called. */
+let stillLoading: unit => unit => unit = %raw(`() => {
+  Object.defineProperty(document, "readyState", {configurable: true, get: () => "loading"});
+  return () => { delete document.readyState };
+}`)
+
 let rootOf: unit => WeftDom.Dom.element = %raw(`() => document.getElementById("root")`)
 let query: string => WeftDom.Dom.element = %raw(`selector => document.querySelector(selector)`)
 let allElements: unit => array<
@@ -119,5 +125,25 @@ describe("a server-rendered page", () => {
     t->expect(WeftDom.Dom.textContent(query("#outer button")))->Expect.toBe("outer: 1")
     console->setConsoleError(original)
     t->expect(warnings)->Expect.toEqual([])
+  })
+
+  testAsync("starts, when its script runs before #root has arrived, once it has", async t => {
+    reset()
+    let loaded = stillLoading()
+    let assets = assets()
+    let html = await Testing.readAll(
+      Page.toStream(
+        <main>
+          <Counter label="early" />
+        </main>,
+        ~assets,
+      ),
+    )
+    // The bootstrap first, as an `async` script can be: no #root yet.
+    Bootstrap.main(assets.loadModule->Option.getUnsafe, _ => ())
+    apply(html->String.slice(~start=html->String.indexOf("<body>") + String.length("<body>")))
+    await settle()
+    loaded()
+    t->expect(clicked("#root button"))->Expect.toBe("early: 1")
   })
 })

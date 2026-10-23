@@ -25,9 +25,16 @@ afterAllAsync(async () => {
 })
 
 describe("from the build", () => {
-  testAsync("the home page renders, its entrypoints work, and a link navigates", async t => {
+  testAsync("the home page hydrates, its entrypoints work, and a link navigates", async t => {
     let page = app.contents->Option.getOrThrow->WeftTesting.open_(~container=rootElement(), "/")
     await page->WeftTesting.waitFor(() => homeShows(page))
+    t->expect(await hydratedAsServed(page))->Expect.toBe(true)
+    // The chunks the page preloads, for the bootstrap to hydrate it with: not the chart's.
+    let shell = await page->WeftTesting.shell
+    t
+    ->expect(shell->String.includes(`<link rel="modulepreload" href="/assets/Counter`))
+    ->Expect.toBe(true)
+    t->expect(shell->String.includes(`href="/assets/Chart`))->Expect.toBe(false)
     page->WeftTesting.click(".counter")
     await page->WeftTesting.waitFor(() => text(page, ".counter") == "clicks: 1")
     page->WeftTesting.click("#other-link")

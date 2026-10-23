@@ -55,14 +55,20 @@ let client = {
   act: Client$WeftDom.act
 };
 
-function open_(app, container, deliveryOpt, url) {
+function open_(app, container, deliveryOpt, bootstrapOpt, url) {
   let delivery = deliveryOpt !== undefined ? deliveryOpt : "Immediate";
+  let bootstrap = bootstrapOpt !== undefined ? bootstrapOpt : true;
   return Testing.openPage(app, {
     url: url,
     container: container,
     delivery: toJs(delivery),
-    client: client
+    client: client,
+    bootstrap: bootstrap
   });
+}
+
+function hydrated(page, timeout) {
+  return page.hydrated(Stdlib_Nullable.fromOption(timeout));
 }
 
 function navigation(prim) {
@@ -147,6 +153,14 @@ function stopRewriting(prim) {
   prim.stopRewriting();
 }
 
+function startBootstrap(prim) {
+  prim.startBootstrap();
+}
+
+function warnings(prim) {
+  return prim.warnings;
+}
+
 function pageRequests(prim) {
   return prim.requests;
 }
@@ -191,6 +205,10 @@ function removedSince(prim0, prim1) {
   return prim0.removedSince(prim1);
 }
 
+function htmlNodes(prim) {
+  return prim.htmlNodes;
+}
+
 export {
   start,
   close,
@@ -199,6 +217,9 @@ export {
   rewriteBodies,
   stopRewriting,
   open_,
+  startBootstrap,
+  hydrated,
+  warnings,
   pageRequests,
   navigation,
   shell,
@@ -215,6 +236,7 @@ export {
   renderCount,
   snapshot,
   removedSince,
+  htmlNodes,
   html,
   has,
   query,

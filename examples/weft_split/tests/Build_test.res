@@ -91,7 +91,9 @@ describe("the server build", () => {
     let html = await page(built(), "/")
     let script = `<script type="module" async src="/${chunk(built(), bootstrap).file}"></script>`
     t->expect(html->String.includes(script))->Expect.toBe(true)
-    t->expect(html->String.includes(`<div id="root"></div>`))->Expect.toBe(true)
+    // With the page itself in it, rendered on the server, for the bootstrap to hydrate.
+    t->expect(html->String.includes(`<div id="root" data-weft-html="">`))->Expect.toBe(true)
+    t->expect(html->String.includes("<h1>Home</h1>"))->Expect.toBe(true)
   })
 
   test("has the server code, without its directives", t => {

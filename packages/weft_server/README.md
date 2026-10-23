@@ -32,12 +32,17 @@ let notePage: Servy.Handler.t = async ctx =>
   WeftServer.Page.respond(ctx.request, <NotePage id={ctx->RequestContext.paramOrThrow("id")} />, ~assets)
 ```
 
-A first request gets the HTML page, with the payload's rows streamed into it as inline scripts; the
-client's own requests (`Accept: text/x-weft-payload`) get the bare payload.
+A first request gets the HTML page: the page itself, rendered on the server (`WeftDom.Html`), so it
+shows before any JavaScript runs, streamed (each `Suspense` boundary's content follows once it's
+ready), with the payload's rows as inline scripts. The payload is rendered once: its rows go to the
+page, and are decoded on the server too, as the browser will, for the HTML. The client's own
+requests (`Accept: text/x-weft-payload`) get the bare payload. With the plugin,
+`virtual:weft/assets` gives the server what it needs (`assets.loadModule`); `~html=false` leaves the
+HTML out of a route's pages.
 
-In the browser, `Bootstrap.start` reads those rows and renders them into `#root` (the Vite plugin's
-default bootstrap calls it). From there, the page is a `Navigation.t`, which entrypoints reach with
-hooks:
+In the browser, `Bootstrap.start` reads those rows and hydrates `#root` with them: the server's
+nodes adopted, not rendered again (the Vite plugin's default bootstrap calls it). From there, the
+page is a `Navigation.t`, which entrypoints reach with hooks:
 
 ```rescript
 // in an entrypoint
@@ -240,5 +245,6 @@ Production builds throw `WeftServer error <code>` instead of these messages:
 |   17 | `Bootstrap.start` found no `#root` in the document.                                       |
 |   18 | An RPC's ID isn't one (names separated by dots, each a letter then letters, digits, `_`). |
 |   19 | An RPC router was given two handlers for one ID.                                          |
+|   20 | The server's page was asked to fetch (`navigate`, `refresh`, a refetch) while rendering.  |
 
 Codes don't change once published: a new error gets the next number.

@@ -53,6 +53,13 @@ root is its result).
 */
 let valueFromStream: (t, stream, ~signal: signal=?) => promise<unknown>
 
+/**
+If `error` is one a payload carried (an error row, which the server's `onError` already saw when
+it was written): `Some` of its digest. `None` for any other error. For server renderers decoding a
+payload again (`Page`'s HTML), so they don't report the same error twice.
+*/
+let reportedDigest: exn => option<option<string>>
+
 /** Fetches `url`'s payload with the client's `fetch`, and decodes it (`fromStream`). */
 let fetchElement: (t, string, ~signal: signal=?) => promise<WeftCore.Element.t>
 

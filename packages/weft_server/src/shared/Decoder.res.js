@@ -8,6 +8,7 @@ import * as Lazy$WeftCore from "@e-cline/weft_core/src/shared/Lazy.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as JsxCore$WeftCore from "@e-cline/weft_core/src/shared/JsxCore.res.js";
+import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
 import * as Errors$WeftServer from "./internal/Errors.res.js";
@@ -243,7 +244,18 @@ function errorOf(json) {
   Stdlib_Option.forEach(text("digest"), digest => {
     error.digest = digest;
   });
+  error.weftFromPayload = true;
   return error;
+}
+
+function reportedDigest(error) {
+  if (error.RE_EXN_ID !== "JsExn") {
+    return;
+  }
+  let error$1 = error._1;
+  if (Primitive_object.equal(Primitive_option.fromNullable(error$1.weftFromPayload), true)) {
+    return Primitive_option.some(Primitive_option.fromNullable(error$1.digest));
+  }
 }
 
 async function read(session, stream, signal) {
@@ -422,6 +434,7 @@ export {
   make,
   fromStream,
   valueFromStream,
+  reportedDigest,
   fetchElement,
   webFetch,
   Latest,

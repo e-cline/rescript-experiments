@@ -8,6 +8,7 @@ export const clientReferencesId = 'virtual:weft/client-references';
 export const clientId = 'virtual:weft/client';
 export const bootstrapId = 'virtual:weft/bootstrap';
 export const assetsId = 'virtual:weft/assets';
+export const ssrReferencesId = 'virtual:weft/ssr-references';
 
 /** The custom HMR event that tells the client to refetch the page (a server-only file changed). */
 export const refreshEvent = 'weft:refresh';
@@ -15,7 +16,8 @@ export const refreshEvent = 'weft:refresh';
 /**
  * `virtual:weft/client-references`: each entrypoint file's id, and a function importing it. Each
  * `import()` is a chunk of its own. This is the only way the client loads an entrypoint, so a server
- * can't make it load anything else.
+ * can't make it load anything else. `virtual:weft/ssr-references` is the same map for the server,
+ * which decodes the page's payload to render its HTML (`WeftServer.Page`).
  */
 export function clientReferencesCode(files: CompiledFile[]): string {
   const lines = files.map(
@@ -32,6 +34,36 @@ export default modules;
 export function loadModule(id) {
   return Object.hasOwn(modules, id)
     ? modules[id]()
+    : Promise.reject(new Error(\`[weft] \${id} isn't an entrypoint file\`));
+}
+`;
+}
+
+/**
+ * `virtual:weft/ssr-references`: the same map, for the server, which loads them all up front
+ * (statically: a server has no use for a chunk per file, and server code imports some of them
+ * anyway, to render them).
+ */
+export function ssrReferencesCode(files: CompiledFile[]): string {
+  const imports = files.map(
+    ({file}, index) =>
+      `import * as module${index} from ${JSON.stringify(file)};`,
+  );
+  const lines = files.map(
+    ({id}, index) => `  ${JSON.stringify(id)}: module${index},`,
+  );
+  return `${imports.join('\n')}
+
+const modules = {
+${lines.join('\n')}
+};
+
+export default modules;
+
+/** The module of the entrypoint file \`id\`, as \`WeftServer.Decoder.make\`'s \`loadModule\` takes. */
+export function loadModule(id) {
+  return Object.hasOwn(modules, id)
+    ? Promise.resolve(modules[id])
     : Promise.reject(new Error(\`[weft] \${id} isn't an entrypoint file\`));
 }
 `;
@@ -87,8 +119,15 @@ export type Assets = {
   entrypoints: Record<string, string[]>;
 };
 
+/**
+ * `virtual:weft/assets`: the assets, and the server's `loadModule` (from
+ * `virtual:weft/ssr-references`), with which `WeftServer.Page` renders a page's HTML.
+ */
 export function assetsCode(assets: Assets): string {
-  return `export default ${JSON.stringify(assets, null, 2)};\n`;
+  return `import {loadModule} from ${JSON.stringify(ssrReferencesId)};
+
+export default {...${JSON.stringify(assets, null, 2)}, loadModule};
+`;
 }
 
 const toPosix = (path: string) => path.split(sep).join('/');

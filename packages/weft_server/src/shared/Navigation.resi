@@ -41,6 +41,20 @@ let make: (
   ~onNavigate: string => unit=?,
 ) => t
 
+/**
+The page an HTML render on the server reads (`Page` makes one): `url` is the request's, `client` the
+server's own decoder. Entrypoints that call `useNavigation` (or `useRefetchable`, or `Rpc.use`) while
+they render get it; asking it to fetch (`navigate`, `refresh`, a refetch) fails, since those are for
+handlers and effects, which only run in the browser.
+*/
+let makeForServer: (Decoder.t, ~url: string) => t
+
+/**
+`element` inside the page's context, as `show` renders it: what to hydrate with, so the first render
+matches what the server rendered.
+*/
+let wrap: (t, WeftCore.Element.t) => WeftCore.Element.t
+
 /** Renders `element` (the first page's, say) straight away, not in a transition. */
 let show: (t, WeftCore.Element.t) => unit
 

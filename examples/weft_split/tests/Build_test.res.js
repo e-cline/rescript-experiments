@@ -117,7 +117,8 @@ Vitest.describe("the server build", undefined, undefined, undefined, undefined, 
     let html = await BuildSupportMjs.page(built$1(), "/");
     let script = `<script type="module" async src="/` + BuildSupportMjs.chunk(built$1(), bootstrap).file + `"></script>`;
     t.expect(html.includes(script)).toBe(true);
-    return t.expect(html.includes(`<div id="root"></div>`)).toBe(true);
+    t.expect(html.includes(`<div id="root" data-weft-html="">`)).toBe(true);
+    return t.expect(html.includes("<h1>Home</h1>")).toBe(true);
   });
   Vitest.test("has the server code, without its directives", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     t.expect(BuildSupportMjs.serverCode(built$1()).includes("WEFT_SPLIT_SERVER_SENTINEL")).toBe(true);

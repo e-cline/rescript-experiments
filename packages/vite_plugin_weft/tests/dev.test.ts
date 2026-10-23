@@ -175,12 +175,28 @@ describe('the dev server', () => {
     );
   });
 
+  test('gives the server its own reference map, and the assets its loadModule', async () => {
+    const assets = await server.environments[
+      serverEnvironment
+    ]!.transformRequest('virtual:weft/assets');
+    expect(assets?.code).toContain('virtual:weft/ssr-references');
+    const references = await server.environments[
+      serverEnvironment
+    ]!.transformRequest('virtual:weft/ssr-references');
+    expect(references?.code).toContain(`"${basic}/src/Likes.res"`);
+  });
+
   test('keeps the server virtual modules from the client, and the client ones from the server', async () => {
     await expect(
       server.environments[clientEnvironment]!.transformRequest(
         'virtual:weft/assets',
       ),
     ).rejects.toThrow('virtual:weft/assets is only for the server');
+    await expect(
+      server.environments[clientEnvironment]!.transformRequest(
+        'virtual:weft/ssr-references',
+      ),
+    ).rejects.toThrow('virtual:weft/ssr-references is only for the server');
     await expect(
       server.environments[serverEnvironment]!.transformRequest(
         'virtual:weft/client',

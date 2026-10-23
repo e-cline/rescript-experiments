@@ -21,18 +21,40 @@ function make(client, render, url, onNavigateOpt) {
     render: render,
     url: url,
     onNavigate: onNavigate,
-    latest: Decoder$WeftServer.Latest.make()
+    latest: Decoder$WeftServer.Latest.make(),
+    onServer: false
   };
 }
 
-function show(navigation, element) {
-  navigation.render(JsxCore$WeftCore.jsx(provider, {
-    value: navigation,
-    children: element
-  }));
+function makeForServer(client, url) {
+  return {
+    client: client,
+    render: param => {},
+    url: url,
+    onNavigate: param => {},
+    latest: Decoder$WeftServer.Latest.make(),
+    onServer: true
+  };
 }
 
-async function fetchAndShow(navigation, url, push) {
+function checkOnClient(navigation) {
+  if (navigation.onServer) {
+    return Errors$WeftServer.fail(20, Env$Common.isDev ? "WeftServer: the page was asked to fetch while it was rendered on the server (navigate, refresh, or a refetch): call these from handlers and effects, which only run in the browser" : "");
+  }
+}
+
+function wrap(navigation, element) {
+  return JsxCore$WeftCore.jsx(provider, {
+    value: navigation,
+    children: element
+  });
+}
+
+function show(navigation, element) {
+  navigation.render(wrap(navigation, element));
+}
+
+async function fetchAndShowOnClient(navigation, url, push) {
   let element = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
   if (element === undefined) {
     return;
@@ -43,6 +65,11 @@ async function fetchAndShow(navigation, url, push) {
   if (push) {
     return navigation.onNavigate(url);
   }
+}
+
+function fetchAndShow(navigation, url, push) {
+  checkOnClient(navigation);
+  return fetchAndShowOnClient(navigation, url, push);
 }
 
 function navigate(navigation, url) {
@@ -86,7 +113,7 @@ function useRefetchable(src, children) {
   let latest = Hooks$WeftCore.useMemo0(() => Decoder$WeftServer.Latest.make());
   let currentChildren = Hooks$WeftCore.useRef(children);
   currentChildren.current = children;
-  let refetch = Hooks$WeftCore.useCallback2(async url => {
+  let refetchOnClient = async url => {
     setFetching(param => true);
     let fetched;
     try {
@@ -106,6 +133,10 @@ function useRefetchable(src, children) {
         over: currentChildren.current
       }));
     });
+  };
+  let refetch = Hooks$WeftCore.useCallback2(url => {
+    checkOnClient(navigation);
+    return refetchOnClient(url);
   }, [
     navigation,
     src
@@ -120,6 +151,8 @@ function useRefetchable(src, children) {
 
 export {
   make,
+  makeForServer,
+  wrap,
   show,
   navigate,
   load,

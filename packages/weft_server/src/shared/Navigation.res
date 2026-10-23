@@ -6,6 +6,8 @@ type t = {
   mutable url: string,
   onNavigate: string => unit,
   latest: Decoder.Latest.t,
+  /** The server's page, which an HTML render reads: it can't fetch anything. */
+  onServer: bool,
 }
 
 let context: WeftCore.Context.t<option<t>> = WeftCore.Context.make(None)
@@ -17,12 +19,34 @@ let make = (client, ~render, ~url, ~onNavigate=_ => ()) => {
   url,
   onNavigate,
   latest: Decoder.Latest.make(),
+  onServer: false,
 }
 
-let show = (navigation, element) =>
-  navigation.render(WeftCore.JsxCore.jsx(provider, {value: Some(navigation), children: element}))
+let makeForServer = (client, ~url) => {
+  client,
+  render: _ => (),
+  url,
+  onNavigate: _ => (),
+  latest: Decoder.Latest.make(),
+  onServer: true,
+}
 
-let fetchAndShow = async (navigation, url, ~push) =>
+let checkOnClient = navigation =>
+  if navigation.onServer {
+    Errors.fail(
+      20,
+      Common.Env.isDev
+        ? "WeftServer: the page was asked to fetch while it was rendered on the server (navigate, refresh, or a refetch): call these from handlers and effects, which only run in the browser"
+        : "",
+    )
+  }
+
+let wrap = (navigation, element) =>
+  WeftCore.JsxCore.jsx(provider, {value: Some(navigation), children: element})
+
+let show = (navigation, element) => navigation.render(wrap(navigation, element))
+
+let fetchAndShowOnClient = async (navigation, url, ~push) =>
   switch await navigation.latest->Decoder.Latest.fetchElement(navigation.client, url) {
   | Some(element) =>
     navigation.url = url
@@ -32,6 +56,13 @@ let fetchAndShow = async (navigation, url, ~push) =>
     }
   | None => ()
   }
+
+// Not `async`, so that on the server the refusal is thrown where it's asked for, not as a
+// rejection nobody waits on.
+let fetchAndShow = (navigation, url, ~push) => {
+  checkOnClient(navigation)
+  fetchAndShowOnClient(navigation, url, ~push)
+}
 
 let navigate = (navigation, url) => fetchAndShow(navigation, url, ~push=true)
 let load = (navigation, url) => fetchAndShow(navigation, url, ~push=false)
@@ -72,7 +103,7 @@ let useRefetchable = (~src, children) => {
   let currentChildren = useRef(children)
   currentChildren.current = children
 
-  let refetch = useCallback2(async (~url=?) => {
+  let refetchOnClient = async (~url=?) => {
     setFetching(_ => true)
     switch await latest->Decoder.Latest.fetchElement(navigation.client, url->Option.getOr(src)) {
     | Some(fetched) =>
@@ -86,6 +117,10 @@ let useRefetchable = (~src, children) => {
       setFetching(_ => false)
       throw(error)
     }
+  }
+  let refetch = useCallback2((~url=?) => {
+    checkOnClient(navigation)
+    refetchOnClient(~url?)
   }, (navigation, src))
 
   let element = switch refetched {

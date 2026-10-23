@@ -35,7 +35,9 @@ Vitest.describe("the first page", undefined, undefined, undefined, undefined, un
   await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list"));
   t.expect(NotesSupport$WeftNotes.text(page, "#comment-list")).toBe("Ada: Don't forget coffee.");
   let shell = await WeftTesting.shell(page);
-  t.expect(shell.includes(`<div id="root"></div>`)).toBe(true);
+  t.expect(shell.includes(`<div id="root" data-weft-html="">`)).toBe(true);
+  t.expect(shell.includes(`<h1 id="title">Groceries</h1>`)).toBe(true);
+  t.expect(shell.includes(`<template id="ws:`)).toBe(true);
   t.expect(shell.endsWith(`</body></html>`)).toBe(true);
   t.expect(shell.includes("__weft")).toBe(false);
   return t.expect(shell.includes(`<link rel="modulepreload" href="/src/LikeButton.res.js">`)).toBe(true);

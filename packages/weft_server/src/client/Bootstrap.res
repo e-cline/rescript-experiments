@@ -43,6 +43,7 @@ external pushState: (Nullable.t<unknown>, string, string) => unit = "pushState"
 @send
 external getElementById: (WeftDom.Dom.document, string) => Nullable.t<WeftDom.Dom.element> =
   "getElementById"
+@send external getAttribute: (WeftDom.Dom.element, string) => Nullable.t<string> = "getAttribute"
 
 let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ()) => {
   let client = Decoder.make(~loadModule, ~fetch?)
@@ -54,17 +55,28 @@ let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ()
     | None => Errors.fail(17, Common.Env.isDev ? "WeftServer: the page has no #root" : "")
     }
   }
-  let root = WeftDom.Client.createRoot(container)
+  // The server rendered the page as HTML (`Page`): hydrate it, rather than render it afresh.
+  let hydrating = container->getAttribute("data-weft-html")->Nullable.toOption->Option.isSome
+  let root = ref(None)
   let navigation = Navigation.make(
     client,
-    ~render=element => root->WeftDom.Client.render(element),
+    ~render=element => root.contents->Option.forEach(root => root->WeftDom.Client.render(element)),
     ~url=url->Option.getOr(pathname ++ search),
     ~onNavigate=url => pushState(Nullable.null, "", url),
   )
   addEventListener("popstate", () => navigation->Navigation.load(pathname ++ search)->ignore)
   onRefresh->Option.forEach(onRefresh => onRefresh(() => navigation->Navigation.refresh->ignore))
+  if !hydrating {
+    // At once, as before: the container is emptied while the payload is still coming.
+    root := Some(WeftDom.Client.createRoot(container))
+  }
   let element = await client->Decoder.fromStream(rows(self))
-  navigation->Navigation.show(element)
+  if hydrating {
+    // The same tree the server's HTML was rendered from: the page's context around the payload.
+    root := Some(WeftDom.Client.hydrateRoot(container, Navigation.wrap(navigation, element)))
+  } else {
+    navigation->Navigation.show(element)
+  }
   navigation
 }
 

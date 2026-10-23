@@ -48,8 +48,11 @@ async function start(loadModule, fetch, container, url, onRefresh, param) {
     let container$2 = document.getElementById("root");
     container$1 = (container$2 == null) ? Errors$WeftServer.fail(17, Env$Common.isDev ? "WeftServer: the page has no #root" : "") : container$2;
   }
-  let root = Client$WeftDom.createRoot(container$1);
-  let navigation = Navigation$WeftServer.make(client, element => Client$WeftDom.render(root, element), Stdlib_Option.getOr(url, location.pathname + location.search), url => {
+  let hydrating = Stdlib_Option.isSome(Primitive_option.fromNullable(container$1.getAttribute("data-weft-html")));
+  let root = {
+    contents: undefined
+  };
+  let navigation = Navigation$WeftServer.make(client, element => Stdlib_Option.forEach(root.contents, root => Client$WeftDom.render(root, element)), Stdlib_Option.getOr(url, location.pathname + location.search), url => {
     history.pushState(null, "", url);
   });
   addEventListener("popstate", () => {
@@ -58,8 +61,15 @@ async function start(loadModule, fetch, container, url, onRefresh, param) {
   Stdlib_Option.forEach(onRefresh, onRefresh => onRefresh(() => {
     Navigation$WeftServer.refresh(navigation);
   }));
+  if (!hydrating) {
+    root.contents = Primitive_option.some(Client$WeftDom.createRoot(container$1));
+  }
   let element = await Decoder$WeftServer.fromStream(client, rows(self), undefined);
-  Navigation$WeftServer.show(navigation, element);
+  if (hydrating) {
+    root.contents = Primitive_option.some(Client$WeftDom.hydrateRoot(container$1, Navigation$WeftServer.wrap(navigation, element)));
+  } else {
+    Navigation$WeftServer.show(navigation, element);
+  }
   return navigation;
 }
 

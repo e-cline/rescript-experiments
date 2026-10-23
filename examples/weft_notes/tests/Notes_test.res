@@ -37,7 +37,11 @@ describe("the first page", () => {
       // The page's HTML, once it has all come: the shell, then the rows (taken out), with a
       // preload for each entrypoint's chunk before the first row using it.
       let shell = await page->WeftTesting.shell
-      t->expect(shell->String.includes(`<div id="root"></div>`))->Expect.toBe(true)
+      // The page's own HTML, rendered on the server: the title, and each boundary's content once
+      // its gate opened (swapped in by the page's runtime).
+      t->expect(shell->String.includes(`<div id="root" data-weft-html="">`))->Expect.toBe(true)
+      t->expect(shell->String.includes(`<h1 id="title">Groceries</h1>`))->Expect.toBe(true)
+      t->expect(shell->String.includes(`<template id="ws:`))->Expect.toBe(true)
       t->expect(shell->String.endsWith(`</body></html>`))->Expect.toBe(true)
       t->expect(shell->String.includes("__weft"))->Expect.toBe(false)
       t

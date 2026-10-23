@@ -9,6 +9,7 @@ import type {CompiledFile} from '../src/internal/scan.js';
 import {
   buildAssets,
   clientReferencesCode,
+  ssrReferencesCode,
   devAssets,
   devUrl,
   type Manifest,
@@ -84,6 +85,15 @@ describe('virtual:weft/client-references', () => {
   test('is empty without entrypoints', async () => {
     const module = await runReferences(clientReferencesCode([]));
     expect(module.default).toEqual({});
+  });
+});
+
+describe('virtual:weft/ssr-references', () => {
+  test('imports every entrypoint file up front, and loads only those', async () => {
+    const code = ssrReferencesCode(files);
+    expect(code).toContain('import * as module0 from "/app/src/Likes.res.js";');
+    expect(code).toContain('"lib/src/Widget.res": module1,');
+    expect(code).not.toContain('import(');
   });
 });
 

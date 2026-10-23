@@ -23,7 +23,7 @@ function onError(error) {
 }
 
 function page(title, render) {
-  return async ctx => Page$WeftServer.respond(ctx.request, render(ctx.request.signal), Assets, title, undefined, onError);
+  return async ctx => Page$WeftServer.respond(ctx.request, render(ctx.request.signal), Assets, undefined, title, undefined, onError);
 }
 
 function id(ctx) {

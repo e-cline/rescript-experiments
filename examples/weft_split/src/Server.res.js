@@ -8,7 +8,7 @@ import * as Pages$WeftSplit from "./Pages.res.js";
 import Assets from "virtual:weft/assets";
 
 function page(title, render) {
-  return async ctx => Page$WeftServer.respond(ctx.request, render(), Assets, title, undefined, undefined);
+  return async ctx => Page$WeftServer.respond(ctx.request, render(), Assets, undefined, title, undefined, undefined);
 }
 
 let app = App$Servy.router(App$Servy.build(undefined), [

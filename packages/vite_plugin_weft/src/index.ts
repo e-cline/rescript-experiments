@@ -31,7 +31,9 @@ import {
   clientReferencesCode,
   clientReferencesId,
   devAssets,
+  ssrReferencesCode,
   refreshEvent,
+  ssrReferencesId,
   type Manifest,
 } from './internal/virtualModules.js';
 
@@ -235,11 +237,13 @@ export function weft(options: Options): Plugin[] {
         id === clientReferencesId ||
         id === clientId ||
         id === bootstrapId ||
-        id === assetsId
+        id === assetsId ||
+        id === ssrReferencesId
       ) {
         // Anything but the server's environment is a client: the browser's, and a test's.
         const isClient = this.environment.name !== serverEnvironment;
-        if (isClient === (id === assetsId)) {
+        const forServer = id === assetsId || id === ssrReferencesId;
+        if (isClient === forServer) {
           this.error(
             `[weft] ${id} is only for the ${isClient ? 'server' : 'client'}, but ` +
               `the ${this.environment.name} environment imports it`,
@@ -253,6 +257,8 @@ export function weft(options: Options): Plugin[] {
     load(id) {
       if (id === resolvedId(clientReferencesId)) {
         return clientReferencesCode(entrypoints(scanned));
+      } else if (id === resolvedId(ssrReferencesId)) {
+        return ssrReferencesCode(entrypoints(scanned));
       } else if (id === resolvedId(clientId)) {
         return clientCode();
       } else if (id === resolvedId(bootstrapId)) {
@@ -390,6 +396,7 @@ export function weft(options: Options): Plugin[] {
               for (const [environment, id] of [
                 [clientEnvironment, clientReferencesId],
                 [serverEnvironment, assetsId],
+                [serverEnvironment, ssrReferencesId],
               ] as const) {
                 const graph = devServer.environments[environment]!.moduleGraph;
                 const node = graph.getModuleById(resolvedId(id));

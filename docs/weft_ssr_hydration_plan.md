@@ -36,10 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 to 7.4 are done (§0, §2, §3, §4, §6 and §7 say where they went their own way); 7.5 is
-next. The decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups
-7.7 and 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with
-a review before the next.
+Phases 7.0 to 7.5 are done (§0, §2 to §7 say where they went their own way); 7.6 is next. The
+decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and
+7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
+review before the next.
 
 ## What was verified before writing this
 
@@ -390,6 +390,23 @@ server isn't worth it (or while finding a hydration bug). The bootstrap tells wh
 `rsc` environment, as `virtual:weft/assets` is; and the server build bundling the entrypoint files
 it imports. In development, the `rsc` environment's module runner imports them from source, so a
 change to an entrypoint file is picked up by the next request (and the client reloads, as now).
+
+**As built (phase 7.5).** The server's `loadModule` travels in the assets (`virtual:weft/assets`
+exports it from `virtual:weft/ssr-references`), so `Page.respond` needs nothing new from apps;
+assets without one (a test's) give today's page. `virtual:weft/ssr-references` imports the
+entrypoint files statically: a server has no use for a chunk per file, and its pages import some of
+them anyway. `Navigation.wrap` gives the tree both sides render (the page's context around the
+payload); the server's page refuses to fetch synchronously (so the refusal is an error where it was
+asked for, not a stray rejection). An error a payload carried was reported to `onError` when its row
+was written; the decoder marks it (`Decoder.reportedDigest`), and the HTML renderer reuses its
+digest instead of reporting it again. `Bootstrap` still creates a client root at once when the page
+has no HTML (emptying the container while the payload comes), and hydrates only once the root row
+has decoded. A segment's rows are written as they come and its HTML once it's rendered from them, so
+the rows are nearly always first; if they aren't, the boundary's hydration suspends until they
+arrive, and the server's content stays meanwhile. Tests: `weft_server/tests/HtmlPage_test.res` (the
+page's order, fallbacks, errors reported once, the server's page) and `HydratedPage_test.res` (in
+jsdom: a streamed page applied piece by piece, hydrated by the real bootstrap, the server's elements
+kept and working, a boundary hydrating when its segment arrives).
 
 ### 6. Hydration in the reconciler
 
@@ -812,7 +829,7 @@ trips and the DOM fuzz test. Done.
 **Phase 7.5 -- Pages.** `Page`'s HTML (the server-side `Decoder`, the tee, the shell, rows,
 segments, the failed-shell fallback, `~html`), `Navigation.makeForServer`, `Bootstrap` hydrating,
 the plugin's `virtual:weft/ssr-references`; `weft_server`'s page tests and the one-process
-end-to-end tests.
+end-to-end tests. Done.
 
 **Phase 7.6 -- The harness, the apps and the browser.** The harness's HTML (`openPage` applying the
 page as a parser would, `hydrated`, `htmlNodes`, `warnings`, `~bootstrap=false`); `weft_notes`' and

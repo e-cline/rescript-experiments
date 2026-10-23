@@ -9,12 +9,28 @@ let notePage: Servy.Handler.t = async ctx =>
   WeftServer.Page.respond(ctx.request, <NotePage id />, ~assets, ~title="Note")
 ```
 
-The HTML is one streamed response: the document's head (the bootstrap's script, `async` so it runs
-as soon as it's loaded, and its preloads and stylesheets), `<div id="root">`, then each row of the
-payload as an inline script as soon as the server writes it, until the payload ends. The bootstrap
-(`Bootstrap`) reads the rows from those scripts, whether they ran before it loaded or after. When a
-row refers to an entrypoint, a `modulepreload` link for its chunk goes before it, so the browser
-starts loading it straight away.
+The HTML is one streamed response, the page rendered as HTML for the browser to show before any
+JavaScript runs, and the payload for the client to hydrate it with:
+
+1. the document's head (the bootstrap's script, `async` so it runs as soon as it's loaded, and its
+   preloads and stylesheets), at once;
+2. once the shell is ready (everything outside `Suspense` boundaries that are still pending),
+   `<div id="root" data-weft-html>` with the shell's HTML in it, after preloads for the chunks of
+   the entrypoints it uses;
+3. each row of the payload as an inline script (the ones that came before the shell, then each as
+   the server writes it), and each pending boundary's content as `WeftDom.Html` has it ready, with
+   the inline runtime that swaps it in.
+
+The payload is rendered once (server components run once): its rows go to the page, and are decoded
+on the server too, exactly as the browser will (`Decoder`, loading entrypoints with
+`assets.loadModule`), for `WeftDom.Html` to render, inside a server-side page
+(`Navigation.makeForServer`) so entrypoints can call `useNavigation`. The bootstrap (`Bootstrap`)
+reads the rows from the inline scripts, whether they ran before it loaded or after, and hydrates
+`#root`.
+
+If the shell fails (an error outside every boundary), or the root row does, the page is the rows
+alone, with an empty `#root`, for the client to render (and to throw the error again where an
+`ErrorBoundary` can catch it). Without `assets.loadModule`, or with `~html=false`, it's always that.
 */
 
 /** What a page loads the client with: `virtual:weft/assets`' default export. */
@@ -27,15 +43,25 @@ type assets = {
   styles: array<string>,
   /** For each entrypoint file, by id: its chunk, then the chunks it imports. */
   entrypoints: dict<array<string>>,
+  /**
+  Loads an entrypoint file on the server, for rendering the page's HTML (the plugin's
+  `virtual:weft/ssr-references`). Without it, a page is the rows alone.
+  */
+  loadModule?: Decoder.loadModule,
 }
 
 /**
-The HTML page for `element`, streamed as it renders. `title` and `head` (raw HTML, for anything else
-the head needs) go in the head. `onError` and `signal` are `Render.toStream`'s.
+The HTML page for `element`, streamed as it renders. `url` (the request's path and query, `"/"` by
+default) is what the server-side page says it is; `html=false` leaves the HTML out. `title` and
+`head` (raw HTML, for anything else the head needs) go in the head. `onError` sees every error, once:
+the server components' (from `Render`) and the client components' (from `WeftDom.Html`). `signal`
+stops everything.
 */
 let toStream: (
   WeftCore.Element.t,
   ~assets: assets,
+  ~url: string=?,
+  ~html: bool=?,
   ~title: string=?,
   ~head: string=?,
   ~onError: exn => option<string>=?,
@@ -60,6 +86,7 @@ let respond: (
   Request.t,
   WeftCore.Element.t,
   ~assets: assets,
+  ~html: bool=?,
   ~title: string=?,
   ~head: string=?,
   ~onError: exn => option<string>=?,

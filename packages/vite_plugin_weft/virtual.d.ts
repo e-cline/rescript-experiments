@@ -31,6 +31,16 @@ declare module 'virtual:weft/assets' {
     styles: string[];
     /** For each entrypoint file, by id: its chunk, then the chunks it imports. */
     entrypoints: Record<string, string[]>;
+    /** The module of an entrypoint file, on the server (`virtual:weft/ssr-references`'). */
+    loadModule: (id: string) => Promise<unknown>;
   };
   export default assets;
+}
+
+declare module 'virtual:weft/ssr-references' {
+  /** Each entrypoint file, by id: a function importing it, on the server. */
+  const modules: Record<string, () => Promise<unknown>>;
+  export default modules;
+  /** The module of the entrypoint file `id`, on the server: for rendering a page's HTML. */
+  export function loadModule(id: string): Promise<unknown>;
 }

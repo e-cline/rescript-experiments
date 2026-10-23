@@ -53,12 +53,13 @@ await serve({dir: 'dist', port: 3000});
 
 ## Virtual modules
 
-| Module                           | Where  | What it is                                                                                                                                          |
-| -------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `virtual:weft/client`            | client | `loadModule(id)`, the module of an entrypoint file, for `WeftServer.Decoder.make`; `onRefresh(listener)`, called when a server file changes in dev. |
-| `virtual:weft/bootstrap`         | client | The default bootstrap: `WeftServer.Bootstrap.main`, with `virtual:weft/client`'s `loadModule` and `onRefresh`.                                      |
-| `virtual:weft/client-references` | client | Each entrypoint file's id, and a function `import()`ing it. The only files the client can be told to load.                                          |
-| `virtual:weft/assets`            | server | `{scripts, preloads, styles, entrypoints}`: the URLs a page loads the client with, and each entrypoint file's chunk and the chunks it imports.      |
+| Module                           | Where  | What it is                                                                                                                                                                                                           |
+| -------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `virtual:weft/client`            | client | `loadModule(id)`, the module of an entrypoint file, for `WeftServer.Decoder.make`; `onRefresh(listener)`, called when a server file changes in dev.                                                                  |
+| `virtual:weft/bootstrap`         | client | The default bootstrap: `WeftServer.Bootstrap.main`, with `virtual:weft/client`'s `loadModule` and `onRefresh`.                                                                                                       |
+| `virtual:weft/client-references` | client | Each entrypoint file's id, and a function `import()`ing it. The only files the client can be told to load.                                                                                                           |
+| `virtual:weft/assets`            | server | `{scripts, preloads, styles, entrypoints, loadModule}`: the URLs a page loads the client with, each entrypoint file's chunk and the chunks it imports, and the server's `loadModule`, for rendering the page's HTML. |
+| `virtual:weft/ssr-references`    | server | The reference map for the server: each entrypoint file, imported up front, and `loadModule`.                                                                                                                         |
 
 Types for them are in `@e-cline/vite_plugin_weft/virtual`. A client environment importing
 `virtual:weft/assets`, or the server one of the client modules, is an error.

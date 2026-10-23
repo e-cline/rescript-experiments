@@ -14,7 +14,8 @@ the rows pushed before this is called, then each as it's pushed, until the end (
 let rows: {..} => Streams.t
 
 /**
-Starts the page: decodes the rows on `self` into `container` (by default `#root`), as the client
+Starts the page: decodes the rows on `self` into `container` (by default `#root`), hydrating the
+server's HTML there if the page has it (`data-weft-html` on the container), as the client
 `loadModule` and `fetch` (by default `Decoder.webFetch`) make. `url` is the page's (by default the
 location's path and query). Resolves with the page, once its first payload has rendered.
 */

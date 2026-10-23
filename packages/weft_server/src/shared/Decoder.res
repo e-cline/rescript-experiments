@@ -208,6 +208,7 @@ let rec entrypointRows = (json: JSON.t, found: array<int>) =>
 
 @get_index external jsonField: (JSON.t, string) => Nullable.t<JSON.t> = ""
 @set external setDigest: (JsError.t, string) => unit = "digest"
+@set external setFromPayload: (JsError.t, bool) => unit = "weftFromPayload"
 
 let errorOf = (json: JSON.t) => {
   let text = field => jsonField(json, field)->Nullable.toOption->Option.flatMap(JSON.Decode.string)
@@ -218,8 +219,19 @@ let errorOf = (json: JSON.t) => {
     },
   )
   text("digest")->Option.forEach(digest => setDigest(error, digest))
+  setFromPayload(error, true)
   error
 }
+
+@get external fromPayload: JsExn.t => Nullable.t<bool> = "weftFromPayload"
+@get external digestOf: JsExn.t => Nullable.t<string> = "digest"
+
+let reportedDigest = (error: exn) =>
+  switch error {
+  | JsExn(error) if fromPayload(error)->Nullable.toOption == Some(true) =>
+    Some(digestOf(error)->Nullable.toOption)
+  | _ => None
+  }
 
 let handleRow = (session, {id, tag, json}: Payload.row) => {
   session.arrived->Set.add(id)

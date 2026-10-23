@@ -54,7 +54,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(TestJsx$WeftCore.Elements.jsx("p", {
       id: "x",
       children: Support$WeftServer.text("hello")
-    }), assets, "A <title>", undefined, undefined, undefined));
+    }), assets, undefined, undefined, "A <title>", undefined, undefined, undefined));
     t.expect(html.startsWith(`<!doctype html><html lang="en"><head><meta charset="utf-8">`)).toBe(true);
     t.expect(html.includes("<title>A &lt;title&gt;</title>")).toBe(true);
     t.expect(html.includes(`<link rel="stylesheet" href="/assets/app.css">`)).toBe(true);
@@ -76,7 +76,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
       id: "x",
       children: Support$WeftServer.text("</script><script>alert(1)</script> <!--     \"quoted\" \\ end")
     });
-    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(element, assets, undefined, undefined, undefined, undefined));
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(element, assets, undefined, undefined, undefined, undefined, undefined, undefined));
     let scripts = html.split("</script>").length - 1 | 0;
     t.expect(scripts).toBe(assets_scripts.length + 2 | 0);
     t.expect(html.includes(" ")).toBe(false);
@@ -100,7 +100,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
           value: 1
         })
       ]
-    }), assets, undefined, undefined, undefined, undefined));
+    }), assets, undefined, undefined, undefined, undefined, undefined, undefined));
     let preload = `<link rel="modulepreload" href="/assets/Entrypoints.js"><link rel="modulepreload" href="/assets/shared.js">`;
     t.expect(html.split(preload).length).toBe(2);
     return t.expect(html.indexOf(preload) < html.indexOf(`push("1:E`)).toBe(true);
@@ -116,7 +116,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
           children: Support$WeftServer.text("late")
         })
       })
-    }), assets, undefined, undefined, undefined, undefined), undefined, undefined);
+    }), assets, undefined, undefined, undefined, undefined, undefined, undefined), undefined, undefined);
     await Support$WeftServer.settle();
     t.expect(Testing$WeftServer.written(pipe).includes("late")).toBe(false);
     t.expect(Testing$WeftServer.written(pipe).includes(`push(null)`)).toBe(false);
@@ -148,7 +148,7 @@ Vitest.describe("Page.respond", undefined, undefined, undefined, undefined, unde
       headers: {
         accept: Payload$WeftServer.contentType
       }
-    }), element, assets, undefined, undefined, undefined);
+    }), element, assets, undefined, undefined, undefined, undefined);
     let header = (response, name) => Primitive_option.fromNull(response.headers.get(name));
     t.expect(header(payloadResponse, "content-type")).toEqual(Payload$WeftServer.contentType);
     t.expect(header(payloadResponse, "vary")).toEqual("Accept");
@@ -157,7 +157,7 @@ Vitest.describe("Page.respond", undefined, undefined, undefined, undefined, unde
       headers: {
         accept: "text/html"
       }
-    }), element, assets, undefined, undefined, undefined);
+    }), element, assets, undefined, undefined, undefined, undefined);
     t.expect(header(page, "content-type")).toEqual("text/html; charset=utf-8");
     return t.expect((await page.text()).includes(`<div id="root"></div>`)).toBe(true);
   });
@@ -192,7 +192,7 @@ Vitest.describe("Bootstrap.rows", undefined, undefined, undefined, undefined, un
         })
       ]
     });
-    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(element, assets, undefined, undefined, undefined, undefined));
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(element, assets, undefined, undefined, undefined, undefined, undefined, undefined));
     let target = {
       __weft: pushedRows(html).map(Stdlib_Nullable.fromOption)
     };

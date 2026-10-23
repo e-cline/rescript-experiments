@@ -18,3 +18,7 @@ tsconfig.vitest-temp.json
 # output of a change is reviewable; CI checks it is up to date.
 lib
 *.gen.tsx
+
+# Playwright's output (examples/weft_notes/e2e).
+test-results
+playwright-report

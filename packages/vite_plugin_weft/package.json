@@ -1,0 +1,77 @@
+{
+  "name": "@e-cline/vite_plugin_weft",
+  "version": "0.0.1",
+  "description": "The Vite plugin for Weft's server components: a server and a client environment, code-split entrypoints, the server/client boundary enforced, a dev server and a production build.",
+  "keywords": [
+    "rescript",
+    "server-components",
+    "vite",
+    "vite-plugin",
+    "weft"
+  ],
+  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/vite_plugin_weft#readme",
+  "bugs": {
+    "url": "https://github.com/e-cline/rescript-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/rescript-experiments.git",
+    "directory": "packages/vite_plugin_weft"
+  },
+  "files": [
+    "dist",
+    "rescript.json",
+    "src/**/*.res",
+    "src/**/*.resi",
+    "src/**/*.res.js",
+    "virtual.d.ts"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    },
+    "./virtual": {
+      "types": "./virtual.d.ts"
+    },
+    "./src/*.res.js": "./src/*.res.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prepack": "vp pack"
+  },
+  "dependencies": {
+    "@e-cline/weft_core": "workspace:^",
+    "@e-cline/weft_dom": "workspace:^",
+    "@e-cline/weft_server": "workspace:^",
+    "@hono/node-server": "catalog:"
+  },
+  "devDependencies": {
+    "@rescript/runtime": "catalog:",
+    "@types/node": "catalog:",
+    "rescript": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "vite": ">=8"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

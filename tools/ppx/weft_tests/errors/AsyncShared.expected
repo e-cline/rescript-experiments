@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  AsyncShared.res:1:1-15
+
+  1 │ @weft.component
+  2 │ let make = async (~id: string) => id
+  3 │ 
+
+  @weft.component: only a server component can be async, and this one is shared
+

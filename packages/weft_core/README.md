@@ -18,6 +18,9 @@ This is an early stage of the [plan](../../docs/weft_plan.md). What works:
   layout effects in the commit, passive effects after it, every cleanup before any effect.
 - `ref` props on host elements, `Context` with `useContext`, `Memo.memo`, and
   `useSyncExternalStore`.
+- `useId`, for linking elements (`htmlFor`, `aria-describedby`): the same on the server and once
+  hydrated, since it comes from the component's position in the tree, not the order things render
+  in; a component mounted later on the client gets a fresh one.
 - Automatic batching (updates in one task render once, in a microtask), `flushSync`, setting state
   while rendering, skipping components whose props and state didn't change.
 - Concurrent rendering: `Transition.start`, `useTransition` and `useDeferredValue`. Transitions
@@ -25,7 +28,12 @@ This is an early stage of the [plan](../../docs/weft_plan.md). What works:
   in their original order.
 - `ErrorBoundary`, catching errors from rendering and effects below it, and `Portal`, rendering
   children into another container.
-- `Suspense` and `Hooks.use(promise)`: a fallback while components below wait for a promise.
+- `Suspense` and `Hooks.use(promise)`: a fallback while components below wait for a promise, and
+  `Lazy.fromPromise`, an element that isn't ready yet, rendered in its place once it is.
+- For server renderers (see
+  [the server components plan](../../docs/weft_server_components_plan.md)): `ServerRender.run`, to
+  call components outside the reconciler, and `Entrypoint` marks; and `Deferred`, a promise whose
+  outcome `Hooks.use` and `Lazy` can read the moment it's settled.
 - `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
   through concurrent renders.
 
@@ -160,6 +168,34 @@ away. Children that suspend after being shown stay mounted behind the fallback, 
 their state. In a transition, a boundary showing its children doesn't fall back at all: the screen
 keeps its previous state (and `useTransition`'s `isPending` stays `true`) until the data arrives.
 
+### Lazy
+
+```rescript
+let chart = WeftCore.Lazy.fromPromise(loadChart()) // a promise of an element, made once
+
+<WeftCore.Suspense fallback={<Spinner />}> chart </WeftCore.Suspense>
+```
+
+`Lazy.fromPromise(promise)` is an element standing for the one `promise` resolves to. Rendering it
+suspends as `Hooks.use` does until the promise settles (a promise that already has is read at once).
+It has no fiber of its own: what it resolves to is rendered in its place, so replacing a lazy
+element with that element, or the other way round, keeps everything below it, state included. It's
+what streamed server output uses for the parts that arrive later. A rejected one throws its error
+from its own position, so an `ErrorBoundary` whose child it is catches it.
+
+A plain promise's outcome can only be learned a microtask after it settles, so a render before then
+suspends once. `Deferred.make()` gives a promise settled from outside whose outcome is recorded the
+moment `resolve` or `reject` is called: what the server components client decodes rows into.
+
+### Server renderers
+
+A server renderer calls components itself, with no fibers. `ServerRender.run(f)` calls `f` as a
+server render: hooks that keep state or run effects fail with an error saying they can't be used on
+the server (code 14), while `Hooks.use` works, throwing its suspension for the renderer to wait on.
+`Entrypoint.mark(make, id)` marks a component as an entrypoint, which a server renderer sends to the
+client as a reference instead of rendering; `Entrypoint.idOf` reads the mark. Apps don't call
+either: the `ppx_weft` PPX and the server renderer do.
+
 ### Portals
 
 `Portal.create(~container, children)` renders `children` into another container of the same renderer
@@ -180,6 +216,15 @@ module Row = {
 with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@jsx.component` only accepts a
 one-argument wrapper.
 
+## Where it runs
+
+Everything in `src/shared/` runs anywhere, in a browser or on a server, with no DOM: the reconciler
+and its hooks only ever touch a host through `HostConfig`. `ServerRender` is for server renderers
+calling components outside the reconciler: `run` for server components (whose stateful hooks fail),
+and `renderComponent` for client components rendered to HTML (whose hooks work as on a first render
+that never commits; `useSyncExternalStore` needs its `~getServerSnapshot` there). `src/testing/` has
+`TestRenderer`, `TestScheduler` and `TestJsx`, for tests.
+
 ## Error codes
 
 In development, misusing the library throws an error that says what went wrong. Production builds
@@ -199,6 +244,9 @@ leave the messages out, throwing `WeftCore error <code>` instead:
 |   10 | Context stack underflow (a bug in WeftCore).                                                                 |
 |   11 | `jsxFragment` is a marker for `<>...</>`, not a component to call.                                           |
 |   12 | A value that isn't an element was rendered.                                                                  |
+|   13 | A lazy element reached the reconciler unresolved (a bug in WeftCore).                                        |
+|   14 | A hook that keeps state or runs effects was used in a component rendered on the server.                      |
+|   15 | `useSyncExternalStore` without a `~getServerSnapshot`, rendered on the server.                               |
 
 Codes don't change once published: a new error gets the next number.
 
@@ -219,6 +267,13 @@ runs effects before returning. To observe timing, `scheduleRender` and `flushSyn
 running `useEffect`s, and transitions wait on `TestScheduler`: `flushTask` runs one time slice,
 `flushAll` the rest, and a component can call `TestScheduler.advanceTime` to take time to render.
 
+`TestRenderer.hydrate(markup, element)` hydrates instead: `markup` is in `toString`'s format, with
+comments for what a server's HTML has besides (`<!--$-->`/`<!--$?-->`/`<!--$!-->` and `<!--/$-->`
+around a `Suspense` boundary, `<!-- -->` between two texts), and `ops` then shows hydration's own
+work (`hydrate div#a` for a node adopted, `remove ...` for one nothing claimed). `resolveBoundary`
+and `failBoundary` play a pending boundary's content arriving from the server, or failing there;
+`toMarkup` shows the nodes markers and all.
+
 ## Writing a renderer
 
 A renderer implements `HostConfig.S` (create instances and text, append, insert and remove children,
@@ -229,6 +284,13 @@ module Renderer = WeftCore.Reconciler.Make(MyHost)
 let root = Renderer.createRoot(container)
 Renderer.flushSync(() => Renderer.render(root, element))
 ```
+
+A host that can also hydrate (render over content already there, a server's HTML) implements
+`HostConfig.Hydratable` too, and gets `hydrateRoot(container, element)` from
+`Reconciler.MakeHydratable`. Its extra operations walk the existing content (the first and next
+hydratable node, a node as an instance of a tag, a boundary's markers), adopt what's claimed
+(`hydrateInstance`), and, at commit, remove what wasn't. `DomHost` (in `weft_dom`) and
+`TestRenderer` both are.
 
 It also provides a JSX module: `include WeftCore.JsxCore` plus an `Elements` submodule whose `props`
 record is the renderer's host props, built on `JsxCore.hostJsx` (and `JsxCore.hostJsxs` for

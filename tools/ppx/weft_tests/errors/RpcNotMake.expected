@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  RpcNotMake.res:1:1-9
+
+  1 │ @weft.rpc({id: "notes.save"})
+  2 │ let save = 1
+  3 │ 
+
+  @weft.rpc: goes on a `let` whose value is `WeftServer.Rpc.make(...)` (or `WeftServer.Rpc.makePrepared(...)`)
+

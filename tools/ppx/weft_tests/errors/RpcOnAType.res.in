@@ -1,0 +1,2 @@
+@weft.rpc({id: "notes.save"})
+type t = int

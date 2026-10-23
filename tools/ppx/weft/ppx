@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# What `"ppx-flags": ["@e-cline/ppx_weft/ppx"]` resolves to. Forwards
+# to the dune-built executable, which this package doesn't ship prebuilt --
+# build it with `pnpm --filter @e-cline/ppx_weft exec vp run build`
+# (see README.md).
+
+DIR=$(dirname "$0")
+EXE="$DIR/_build/default/ppx_src/bin/main.exe"
+
+if [ ! -x "$EXE" ]; then
+  echo "ppx_weft: $EXE not found -- build the PPX first (see tools/ppx/weft/README.md)" >&2
+  exit 1
+fi
+
+exec "$EXE" "$@"

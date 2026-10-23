@@ -73,45 +73,13 @@ the offending type.
 
 ## Building
 
-The PPX is OCaml, so building it needs [opam](https://opam.ocaml.org/) installed (and `opam init`
-run once). Nothing else: the `build` task sets up the rest.
+The PPX is OCaml, built with dune from the opam switch every PPX in `tools/ppx` shares. Building it
+needs only [opam](https://opam.ocaml.org/); [`../README.md`](../README.md) covers the toolchain: how
+it's set up, why the versions are pinned, and how to change them.
 
 ```bash
 pnpm --filter @e-cline/ppx_pretty_print exec vp run build
 ```
-
-That first runs `setup.sh`, which creates a global opam switch named `ppx_pretty_print` (under
-`~/.opam`) holding exactly the compiler and package versions in `ppx_pretty_print.opam.locked`, then
-runs dune from it with `opam exec --switch=ppx_pretty_print`. Your current opam switch, and whatever
-OCaml it has, is neither used nor touched. Creating the switch compiles OCaml, which takes a few
-minutes; on later builds `setup.sh` does nothing unless the lock file differs from the one the
-switch was last installed from (a copy of which it keeps inside the switch).
-
-Because the switch lives outside the checkout, every clone and git worktree on the machine shares
-it, and only the first one to build pays for compiling OCaml. The catch is that checkouts with
-different lock files -- say, a branch bumping ppxlib -- share it too: each build re-syncs the switch
-to its own lock file, which is quick for a package bump but recompiles everything when the OCaml
-version differs, and a build in one checkout can change the switch under a build running in the
-other. Avoid building such checkouts at the same time; once the lock file change is merged
-everywhere, they agree again.
-
-To start over, `opam switch remove ppx_pretty_print` and build again. Checkouts set up before the
-switch was global have a now-unused local switch in `_opam/`, which can be deleted.
-
-The root-level `res` task depends on that `build` task, so `pnpm build` / `pnpm test` from the repo
-root build the PPX first -- which also means **the whole workspace's build needs opam**.
-
-To change a dependency: edit `dune-project`, then from this directory
-`opam install . --deps-only --switch=ppx_pretty_print`, and regenerate the lock file with
-`opam lock . --switch=ppx_pretty_print`.
-
-The versions are pinned for a reason. The ReScript compiler hands a PPX a frozen, OCaml 4.06-shaped
-version of its AST, and ppxlib 0.34 is the last release that reads it (0.35 dropped every AST older
-than 4.08). ppxlib 0.34 in turn needs OCaml < 5.4.
-
-After changing the PPX, rebuild it and then rebuild the ReScript code using it. If the change
-doesn't seem to take effect, `pnpm rescript:clean` first: the ReScript build decides what to
-recompile from the `.res` sources, not from the PPX executable.
 
 ## Using it in a package
 

@@ -1,0 +1,51 @@
+{
+  "name": "@e-cline/weft_server",
+  "version": "0.0.1",
+  "description": "Server components for Weft: render components on the server into a streamed payload, and decode it into elements on the client, with entrypoints loaded on demand.",
+  "keywords": [
+    "rescript",
+    "server-components",
+    "streaming",
+    "ui",
+    "weft"
+  ],
+  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/weft_server#readme",
+  "bugs": {
+    "url": "https://github.com/e-cline/rescript-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/rescript-experiments.git",
+    "directory": "packages/weft_server"
+  },
+  "files": [
+    "rescript.json",
+    "src/**/*.res",
+    "src/**/*.resi"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@e-cline/common": "workspace:^",
+    "@e-cline/weft_core": "workspace:^",
+    "@e-cline/weft_dom": "workspace:^",
+    "@rescript/webapi": "catalog:"
+  },
+  "devDependencies": {
+    "@rescript/runtime": "catalog:",
+    "rescript": "catalog:",
+    "rescript-vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@rescript/runtime": ">=12.0.0 <13",
+    "rescript": ">=12.0.0 <13"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

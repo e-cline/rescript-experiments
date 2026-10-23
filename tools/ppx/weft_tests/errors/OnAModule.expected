@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  OnAModule.res:1:1-15
+
+  1 │ @weft.component
+  2 │ module Label = {
+  3 │   let make = (~label: string) => label
+
+  @weft.component: goes on a `let` binding of a component (or its declaration in an interface)
+

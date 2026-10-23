@@ -3,17 +3,17 @@
 import * as Mitata from "mitata";
 import * as Stdlib_Int from "@rescript/runtime/lib/es6/Stdlib_Int.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
-import * as Memo$WeftCore from "@e-cline/weft_core/src/Memo.res.js";
+import * as Memo$WeftCore from "@e-cline/weft_core/src/shared/Memo.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
+import * as Hooks$WeftCore from "@e-cline/weft_core/src/shared/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
-import * as Context$WeftCore from "@e-cline/weft_core/src/Context.res.js";
+import * as Context$WeftCore from "@e-cline/weft_core/src/shared/Context.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/TestJsx.res.js";
+import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
 import * as Mitata$Benchmarking from "@e-cline/benchmarking/src/Mitata.res.js";
-import * as Reconciler$WeftCore from "@e-cline/weft_core/src/Reconciler.res.js";
+import * as Reconciler$WeftCore from "@e-cline/weft_core/src/shared/Reconciler.res.js";
 import * as Runner$Benchmarking from "@e-cline/benchmarking/src/Runner.res.js";
-import * as Transition$WeftCore from "@e-cline/weft_core/src/Transition.res.js";
+import * as Transition$WeftCore from "@e-cline/weft_core/src/shared/Transition.res.js";
 import * as BenchHost$WeftCoreBenchmarks from "./BenchHost.res.js";
 import * as BenchScheduler$WeftCoreBenchmarks from "./BenchScheduler.res.js";
 

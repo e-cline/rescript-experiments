@@ -4,6 +4,8 @@ packages:
   - examples/*
   - tools/benchmarking
   - tools/ppx/*
+  # vite_plugin_weft's fixture apps: ReScript packages, compiled by the root build.
+  - packages/vite_plugin_weft/tests/fixtures/*
 
 allowBuilds:
   esbuild: true
@@ -28,6 +30,7 @@ catalogs:
     '@hono/node-server': ^2.1.5
     'rescript-vitest': ^3.0.1
     jsdom: ^30.1.3
+    '@playwright/test': 1.63.0
     react: ^19.3.1
     react-dom: ^19.3.1
     '@types/react': ^19.3.0

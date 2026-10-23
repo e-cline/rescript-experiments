@@ -50,6 +50,9 @@ module ErrorBoundary = WeftCore.ErrorBoundary
 /** `<Suspense fallback>`: show a fallback while a child waits on a promise (`Hooks.use`). */
 module Suspense = WeftCore.Suspense
 
+/** `Lazy.fromPromise`: an element that isn't ready yet, rendered (or suspended on) in its place. */
+module Lazy = WeftCore.Lazy
+
 /**
 The JSX module: `@@jsxConfig({version: 4, module_: "Weft.Jsx"})`. Host tags (`<div>`) take DOM
 props. Components that should work under any renderer are written against `WeftCore.Jsx` instead.

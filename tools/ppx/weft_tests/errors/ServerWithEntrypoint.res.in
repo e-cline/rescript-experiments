@@ -1,0 +1,4 @@
+@@weft.server
+
+@weft.component({kind: Entrypoint})
+let make = (~label: string) => label

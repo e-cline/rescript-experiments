@@ -24,6 +24,14 @@ formatter and linter), the ReScript compiler, and the OCaml toolchain.
 pnpm install
 ```
 
+Then build the Vite plugin, once: `vp run` loads every package's Vite config to make its task graph,
+and the examples' configs import the plugin from its build, which isn't committed (so a missing or
+broken `dist` fails every `vp run`, the plugin's own build included):
+
+```bash
+pnpm --filter @e-cline/vite_plugin_weft exec vp pack
+```
+
 ```bash
 pnpm run build
 ```
@@ -32,23 +40,23 @@ pnpm run build
 
 ### The OCaml toolchain
 
-There's no OCaml version to install or select by hand. The PPX's build task runs
-`tools/ppx/pretty_print/setup.sh`, which creates a global opam switch named `ppx_pretty_print`
-(under `~/.opam`) containing exactly the compiler and packages pinned in
-`tools/ppx/pretty_print/ppx_pretty_print.opam.locked` -- currently OCaml 5.3.0 and ppxlib 0.34.0.
+There's no OCaml version to install or select by hand. The PPXs' builds depend on the root
+`ppx:setup` task, which runs `tools/ppx/setup.sh`: it creates a global opam switch named
+`rescript_ppx` (under `~/.opam`) containing exactly the compiler and packages pinned in
+`tools/ppx/rescript_ppx.opam.locked` -- currently OCaml 5.3.0 and ppxlib 0.34.0.
 
-- The build always uses that switch, via `opam exec --switch=ppx_pretty_print`. Your current switch,
-  and whatever OCaml the machine has otherwise, is neither used nor changed, and there's no need to
-  run `eval $(opam env)`.
-- The switch is shared by every clone and git worktree on the machine, so only the first build
-  compiles OCaml. After that, `setup.sh` does nothing unless the lock file has changed, in which
-  case the next build brings the switch back in sync with it. (Checkouts with different lock files
-  therefore re-sync it back and forth; see `tools/ppx/pretty_print/README.md`.)
-- To start over, `opam switch remove ppx_pretty_print` and build again.
+- The build always uses that switch, via `opam exec --switch=rescript_ppx`. Your current switch, and
+  whatever OCaml the machine has otherwise, is neither used nor changed, and there's no need to run
+  `eval $(opam env)`.
+- The switch is shared by every PPX, and by every clone and git worktree on the machine, so only the
+  first build compiles OCaml. After that, `setup.sh` does nothing unless the lock file has changed,
+  in which case the next build brings the switch back in sync with it. (Checkouts with different
+  lock files therefore re-sync it back and forth; see `tools/ppx/README.md`.)
+- To start over, `opam switch remove rescript_ppx` and build again. A `ppx_pretty_print` switch left
+  from older checkouts is no longer used, and can be removed the same way.
 
 The versions are pinned because ReScript only works with a narrow range of them; see
-`tools/ppx/pretty_print/README.md` for why, and for how to change a dependency and regenerate the
-lock file.
+`tools/ppx/README.md` for why, and for how to change a dependency and regenerate the lock file.
 
 ## Scripts
 
@@ -60,6 +68,17 @@ pnpm run build
 
 ```bash
 pnpm run test
+```
+
+Run the browser tests (a few, in [`examples/weft_notes/e2e`](examples/weft_notes/e2e), against the
+built app), which need Playwright's Chromium installed once:
+
+```bash
+pnpm --filter @e-cline/weft_notes_example exec playwright install chromium
+```
+
+```bash
+pnpm run e2e
 ```
 
 Run every benchmark package (a package's `benchmarks/` directory is a package of its own, built on

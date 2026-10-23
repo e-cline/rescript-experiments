@@ -1,0 +1,11 @@
+
+  We've found a bug for you!
+  ServerInModule.res:2:3-15
+
+  1 │ module Inner = {
+  2 │   @@weft.server
+  3 │   let value = 1
+  4 │ }
+
+  @@weft.server: marks a whole file, so it goes at its top level, not in a module
+

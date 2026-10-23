@@ -173,6 +173,9 @@ catalogs:
     '@hono/node-server':
       specifier: ^2.1.5
       version: 2.1.5
+    '@playwright/test':
+      specifier: 1.63.0
+      version: 1.63.0
     '@rescript/react':
       specifier: ^0.15.0
       version: 0.15.0
@@ -250,6 +253,9 @@ importers:
       '@e-cline/http_server_example':
         specifier: workspace:*
         version: link:examples/http_server
+      '@e-cline/ppx_weft_tests':
+        specifier: workspace:*
+        version: link:tools/ppx/weft_tests
       '@e-cline/pretty_print_example':
         specifier: workspace:*
         version: link:examples/pretty_print
@@ -280,6 +286,18 @@ importers:
       '@e-cline/trees_benchmarks':
         specifier: workspace:*
         version: link:packages/trees/benchmarks
+      '@e-cline/vite_plugin_weft':
+        specifier: workspace:*
+        version: link:packages/vite_plugin_weft
+      '@e-cline/vite_plugin_weft_fixture_basic':
+        specifier: workspace:*
+        version: link:packages/vite_plugin_weft/tests/fixtures/basic
+      '@e-cline/vite_plugin_weft_fixture_client_imports_server':
+        specifier: workspace:*
+        version: link:packages/vite_plugin_weft/tests/fixtures/client_imports_server
+      '@e-cline/vite_plugin_weft_fixture_widgets':
+        specifier: workspace:*
+        version: link:packages/vite_plugin_weft/tests/fixtures/widgets
       '@e-cline/weft':
         specifier: workspace:*
         version: link:packages/weft
@@ -295,9 +313,18 @@ importers:
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:packages/weft_dom
+      '@e-cline/weft_notes_example':
+        specifier: workspace:*
+        version: link:examples/weft_notes
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:packages/weft_server
       '@e-cline/weft_signals':
         specifier: workspace:*
         version: link:packages/weft_signals
+      '@e-cline/weft_split_example':
+        specifier: workspace:*
+        version: link:examples/weft_split
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -315,7 +342,7 @@ importers:
         version: 7.0.2
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   examples/http_server:
     dependencies:
@@ -340,7 +367,7 @@ importers:
         version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   examples/pretty_print:
     dependencies:
@@ -384,7 +411,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   examples/react_ui:
     devDependencies:
@@ -439,7 +466,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   examples/weft_app:
     dependencies:
@@ -470,7 +497,108 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  examples/weft_notes:
+    dependencies:
+      '@e-cline/servy':
+        specifier: workspace:*
+        version: link:../../packages/servy
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../packages/weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../packages/weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../packages/weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      '@rescript/webapi':
+        specifier: 'catalog:'
+        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
+      '@e-cline/vite_plugin_weft':
+        specifier: workspace:*
+        version: link:../../packages/vite_plugin_weft
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.63.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  examples/weft_split:
+    dependencies:
+      '@e-cline/servy':
+        specifier: workspace:*
+        version: link:../../packages/servy
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../packages/weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../packages/weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../packages/weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      '@rescript/webapi':
+        specifier: 'catalog:'
+        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
+      '@e-cline/vite_plugin_weft':
+        specifier: workspace:*
+        version: link:../../packages/vite_plugin_weft
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/common:
     dependencies:
@@ -577,7 +705,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/signals:
     devDependencies:
@@ -617,7 +745,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/trees:
     devDependencies:
@@ -657,7 +785,119 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/vite_plugin_weft:
+    dependencies:
+      '@e-cline/weft_core':
+        specifier: workspace:^
+        version: link:../weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:^
+        version: link:../weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:^
+        version: link:../weft_server
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.1.5(hono@4.13.13)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  packages/vite_plugin_weft/tests/fixtures/basic:
+    dependencies:
+      '@e-cline/common':
+        specifier: workspace:*
+        version: link:../../../../common
+      '@e-cline/vite_plugin_weft_fixture_widgets':
+        specifier: workspace:*
+        version: link:../widgets
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../../../weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../../weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../../tools/ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+
+  packages/vite_plugin_weft/tests/fixtures/client_imports_server:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../../../weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../weft_dom
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../../tools/ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+
+  packages/vite_plugin_weft/tests/fixtures/widgets:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../../../weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../../weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../../tools/ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
 
   packages/weft:
     dependencies:
@@ -741,10 +981,13 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/weft_dom:
     dependencies:
+      '@e-cline/common':
+        specifier: workspace:^
+        version: link:../common
       '@e-cline/weft_core':
         specifier: workspace:^
         version: link:../weft_core
@@ -755,6 +998,31 @@ importers:
       jsdom:
         specifier: 'catalog:'
         version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+
+  packages/weft_server:
+    dependencies:
+      '@e-cline/common':
+        specifier: workspace:^
+        version: link:../common
+      '@e-cline/weft_core':
+        specifier: workspace:^
+        version: link:../weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:^
+        version: link:../weft_dom
+      '@rescript/webapi':
+        specifier: 'catalog:'
+        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
       rescript:
         specifier: 'catalog:'
         version: 12.3.1
@@ -806,6 +1074,36 @@ importers:
       rescript:
         specifier: 'catalog:'
         version: 12.3.1
+
+  tools/ppx/weft: {}
+
+  tools/ppx/weft_tests:
+    dependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../weft
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../packages/weft
+      '@e-cline/weft_core':
+        specifier: workspace:*
+        version: link:../../../packages/weft_core
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../packages/weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
 packages:
 
@@ -1448,6 +1746,11 @@ packages:
   '@oxlint/plugins@1.88.0':
     resolution: {integrity: sha512-G2xbfWTrbqYRhR/vfeKNMQf/sS3/ti0iKJAAkRxHuXWZH/hne/dyIb9QKk5LuR6cJLARxsL6FMoAYmfspd74MQ==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@playwright/test@1.63.0':
+    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@pnpm/deps.graph-sequencer@1100.0.1':
     resolution: {integrity: sha512-pOr5+q1fLYKwFN3LAJuGZEnfXDcQ73zqgDHMtGy+K+uIoUqyY+6MeDCWFwfu+4EFuq76I5EPFofoNAI+Bmmq4A==}
@@ -2234,6 +2537,16 @@ packages:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
 
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.63.0:
+    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   pngjs@7.0.0:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
@@ -3000,6 +3313,10 @@ snapshots:
 
   '@oxlint/plugins@1.88.0': {}
 
+  '@playwright/test@1.63.0':
+    dependencies:
+      playwright: 1.63.0
+
   '@pnpm/deps.graph-sequencer@1100.0.1': {}
 
   '@polka/url@1.0.0-next.29': {}
@@ -3749,7 +4066,7 @@ snapshots:
 
   obug@3.0.0: {}
 
-  oxfmt@0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
+  oxfmt@0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
     dependencies:
       tinypool: 2.2.0
     optionalDependencies:
@@ -3772,9 +4089,9 @@ snapshots:
       '@oxfmt/binding-win32-arm64-msvc': 0.73.0
       '@oxfmt/binding-win32-ia32-msvc': 0.73.0
       '@oxfmt/binding-win32-x64-msvc': 0.73.0
-      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  oxfmt@0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
+  oxfmt@0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
     dependencies:
       tinypool: 2.2.0
     optionalDependencies:
@@ -3797,7 +4114,7 @@ snapshots:
       '@oxfmt/binding-win32-arm64-msvc': 0.73.0
       '@oxfmt/binding-win32-ia32-msvc': 0.73.0
       '@oxfmt/binding-win32-x64-msvc': 0.73.0
-      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   oxlint-tsgolint@7.0.2004:
     optionalDependencies:
@@ -3808,7 +4125,7 @@ snapshots:
       '@oxlint-tsgolint/win32-arm64': 7.0.2004
       '@oxlint-tsgolint/win32-x64': 7.0.2004
 
-  oxlint@1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
+  oxlint@1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.88.0
       '@oxlint/binding-android-arm64': 1.88.0
@@ -3830,9 +4147,9 @@ snapshots:
       '@oxlint/binding-win32-ia32-msvc': 1.88.0
       '@oxlint/binding-win32-x64-msvc': 1.88.0
       oxlint-tsgolint: 7.0.2004
-      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  oxlint@1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
+  oxlint@1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.88.0
       '@oxlint/binding-android-arm64': 1.88.0
@@ -3854,7 +4171,7 @@ snapshots:
       '@oxlint/binding-win32-ia32-msvc': 1.88.0
       '@oxlint/binding-win32-x64-msvc': 1.88.0
       oxlint-tsgolint: 7.0.2004
-      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+      vite-plus: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   package-manager-detector@1.9.0: {}
 
@@ -3869,6 +4186,12 @@ snapshots:
   picomatch@4.0.5: {}
 
   picomatch@4.0.7: {}
+
+  playwright-core@1.63.0: {}
+
+  playwright@1.63.0:
+    dependencies:
+      playwright-core: 1.63.0
 
   pngjs@7.0.0: {}
 
@@ -4044,7 +4367,7 @@ snapshots:
 
   undici@8.12.2: {}
 
-  vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
+  vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       '@oxc-project/types': 0.154.0
       '@oxlint/plugins': 1.88.0
@@ -4055,8 +4378,8 @@ snapshots:
       '@vitest/snapshot': 5.0.5
       '@vitest/spy': 5.0.5
       '@vitest/utils': 5.0.5
-      oxfmt: 0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
-      oxlint: 1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
+      oxfmt: 0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
+      oxlint: 1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
       oxlint-tsgolint: 7.0.2004
       vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vitest: 5.0.5(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
@@ -4069,6 +4392,7 @@ snapshots:
       '@voidzero-dev/vite-plus-linux-x64-musl': 1.3.0
       '@voidzero-dev/vite-plus-win32-arm64-msvc': 1.3.0
       '@voidzero-dev/vite-plus-win32-x64-msvc': 1.3.0
+      playwright: 1.63.0
     transitivePeerDependencies:
       - '@arethetypeswrong/core'
       - '@astrojs/compiler-rs'
@@ -4104,7 +4428,7 @@ snapshots:
       - vue-tsc
       - yaml
 
-  vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
+  vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       '@oxc-project/types': 0.154.0
       '@oxlint/plugins': 1.88.0
@@ -4115,8 +4439,8 @@ snapshots:
       '@vitest/snapshot': 5.0.5
       '@vitest/spy': 5.0.5
       '@vitest/utils': 5.0.5
-      oxfmt: 0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
-      oxlint: 1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
+      oxfmt: 0.73.0(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
+      oxlint: 1.88.0(oxlint-tsgolint@7.0.2004)(vite-plus@1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
       oxlint-tsgolint: 7.0.2004
       vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
       vitest: 5.0.5(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
@@ -4129,6 +4453,7 @@ snapshots:
       '@voidzero-dev/vite-plus-linux-x64-musl': 1.3.0
       '@voidzero-dev/vite-plus-win32-arm64-msvc': 1.3.0
       '@voidzero-dev/vite-plus-win32-x64-msvc': 1.3.0
+      playwright: 1.63.0
     transitivePeerDependencies:
       - '@arethetypeswrong/core'
       - '@astrojs/compiler-rs'

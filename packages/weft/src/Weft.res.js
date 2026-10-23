@@ -15,6 +15,8 @@ let ErrorBoundary;
 
 let Suspense;
 
+let Lazy;
+
 let Jsx;
 
 let Portal;
@@ -31,6 +33,7 @@ export {
   Transition,
   ErrorBoundary,
   Suspense,
+  Lazy,
   Jsx,
   Portal,
   Client,

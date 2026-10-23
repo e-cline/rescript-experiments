@@ -1,8 +1,15 @@
 {
   "name": "@e-cline/weft_dom",
   "sources": [
-    {"dir": "src", "subdirs": true},
-    {"dir": "tests", "subdirs": true, "type": "dev"}
+    {
+      "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "tests",
+      "subdirs": true,
+      "type": "dev"
+    }
   ],
   "package-specs": [
     {
@@ -13,5 +20,5 @@
   "suffix": ".res.js",
   "namespace": "WeftDom",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/weft_core"]
+  "dependencies": ["@e-cline/common", "@e-cline/weft_core"]
 }

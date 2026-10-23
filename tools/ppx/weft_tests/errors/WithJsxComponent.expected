@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  WithJsxComponent.res:1:17-30
+
+  1 │ @weft.component @jsx.component
+  2 │ let make = (~label: string) => label
+  3 │ 
+
+  @weft.component: replaces @jsx.component, so a binding can't have both
+

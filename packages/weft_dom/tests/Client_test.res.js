@@ -2,16 +2,16 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Pervasives from "@rescript/runtime/lib/es6/Pervasives.js";
-import * as Dom$WeftDom from "../src/Dom.res.js";
-import * as Jsx$WeftDom from "../src/Jsx.res.js";
+import * as Dom$WeftDom from "../src/shared/Dom.res.js";
+import * as Jsx$WeftDom from "../src/shared/Jsx.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
-import * as Client$WeftDom from "../src/Client.res.js";
-import * as Hooks$WeftCore from "@e-cline/weft_core/src/Hooks.res.js";
-import * as Portal$WeftDom from "../src/Portal.res.js";
+import * as Client$WeftDom from "../src/client/Client.res.js";
+import * as Hooks$WeftCore from "@e-cline/weft_core/src/shared/Hooks.res.js";
+import * as Portal$WeftDom from "../src/shared/Portal.res.js";
 import * as Stdlib_Nullable from "@rescript/runtime/lib/es6/Stdlib_Nullable.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/Suspense.res.js";
-import * as Transition$WeftCore from "@e-cline/weft_core/src/Transition.res.js";
+import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as Transition$WeftCore from "@e-cline/weft_core/src/shared/Transition.res.js";
 
 function makeContainer() {
   let container = document.createElement("div");

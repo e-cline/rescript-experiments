@@ -31,8 +31,14 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: true
 
-      # The OCaml toolchain the workspace's ReScript PPX is built with.
+      # The OCaml toolchain the workspace's ReScript PPXs are built with.
       - uses: ./.github/actions/setup-opam
+
+      # `vp run` loads every package's Vite config to make its task graph, and
+      # the examples' configs import the Vite plugin from its build (`dist`,
+      # not committed): build it first, with `vp pack`, which doesn't.
+      - run: vp pack
+        working-directory: packages/vite_plugin_weft
 
       # The check type-checks TypeScript that imports files the ReScript
       # compiler generates, so it has to follow the build.
@@ -45,3 +51,32 @@ jobs:
           git diff --exit-code --stat -- '*.res.js' '*.res.jsx'
       - run: vp run check
       - run: vp run test
+
+  e2e:
+    # The browser tests (examples/weft_notes/e2e): a few, against the built app in Chromium, on one
+    # Node version. Everything a browser isn't needed for is tested in the job above.
+    name: Browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+
+      - uses: ./.github/actions/setup-opam
+
+      # `vp run` loads every package's Vite config to make its task graph, and
+      # the examples' configs import the Vite plugin from its build (`dist`,
+      # not committed): build it first, with `vp pack`, which doesn't.
+      - run: vp pack
+        working-directory: packages/vite_plugin_weft
+      - run: vp run build
+      - name: Install Chromium for Playwright
+        run:
+          pnpm --filter @e-cline/weft_notes_example exec playwright install
+          --with-deps chromium
+      - run: vp run --filter @e-cline/weft_notes_example e2e

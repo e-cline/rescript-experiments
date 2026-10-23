@@ -1,4 +1,4 @@
-import {defineConfig} from 'vite-plus';
+import {defineConfig, type PluginOption} from 'vite-plus';
 
 // This is the default (see https://vitest.dev/config/#include).
 // We also use it for `typecheck.include`.
@@ -31,6 +31,16 @@ const resTestFileMatch = ['**/*_{test,spec}.res.{js,jsx}'];
 // this one.
 export const rootResTask = '@e-cline/rescript-experiments#res';
 
+// The root-level task that makes sure the opam switch every PPX in `tools/ppx`
+// builds with exists and matches its lock file (`tools/ppx/setup.sh`). Each
+// PPX's `build` depends on it, rather than running `setup.sh` itself, so two
+// PPX builds never install into the switch at the same time.
+export const ppxSetupTask = '@e-cline/rescript-experiments#ppx:setup';
+
+// Runs a command with that switch's tools (dune, the OCaml compiler) on the
+// PATH, leaving the user's own opam switch alone.
+export const opamExec = 'opam exec --switch=rescript_ppx --';
+
 /** A `run.tasks` entry, as `makeRescriptLibConfig`'s `tasks` option takes. */
 export type RunTask = {
   command: string | string[];
@@ -57,8 +67,19 @@ export type RunTask = {
  * key a cache hit off of, and its diagnostics can depend on sibling files
  * outside `test.include`/`pack.entry`'s cache inputs.
  */
-export function makeLibConfig(): ReturnType<typeof defineConfig> {
+export function makeLibConfig(
+  options: {
+    /** Vite plugins (for the package's tests, or a Vite app's build). */
+    plugins?: PluginOption[];
+    /**
+     * How long a test (and a hook) may take, in milliseconds, for tests that build or serve
+     * something. Default: Vitest's.
+     */
+    testTimeout?: number;
+  } = {},
+): ReturnType<typeof defineConfig> {
   return defineConfig({
+    ...(options.plugins && {plugins: options.plugins}),
     run: {
       tasks: {
         build: {
@@ -119,6 +140,10 @@ export function makeLibConfig(): ReturnType<typeof defineConfig> {
       // The shared `test` task runs here even for packages with no test
       // files yet -- don't fail those.
       passWithNoTests: true,
+      ...(options.testTimeout !== undefined && {
+        testTimeout: options.testTimeout,
+        hookTimeout: options.testTimeout,
+      }),
       typecheck: {
         enabled: true,
         include: [...testFileMatch],
@@ -230,6 +255,13 @@ export function makeRescriptLibConfig(
      * that render into a document. Default: `node`.
      */
     testEnvironment?: 'node' | 'jsdom';
+    /** Vite plugins: for a Vite app, the ones its build and dev server use. */
+    plugins?: PluginOption[];
+    /**
+     * How long a test (and a hook) may take, in milliseconds, for tests that build or serve
+     * something. Default: Vitest's.
+     */
+    testTimeout?: number;
   } = {},
 ): ReturnType<typeof defineConfig> {
   const typescriptSurface = options.typescriptSurface ?? false;
@@ -240,6 +272,7 @@ export function makeRescriptLibConfig(
     `echo "No TypeScript surface to ${verb} -- see the root res task"`;
 
   return defineConfig({
+    ...(options.plugins && {plugins: options.plugins}),
     run: {
       tasks: {
         ...(preserveJsx && {
@@ -329,6 +362,10 @@ export function makeRescriptLibConfig(
       exclude: ['**/node_modules/**', '**/.git/**', 'lib/**'],
       passWithNoTests: true,
       environment: options.testEnvironment ?? 'node',
+      ...(options.testTimeout !== undefined && {
+        testTimeout: options.testTimeout,
+        hookTimeout: options.testTimeout,
+      }),
       typecheck: {
         enabled: typescriptSurface,
         include: [...testFileMatch],

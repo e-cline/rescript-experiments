@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  OnAType.res:1:1-15
+
+  1 │ @weft.component
+  2 │ type t = int
+  3 │ 
+
+  @weft.component: goes on a `let` binding of a component (or its declaration in an interface)
+

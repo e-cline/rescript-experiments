@@ -1,0 +1,12 @@
+
+  We've found a bug for you!
+  BothKinds.res:7:3-17
+
+  5 │ 
+  6 │ module LikeButton = {
+  7 │   @weft.component({kind: Entrypoint})
+  8 │   let make = (~id: string) => id
+  9 │ }
+
+  @weft.component: a file has server components or entrypoints, not both: this file has a server component at line 2
+

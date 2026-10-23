@@ -1,0 +1,14 @@
+// Canary (plan, verified point 5): the JSX transform wraps an async component in the standard
+// library's `Jsx.promise`, whatever JSX module the file uses, so it doesn't type-check with Weft's.
+// The PPX will rewrite async server components to avoid it. Compiled without the PPX.
+@@jsxConfig({version: 4, module_: "MyJsx"})
+module MyJsx = {
+  type element
+  type component<'props> = 'props => element
+  let jsx = (component: component<'props>, props: 'props): element => component(props)
+  external string: string => element = "%identity"
+}
+module Label = {
+  @jsx.component
+  let make = async (~text: string) => MyJsx.string(text)
+}

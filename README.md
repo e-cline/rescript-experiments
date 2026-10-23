@@ -8,22 +8,25 @@ WARNING: None of this is intended for real production use.
 
 Weft is the UI framework in here: `weft` (its public API, re-exporting the next two), `weft_core`
 (components, hooks and a fiber reconciler), `weft_dom` (the DOM renderer) and `weft_signals` (hooks
-for reading `signals`), plus the `weft_app` example.
+for reading `signals`), plus the `weft_app` example. Server components for it are under way:
+`weft_server` and `vite_plugin_weft`, with the `weft_notes` and `weft_split` examples.
 
 ## Packages
 
-| Package                                              | What it is                                                                                                                                           |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`@e-cline/common`](packages/common)                 | Utilities with no direct `Belt` equivalent: array helpers, an `ImmutableArray`, debug-only assertions, hashing, and a lazy sequence type.            |
-| [`@e-cline/priority_queue`](packages/priority_queue) | Priority queues: a mutable array-backed binary heap and an immutable leftist heap.                                                                   |
-| [`@e-cline/trees`](packages/trees)                   | Persistent sorted maps (a B+tree, an AVL tree and a chunked AVL tree), with mutable variants and diffing that takes advantage of structural sharing. |
-| [`@e-cline/signals`](packages/signals)               | Reactive signals: atoms, computeds and effects, with diff-driven history for incremental consumers.                                                  |
-| [`@e-cline/signal_maps`](packages/signal_maps)       | A sorted, signal-backed map whose derived views update incrementally. Built on the two packages above.                                               |
-| [`@e-cline/servy`](packages/servy)                   | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
-| [`@e-cline/weft`](packages/weft)                     | Weft's public API: `weft_core` and `weft_dom` behind one `Weft` module. The package to depend on.                                                    |
-| [`@e-cline/weft_core`](packages/weft_core)           | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
-| [`@e-cline/weft_dom`](packages/weft_dom)             | The DOM renderer for `weft_core`: render components into a browser page.                                                                             |
-| [`@e-cline/weft_signals`](packages/weft_signals)     | Hooks for reading `signals` atoms and computeds from `weft_core` components.                                                                         |
+| Package                                                  | What it is                                                                                                                                           |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@e-cline/common`](packages/common)                     | Utilities with no direct `Belt` equivalent: array helpers, an `ImmutableArray`, debug-only assertions, hashing, and a lazy sequence type.            |
+| [`@e-cline/priority_queue`](packages/priority_queue)     | Priority queues: a mutable array-backed binary heap and an immutable leftist heap.                                                                   |
+| [`@e-cline/trees`](packages/trees)                       | Persistent sorted maps (a B+tree, an AVL tree and a chunked AVL tree), with mutable variants and diffing that takes advantage of structural sharing. |
+| [`@e-cline/signals`](packages/signals)                   | Reactive signals: atoms, computeds and effects, with diff-driven history for incremental consumers.                                                  |
+| [`@e-cline/signal_maps`](packages/signal_maps)           | A sorted, signal-backed map whose derived views update incrementally. Built on the two packages above.                                               |
+| [`@e-cline/servy`](packages/servy)                       | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
+| [`@e-cline/weft`](packages/weft)                         | Weft's public API: `weft_core` and `weft_dom` behind one `Weft` module. The package to depend on.                                                    |
+| [`@e-cline/weft_core`](packages/weft_core)               | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
+| [`@e-cline/weft_dom`](packages/weft_dom)                 | The DOM renderer for `weft_core`: render components into a browser page.                                                                             |
+| [`@e-cline/weft_signals`](packages/weft_signals)         | Hooks for reading `signals` atoms and computeds from `weft_core` components.                                                                         |
+| [`@e-cline/weft_server`](packages/weft_server)           | Server components for Weft: render on the server into a streamed payload, decode it on the client, with entrypoints loaded on demand.                |
+| [`@e-cline/vite_plugin_weft`](packages/vite_plugin_weft) | The Vite plugin for Weft's server components: server and client environments, an entrypoint per chunk, the boundary enforced, dev and build.         |
 
 These are at version 0.0.x: the APIs are still changing, and any release may break them.
 
@@ -48,17 +51,18 @@ Then list it in your `rescript.json`:
 ```
 
 Each package's modules sit under a namespace named after it (`Signals`, `Trees`, `Common`,
-`SignalMaps`, `Servy`, `WeftCore`, `WeftDom`, `WeftSignals`), so `Signals.Atom.make` works without
-an `open`. (`weft` is the exception: a single `Weft` module.) The packages ship as ReScript source,
-and your project's `rescript build` compiles them along with your own code.
+`SignalMaps`, `Servy`, `WeftCore`, `WeftDom`, `WeftSignals`, `WeftServer`), so `Signals.Atom.make`
+works without an `open`. (`weft` is the exception: a single `Weft` module.) The packages ship as
+ReScript source, and your project's `rescript build` compiles them along with your own code.
 
 ## Also in this repository
 
 These aren't published:
 
 - [`examples/`](examples) -- an HTTP server built with `servy`, a React component written in
-  ReScript and the TypeScript React app consuming it, a todo app built with `weft_core`, a
-  tree-shaking check, and a use of the PPX below.
+  ReScript and the TypeScript React app consuming it, a todo app built with `weft_core`, a notes app
+  and an app code-split with Weft's server components (with tests through the plugin's harness, and
+  in a browser), a tree-shaking check, and a use of the PPX below.
 - [`packages/trees/benchmarks`](packages/trees/benchmarks),
   [`packages/signals/benchmarks`](packages/signals/benchmarks),
   [`packages/signal_maps/benchmarks`](packages/signal_maps/benchmarks) and
@@ -68,6 +72,9 @@ These aren't published:
   mitata and a seeded PRNG.
 - [`tools/ppx/pretty_print`](tools/ppx/pretty_print) -- an example ReScript PPX, written in OCaml,
   that derives pretty-printers for types.
+- [`tools/ppx/weft`](tools/ppx/weft) -- the PPX for Weft's `@weft.component` attribute, the start of
+  [server components for Weft](docs/weft_server_components_plan.md), with its tests in
+  [`tools/ppx/weft_tests`](tools/ppx/weft_tests).
 - [`RESCRIPT.md`](RESCRIPT.md) -- notes on integrating ReScript with the Vite+ toolchain, including
   the rough edges found along the way.
 

@@ -1,0 +1,2 @@
+@weft.component({kind: Browser})
+let make: (~label: string) => Jsx.element

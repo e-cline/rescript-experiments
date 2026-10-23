@@ -3,9 +3,9 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Vitest$1 from "vitest";
 import * as Pervasives from "@rescript/runtime/lib/es6/Pervasives.js";
-import * as Dom$WeftDom from "@e-cline/weft_dom/src/Dom.res.js";
-import * as Jsx$WeftDom from "@e-cline/weft_dom/src/Jsx.res.js";
-import * as Client$WeftDom from "@e-cline/weft_dom/src/Client.res.js";
+import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
+import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Client$WeftDom from "@e-cline/weft_dom/src/client/Client.res.js";
 import * as App$WeftAppExample from "../src/App.res.js";
 
 function mount(storageKey) {

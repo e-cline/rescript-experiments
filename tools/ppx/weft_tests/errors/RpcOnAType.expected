@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  RpcOnAType.res:1:1-9
+
+  1 │ @weft.rpc({id: "notes.save"})
+  2 │ type t = int
+  3 │ 
+
+  @weft.rpc: goes on a `let` whose value is `WeftServer.Rpc.make(...)`, in an implementation
+

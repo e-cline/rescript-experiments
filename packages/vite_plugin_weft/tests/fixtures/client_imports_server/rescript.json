@@ -1,0 +1,14 @@
+{
+  "name": "@e-cline/vite_plugin_weft_fixture_client_imports_server",
+  "sources": {"dir": "src"},
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "FixtureClientImportsServer",
+  "dependencies": ["@e-cline/weft", "@e-cline/weft_core", "@e-cline/weft_dom"],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
+}

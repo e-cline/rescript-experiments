@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 Refetching, fuzzed. Each seed generates a sequence of random trees of host elements, text, Suspense
@@ -15,7 +15,7 @@ the direct render kept it), and the same DOM nodes must have been kept.
 open Vitest
 open Support
 
-/** A seeded Lehmer PRNG (as in `weft_core`'s fuzz test), so failures reproduce. */
+/** A seeded Lehmer PRNG (as in `weft`'s fuzz test), so failures reproduce. */
 module Random = {
   type t = ref<float>
   let make = (seed: float): t => ref(seed)
@@ -39,10 +39,10 @@ type rec spec =
 /** A server component: its child, after `delay` macrotasks (0: synchronously). */
 module FuzzServer = {
   @jsx.component
-  let make = (~delay: int, ~child: WeftCore.Element.t) =>
+  let make = (~delay: int, ~child: Weft.Element.t) =>
     delay == 0
       ? child
-      : WeftCore.Lazy.fromPromise(
+      : Weft.Lazy.fromPromise(
           (
             async () => {
               for _ in 1 to delay {
@@ -93,27 +93,27 @@ let rec generate = (random, ~depth, ~labels: array<string>, ~key) =>
   | _ => Boundary(key, generate(random, ~depth=depth - 1, ~labels, ~key=None))
   }
 
-type hostProps = WeftCore.TestJsx.Elements.props
+type hostProps = Weft.TestJsx.Elements.props
 
 /** `spec` as elements: with server components (`~server`), or evaluated in place (the oracle). */
-let rec toElement = (spec, ~server: bool): WeftCore.Element.t =>
+let rec toElement = (spec, ~server: bool): Weft.Element.t =>
   switch spec {
   | Text(value) => text(value)
   | Host(tag, key, children) =>
     let props: hostProps = {
       children: TestJsx.array(children->Array.map(child => toElement(child, ~server))),
     }
-    WeftCore.JsxCore.hostJsxsKeyed(tag, props, ~key?, ())
+    Weft.JsxCore.hostJsxsKeyed(tag, props, ~key?, ())
   | Entry(key, label, children) =>
-    WeftCore.JsxCore.jsxKeyed(
+    Weft.JsxCore.jsxKeyed(
       Counter.make,
       {label, children: ?(children->Option.map(child => toElement(child, ~server)))},
       ~key?,
       (),
     )
   | Boundary(key, child) =>
-    WeftCore.JsxCore.jsxKeyed(
-      WeftCore.Suspense.make,
+    Weft.JsxCore.jsxKeyed(
+      Weft.Suspense.make,
       {fallback: loading, children: toElement(child, ~server)},
       ~key?,
       (),
@@ -121,9 +121,9 @@ let rec toElement = (spec, ~server: bool): WeftCore.Element.t =>
   | Server(key, delay, child) =>
     let child = toElement(child, ~server)
     switch (server, key) {
-    | (true, _) => WeftCore.JsxCore.jsxKeyed(FuzzServer.make, {delay, child}, ~key?, ())
+    | (true, _) => Weft.JsxCore.jsxKeyed(FuzzServer.make, {delay, child}, ~key?, ())
     | (false, Some(key)) =>
-      WeftCore.JsxCore.jsxKeyed(WeftCore.JsxCore.Fragment.make, {children: child}, ~key, ())
+      Weft.JsxCore.jsxKeyed(Weft.JsxCore.Fragment.make, {children: child}, ~key, ())
     | (false, None) => child
     }
   }
@@ -209,7 +209,7 @@ describe("refetching, fuzzed", () => {
             if first {
               TestRenderer.render(renderer, element)
             } else {
-              WeftCore.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
+              Weft.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
             }
           },
         )
@@ -220,7 +220,7 @@ describe("refetching, fuzzed", () => {
             if first {
               TestRenderer.render(renderer, element)
             } else {
-              WeftCore.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
+              Weft.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
             }
           },
         )

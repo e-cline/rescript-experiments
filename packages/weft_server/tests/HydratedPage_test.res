@@ -75,13 +75,13 @@ describe("a server-rendered page", () => {
         <span id="outer">
           <Counter label="outer" />
         </span>
-        <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
+        <Weft.Suspense fallback={<i> {string("loading")} </i>}>
           <Later ready>
             <section id="inner">
               <Counter label="inner" />
             </section>
           </Later>
-        </WeftCore.Suspense>
+        </Weft.Suspense>
       </main>,
       ~assets,
     )

@@ -9,13 +9,13 @@ let stream = WeftServer.Render.toStream(<NotePage id />)
 
 It walks the tree with no fibers:
 
-- Server and shared components are called (through `WeftCore.ServerRender.run`, so hooks that keep
+- Server and shared components are called (through `Weft.ServerRender.run`, so hooks that keep
   state fail with a clear error, and `Hooks.use` works), and their output is rendered in turn. A
   keyed one's output is wrapped in a fragment with its key, since it leaves no fiber behind on the
   client to carry it.
 - Host elements and their props are written as they are. They can't have event handlers or refs:
   those belong in an entrypoint.
-- An entrypoint (a component marked by `WeftCore.Entrypoint.mark`, which `@weft.component({kind:
+- An entrypoint (a component marked by `Weft.Entrypoint.mark`, which `@weft.component({kind:
   Entrypoint})` does) isn't called: it's written as a reference, with its props, which have to be
   serializable (see `Payload`). Element props, `children` included, are rendered here, so server
   components can be passed to entrypoints.
@@ -46,7 +46,7 @@ type stream = Streams.t
 The payload for `element`. `onError` (by default, logging with `Console.error`) is called with each
 error, and returns the digest to send with it, if any.
 */
-let toStream: (WeftCore.Element.t, ~onError: exn => option<string>=?, ~signal: signal=?) => stream
+let toStream: (Weft.Element.t, ~onError: exn => option<string>=?, ~signal: signal=?) => stream
 
 /**
 The payload for any value the encoder can send, not just an element (an RPC's response: its

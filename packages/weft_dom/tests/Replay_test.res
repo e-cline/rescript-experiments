@@ -9,7 +9,7 @@ once they have, through the elements' own listeners.
 open Vitest
 open DomSupport
 
-module Hooks = WeftCore.Hooks
+module Hooks = Weft.Hooks
 
 let string = Jsx.string
 
@@ -219,10 +219,10 @@ describe("events from before hydration", () => {
       let log = []
       let page = promise =>
         <div>
-          <WeftCore.Suspense fallback={string("loading")}>
+          <Weft.Suspense fallback={string("loading")}>
             <Waits promise id="w" />
             <Logs id="a" log />
-          </WeftCore.Suspense>
+          </Weft.Suspense>
           <Logs id="b" log />
         </div>
       let container = serverPage(await Html.renderToString(page(Promise.resolve("ready"))))
@@ -243,10 +243,10 @@ describe("events from before hydration", () => {
     let log = []
     let page = promise =>
       <div id="outer" onClick={_ => log->Array.push("outer")}>
-        <WeftCore.Suspense fallback={string("loading")}>
+        <Weft.Suspense fallback={string("loading")}>
           <Waits promise id="w" />
           <Logs id="a" log />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
       </div>
     let container = serverPage(await Html.renderToString(page(Promise.resolve("ready"))))
     let (promise, resolve) = deferred()
@@ -265,9 +265,9 @@ describe("events from before hydration", () => {
     let container = serverPage(
       await Html.renderToString(
         <div>
-          <WeftCore.Suspense fallback={string("loading")}>
+          <Weft.Suspense fallback={string("loading")}>
             <i id="gone"> {string("server")} </i>
-          </WeftCore.Suspense>
+          </Weft.Suspense>
           <Logs id="b" log />
         </div>,
       ),
@@ -280,9 +280,9 @@ describe("events from before hydration", () => {
         hydrate(
           container,
           <div>
-            <WeftCore.Suspense fallback={string("loading")}>
+            <Weft.Suspense fallback={string("loading")}>
               <em> {string("client")} </em>
-            </WeftCore.Suspense>
+            </Weft.Suspense>
             <Logs id="b" log />
           </div>,
         )

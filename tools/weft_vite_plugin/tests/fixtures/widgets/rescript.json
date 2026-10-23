@@ -1,0 +1,18 @@
+{
+  "name": "@e-cline/weft_vite_plugin_fixture_widgets",
+  "sources": "src",
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "FixtureWidgets",
+  "dependencies": [
+    "@e-cline/weft",
+    "@e-cline/weft_dom",
+    "@e-cline/weft_server"
+  ],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
+}

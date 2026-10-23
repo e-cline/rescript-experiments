@@ -2,12 +2,11 @@
   "name": "@e-cline/weft_notes_example",
   "version": "0.0.0",
   "private": true,
-  "description": "A notes app built with Weft's server components: streamed pages, navigation, parts of pages refetched, and the integration test bed for @e-cline/vite_plugin_weft's harness.",
+  "description": "A notes app built with Weft's server components: streamed pages, navigation, parts of pages refetched, and the integration test bed for @e-cline/weft_vite_plugin's harness.",
   "type": "module",
   "dependencies": {
     "@e-cline/servy": "workspace:*",
     "@e-cline/weft": "workspace:*",
-    "@e-cline/weft_core": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
     "@e-cline/weft_server": "workspace:*",
     "@rescript/runtime": "catalog:",
@@ -15,7 +14,7 @@
   },
   "devDependencies": {
     "@e-cline/ppx_weft": "workspace:*",
-    "@e-cline/vite_plugin_weft": "workspace:*",
+    "@e-cline/weft_vite_plugin": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "jsdom": "catalog:",

@@ -38,7 +38,7 @@ let elementKinds = [
 ]
 
 /**
-Whether `value` is an element node (`WeftCore.Element.node`): a plain object with exactly its four
+Whether `value` is an element node (`Weft.Element.node`): a plain object with exactly its four
 fields, and a `kind` that's one of `Element.kind`'s. A record of the same shape would be taken for
 one; that's the price of elements having no brand.
 */

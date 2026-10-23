@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 What the tests share: server components and entrypoints written the way `ppx_weft` compiles them
@@ -7,9 +7,9 @@ entrypoints, and helpers for running a payload from `Render` through `Client` in
 `TestRenderer`.
 */
 
-module TestRenderer = WeftCore.TestRenderer
-module TestJsx = WeftCore.TestJsx
-module Deferred = WeftCore.Deferred
+module TestRenderer = Weft.TestRenderer
+module TestJsx = Weft.TestJsx
+module Deferred = Weft.Deferred
 
 let text = TestJsx.string
 
@@ -18,7 +18,7 @@ let settle = async () =>
   for _ in 1 to 6 {
     await Testing.tick()
     TestRenderer.act(() => ())
-    WeftCore.TestScheduler.flushAll()
+    Weft.TestScheduler.flushAll()
   }
 
 /** A payload's rows, one string each, without the newlines. */
@@ -44,8 +44,8 @@ let resetCounts = () => {
 module Counter = {
   /** A counter with state, showing its label, its count and any children it's given. */
   @jsx.component
-  let make = (~label: string, ~note: option<string>=?, ~children: option<WeftCore.Element.t>=?) => {
-    let (count, setCount) = WeftCore.Hooks.useState(() => 0)
+  let make = (~label: string, ~note: option<string>=?, ~children: option<Weft.Element.t>=?) => {
+    let (count, setCount) = Weft.Hooks.useState(() => 0)
     setCounts->Dict.set(label, setCount)
     renders->Dict.set(label, rendersOf(label) + 1)
     let content =
@@ -59,7 +59,7 @@ module Counter = {
     | None => <b id=label> content </b>
     }
   }
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Counter")
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#Counter")
 }
 
 external toUnknown: 'a => unknown = "%identity"
@@ -74,34 +74,33 @@ module Probe = {
     received->Dict.set(name, toUnknown(value))
     <i id=name />
   }
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Probe")
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#Probe")
 }
 
 module Reader = {
   /** Reads a promise prop with `Hooks.use`. */
   @jsx.component
-  let make = (~id: string, ~promise: promise<string>) =>
-    <u id> {text(WeftCore.Hooks.use(promise))} </u>
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Reader")
+  let make = (~id: string, ~promise: promise<string>) => <u id> {text(Weft.Hooks.use(promise))} </u>
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#Reader")
 }
 
 module Guard = {
   /** An error boundary, which has to be an entrypoint (its fallback is a function). */
   @jsx.component
-  let make = (~children: WeftCore.Element.t) =>
-    <WeftCore.ErrorBoundary
+  let make = (~children: Weft.Element.t) =>
+    <Weft.ErrorBoundary
       fallback={(~error, ~reset as _) =>
-        <p id="error"> {text(WeftCore.ErrorBoundary.message(error))} </p>}
+        <p id="error"> {text(Weft.ErrorBoundary.message(error))} </p>}
     >
       children
-    </WeftCore.ErrorBoundary>
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Guard")
+    </Weft.ErrorBoundary>
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#Guard")
 }
 
 module Inner = {
   @jsx.component
   let make = (~label: string) => <s id=label> {text(label)} </s>
-  let () = WeftCore.Entrypoint.mark(make, "test/Other.res#")
+  let () = Weft.Entrypoint.mark(make, "test/Other.res#")
 }
 
 /** Each `Refetching`'s `refetch`, by `src`. */
@@ -113,29 +112,29 @@ module Refetching = {
   (its `title`), and keeps its `refetch` where tests can call it.
   */
   @jsx.component
-  let make = (~id: string, ~src: string, ~children: WeftCore.Element.t) => {
+  let make = (~id: string, ~src: string, ~children: Weft.Element.t) => {
     let {element, refetch, isPending} = Navigation.useRefetchable(~src, children)
     refetchers->Dict.set(src, refetch)
     <div id title={isPending ? "pending" : "idle"}> element </div>
   }
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Refetching")
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#Refetching")
 }
 
-let theme = WeftCore.Context.make("plain")
+let theme = Weft.Context.make("plain")
 
 module Themed = {
   /** Provides a theme to its children, as an entrypoint can. */
   @jsx.component
-  let make = (~value: string, ~children: WeftCore.Element.t) =>
-    WeftCore.JsxCore.jsx(WeftCore.Context.provider(theme), {value, children})
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#Themed")
+  let make = (~value: string, ~children: Weft.Element.t) =>
+    Weft.JsxCore.jsx(Weft.Context.provider(theme), {value, children})
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#Themed")
 }
 
 module ThemeReader = {
   /** Shows the theme it gets from above. */
   @jsx.component
-  let make = (~id: string) => <q id> {text(WeftCore.Hooks.useContext(theme))} </q>
-  let () = WeftCore.Entrypoint.mark(make, "test/Entrypoints.res#ThemeReader")
+  let make = (~id: string) => <q id> {text(Weft.Hooks.useContext(theme))} </q>
+  let () = Weft.Entrypoint.mark(make, "test/Entrypoints.res#ThemeReader")
 }
 
 let entrypointFile = Testing.module_([
@@ -159,8 +158,8 @@ let makeModules = () =>
 module Async = {
   /** An async server component (as the PPX compiles one): its children, once `ready` resolves. */
   @jsx.component
-  let make = (~ready: promise<unit>, ~children: WeftCore.Element.t) =>
-    WeftCore.Lazy.fromPromise(
+  let make = (~ready: promise<unit>, ~children: Weft.Element.t) =>
+    Weft.Lazy.fromPromise(
       (
         async () => {
           await ready
@@ -179,19 +178,19 @@ module Fails = {
 module Uses = {
   /** A server component that reads a promise with `Hooks.use`. */
   @jsx.component
-  let make = (~promise: promise<string>) => <em> {text(WeftCore.Hooks.use(promise))} </em>
+  let make = (~promise: promise<string>) => <em> {text(Weft.Hooks.use(promise))} </em>
 }
 
 module Wrap = {
   /** A server component that renders its children in a `<div>`. */
   @jsx.component
-  let make = (~id: string, ~children: WeftCore.Element.t) => <div id> children </div>
+  let make = (~id: string, ~children: Weft.Element.t) => <div id> children </div>
 }
 
 module WrapAgain = {
   /** The same output as `Wrap`, from another component. */
   @jsx.component
-  let make = (~id: string, ~children: WeftCore.Element.t) => <div id> children </div>
+  let make = (~id: string, ~children: Weft.Element.t) => <div id> children </div>
 }
 
 let loading = <i id="loading"> {text("loading")} </i>
@@ -233,7 +232,7 @@ type served = {url: string, pipe: Testing.pipe}
 A `fetch` answering each URL with `route(url)`, rendered by the server, through a pipe delivered as
 `delivery(url)` says; and the requests it has served, in order.
 */
-let serve = (~delivery=_ => Testing.Immediate, route: string => WeftCore.Element.t) => {
+let serve = (~delivery=_ => Testing.Immediate, route: string => Weft.Element.t) => {
   let served = []
   let fetch = (url, ~signal) => {
     let pipe = Testing.pipe(Render.toStream(route(url), ~signal), ~delivery=delivery(url))

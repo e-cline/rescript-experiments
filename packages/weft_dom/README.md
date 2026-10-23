@@ -1,16 +1,15 @@
 # @e-cline/weft_dom
 
-The DOM renderer for [`@e-cline/weft_core`](../weft_core): renders `@jsx.component` components into
-a browser page. It's a `WeftCore.HostConfig.S` for the DOM, plus a JSX module whose host tags take
-DOM props. On the server, `Html` renders the same trees to HTML, streamed, for the client to
-hydrate.
+The DOM renderer for [`@e-cline/weft`](../weft): renders `@jsx.component` components into a browser
+page. It's a `Weft.HostConfig.S` for the DOM, plus a JSX module whose host tags take DOM props. On
+the server, `Html` renders the same trees to HTML, streamed, for the client to hydrate.
 
 ## Installing
 
 Needs ReScript 12.
 
 ```bash
-npm install @e-cline/weft_core @e-cline/weft_dom rescript @rescript/runtime
+npm install @e-cline/weft @e-cline/weft_dom rescript @rescript/runtime
 ```
 
 Add both to the `dependencies` in your `rescript.json`. The modules are under the `WeftDom`
@@ -24,7 +23,7 @@ namespace.
 module Counter = {
   @jsx.component
   let make = () => {
-    let (count, setCount) = WeftCore.Hooks.useState(() => 0)
+    let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button onClick={_ => setCount(c => c + 1)}> {WeftDom.Jsx.int(count)} </button>
   }
 }
@@ -97,10 +96,10 @@ package's own tests run in jsdom (Vitest's `environment: 'jsdom'`).
 `Html.render(element)` renders the tree as the client would render it: host elements and their props
 by `DomProps`' rules (the same ones `DomHost` follows, so the server writes what the client would
 set), text escaped (with `<!-- -->` between two texts in a row, which the parser would merge),
-components called through `WeftCore.ServerRender.renderComponent` (their hooks giving initial
-state), providers' values reaching them. `shell` is everything outside pending `Suspense`
-boundaries; `rest` streams each boundary's content once it's ready, in a `<template>` an inline
-script swaps in over the fallback. `renderToString` waits for everything instead.
+components called through `Weft.ServerRender.renderComponent` (their hooks giving initial state),
+providers' values reaching them. `shell` is everything outside pending `Suspense` boundaries; `rest`
+streams each boundary's content once it's ready, in a `<template>` an inline script swaps in over
+the fallback. `renderToString` waits for everything instead.
 
 A boundary's content is tried at once, and written in place if it's ready. If something in it
 suspends, its fallback is written, with markers the client's hydration reads, and the content is

@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 The comments, which arrive as a promise (the server doesn't wait for them before sending the
@@ -12,18 +12,18 @@ module Items = {
       {Weft.Hooks.use(comments)
       ->Array.map(comment =>
         <li key=comment.id id={`comment-${comment.id}`}>
-          <b> {Weft.Jsx.string(comment.author)} </b>
-          {Weft.Jsx.string(": " ++ comment.text)}
+          <b> {WeftDom.Jsx.string(comment.author)} </b>
+          {WeftDom.Jsx.string(": " ++ comment.text)}
         </li>
       )
-      ->Weft.Jsx.array}
+      ->WeftDom.Jsx.array}
     </ul>
 }
 
 @weft.component({kind: Entrypoint})
 let make = (~comments: promise<array<Types.comment>>) =>
   <Weft.Suspense
-    fallback={<p id="comment-list-loading"> {Weft.Jsx.string("Loading comments…")} </p>}
+    fallback={<p id="comment-list-loading"> {WeftDom.Jsx.string("Loading comments…")} </p>}
   >
     <Items comments />
   </Weft.Suspense>

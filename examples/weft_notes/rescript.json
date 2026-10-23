@@ -12,11 +12,10 @@
   ],
   "suffix": ".res.js",
   "namespace": "WeftNotes",
-  "dev-dependencies": ["rescript-vitest", "@e-cline/vite_plugin_weft"],
+  "dev-dependencies": ["rescript-vitest", "@e-cline/weft_vite_plugin"],
   "dependencies": [
     "@e-cline/servy",
     "@e-cline/weft",
-    "@e-cline/weft_core",
     "@e-cline/weft_dom",
     "@e-cline/weft_server",
     "@rescript/webapi"

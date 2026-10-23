@@ -30,7 +30,7 @@ already does most of the work:
   `node src/Demo.res.js`) -- **no bundler plugin is needed at all** for the compiled output itself.
 - JSX in `.res` files compiles to `.res.js` too: the root `rescript.json` sets
   `"jsx": {"version": 4}` without `preserve`, so it's lowered to function calls
-  (`JsxRuntime.jsx(...)` for React, or a custom module's `Jsx.jsx(...)`, as `weft_core`'s per-file
+  (`JsxRuntime.jsx(...)` for React, or a custom module's `Jsx.jsx(...)`, as `weft`'s per-file
   `@@jsxConfig` uses).
 - A package that wants its JSX preserved in the output (here only `react_ui`) compiles to `.res.jsx`
   instead. Its `rescript.json` sets `"jsx": {"version": 4, "preserve": true}`, so the JSX stays JSX
@@ -102,8 +102,8 @@ lists with the _root's_ values, ignoring the package's own (including a `suffix`
 
 - The repo-root `rescript.json` has `"suffix": ".res.js"` and `"jsx": {"version": 4}` without
   `preserve`, and lists every other package. The root `res` task builds them. (Leaving `jsx` out
-  entirely isn't an option: `weft_core`'s per-file `@@jsxConfig` fails with "JSX support is not
-  enabled" unless the project turns JSX on.)
+  entirely isn't an option: `weft`'s per-file `@@jsxConfig` fails with "JSX support is not enabled"
+  unless the project turns JSX on.)
 - A package with preserved JSX is left out of the root's `dependencies` (and out of the root
   `package.json`'s `devDependencies`, which exist only so the root build can resolve its
   `dependencies`). Its own `rescript.json` sets `"jsx": {"version": 4, "preserve": true}` and

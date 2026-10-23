@@ -13,21 +13,21 @@
 
    - Shared: nothing else.
    - Server: an `async` component is rewritten into a synchronous one
-     returning a `WeftCore.Lazy` element around its body's promise, since the
+     returning a `Weft.Lazy` element around its body's promise, since the
      JSX transform wraps an async component in the standard library's
      `Jsx.promise`, which doesn't fit Weft's element type:
 
      {[
        let make = async (~id) => body
        // becomes
-       let make = (~id) => WeftCore.Lazy.fromPromise((async () => body)())
+       let make = (~id) => Weft.Lazy.fromPromise((async () => body)())
      ]}
 
      The file gets `@@directive("'use weft server'")`.
    - Entrypoint: right after the binding,
 
      {[
-       let () = WeftCore.Entrypoint.mark(make, "<package>/<path>#<Module.Path>")
+       let () = Weft.Entrypoint.mark(make, "<package>/<path>#<Module.Path>")
      ]}
 
      marks the component the JSX transform defines last (the props-taking
@@ -217,7 +217,7 @@ let split_function expr =
 let is_async fn = has_attribute "res.async" fn.pexp_attributes
 
 (* Rewrites `async (~a, ~b) => body` into
-   `(~a, ~b) => WeftCore.Lazy.fromPromise((async () => body)())`. *)
+   `(~a, ~b) => Weft.Lazy.fromPromise((async () => body)())`. *)
 let rewrite_async fn =
   let attributes =
     List.filter (fun a -> not (is_named "res.async" a)) fn.pexp_attributes
@@ -229,7 +229,7 @@ let rewrite_async fn =
     | _ ->
         let loc = expr.pexp_loc in
         eapply ~loc
-          (evar ~loc "WeftCore.Lazy.fromPromise")
+          (evar ~loc "Weft.Lazy.fromPromise")
           [ eapply ~loc (async_thunk ~loc expr) [ eunit ~loc ] ]
   in
   { (go fn) with pexp_attributes = attributes }
@@ -509,7 +509,7 @@ let rewriter () =
                   value_binding ~loc:gloc ~pat:(punit ~loc:gloc)
                     ~expr:
                       (eapply ~loc:gloc
-                         (evar ~loc:gloc "WeftCore.Entrypoint.mark")
+                         (evar ~loc:gloc "Weft.Entrypoint.mark")
                          [ evar ~loc:gloc "make"; str ~loc:gloc id ]);
                 ]
             in

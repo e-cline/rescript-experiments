@@ -7,19 +7,19 @@ let string = WeftDom.Jsx.string
 module Counter = {
   @jsx.component
   let make = (~label: string) => {
-    let (count, setCount) = WeftCore.Hooks.useState(() => 0)
+    let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button className="counter" onClick={_ => setCount(count => count + 1)}>
       {string(`${label}: ${Int.toString(count)}`)}
     </button>
   }
-  let () = WeftCore.Entrypoint.mark(make, "test/Dom.res#Counter")
+  let () = Weft.Entrypoint.mark(make, "test/Dom.res#Counter")
 }
 
 module Where = {
   /** Shows the page's URL, from `useNavigation`: the server's page, when rendered there. */
   @jsx.component
   let make = () => <code> {string(Navigation.useNavigation()->Navigation.url)} </code>
-  let () = WeftCore.Entrypoint.mark(make, "test/Dom.res#Where")
+  let () = Weft.Entrypoint.mark(make, "test/Dom.res#Where")
 }
 
 module Fetches = {
@@ -29,13 +29,13 @@ module Fetches = {
     Navigation.useNavigation()->Navigation.refresh->ignore
     <p />
   }
-  let () = WeftCore.Entrypoint.mark(make, "test/Dom.res#Fetches")
+  let () = Weft.Entrypoint.mark(make, "test/Dom.res#Fetches")
 }
 
 module Throws = {
   @jsx.component
   let make = () => JsError.throwWithMessage("the entrypoint failed")
-  let () = WeftCore.Entrypoint.mark(make, "test/Dom.res#Throws")
+  let () = Weft.Entrypoint.mark(make, "test/Dom.res#Throws")
 }
 
 let modules = () =>
@@ -62,8 +62,8 @@ let assets = (): Page.assets => {
 module Later = {
   /** A server component: its children, once `ready` resolves. */
   @jsx.component
-  let make = (~ready: promise<unit>, ~children: WeftCore.Element.t) =>
-    WeftCore.Lazy.fromPromise(
+  let make = (~ready: promise<unit>, ~children: Weft.Element.t) =>
+    Weft.Lazy.fromPromise(
       (
         async () => {
           await ready

@@ -2,9 +2,9 @@
 
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as DomHost$WeftDom from "./DomHost.res.js";
-import * as Reconciler$WeftCore from "@e-cline/weft_core/src/shared/Reconciler.res.js";
+import * as Reconciler$Weft from "@e-cline/weft/src/shared/Reconciler.res.js";
 
-let Renderer = Reconciler$WeftCore.MakeHydratable({
+let Renderer = Reconciler$Weft.MakeHydratable({
   instanceToNode: DomHost$WeftDom.instanceToNode,
   textToNode: DomHost$WeftDom.textToNode,
   getPublicInstance: DomHost$WeftDom.getPublicInstance,

@@ -3,11 +3,11 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Client$WeftDom from "@e-cline/weft_dom/src/client/Client.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Page$WeftServer from "../src/server/Page.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
 import * as Bootstrap$WeftServer from "../src/client/Bootstrap.res.js";
 import * as PageSupport$WeftServer from "./PageSupport.res.js";
@@ -78,7 +78,7 @@ Vitest.describe("a server-rendered page", undefined, undefined, undefined, undef
             label: "outer"
           })
         }),
-        Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+        Jsx$WeftDom.jsx(Suspense$Weft.make, {
           fallback: Jsx$WeftDom.Elements.jsx("i", {
             children: PageSupport$WeftServer.string("loading")
           }),

@@ -4,8 +4,8 @@
 import * as Db$WeftNotes from "./Db.res.js";
 import * as Api$WeftNotes from "./Api.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as ErrorBoundary$Weft from "@e-cline/weft/src/shared/ErrorBoundary.res.js";
 import * as RpcServer$WeftServer from "@e-cline/weft_server/src/server/RpcServer.res.js";
-import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/shared/ErrorBoundary.res.js";
 
 let saveTitle = RpcServer$WeftServer.handler(Api$WeftNotes.saveTitle, async (param, param$1) => {
   let noteId = param.noteId;
@@ -67,7 +67,7 @@ let router = RpcServer$WeftServer.router([
   addComment,
   like
 ], undefined, undefined, error => {
-  console.error(`weft_notes: an RPC failed: ` + ErrorBoundary$WeftCore.message(error));
+  console.error(`weft_notes: an RPC failed: ` + ErrorBoundary$Weft.message(error));
 });
 
 let RpcServer;

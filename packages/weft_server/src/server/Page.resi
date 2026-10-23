@@ -58,7 +58,7 @@ the server components' (from `Render`) and the client components' (from `WeftDom
 stops everything.
 */
 let toStream: (
-  WeftCore.Element.t,
+  Weft.Element.t,
   ~assets: assets,
   ~url: string=?,
   ~html: bool=?,
@@ -84,7 +84,7 @@ the request is aborted (the client went away). It varies by `Accept`, and says s
 */
 let respond: (
   Request.t,
-  WeftCore.Element.t,
+  Weft.Element.t,
   ~assets: assets,
   ~html: bool=?,
   ~title: string=?,

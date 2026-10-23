@@ -1,15 +1,15 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
-A todo app on `weft_core`: the todos live in a reducer (saved to `localStorage` by an effect), the
+A todo app on `weft`: the todos live in a reducer (saved to `localStorage` by an effect), the
 current filter reaches the list through context (switching it is a transition), each item is
 memoized, and the new-todo input is focused through a ref when the app mounts.
 */
 
 open Weft.Hooks
 
-module Dom = Weft.Dom
-module Jsx = Weft.Jsx
+module Dom = WeftDom.Dom
+module Jsx = WeftDom.Jsx
 
 module FilterContext = {
   let context = Weft.Context.make(Todo.All)

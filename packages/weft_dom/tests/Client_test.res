@@ -2,7 +2,7 @@
 
 open Vitest
 
-module Hooks = WeftCore.Hooks
+module Hooks = Weft.Hooks
 
 let makeContainer = () => {
   let container = Dom.createElement(Dom.document, "div")
@@ -259,7 +259,7 @@ describe("Transitions in the page", () => {
       @jsx.component
       let make = () => {
         let (tab, setTab) = Hooks.useState(() => "home")
-        <button id="tab" onClick={_ => WeftCore.Transition.start(() => setTab(_ => "settings"))}>
+        <button id="tab" onClick={_ => Weft.Transition.start(() => setTab(_ => "settings"))}>
           {Jsx.string(tab)}
         </button>
       }
@@ -306,9 +306,9 @@ describe("Suspense in the page", () => {
         <p id="content" style={dict{"display": "flex"}}> {Jsx.string(Hooks.use(promise))} </p>
     }
     let view = promise =>
-      <WeftCore.Suspense fallback={<i id="loading" />}>
+      <Weft.Suspense fallback={<i id="loading" />}>
         <Reads promise />
-      </WeftCore.Suspense>
+      </Weft.Suspense>
     let wait = () => Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ignore)
     let (container, root) = mount(view(first))
     await wait()
@@ -406,10 +406,10 @@ describe("More DOM cases", () => {
       let make = (~promise: promise<string>) => Jsx.string(Hooks.use(promise))
     }
     let view = promise =>
-      <WeftCore.Suspense fallback={Jsx.string("loading")}>
+      <Weft.Suspense fallback={Jsx.string("loading")}>
         <b id="plain" />
         <Reads promise />
-      </WeftCore.Suspense>
+      </Weft.Suspense>
     let (container, root) = mount(view(first))
     await wait()
     Client.act(() => ())

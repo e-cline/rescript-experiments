@@ -1,8 +1,48 @@
 # @e-cline/weft
 
-Weft is a React-like UI framework written in ReScript, with no React underneath. This is the package
-to depend on: the public API of [`@e-cline/weft_core`](../weft_core) (components, hooks, the
-reconciler) and [`@e-cline/weft_dom`](../weft_dom) (the DOM renderer) behind one module, `Weft`.
+Weft is a React-like component library written in ReScript, with no React underneath: components are
+ordinary `@jsx.component` functions, state lives in hooks, and a fiber reconciler (the same design
+as React's) works out what changed and hands the changes to a pluggable host renderer.
+
+This is an early stage of the [plan](../../docs/weft_plan.md). What works:
+
+- `@jsx.component` components, host elements, text, fragments (`<>`, and `<Jsx.Fragment key>`),
+  keyed and unkeyed lists.
+- React's child reconciliation: nodes are reused by key and type, and moves, insertions and removals
+  touch only what changed.
+- React's key warnings in development builds: two children with the same key, and children without a
+  key in a `Jsx.array` list.
+- `useState`, `useReducer`, `useReducerWithMapState`, `useRef`, `useMemo0`–`5`, `useCallback0`–`5`.
+- `useEffect` and `useLayoutEffect` (each with `0`–`5` dependency variants), with React's ordering:
+  layout effects in the commit, passive effects after it, every cleanup before any effect.
+- `ref` props on host elements, `Context` with `useContext`, `Memo.memo`, and
+  `useSyncExternalStore`.
+- `useId`, for linking elements (`htmlFor`, `aria-describedby`): the same on the server and once
+  hydrated, since it comes from the component's position in the tree, not the order things render
+  in; a component mounted later on the client gets a fresh one.
+- Automatic batching (updates in one task render once, in a microtask), `flushSync`, setting state
+  while rendering, skipping components whose props and state didn't change.
+- Concurrent rendering: `Transition.start`, `useTransition` and `useDeferredValue`. Transitions
+  render in time slices, more urgent updates interrupt them, and skipped updates are applied later
+  in their original order.
+- `ErrorBoundary`, catching errors from rendering and effects below it, and `Portal`, rendering
+  children into another container.
+- `Suspense` and `Hooks.use(promise)`: a fallback while components below wait for a promise, and
+  `Lazy.fromPromise`, an element that isn't ready yet, rendered in its place once it is.
+- For server renderers (see
+  [the server components plan](../../docs/weft_server_components_plan.md)): `ServerRender.run`, to
+  call components outside the reconciler, and `Entrypoint` marks; and `Deferred`, a promise whose
+  outcome `Hooks.use` and `Lazy` can read the moment it's settled.
+- `TestRenderer`: an in-memory renderer that logs every host operation, with `TestScheduler` to step
+  through concurrent renders.
+
+This package is the framework's core, and renders nothing by itself: to render into a browser page,
+use [`@e-cline/weft_dom`](../weft_dom); to read `signals` atoms and computeds from components,
+[`@e-cline/weft_signals`](../weft_signals). [`benchmarks/`](benchmarks) measures the reconciler on
+lists of up to 10,000 rows, and the size of a production bundle: `vp run size`, from the repository
+root, prints it for a counter, an app using the whole API, and
+[the todo app](../../examples/weft_app), minified and compressed (see
+[Bundle size](benchmarks/README.md#bundle-size)).
 
 ## Installing
 
@@ -12,63 +52,264 @@ Needs ReScript 12.
 npm install @e-cline/weft rescript @rescript/runtime
 ```
 
-Add `@e-cline/weft`, `@e-cline/weft_core` and `@e-cline/weft_dom` to the `dependencies` in your
-`rescript.json`. (ReScript only sees modules from packages it's told about, and `Weft` is made of
-aliases of the other two.)
+Add `"@e-cline/weft"` to the `dependencies` in your `rescript.json`, along with
+`"@e-cline/weft_dom"` to render into a page (see its README). The modules are under the `Weft`
+namespace.
 
-## Using it
+## Writing components
+
+A file opts in to this library's JSX with a `@@jsxConfig` line naming a JSX module:
 
 ```rescript
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 module Counter = {
   @jsx.component
-  let make = () => {
+  let make = (~label: string) => {
     let (count, setCount) = Weft.Hooks.useState(() => 0)
-    <button onClick={_ => setCount(c => c + 1)}> {Weft.Jsx.int(count)} </button>
+    <button id="counter" onClick={() => setCount(c => c + 1)}>
+      {Weft.TestJsx.string(`${label}: ${Int.toString(count)}`)}
+    </button>
   }
-}
-
-switch Weft.Dom.document->Weft.Dom.body->Weft.Dom.querySelector("#app")->Nullable.toOption {
-| Some(container) => Weft.Client.createRoot(container)->Weft.Client.render(<Counter />)
-| None => ()
 }
 ```
 
-[`examples/weft_app`](../../examples/weft_app) is a complete app.
+The JSX module decides which host tags exist and what props they take, so each renderer has its own.
+`Weft.Jsx` has no host tags at all: a component written against it can only compose other
+components, and works under any renderer. A `<div>` in such a file is a compile error.
 
-## What's in `Weft`
+`@@jsxConfig` works per file, so it doesn't need to take over the project's `jsx` setting, though
+the project must turn JSX on (here, the root `rescript.json`'s `"jsx": {"version": 4}`). ReScript
+lowers the JSX to function calls either way, even when the project sets `"preserve": true`, so the
+output is plain `.res.js`.
 
-| Module / type   | From                     | What it is                                                          |
-| --------------- | ------------------------ | ------------------------------------------------------------------- |
-| `element`       | `WeftCore.Element.t`     | What a component returns and `Client.render` takes.                 |
-| `Hooks`         | `WeftCore.Hooks`         | `useState`, `useReducer`, `useEffect`, `useMemo`, `useContext`, ... |
-| `Ref`           | `WeftCore.Ref`           | The mutable box `Hooks.useRef` returns.                             |
-| `Context`       | `WeftCore.Context`       | `make` and `provider`.                                              |
-| `Memo`          | `WeftCore.Memo`          | Skip re-rendering a component whose props are unchanged.            |
-| `Transition`    | `WeftCore.Transition`    | `start`: mark updates as non-urgent.                                |
-| `ErrorBoundary` | `WeftCore.ErrorBoundary` | Catch errors thrown while rendering below it.                       |
-| `Suspense`      | `WeftCore.Suspense`      | A fallback while a child waits on a promise (`Hooks.use`).          |
-| `Lazy`          | `WeftCore.Lazy`          | An element that isn't ready yet, rendered in its place once it is.  |
-| `Jsx`           | `WeftDom.Jsx`            | The JSX module; host tags take DOM props.                           |
-| `Portal`        | `WeftDom.Portal`         | Render children into another DOM element.                           |
-| `Client`        | `WeftDom.Client`         | `createRoot`, `render`, `unmount`, `flushSync`, `act`.              |
-| `Dom`           | `WeftDom.Dom`            | The small set of DOM bindings the renderer and components need.     |
+Hooks follow `@rescript/react`'s names and the usual rules: call them unconditionally, in the same
+order on every render. Breaking the order throws in development (production builds skip the check,
+as React's do).
 
-Each is an alias, so the types are the same as the originals' and the docs in `weft_core` and
-`weft_dom` apply.
+### Effects
 
-## What's not
+`useLayoutEffect` runs synchronously once the host is updated, before the commit returns (an update
+it makes renders straight away). `useEffect` runs afterwards: in a `setTimeout`, or before the next
+render, whichever comes first. Within each kind, children run before parents, and every cleanup due
+in a commit runs before any effect. An exception from an effect doesn't stop the others; the first
+one is rethrown once they've all run.
 
-The machinery for writing or testing a renderer stays in `@e-cline/weft_core`: `Reconciler`,
-`Scheduler`, `HostConfig`, `JsxCore`, `TestRenderer`, `TestScheduler` and `TestJsx`. So does
-`WeftCore.Jsx`, the JSX module without host tags, for components that should work under any
-renderer. `@e-cline/weft_signals` is separate too.
+### Context
 
-## Bundle size
+```rescript
+module Theme = {
+  let context = Weft.Context.make("light")
+  module Provider = {
+    let make = Weft.Context.provider(context)
+  }
+}
 
-Free. A module alias compiles away: `Weft.Hooks.useState` becomes an import of `useState` from
-`weft_core`'s `Hooks.res.js`, the same as writing `WeftCore.Hooks.useState`, so an app imports
-exactly what it uses and a bundler drops the rest. `Weft.res.js` itself is never imported.
-[`weft_core`'s size benchmark](../weft_core/benchmarks/size) is written against `Weft`, and its
-numbers are the same as before.
+<Theme.Provider value="dark"> <Toolbar /> </Theme.Provider>
+// inside Toolbar, or anything below it:
+let theme = Weft.Hooks.useContext(Theme.context)
+```
+
+A consumer renders again when its provider's value changes, even past components that skipped
+rendering.
+
+### Transitions
+
+```rescript
+let (isPending, startTransition) = Weft.Hooks.useTransition()
+// in a handler:
+startTransition(() => setResults(_ => search(query)))
+```
+
+Each update has a lane: `flushSync` and event handlers (in `weft_dom`) are sync, updates in
+`Transition.start` are transitions, and everything else is default. Sync and default updates render
+in a microtask, start to finish. A transition renders in scheduler tasks, stopping every 5 ms (by
+default) to let the browser handle input; an urgent update arriving meanwhile throws the unfinished
+render away, renders on its own (skipping the transition's updates), and the transition then starts
+again. `useDeferredValue(value)` shows the previous value during urgent renders and catches up in a
+transition. A store read with `useSyncExternalStore` that changed while a transition was paused
+makes it render again, without stopping, so no commit mixes old and new values.
+
+The scheduler is pluggable: `Reconciler.MakeWithScheduler(Host, Sched)` takes any `Scheduler.S`;
+`Reconciler.Make(Host)` uses `Scheduler.Default`.
+
+### Error boundaries
+
+```rescript
+<Weft.ErrorBoundary
+  fallback={(~error, ~reset) =>
+    <ErrorPanel message={Weft.ErrorBoundary.message(error)} onRetry=reset />}>
+  <Dashboard />
+</Weft.ErrorBoundary>
+```
+
+An exception thrown while a component below renders stops rendering at the nearest boundary, which
+renders its fallback instead (in the same render, so nothing from the failed subtree commits). An
+exception from an effect below shows the fallback in a render straight after. `reset` renders the
+children again. An error in a fallback goes to the next boundary up; with no boundary, it propagates
+as before.
+
+### Suspense
+
+```rescript
+let user = fetchUser(id) // made once, outside the component (or cached)
+
+module Profile = {
+  @jsx.component
+  let make = () => <h1> {Jsx.string(Weft.Hooks.use(user).name)} </h1>
+}
+
+<Weft.Suspense fallback={<Spinner />}> <Profile /> </Weft.Suspense>
+```
+
+`Hooks.use(promise)` returns what the promise resolved to. Until it settles, the nearest `Suspense`
+boundary shows its fallback, and renders its children again once it has; a rejection goes to the
+nearest `ErrorBoundary`. Pass the same promise every render, since a render that suspends is thrown
+away. Children that suspend after being shown stay mounted behind the fallback, hidden, keeping
+their state. In a transition, a boundary showing its children doesn't fall back at all: the screen
+keeps its previous state (and `useTransition`'s `isPending` stays `true`) until the data arrives.
+
+### Lazy
+
+```rescript
+let chart = Weft.Lazy.fromPromise(loadChart()) // a promise of an element, made once
+
+<Weft.Suspense fallback={<Spinner />}> chart </Weft.Suspense>
+```
+
+`Lazy.fromPromise(promise)` is an element standing for the one `promise` resolves to. Rendering it
+suspends as `Hooks.use` does until the promise settles (a promise that already has is read at once).
+It has no fiber of its own: what it resolves to is rendered in its place, so replacing a lazy
+element with that element, or the other way round, keeps everything below it, state included. It's
+what streamed server output uses for the parts that arrive later. A rejected one throws its error
+from its own position, so an `ErrorBoundary` whose child it is catches it.
+
+A plain promise's outcome can only be learned a microtask after it settles, so a render before then
+suspends once. `Deferred.make()` gives a promise settled from outside whose outcome is recorded the
+moment `resolve` or `reject` is called: what the server components client decodes rows into.
+
+### Server renderers
+
+A server renderer calls components itself, with no fibers. `ServerRender.run(f)` calls `f` as a
+server render: hooks that keep state or run effects fail with an error saying they can't be used on
+the server (code 14), while `Hooks.use` works, throwing its suspension for the renderer to wait on.
+`Entrypoint.mark(make, id)` marks a component as an entrypoint, which a server renderer sends to the
+client as a reference instead of rendering; `Entrypoint.idOf` reads the mark. Apps don't call
+either: the `ppx_weft` PPX and the server renderer do.
+
+### Portals
+
+`Portal.create(~container, children)` renders `children` into another container of the same renderer
+while they stay in place in the tree: context, error boundaries and effects behave as if they were
+where the portal is. Renderers wrap it with their container type: `TestRenderer.portal` (with
+`TestRenderer.createTarget`) and `WeftDom.Portal`.
+
+### Memo
+
+```rescript
+module Row = {
+  @jsx.component
+  let make = Weft.Memo.memo((~label: string) => ...)
+}
+```
+
+`Memo.memo` compares props field by field with `Object.is`. For a custom comparison, shadow `make`
+with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@jsx.component` only accepts a
+one-argument wrapper.
+
+## Where it runs
+
+Everything in `src/shared/` runs anywhere, in a browser or on a server, with no DOM: the reconciler
+and its hooks only ever touch a host through `HostConfig`. `ServerRender` is for server renderers
+calling components outside the reconciler: `run` for server components (whose stateful hooks fail),
+and `renderComponent` for client components rendered to HTML (whose hooks work as on a first render
+that never commits; `useSyncExternalStore` needs its `~getServerSnapshot` there). `src/testing/` has
+`TestRenderer`, `TestScheduler` and `TestJsx`, for tests.
+
+## Error codes
+
+In development, misusing the library throws an error that says what went wrong. Production builds
+leave the messages out, throwing `Weft error <code>` instead:
+
+| Code | Development message                                                                                          |
+| ---: | ------------------------------------------------------------------------------------------------------------ |
+|    1 | Hooks can only be called while a function component is rendering.                                            |
+|    2 | Rendered more hooks than during the previous render.                                                         |
+|    3 | Rendered fewer hooks than during the previous render.                                                        |
+|    4 | Too many re-renders: a component is setting its own state on every render.                                   |
+|    5 | Maximum update depth exceeded: a component keeps updating state while rendering or in a layout effect.       |
+|    6 | Updates keep scheduling more updates (from `act`, or `TestRenderer`).                                        |
+|    7 | Can't render into a root that was unmounted.                                                                 |
+|    8 | A component suspended (`Hooks.use` on a promise that hasn't settled) with no `<Suspense>` boundary above it. |
+|    9 | A host node has no host parent (a bug in Weft or the renderer).                                              |
+|   10 | Context stack underflow (a bug in Weft).                                                                     |
+|   11 | `jsxFragment` is a marker for `<>...</>`, not a component to call.                                           |
+|   12 | A value that isn't an element was rendered.                                                                  |
+|   13 | A lazy element reached the reconciler unresolved (a bug in Weft).                                            |
+|   14 | A hook that keeps state or runs effects was used in a component rendered on the server.                      |
+|   15 | `useSyncExternalStore` without a `~getServerSnapshot`, rendered on the server.                               |
+
+Codes don't change once published: a new error gets the next number.
+
+## Testing with `TestRenderer`
+
+```rescript
+let renderer = Weft.TestRenderer.create()
+renderer->Weft.TestRenderer.render(<Counter label="Clicks" />)
+renderer->Weft.TestRenderer.click("counter")
+renderer->Weft.TestRenderer.toString // `<button id="counter">Clicks: 1</button>`
+renderer->Weft.TestRenderer.ops // ["create \"Clicks: 0\"", ..., "text \"Clicks: 0\" -> \"Clicks: 1\""]
+```
+
+`ops` lists the host operations performed (`create`, `append`, `insert ... before`, `remove`,
+`update`, `text`), so a test can check that an update did no more than it had to. `render`, `click`,
+`input` and `unmount` run inside `act`, which renders everything pending (transitions included) and
+runs effects before returning. To observe timing, `scheduleRender` and `flushSync` render without
+running `useEffect`s, and transitions wait on `TestScheduler`: `flushTask` runs one time slice,
+`flushAll` the rest, and a component can call `TestScheduler.advanceTime` to take time to render.
+
+`TestRenderer.hydrate(markup, element)` hydrates instead: `markup` is in `toString`'s format, with
+comments for what a server's HTML has besides (`<!--$-->`/`<!--$?-->`/`<!--$!-->` and `<!--/$-->`
+around a `Suspense` boundary, `<!-- -->` between two texts), and `ops` then shows hydration's own
+work (`hydrate div#a` for a node adopted, `remove ...` for one nothing claimed). `resolveBoundary`
+and `failBoundary` play a pending boundary's content arriving from the server, or failing there;
+`toMarkup` shows the nodes markers and all.
+
+## Writing a renderer
+
+A renderer implements `HostConfig.S` (create instances and text, append, insert and remove children,
+compute and apply prop updates) and gets its API from `Reconciler.Make`:
+
+```rescript
+module Renderer = Weft.Reconciler.Make(MyHost)
+let root = Renderer.createRoot(container)
+Renderer.flushSync(() => Renderer.render(root, element))
+```
+
+A host that can also hydrate (render over content already there, a server's HTML) implements
+`HostConfig.Hydratable` too, and gets `hydrateRoot(container, element)` from
+`Reconciler.MakeHydratable`. Its extra operations walk the existing content (the first and next
+hydratable node, a node as an instance of a tag, a boundary's markers), adopt what's claimed
+(`hydrateInstance`), and, at commit, remove what wasn't. `DomHost` (in `weft_dom`) and
+`TestRenderer` both are.
+
+It also provides a JSX module: `include Weft.JsxCore` plus an `Elements` submodule whose `props`
+record is the renderer's host props, built on `JsxCore.hostJsx` (and `JsxCore.hostJsxs` for
+`Elements.jsxs`, which marks written-out children so they aren't warned about for having no keys).
+`TestJsx` and `TestRenderer` are a complete example.
+
+## How it works
+
+- **Elements** are plain values: `null`, a string or number, an array, or a node record
+  (`Element.classify` tells them apart).
+- **Fibers** form two trees: `current` (on screen) and the work-in-progress tree a render builds
+  from it, reusing each fiber's `alternate`.
+- **Rendering** walks the tree from the root, skipping subtrees with no pending updates in the lane
+  being rendered, renders components, and diffs their output against the current children. New host
+  nodes are built off-screen, bottom up. A concurrent render can stop between fibers and pick up
+  where it left off.
+- **Committing** applies the recorded insertions, moves, updates and removals to the host in one go,
+  then attaches refs and runs layout effects; passive effects follow later.
+
+An exception thrown while rendering leaves the screen as it was and propagates to whatever started
+the render. The updates that render was processing are lost.

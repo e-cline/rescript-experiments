@@ -11,6 +11,7 @@
     }
   ],
   "suffix": ".res.js",
+  "namespace": "Weft",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/weft_core", "@e-cline/weft_dom"]
+  "dependencies": ["@e-cline/common", "@e-cline/priority_queue"]
 }

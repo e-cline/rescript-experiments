@@ -1,5 +1,5 @@
 ---
-'@e-cline/weft_core': patch
+'@e-cline/weft': patch
 ---
 
 Checking that hooks are called in the same order on every render now happens in development only, as

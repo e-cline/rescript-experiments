@@ -1,5 +1,5 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 @weft.component({kind: Entrypoint})
 let make = (~greeting: string, ~name: string) =>
-  <p> {WeftCore.TestJsx.string(`${greeting}, ${name}!`)} </p>
+  <p> {Weft.TestJsx.string(`${greeting}, ${name}!`)} </p>

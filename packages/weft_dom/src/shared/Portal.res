@@ -1,6 +1,6 @@
-type props = {container: Dom.element, children: WeftCore.Element.t}
+type props = {container: Dom.element, children: Weft.Element.t}
 
 let create = (children, ~container: Dom.element, ~key=?) =>
-  WeftCore.Portal.create(~container, ~key?, children)
+  Weft.Portal.create(~container, ~key?, children)
 
 let make = (props: props) => create(props.children, ~container=props.container)

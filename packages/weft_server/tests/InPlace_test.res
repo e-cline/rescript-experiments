@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 Refetching: a payload rendered over the one on screen is patched in, not remounted. Each test
@@ -23,7 +23,7 @@ let mount = async (~client, tree) => {
 let refetch = async (~client, renderer, tree) => {
   let element = await roundTrip(~client, tree)
   TestRenderer.clearOps(renderer)
-  WeftCore.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
+  Weft.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
   await settle()
 }
 
@@ -224,11 +224,11 @@ describe("refetching over placeholders", () => {
       let ready = Deferred.make()
       let renderer = await mount(
         ~client,
-        <WeftCore.Suspense fallback=loading>
+        <Weft.Suspense fallback=loading>
           <Async ready=ready.promise>
             <Counter label="a" />
           </Async>
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
       )
       t->expect(shows(renderer))->Expect.toBe(`<i id="loading">loading</i>`)
       ready.resolve()
@@ -237,9 +237,9 @@ describe("refetching over placeholders", () => {
       await refetch(
         ~client,
         renderer,
-        <WeftCore.Suspense fallback=loading>
+        <Weft.Suspense fallback=loading>
           <Counter label="a" />
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
       )
       t->expect(shows(renderer))->Expect.toBe(`<b id="a">a:1</b>`)
       t->expect(opsLike(renderer, "create"))->Expect.toEqual([])
@@ -251,20 +251,20 @@ describe("refetching over placeholders", () => {
     let client = makeClient()
     let renderer = await mount(
       ~client,
-      <WeftCore.Suspense fallback=loading>
+      <Weft.Suspense fallback=loading>
         <Counter label="a" />
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
     )
     bump("a")
     let ready = Deferred.make()
     await refetch(
       ~client,
       renderer,
-      <WeftCore.Suspense fallback=loading>
+      <Weft.Suspense fallback=loading>
         <Async ready=ready.promise>
           <Counter label="a" note="later" />
         </Async>
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
     )
     // A boundary that's showing its content keeps showing it during the transition...
     t->expect(shows(renderer))->Expect.toBe(`<b id="a">a:1</b>`)
@@ -279,11 +279,11 @@ describe("refetching over placeholders", () => {
     resetCounts()
     let client = makeClient()
     let tree =
-      <WeftCore.Suspense fallback=loading>
+      <Weft.Suspense fallback=loading>
         <Async ready={Promise.resolve()}>
           <Counter label="a" />
         </Async>
-      </WeftCore.Suspense>
+      </Weft.Suspense>
     let pipe = Testing.pipe(Render.toStream(tree))
     let element = client->Decoder.fromStream(Testing.stream(pipe))
     await Testing.finished(pipe)
@@ -313,11 +313,11 @@ describe("refetching over placeholders", () => {
         renderer,
         <div>
           <Counter label="a" />
-          <WeftCore.Suspense fallback=loading>
+          <Weft.Suspense fallback=loading>
             <Async ready=ready.promise>
               <b id="new" />
             </Async>
-          </WeftCore.Suspense>
+          </Weft.Suspense>
         </div>,
       )
       t
@@ -370,14 +370,14 @@ describe("refetching, with errors", () => {
         <div>
           <Counter label="a" />
           <Guard>
-            <WeftCore.Suspense fallback=loading> content </WeftCore.Suspense>
+            <Weft.Suspense fallback=loading> content </Weft.Suspense>
           </Guard>
         </div>
       let renderer = await mount(~client, tree(<b id="fine" />))
       bump("a")
       let render = Render.toStream(tree(<Fails message="broken" />), ~onError=_ => None)
       let element = await client->Decoder.fromStream(Testing.stream(Testing.pipe(render)))
-      WeftCore.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
+      Weft.Transition.start(() => TestRenderer.scheduleRender(renderer, element))
       await settle()
       t
       ->expect(shows(renderer))
@@ -430,16 +430,16 @@ describe("refetching, in order", () => {
       @jsx.component
       let make = (~promise) => {
         calls := calls.contents + 1
-        text(WeftCore.Hooks.use(promise))
+        text(Weft.Hooks.use(promise))
       }
     }
     let (client, pipes) = fetching(
       dict{
         "/old": () =>
           <div>
-            <WeftCore.Suspense fallback=loading>
+            <Weft.Suspense fallback=loading>
               <Counted promise=data.promise />
-            </WeftCore.Suspense>
+            </Weft.Suspense>
           </div>,
         "/new": () => <p> {text("new")} </p>,
       },

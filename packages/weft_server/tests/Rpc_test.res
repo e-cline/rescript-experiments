@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 Weft RPCs: the router against hand-made requests (what it refuses, and that nothing of the RPC's
@@ -61,7 +61,7 @@ let laterHandler = RpcServer.handler(later, async (label, ~http as _) => Ok({
   later: gate.contents.promise->Promise.thenResolve(_ => `${label}, later`),
 }))
 
-let render: Rpc.t<string, string, WeftCore.Element.t, unit> = Rpc.make(
+let render: Rpc.t<string, string, Weft.Element.t, unit> = Rpc.make(
   ~id="notes.render",
   ~request=Codec.string,
 )

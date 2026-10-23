@@ -2,10 +2,10 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Page$WeftServer from "../src/server/Page.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as ErrorBoundary$Weft from "@e-cline/weft/src/shared/ErrorBoundary.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
-import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/shared/ErrorBoundary.res.js";
 import * as PageSupport$WeftServer from "./PageSupport.res.js";
 
 function indexOf(html, text) {
@@ -15,7 +15,7 @@ function indexOf(html, text) {
 function reporting() {
   let reported = [];
   let onError = error => {
-    reported.push(ErrorBoundary$WeftCore.message(error));
+    reported.push(ErrorBoundary$Weft.message(error));
     return "d";
   };
   return [
@@ -49,7 +49,7 @@ Vitest.describe("a page with its HTML", undefined, undefined, undefined, undefin
     let promise = new Promise((done, param) => {
       resolve.contents = () => done();
     });
-    let reader = Page$WeftServer.toStream(Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+    let reader = Page$WeftServer.toStream(Jsx$WeftDom.jsx(Suspense$Weft.make, {
       fallback: Jsx$WeftDom.Elements.jsx("i", {
         children: PageSupport$WeftServer.string("loading")
       }),
@@ -113,7 +113,7 @@ Vitest.describe("a page with its HTML", undefined, undefined, undefined, undefin
   });
   Vitest.testAsync("writes a boundary a server component failed in as failed, reporting it once", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let match = reporting();
-    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(Jsx$WeftDom.jsx(Suspense$Weft.make, {
       fallback: PageSupport$WeftServer.string("fallback"),
       children: Jsx$WeftDom.jsx(PageSupport$WeftServer.ServerFails.make, {
         message: "inside"

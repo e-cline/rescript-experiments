@@ -161,7 +161,7 @@ let call = async (rpc, ~client, input, ~base=?, ~signal=?) =>
 
 let use = (rpc, ~base=?) => {
   let navigation = Navigation.useNavigation()
-  WeftCore.Hooks.useCallback2(
+  Weft.Hooks.useCallback2(
     input => call(rpc, ~client=Navigation.client(navigation), input, ~base?),
     (navigation, rpc),
   )

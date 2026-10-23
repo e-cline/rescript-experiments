@@ -46,9 +46,9 @@ against the code again, and what had drifted is corrected in those notes. The de
 
 Spikes, against the code as phase 6 left it (scripts in the session's scratchpad, not committed):
 
-1. **An entrypoint's hooks run on the server without the reconciler**, through `weft_core`'s own
-   mount path: `HookImpl.renderWithHooks(None, fiber, component, props, lane)` on a fiber that's in
-   no tree. In Node, with no DOM: `useState` and `useReducer` give their initial state, `useRef`,
+1. **An entrypoint's hooks run on the server without the reconciler**, through `weft`'s own mount
+   path: `HookImpl.renderWithHooks(None, fiber, component, props, lane)` on a fiber that's in no
+   tree. In Node, with no DOM: `useState` and `useReducer` give their initial state, `useRef`,
    `useMemo` and `useCallback` work, `useContext` reads the context's `currentValue` (which the
    renderer sets around the call), `useEffect` and `useLayoutEffect` record effects that never run,
    `useTransition` gives `(false, _)`, `useDeferredValue` its value, a render-phase update renders
@@ -129,7 +129,7 @@ runs, and the build checks it:
 - **Each package's `src` has `client/`, `server/` and `shared/`** (and `testing/` for the test
   helpers). ReScript module names don't depend on directories, so this moves files without renaming
   modules (except as below).
-  - `weft_core`: everything is `shared/` (the reconciler, hooks, elements, `ServerRender`), except
+  - `weft`: everything is `shared/` (the reconciler, hooks, elements, `ServerRender`), except
     `TestRenderer`, `TestScheduler` and `TestJsx` in `testing/`.
   - `weft_dom`: `client/` has `Client` (roots) and `DomHost`; `server/` has `Html` (the HTML
     renderer, §3); `shared/` has `Dom`, `DomProps` (the prop rules both renderers follow), `Jsx` and
@@ -187,17 +187,16 @@ through a new virtual module, `virtual:weft/ssr-references` (the same map as the
 `virtual:weft/client-references`, imported by the server), so the server build bundles the
 entrypoint files too. React's Vite plugin has a third environment (`ssr`) for this, because React
 has two builds (the `react-server` export condition) that can't share a module graph. Weft has one
-`weft_core`, so one server environment is enough: one server build, one module graph, one copy of
-each shared module. What it asks of entrypoint files: no DOM access at the top level of a module
-(only in handlers and effects), which is already true of every one in the repo, and the same rule
-React has.
+`weft`, so one server environment is enough: one server build, one module graph, one copy of each
+shared module. What it asks of entrypoint files: no DOM access at the top level of a module (only in
+handlers and effects), which is already true of every one in the repo, and the same rule React has.
 
 ### 2. Hooks without the reconciler
 
-`weft_core` gains `ServerRender.renderComponent(component, props, options)`, for server renderers
-that call client components (entrypoints, and the shared and client components they render): it
-calls the component through `HookImpl.renderWithHooks` on a fiber made for the call and in no tree,
-as a mount (verified point 1). On top of what the spike showed works, it:
+`weft` gains `ServerRender.renderComponent(component, props, options)`, for server renderers that
+call client components (entrypoints, and the shared and client components they render): it calls the
+component through `HookImpl.renderWithHooks` on a fiber made for the call and in no tree, as a mount
+(verified point 1). On top of what the spike showed works, it:
 
 - sets aside any render in progress (as `ServerRender.run` does today), and restores it however the
   call ends, resetting `HookImpl.state` after a throw or a suspension;
@@ -213,7 +212,7 @@ updates dropped. Two need changes of their own:
 - **`useSyncExternalStore`** gains `~getServerSnapshot`, as React's has: the server renders with it,
   and so does hydration (the HTML was rendered from it), with an update straight after to the
   client's snapshot if it differs. Without it, rendering on the server fails with an error saying to
-  give one (a new `weft_core` code, 15).
+  give one (a new `weft` code, 15).
 - **`Hooks.use`** already works on both sides.
 
 `ServerRender.run` (server components, which must not have state) is unchanged: its hooks still fail
@@ -243,13 +242,13 @@ because it follows the same prop rules as `DomHost` (in `shared/DomProps`), and 
 ```rescript
 /** The HTML for `element`, streamed: the shell, then each boundary's content as it's ready. */
 let renderToStream: (
-  WeftCore.Element.t,
+  Weft.Element.t,
   ~onError: exn => option<string>=?,
   ~signal: AbortSignal.t=?,
 ) => stream
 
 /** The HTML for `element`, all of it, once everything has rendered (for tests, and static pages). */
-let renderToString: WeftCore.Element.t => promise<string>
+let renderToString: Weft.Element.t => promise<string>
 ```
 
 It walks the tree like `Render`, with no fibers, by element kind:
@@ -313,9 +312,9 @@ same way. An error in a boundary is reported to `onError` only once the attempt 
 pending boundaries get their ids then too, so retried attempts don't report twice or leave gaps. The
 `style` attribute is written as the browser serializes it (`background-color: red;`). Two things for
 the hydration phases: a `<textarea>`'s value is written as its text, which a client render doesn't
-have (it sets the property), so hydration leaves a textarea's children alone (7.4); and `weft_core`
-gained `ServerRender.providedContext`, so the renderer reads a provider element without
-`weft_core`'s internals. `weft_dom`'s error codes start here (1 to 6, in its README).
+have (it sets the property), so hydration leaves a textarea's children alone (7.4); and `weft`
+gained `ServerRender.providedContext`, so the renderer reads a provider element without `weft`'s
+internals. `weft_dom`'s error codes start here (1 to 6, in its README).
 
 The concurrency paragraph above isn't what was built: siblings aren't rendered concurrently. Each
 attempt (the shell, or one boundary's content) renders synchronously, depth first; whatever in it
@@ -433,7 +432,7 @@ the root row decodes.
 
 ### 6. Hydration in the reconciler
 
-`weft_core`'s reconciler learns to render over nodes that are already there.
+`weft`'s reconciler learns to render over nodes that are already there.
 
 **The host operations.** `HostConfig` gains a module type for hosts that can hydrate:
 
@@ -572,10 +571,10 @@ inserted before it goes before its start marker. Not handled: a dehydrated bound
   boundary around a part that can fail on the server puts a `Suspense` boundary around the error
   boundary, to keep what's rendered on the client to that part (`weft_notes` does).
 
-The tests (`weft_core/tests/Hydration_test.res`) run over `TestRenderer`'s nodes: each case above,
-and a fuzz test where random trees hydrate over markup made from them into exactly what a direct
-render makes (no node created but empty texts), and still do with the markup broken at random (a
-node dropped, a tag changed, a text changed, an extra node), recovering with warnings.
+The tests (`weft/tests/Hydration_test.res`) run over `TestRenderer`'s nodes: each case above, and a
+fuzz test where random trees hydrate over markup made from them into exactly what a direct render
+makes (no node created but empty texts), and still do with the markup broken at random (a node
+dropped, a tag changed, a text changed, an extra node), recovering with warnings.
 
 ### 7. Hydration in the DOM
 
@@ -639,7 +638,7 @@ The oracle throughout is the client render: **hydrating server HTML must end in 
 client render of the same tree makes**, with the server's nodes reused (none created, none removed)
 whenever the two agreed.
 
-#### `weft_core` (the reconciler, without a DOM)
+#### `weft` (the reconciler, without a DOM)
 
 `TestRenderer` implements `HostConfig.Hydratable`, with `TestRenderer.fromMarkup` building a node
 tree from its own `toString` format (`<b id="c1">c1:0</b>`, with comments for markers), so the
@@ -700,8 +699,8 @@ hydration algorithm is tested in Node, fast, and fuzzed:
 
 **As built, the tests (checked before the PR).** `TestRenderer` hydrates markup with
 `TestRenderer.hydrate(markup, element)` (rather than a `fromMarkup`), and counts nodes created from
-its log of operations. The `weft_core` fuzz test checks that broken markup warns, not what the
-warning names. The DOM fuzz test's random trees are tags with or without a class, inputs, text runs,
+its log of operations. The `weft` fuzz test checks that broken markup warns, not what the warning
+names. The DOM fuzz test's random trees are tags with or without a class, inputs, text runs,
 fragments, components with state, `Suspense` boundaries waiting on promises, lazy elements and
 `useId` probes (no styles); its HTML is applied segment by segment as the renderer produces them,
 rather than cut at random. `weft_server`'s end-to-end tests stream `Page.toStream` straight into
@@ -899,8 +898,8 @@ switching between fallback and content; and `weft_notes`' comment form linking i
   both optional.
 
 `weft_dom`'s `DomProps` gained `aria-describedby` and `aria-labelledby`, what `useId` is mostly for.
-Tests: `weft_core/tests/UseId_test.res` (an ID per call, kept; a fresh one after a keyed reorder;
-the encoding; the client's positions while hydrating against the server's for the same tree;
+Tests: `weft/tests/UseId_test.res` (an ID per call, kept; a fresh one after a keyed reorder; the
+encoding; the client's positions while hydrating against the server's for the same tree;
 `ServerRender_test`'s failure in a server component), the DOM fuzz test (every component's IDs over
 100 random trees, with fragments at the top of a component's output and lazy elements, the same on
 both sides), labels and inputs linked through hydration and prefixes in `Hydrate_test.res`, and
@@ -911,7 +910,7 @@ both sides), labels and inputs linked through hydration and prefixes in `Hydrate
 After phase 7.0 (§0), and with what phase 7 adds:
 
 ```
-packages/weft_core/src/
+packages/weft/src/
   shared/HostConfig.res             gains `Hydratable`
   shared/Reconciler.res(i)          `MakeHydratable`, with `hydrateRoot`; hydration in the work loop
                                     (the cursor, claiming, mismatches and dehydrated boundaries in it)
@@ -932,15 +931,15 @@ packages/weft_server/src/
   server/RpcServer.res(i)           `handler`, `router`, `respond`: from today's `Rpc`
   server/Page.res(i)                the HTML in the page: shell, rows, segments; `~html`
   client/Bootstrap.res              `hydrateRoot` when the page has HTML
-packages/vite_plugin_weft/          `virtual:weft/ssr-references`; the harness's HTML
+tools/weft_vite_plugin/          `virtual:weft/ssr-references`; the harness's HTML
 examples/weft_notes/, weft_split/   the scenarios again, over hydrated pages
 ```
 
-New error codes: `weft_core` 15 (`useSyncExternalStore` without `~getServerSnapshot` on the server;
-16, a hydration API used with a host that can't hydrate, wasn't needed, §6); `weft_dom`'s first
-codes (it has none yet), for the HTML renderer's refusals (a tag or attribute name that isn't one,
-children of a void element, `<script>` or `<style>` content); `weft_server` 20 (`navigate` or
-`refresh` on the server's page).
+New error codes: `weft` 15 (`useSyncExternalStore` without `~getServerSnapshot` on the server; 16, a
+hydration API used with a host that can't hydrate, wasn't needed, §6); `weft_dom`'s first codes (it
+has none yet), for the HTML renderer's refusals (a tag or attribute name that isn't one, children of
+a void element, `<script>` or `<style>` content); `weft_server` 20 (`navigate` or `refresh` on the
+server's page).
 
 ## Phases
 
@@ -1000,7 +999,7 @@ designed here and built after the rest, as phases 7.7 and 7.8), and the rest as 
 1. **Render HTML from the payload decoded on the server** (§1), rather than from the original tree:
    server components run once, and the HTML is rendered from exactly the tree the client hydrates.
 2. **Run it in the `rsc` environment**, with a server copy of the reference map, rather than a third
-   `ssr` environment: Weft has one `weft_core`, so one server build and module graph will do.
+   `ssr` environment: Weft has one `weft`, so one server build and module graph will do.
 3. **Dehydrated boundaries** (§6), settled: a boundary still pending when hydration reaches it keeps
    the server's HTML and hydrates once its segment is swapped in, rather than being rendered on the
    client from scratch (which would throw away HTML the server already sent, and could flash the

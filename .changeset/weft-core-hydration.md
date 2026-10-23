@@ -1,5 +1,5 @@
 ---
-'@e-cline/weft_core': patch
+'@e-cline/weft': patch
 ---
 
 Hydration: `Reconciler.MakeHydratable(Host)`, for a host implementing `HostConfig.Hydratable`, gives

@@ -2,7 +2,7 @@ module Signal = Signals.Signal
 module Atom = Signals.Atom
 module Computed = Signals.Computed
 module EffectBase = Signals.EffectBase
-module Hooks = WeftCore.Hooks
+module Hooks = Weft.Hooks
 
 /**
 Calls `onChange` after each change to `signal`, until the returned function is called: an effect

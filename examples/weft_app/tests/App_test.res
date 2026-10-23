@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 Drives the todo app the way a user would, in jsdom: typing, submitting, clicking.
@@ -6,8 +6,8 @@ Drives the todo app the way a user would, in jsdom: typing, submitting, clicking
 
 open Vitest
 
-module Dom = Weft.Dom
-module Client = Weft.Client
+module Dom = WeftDom.Dom
+module Client = WeftDom.Client
 
 external toUnknown: 'a => unknown = "%identity"
 external toBool: unknown => bool = "%identity"

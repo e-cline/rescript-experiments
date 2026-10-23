@@ -10,9 +10,9 @@ root->WeftDom.Client.render(element)
 
 The promise resolves once the root row is in and every entrypoint it refers to has loaded; the rest
 of the payload keeps streaming in after that. Each part that wasn't ready when the server wrote the
-root arrives as a `WeftCore.Lazy` element, which renders as soon as its row does (and suspends to
+root arrives as a `Weft.Lazy` element, which renders as soon as its row does (and suspends to
 its `Suspense` boundary until then). A row that has arrived is readable at once (see
-`WeftCore.Deferred`), so rendering a payload that has fully arrived never suspends.
+`Weft.Deferred`), so rendering a payload that has fully arrived never suspends.
 
 Entrypoint modules are loaded once per client, not once per payload, so the same entrypoint in two
 payloads is the same component type: rendering a refetched payload over the one on screen keeps the
@@ -45,7 +45,7 @@ before it arrives (or `signal` is aborted first). Aborting `signal` cancels the 
 rows that haven't arrived then never do, and what's waiting on them (a `Suspense` boundary's fallback, say) goes on waiting, rather than failing,
 since it may still be on screen until whatever replaces it is ready.
 */
-let fromStream: (t, stream, ~signal: signal=?) => promise<WeftCore.Element.t>
+let fromStream: (t, stream, ~signal: signal=?) => promise<Weft.Element.t>
 
 /**
 `fromStream` for a payload whose root is any value, not just an element (an RPC's response, whose
@@ -61,7 +61,7 @@ payload again (`Page`'s HTML), so they don't report the same error twice.
 let reportedDigest: exn => option<option<string>>
 
 /** Fetches `url`'s payload with the client's `fetch`, and decodes it (`fromStream`). */
-let fetchElement: (t, string, ~signal: signal=?) => promise<WeftCore.Element.t>
+let fetchElement: (t, string, ~signal: signal=?) => promise<Weft.Element.t>
 
 /**
 `fetch` for the browser: the global `fetch`, asking for the bare payload
@@ -79,5 +79,5 @@ module Latest: {
   type t
   let make: unit => t
   /** `Some(element)` if this is still the latest fetch once it's done; `None` if another replaced it. */
-  let fetchElement: (t, client, string) => promise<option<WeftCore.Element.t>>
+  let fetchElement: (t, client, string) => promise<option<Weft.Element.t>>
 }

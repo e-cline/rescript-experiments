@@ -32,10 +32,10 @@ development; a text that differs is patched, and attributes that differ are warn
 `idPrefix` is the HTML's (`Html.render(~idPrefix)`, `"w"` by default), for `Hooks.useId`'s IDs to
 match.
 */
-let hydrateRoot: (~idPrefix: string=?, Dom.element, WeftCore.Element.t) => root
+let hydrateRoot: (~idPrefix: string=?, Dom.element, Weft.Element.t) => root
 
 /** Renders `element` into the root, replacing what it rendered before, in a microtask. */
-let render: (root, WeftCore.Element.t) => unit
+let render: (root, Weft.Element.t) => unit
 
 /** Removes everything the root rendered, at once. */
 let unmount: root => unit

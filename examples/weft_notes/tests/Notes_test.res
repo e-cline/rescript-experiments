@@ -241,7 +241,7 @@ describe("hydrating the first page", () => {
     t
     ->expect(page->WeftTesting.warnings)
     ->Expect.toEqual([
-      `WeftCore: the server's HTML doesn't match the client's render: the text "${serverDay}" is "${clientDay}" on the client`,
+      `Weft: the server's HTML doesn't match the client's render: the text "${serverDay}" is "${clientDay}" on the client`,
     ])
   })
 })

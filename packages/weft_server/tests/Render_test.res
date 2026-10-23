@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 The server renderer on its own: the rows it writes, and when.
@@ -120,9 +120,9 @@ describe("Render: waiting and streaming", () => {
     async t => {
       let ready = Deferred.make()
       let pipe = start(
-        <WeftCore.Suspense fallback=loading>
+        <Weft.Suspense fallback=loading>
           <Async ready=ready.promise> {text("late")} </Async>
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
       )
       await ticks()
       t
@@ -150,12 +150,12 @@ describe("Render: waiting and streaming", () => {
       }
       let pipe = start(
         <div>
-          <WeftCore.Suspense fallback=loading>
+          <Weft.Suspense fallback=loading>
             <Track name="one" ready=first.promise />
-          </WeftCore.Suspense>
-          <WeftCore.Suspense fallback=loading>
+          </Weft.Suspense>
+          <Weft.Suspense fallback=loading>
             <Track name="two" ready=second.promise />
-          </WeftCore.Suspense>
+          </Weft.Suspense>
         </div>,
       )
       await ticks()
@@ -205,13 +205,13 @@ describe("Render: waiting and streaming", () => {
       module Forever = {
         @jsx.component
         let make = () =>
-          text(WeftCore.Hooks.use(Promise.resolve("never read")->Promise.thenResolve(x => x)))
+          text(Weft.Hooks.use(Promise.resolve("never read")->Promise.thenResolve(x => x)))
       }
       let rows = await payload(
         ~onError=quietly,
-        <WeftCore.Suspense fallback=loading>
+        <Weft.Suspense fallback=loading>
           <Forever />
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
       )
       t
       ->expect(rows->Array.some(row => row->String.includes("suspended 100 times")))
@@ -232,9 +232,9 @@ describe("Render: errors", () => {
       let rows = await payload(
         ~onError,
         <div>
-          <WeftCore.Suspense fallback=loading>
+          <Weft.Suspense fallback=loading>
             <Fails message="broken" />
-          </WeftCore.Suspense>
+          </Weft.Suspense>
           <b id="fine" />
         </div>,
       )
@@ -280,7 +280,7 @@ describe("Render: errors", () => {
   testAsync("nor an event handler, or a ref, on a host element", async t => {
     let handler = await messageOf(<button onClick={() => ()} />)
     t->expect(handler->String.includes("can't have an event handler"))->Expect.toBe(true)
-    let ref = await messageOf(<b ref={WeftCore.Ref.current: Nullable.null} />)
+    let ref = await messageOf(<b ref={Weft.Ref.current: Nullable.null} />)
     t->expect(ref->String.includes("can't have a ref"))->Expect.toBe(true)
   })
 
@@ -294,18 +294,18 @@ describe("Render: errors", () => {
   })
 
   testAsync("nor a context provider, or an error boundary", async t => {
-    let context = WeftCore.Context.make(0)
+    let context = Weft.Context.make(0)
     module Provider = {
-      let make = WeftCore.Context.provider(context)
+      let make = Weft.Context.provider(context)
     }
     let provider = await messageOf(<Provider value=1> {text("x")} </Provider>)
     t
     ->expect(provider->String.includes("a context provider can't be rendered on the server"))
     ->Expect.toBe(true)
     let boundary = await messageOf(
-      <WeftCore.ErrorBoundary fallback={(~error as _, ~reset as _) => text("x")}>
+      <Weft.ErrorBoundary fallback={(~error as _, ~reset as _) => text("x")}>
         {text("y")}
-      </WeftCore.ErrorBoundary>,
+      </Weft.ErrorBoundary>,
     )
     t
     ->expect(boundary->String.includes("an ErrorBoundary can't be rendered on the server"))
@@ -316,7 +316,7 @@ describe("Render: errors", () => {
     module Stateful = {
       @jsx.component
       let make = () => {
-        let (count, _) = WeftCore.Hooks.useState(() => 0)
+        let (count, _) = Weft.Hooks.useState(() => 0)
         TestJsx.int(count)
       }
     }
@@ -335,15 +335,15 @@ describe("Render: aborting", () => {
       @jsx.component
       let make = (~promise) => {
         calls := calls.contents + 1
-        text(WeftCore.Hooks.use(promise))
+        text(Weft.Hooks.use(promise))
       }
     }
     let controller = Streams.Controller.make()
     let pipe = start(
       ~signal=Streams.Controller.signal(controller),
-      <WeftCore.Suspense fallback=loading>
+      <Weft.Suspense fallback=loading>
         <Counted promise=data.promise />
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
     )
     await ticks()
     let before = written(pipe)
@@ -362,13 +362,13 @@ describe("Render: aborting", () => {
       @jsx.component
       let make = (~promise) => {
         calls := calls.contents + 1
-        text(WeftCore.Hooks.use(promise))
+        text(Weft.Hooks.use(promise))
       }
     }
     let stream = Render.toStream(
-      <WeftCore.Suspense fallback=loading>
+      <Weft.Suspense fallback=loading>
         <Counted promise=data.promise />
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
     )
     let reader = stream->Streams.getReader
     await reader->Streams.Reader.cancel

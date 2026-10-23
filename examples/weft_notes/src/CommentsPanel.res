@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 The comments (rendered on the server, and given as `children`), with a button that fetches them
@@ -6,7 +6,7 @@ again by themselves (`useRefetchable`), and says so while it's at it.
 */
 
 @weft.component({kind: Entrypoint})
-let make = (~noteId: string, ~children: Weft.element) => {
+let make = (~noteId: string, ~children: Weft.Element.t) => {
   let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
   <div id="comments-panel">
     <button
@@ -14,7 +14,7 @@ let make = (~noteId: string, ~children: Weft.element) => {
       title={comments.isPending ? "pending" : "idle"}
       onClick={_ => comments.refetch()->ignore}
     >
-      {Weft.Jsx.string(comments.isPending ? "Reloading…" : "Reload comments")}
+      {WeftDom.Jsx.string(comments.isPending ? "Reloading…" : "Reload comments")}
     </button>
     {comments.element}
   </div>

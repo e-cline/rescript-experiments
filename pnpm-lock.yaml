@@ -286,30 +286,15 @@ importers:
       '@e-cline/trees_benchmarks':
         specifier: workspace:*
         version: link:packages/trees/benchmarks
-      '@e-cline/vite_plugin_weft':
-        specifier: workspace:*
-        version: link:packages/vite_plugin_weft
-      '@e-cline/vite_plugin_weft_fixture_basic':
-        specifier: workspace:*
-        version: link:packages/vite_plugin_weft/tests/fixtures/basic
-      '@e-cline/vite_plugin_weft_fixture_client_imports_server':
-        specifier: workspace:*
-        version: link:packages/vite_plugin_weft/tests/fixtures/client_imports_server
-      '@e-cline/vite_plugin_weft_fixture_widgets':
-        specifier: workspace:*
-        version: link:packages/vite_plugin_weft/tests/fixtures/widgets
       '@e-cline/weft':
         specifier: workspace:*
         version: link:packages/weft
       '@e-cline/weft_app_example':
         specifier: workspace:*
         version: link:examples/weft_app
-      '@e-cline/weft_core':
+      '@e-cline/weft_benchmarks':
         specifier: workspace:*
-        version: link:packages/weft_core
-      '@e-cline/weft_core_benchmarks':
-        specifier: workspace:*
-        version: link:packages/weft_core/benchmarks
+        version: link:packages/weft/benchmarks
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:packages/weft_dom
@@ -325,6 +310,18 @@ importers:
       '@e-cline/weft_split_example':
         specifier: workspace:*
         version: link:examples/weft_split
+      '@e-cline/weft_vite_plugin':
+        specifier: workspace:*
+        version: link:tools/weft_vite_plugin
+      '@e-cline/weft_vite_plugin_fixture_basic':
+        specifier: workspace:*
+        version: link:tools/weft_vite_plugin/tests/fixtures/basic
+      '@e-cline/weft_vite_plugin_fixture_client_imports_server':
+        specifier: workspace:*
+        version: link:tools/weft_vite_plugin/tests/fixtures/client_imports_server
+      '@e-cline/weft_vite_plugin_fixture_widgets':
+        specifier: workspace:*
+        version: link:tools/weft_vite_plugin/tests/fixtures/widgets
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -473,9 +470,6 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../packages/weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../packages/weft_core
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../packages/weft_dom
@@ -507,9 +501,6 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../packages/weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../packages/weft_core
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../packages/weft_dom
@@ -526,9 +517,9 @@ importers:
       '@e-cline/ppx_weft':
         specifier: workspace:*
         version: link:../../tools/ppx/weft
-      '@e-cline/vite_plugin_weft':
+      '@e-cline/weft_vite_plugin':
         specifier: workspace:*
-        version: link:../../packages/vite_plugin_weft
+        version: link:../../tools/weft_vite_plugin
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.63.0
@@ -559,9 +550,6 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../packages/weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../packages/weft_core
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../packages/weft_dom
@@ -578,9 +566,9 @@ importers:
       '@e-cline/ppx_weft':
         specifier: workspace:*
         version: link:../../tools/ppx/weft
-      '@e-cline/vite_plugin_weft':
+      '@e-cline/weft_vite_plugin':
         specifier: workspace:*
-        version: link:../../packages/vite_plugin_weft
+        version: link:../../tools/weft_vite_plugin
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -787,141 +775,7 @@ importers:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
-  packages/vite_plugin_weft:
-    dependencies:
-      '@e-cline/weft_core':
-        specifier: workspace:^
-        version: link:../weft_core
-      '@e-cline/weft_dom':
-        specifier: workspace:^
-        version: link:../weft_dom
-      '@e-cline/weft_server':
-        specifier: workspace:^
-        version: link:../weft_server
-      '@hono/node-server':
-        specifier: 'catalog:'
-        version: 2.1.5(hono@4.13.13)
-      vite:
-        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
-        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
-    devDependencies:
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.5
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
-      vite-plus:
-        specifier: 'catalog:'
-        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
-
-  packages/vite_plugin_weft/tests/fixtures/basic:
-    dependencies:
-      '@e-cline/common':
-        specifier: workspace:*
-        version: link:../../../../common
-      '@e-cline/vite_plugin_weft_fixture_widgets':
-        specifier: workspace:*
-        version: link:../widgets
-      '@e-cline/weft':
-        specifier: workspace:*
-        version: link:../../../../weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../../../weft_core
-      '@e-cline/weft_dom':
-        specifier: workspace:*
-        version: link:../../../../weft_dom
-      '@e-cline/weft_server':
-        specifier: workspace:*
-        version: link:../../../../weft_server
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-    devDependencies:
-      '@e-cline/ppx_weft':
-        specifier: workspace:*
-        version: link:../../../../../tools/ppx/weft
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-
-  packages/vite_plugin_weft/tests/fixtures/client_imports_server:
-    dependencies:
-      '@e-cline/weft':
-        specifier: workspace:*
-        version: link:../../../../weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../../../weft_core
-      '@e-cline/weft_dom':
-        specifier: workspace:*
-        version: link:../../../../weft_dom
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-    devDependencies:
-      '@e-cline/ppx_weft':
-        specifier: workspace:*
-        version: link:../../../../../tools/ppx/weft
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-
-  packages/vite_plugin_weft/tests/fixtures/widgets:
-    dependencies:
-      '@e-cline/weft':
-        specifier: workspace:*
-        version: link:../../../../weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../../../weft_core
-      '@e-cline/weft_dom':
-        specifier: workspace:*
-        version: link:../../../../weft_dom
-      '@e-cline/weft_server':
-        specifier: workspace:*
-        version: link:../../../../weft_server
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-    devDependencies:
-      '@e-cline/ppx_weft':
-        specifier: workspace:*
-        version: link:../../../../../tools/ppx/weft
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-
   packages/weft:
-    dependencies:
-      '@e-cline/weft_core':
-        specifier: workspace:^
-        version: link:../weft_core
-      '@e-cline/weft_dom':
-        specifier: workspace:^
-        version: link:../weft_dom
-    devDependencies:
-      '@rescript/runtime':
-        specifier: 'catalog:'
-        version: 12.3.1
-      jsdom:
-        specifier: 'catalog:'
-        version: 30.1.3
-      rescript:
-        specifier: 'catalog:'
-        version: 12.3.1
-      rescript-vitest:
-        specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
-
-  packages/weft_core:
     dependencies:
       '@e-cline/common':
         specifier: workspace:^
@@ -940,15 +794,12 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
-  packages/weft_core/benchmarks:
+  packages/weft/benchmarks:
     dependencies:
       '@e-cline/benchmarking':
         specifier: workspace:*
         version: link:../../../tools/benchmarking
       '@e-cline/weft':
-        specifier: workspace:*
-        version: link:../../weft
-      '@e-cline/weft_core':
         specifier: workspace:*
         version: link:..
       '@e-cline/weft_dom':
@@ -988,9 +839,9 @@ importers:
       '@e-cline/common':
         specifier: workspace:^
         version: link:../common
-      '@e-cline/weft_core':
+      '@e-cline/weft':
         specifier: workspace:^
-        version: link:../weft_core
+        version: link:../weft
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -1010,9 +861,9 @@ importers:
       '@e-cline/common':
         specifier: workspace:^
         version: link:../common
-      '@e-cline/weft_core':
+      '@e-cline/weft':
         specifier: workspace:^
-        version: link:../weft_core
+        version: link:../weft
       '@e-cline/weft_dom':
         specifier: workspace:^
         version: link:../weft_dom
@@ -1035,9 +886,9 @@ importers:
       '@e-cline/signals':
         specifier: workspace:^
         version: link:../signals
-      '@e-cline/weft_core':
+      '@e-cline/weft':
         specifier: workspace:^
-        version: link:../weft_core
+        version: link:../weft
     devDependencies:
       '@rescript/runtime':
         specifier: 'catalog:'
@@ -1085,9 +936,6 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../../packages/weft
-      '@e-cline/weft_core':
-        specifier: workspace:*
-        version: link:../../../packages/weft_core
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../../packages/weft_dom
@@ -1104,6 +952,109 @@ importers:
       rescript-vitest:
         specifier: 'catalog:'
         version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+
+  tools/weft_vite_plugin:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:^
+        version: link:../../packages/weft
+      '@e-cline/weft_dom':
+        specifier: workspace:^
+        version: link:../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:^
+        version: link:../../packages/weft_server
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.1.5(hono@4.13.13)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+    devDependencies:
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  tools/weft_vite_plugin/tests/fixtures/basic:
+    dependencies:
+      '@e-cline/common':
+        specifier: workspace:*
+        version: link:../../../../../packages/common
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_server
+      '@e-cline/weft_vite_plugin_fixture_widgets':
+        specifier: workspace:*
+        version: link:../widgets
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+
+  tools/weft_vite_plugin/tests/fixtures/client_imports_server:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_dom
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+
+  tools/weft_vite_plugin/tests/fixtures/widgets:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
 
 packages:
 

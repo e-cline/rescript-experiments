@@ -1,5 +1,5 @@
 /***
-Hooks that read `signals` signals from `weft_core` components, rendering them again when what
+Hooks that read `signals` signals from `weft` components, rendering them again when what
 they read changes.
 
 ```rescript
@@ -19,7 +19,7 @@ as it lands (or when the outermost `Batch.run` ends), and the component renders 
 together with everything else updated in the same task. A render only reads the current value
 (`Signal.peek`), so it never adds dependencies to an effect or computed that happens to be running.
 
-They're built on `WeftCore.Hooks.useSyncExternalStore`: a signal that changes while a transition is
+They're built on `Weft.Hooks.useSyncExternalStore`: a signal that changes while a transition is
 paused partway can't commit with some components showing its old value and some its new one.
 
 Read signals with these hooks, not `Signal.get` in a component's body: a component only renders

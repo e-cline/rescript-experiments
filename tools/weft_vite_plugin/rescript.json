@@ -1,0 +1,12 @@
+{
+  "name": "@e-cline/weft_vite_plugin",
+  "sources": [{"dir": "src"}],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "dependencies": ["@e-cline/weft", "@e-cline/weft_dom", "@e-cline/weft_server"]
+}

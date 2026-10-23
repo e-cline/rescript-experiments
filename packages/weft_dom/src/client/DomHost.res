@@ -1,5 +1,5 @@
 /***
-`WeftCore.HostConfig.S` for the DOM: how props become attributes, properties, styles and listeners
+`Weft.HostConfig.S` for the DOM: how props become attributes, properties, styles and listeners
 (see `DomProps` for the rules), and how nodes are created and arranged.
 
 Each element keeps its latest props and one listener per event name, which looks up the current
@@ -462,7 +462,7 @@ let hydrateInstance = (element: Dom.element, ~tag as _, ~props) => {
 @get external textData: Dom.text => string = "data"
 let textMatches = (text: textInstance, ~text as expected) => textData(text) == expected
 
-let suspenseState = (marker: suspenseInstance): WeftCore.HostConfig.suspenseState =>
+let suspenseState = (marker: suspenseInstance): Weft.HostConfig.suspenseState =>
   switch nodeData(marker) {
   | "$" => Complete
   | "$?" => Pending

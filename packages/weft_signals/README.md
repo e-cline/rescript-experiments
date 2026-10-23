@@ -1,15 +1,15 @@
 # @e-cline/weft_signals
 
 Hooks for reading [`@e-cline/signals`](../signals) atoms and computeds from
-[`@e-cline/weft_core`](../weft_core) components: a component renders again when a signal it read
-through a hook changes, and only then.
+[`@e-cline/weft`](../weft) components: a component renders again when a signal it read through a
+hook changes, and only then.
 
 ## Installing
 
 Needs ReScript 12.
 
 ```bash
-npm install @e-cline/weft_signals @e-cline/weft_core @e-cline/signals rescript @rescript/runtime
+npm install @e-cline/weft_signals @e-cline/weft @e-cline/signals rescript @rescript/runtime
 ```
 
 Add the three packages to the `dependencies` in your `rescript.json`. The module is
@@ -45,12 +45,12 @@ A computed that recomputes to an equal value doesn't render the component. Write
 
 ## How it works
 
-Each hook is `WeftCore.Hooks.useSyncExternalStore` over the signal: `getSnapshot` is `Signal.peek`
-(so rendering never adds a dependency to whatever effect or computed is running), and `subscribe` is
-an `EffectBase` effect on `Scheduler.Sync` that reads the signal and, after its first run, reports
-each change. So signal changes get the store hook's guarantees: they render at sync priority, and
-one that lands while a transition is paused makes it render again rather than commit a mix of old
-and new values.
+Each hook is `Weft.Hooks.useSyncExternalStore` over the signal: `getSnapshot` is `Signal.peek` (so
+rendering never adds a dependency to whatever effect or computed is running), and `subscribe` is an
+`EffectBase` effect on `Scheduler.Sync` that reads the signal and, after its first run, reports each
+change. So signal changes get the store hook's guarantees: they render at sync priority, and one
+that lands while a transition is paused makes it render again rather than commit a mix of old and
+new values.
 
 The one caveat comes from `signals`' effect ownership: an effect created while another effect's
 function is running belongs to that run. Subscriptions are created in `useEffect`; if one of your

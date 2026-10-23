@@ -53,7 +53,7 @@ jobs:
       # the examples' configs import the Vite plugin from its build (`dist`,
       # not committed): build it first, with `vp pack`, which doesn't.
       - run: vp pack
-        working-directory: packages/vite_plugin_weft
+        working-directory: tools/weft_vite_plugin
       - run: vp run test
 
       # Publishes every package whose current version isn't on npm yet, and

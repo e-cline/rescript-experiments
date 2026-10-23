@@ -1,7 +1,7 @@
 {
   "name": "@e-cline/weft_dom",
   "version": "0.0.1",
-  "description": "The DOM renderer for @e-cline/weft_core: render @jsx.component components into a browser page.",
+  "description": "The DOM renderer for @e-cline/weft: render @jsx.component components into a browser page.",
   "keywords": [
     "dom",
     "fiber",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@e-cline/common": "workspace:^",
-    "@e-cline/weft_core": "workspace:^"
+    "@e-cline/weft": "workspace:^"
   },
   "devDependencies": {
     "@rescript/runtime": "catalog:",

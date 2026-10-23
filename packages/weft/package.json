@@ -1,10 +1,11 @@
 {
   "name": "@e-cline/weft",
   "version": "0.0.1",
-  "description": "Weft: a React-like UI framework in ReScript. One package with the public API of @e-cline/weft_core and the DOM renderer.",
+  "description": "Weft: a React-like component library authored in ReScript. @jsx.component components, hooks and a fiber reconciler with pluggable host renderers.",
   "keywords": [
-    "dom",
+    "fiber",
     "jsx",
+    "reconciler",
     "rescript",
     "ui",
     "weft"
@@ -31,12 +32,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@e-cline/weft_core": "workspace:^",
-    "@e-cline/weft_dom": "workspace:^"
+    "@e-cline/common": "workspace:^",
+    "@e-cline/priority_queue": "workspace:^"
   },
   "devDependencies": {
     "@rescript/runtime": "catalog:",
-    "jsdom": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:"
   },

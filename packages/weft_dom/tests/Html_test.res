@@ -9,7 +9,7 @@ DOM the HTML parses into is the DOM a client render of the same tree makes.
 open Vitest
 open DomSupport
 
-module Hooks = WeftCore.Hooks
+module Hooks = Weft.Hooks
 
 let string = Jsx.string
 
@@ -61,7 +61,7 @@ module Fails = {
   let make = (~message: string) => JsError.throwWithMessage(message)
 }
 
-let theme = WeftCore.Context.make("plain")
+let theme = Weft.Context.make("plain")
 
 module Themed = {
   @jsx.component
@@ -69,7 +69,7 @@ module Themed = {
 }
 
 let themeProvider = (value, children) =>
-  WeftCore.JsxCore.jsx(WeftCore.Context.provider(theme), {value, children})
+  Weft.JsxCore.jsx(Weft.Context.provider(theme), {value, children})
 
 describe("host elements and props", () => {
   testAsync("writes tags, attributes by DomProps' names, and booleans", async t => {
@@ -86,7 +86,7 @@ describe("host elements and props", () => {
   })
 
   testAsync("leaves out event handlers and refs", async t => {
-    let ref: WeftCore.Ref.t<Nullable.t<Dom.element>> = {current: Nullable.null}
+    let ref: Weft.Ref.t<Nullable.t<Dom.element>> = {current: Nullable.null}
     t
     ->expect(await html(<button onClick={_ => ()} ref> {string("go")} </button>))
     ->Expect.toBe("<button>go</button>")
@@ -140,14 +140,11 @@ describe("host elements and props", () => {
   })
 
   testAsync("refuses a tag that isn't one, and script or style content", async t => {
-    let bad = WeftCore.JsxCore.hostJsx("div onclick=x", ({}: DomProps.props))
+    let bad = Weft.JsxCore.hostJsx("div onclick=x", ({}: DomProps.props))
     t
     ->expect(await rejection(() => html(bad)))
     ->Expect.toEqual(Some(`WeftDom: "div onclick=x" isn't a tag name, at the root`))
-    let script = WeftCore.JsxCore.hostJsx(
-      "script",
-      ({children: string("alert(1)")}: DomProps.props),
-    )
+    let script = Weft.JsxCore.hostJsx("script", ({children: string("alert(1)")}: DomProps.props))
     t
     ->expect(await rejection(() => html(script)))
     ->Expect.toEqual(
@@ -223,13 +220,13 @@ describe("text, components and the rest", () => {
         <b> {Jsx.int(count)} </b>
       }
     }
-    let memoized = WeftCore.Memo.memo(Counter.make)
+    let memoized = Weft.Memo.memo(Counter.make)
     t
     ->expect(
       await html(
         <div>
           <Counter start=3 />
-          {WeftCore.JsxCore.jsx(memoized, {start: 4})}
+          {Weft.JsxCore.jsx(memoized, {start: 4})}
           <Themed />
           {themeProvider("dark", <Themed />)}
           {themeProvider("outer", themeProvider("inner", <Themed />))}
@@ -246,9 +243,9 @@ describe("text, components and the rest", () => {
       await html(
         <div>
           {Portal.create(<p> {string("away")} </p>, ~container=elsewhere)}
-          <WeftCore.ErrorBoundary fallback={(~error as _, ~reset as _) => string("fallback")}>
+          <Weft.ErrorBoundary fallback={(~error as _, ~reset as _) => string("fallback")}>
             {string("children")}
-          </WeftCore.ErrorBoundary>
+          </Weft.ErrorBoundary>
         </div>,
       ),
     )
@@ -296,7 +293,7 @@ describe("text, components and the rest", () => {
     "renders a resolved Lazy element as what it resolved to, and waits for one that isn't",
     async t => {
       let (promise, resolve) = deferred()
-      let lazy_ = WeftCore.Lazy.fromPromise(promise)
+      let lazy_ = Weft.Lazy.fromPromise(promise)
       let rendered = html(<div> lazy_ </div>)
       await tick()
       resolve(<b> {string("lazy")} </b>)
@@ -337,9 +334,9 @@ describe("boundaries, all at once (renderToString)", () => {
     let (promise, resolve) = deferred()
     let rendered = html(
       <div>
-        <WeftCore.Suspense fallback={string("loading")}>
+        <Weft.Suspense fallback={string("loading")}>
           <Waits promise />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
       </div>,
     )
     await tick()
@@ -352,7 +349,7 @@ describe("boundaries, all at once (renderToString)", () => {
     async t => {
       let reported = []
       let onError = error => {
-        reported->Array.push(WeftCore.ErrorBoundary.message(error))
+        reported->Array.push(Weft.ErrorBoundary.message(error))
         Some("d1")
       }
       // A sibling outside the boundary suspends, so the whole thing renders twice: the failure is
@@ -362,9 +359,9 @@ describe("boundaries, all at once (renderToString)", () => {
         ~onError,
         <div>
           <Waits promise />
-          <WeftCore.Suspense fallback={string("fallback")}>
+          <Weft.Suspense fallback={string("fallback")}>
             <Fails message="boom" />
-          </WeftCore.Suspense>
+          </Weft.Suspense>
         </div>,
       )
       await tick()
@@ -405,9 +402,9 @@ describe("streaming", () => {
     let (promise, resolve) = deferred()
     let rendering = Html.render(
       <div>
-        <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
+        <Weft.Suspense fallback={<i> {string("loading")} </i>}>
           <Waits promise />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
       </div>,
     )
     t
@@ -428,12 +425,12 @@ describe("streaming", () => {
     let (outer, resolveOuter) = deferred()
     let (inner, resolveInner) = deferred()
     let rendering = Html.render(
-      <WeftCore.Suspense fallback={string("outer loading")}>
+      <Weft.Suspense fallback={string("outer loading")}>
         <Waits promise=outer />
-        <WeftCore.Suspense fallback={string("inner loading")}>
+        <Weft.Suspense fallback={string("inner loading")}>
           <Waits promise=inner />
-        </WeftCore.Suspense>
-      </WeftCore.Suspense>,
+        </Weft.Suspense>
+      </Weft.Suspense>,
     )
     t
     ->expect(await rendering->Html.shell)
@@ -452,12 +449,12 @@ describe("streaming", () => {
     let (outer, resolveOuter) = deferred()
     let (inner, resolveInner) = deferred()
     let rendering = Html.render(
-      <WeftCore.Suspense fallback={string("outer loading")}>
+      <Weft.Suspense fallback={string("outer loading")}>
         <Waits promise=outer />
-        <WeftCore.Suspense fallback={string("inner loading")}>
+        <Weft.Suspense fallback={string("inner loading")}>
           <Waits promise=inner />
-        </WeftCore.Suspense>
-      </WeftCore.Suspense>,
+        </Weft.Suspense>
+      </Weft.Suspense>,
     )
     let _ = await rendering->Html.shell
     let rest = chunks(rendering->Html.rest)
@@ -482,9 +479,9 @@ describe("streaming", () => {
     }
     let rendering = Html.render(
       ~onError=_ => Some("d2"),
-      <WeftCore.Suspense fallback={string("loading")}>
+      <Weft.Suspense fallback={string("loading")}>
         <FailsAfter promise />
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
     )
     let _ = await rendering->Html.shell
     let rest = chunks(rendering->Html.rest)
@@ -509,9 +506,9 @@ describe("streaming", () => {
     let (promise, resolve) = deferred()
     let controller = makeController()
     let rendering = Html.render(
-      <WeftCore.Suspense fallback={string("loading")}>
+      <Weft.Suspense fallback={string("loading")}>
         <Waits promise />
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
       ~signal=controller->signalOf,
     )
     let _ = await rendering->Html.shell
@@ -525,9 +522,9 @@ describe("streaming", () => {
     let (promise, resolve) = deferred()
     let stream = Html.renderToStream(
       <div>
-        <WeftCore.Suspense fallback={string("loading")}>
+        <Weft.Suspense fallback={string("loading")}>
           <Waits promise />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
       </div>,
     )
     let all = chunks(stream)
@@ -554,9 +551,9 @@ describe("the runtime", () => {
     let (promise, resolve) = deferred()
     let rendering = Html.render(
       <>
-        <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
+        <Weft.Suspense fallback={<i> {string("loading")} </i>}>
           <Waits promise />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
         {string("after")}
       </>,
     )
@@ -585,20 +582,20 @@ describe("the runtime", () => {
     let rendering = Html.render(
       <table>
         <tbody>
-          <WeftCore.Suspense
+          <Weft.Suspense
             fallback={<tr>
               <td> {string("1…")} </td>
             </tr>}
           >
             <Row promise=first />
-          </WeftCore.Suspense>
-          <WeftCore.Suspense
+          </Weft.Suspense>
+          <Weft.Suspense
             fallback={<tr>
               <td> {string("2…")} </td>
             </tr>}
           >
             <Row promise=second />
-          </WeftCore.Suspense>
+          </Weft.Suspense>
         </tbody>
       </table>,
     )
@@ -628,9 +625,9 @@ describe("the runtime", () => {
     }
     let rendering = Html.render(
       ~onError=_ => Some("d3"),
-      <WeftCore.Suspense fallback={string("fallback")}>
+      <Weft.Suspense fallback={string("fallback")}>
         <FailsAfter promise />
-      </WeftCore.Suspense>,
+      </Weft.Suspense>,
     )
     let container = page(await rendering->Html.shell)
     let retried = ref(false)
@@ -677,7 +674,7 @@ let rec randomTree = (random, ~depth): Jsx.element =>
       style: ?(Random.intBelow(random, 3) == 0 ? Some(dict{"backgroundColor": "red"}) : None),
       children,
     }
-    WeftCore.JsxCore.hostJsx(tag, props)
+    Weft.JsxCore.hostJsx(tag, props)
   }
 
 and randomChildren = (random, ~depth) => {
@@ -685,7 +682,7 @@ and randomChildren = (random, ~depth) => {
     randomTree(random, ~depth)
   )
   // As JSX writes a list of children: no keys needed.
-  WeftCore.JsxCore.markStaticList(children)
+  Weft.JsxCore.markStaticList(children)
   Jsx.array(children)
 }
 

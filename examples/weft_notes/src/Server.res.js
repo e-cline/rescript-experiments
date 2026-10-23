@@ -12,14 +12,14 @@ import * as Page$WeftServer from "@e-cline/weft_server/src/server/Page.res.js";
 import * as Pages$WeftNotes from "./Pages.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as ErrorBoundary$Weft from "@e-cline/weft/src/shared/ErrorBoundary.res.js";
 import * as ApiServer$WeftNotes from "./ApiServer.res.js";
 import Assets from "virtual:weft/assets";
 import * as RequestContext$Servy from "@e-cline/servy/src/RequestContext.res.js";
 import * as RpcServer$WeftServer from "@e-cline/weft_server/src/server/RpcServer.res.js";
-import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/shared/ErrorBoundary.res.js";
 
 function onError(error) {
-  console.error(`weft_notes: a component failed: ` + ErrorBoundary$WeftCore.message(error));
+  console.error(`weft_notes: a component failed: ` + ErrorBoundary$Weft.message(error));
 }
 
 function page(title, render) {

@@ -1,4 +1,4 @@
-import {weft} from '@e-cline/vite_plugin_weft';
+import {weft} from '@e-cline/weft_vite_plugin';
 
 import {makeRescriptLibConfig, rootResTask} from '../../vite.config.base.ts';
 

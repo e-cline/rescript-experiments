@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 `Navigation`: a page fetched again, or another page, rendered over the one on screen, and parts of
@@ -143,11 +143,11 @@ describe("navigating", () => {
         switch url {
         | "/streaming" =>
           <section id="streaming">
-            <WeftCore.Suspense fallback=loading>
+            <Weft.Suspense fallback=loading>
               <Async ready=gate.promise>
                 <b id="late"> {text("late")} </b>
               </Async>
-            </WeftCore.Suspense>
+            </Weft.Suspense>
           </section>
         | _ => route(url)
         }

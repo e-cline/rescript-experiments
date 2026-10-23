@@ -1,11 +1,11 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 open Vitest
 
 module Atom = Signals.Atom
 module Batch = Signals.Batch
-module TestJsx = WeftCore.TestJsx
-module TestRenderer = WeftCore.TestRenderer
+module TestJsx = Weft.TestJsx
+module TestRenderer = Weft.TestRenderer
 
 let renders = ref(0)
 
@@ -153,12 +153,12 @@ describe("useSignal and useComputed", () => {
       @jsx.component
       let make = (~id: string) => {
         let (current, _) = SignalHooks.useAtom(value)
-        WeftCore.TestScheduler.advanceTime(3.0)
+        Weft.TestScheduler.advanceTime(3.0)
         <i id> {TestJsx.int(current)} </i>
       }
     }
     let renderer = TestRenderer.create()
-    WeftCore.Transition.start(
+    Weft.Transition.start(
       () =>
         TestRenderer.scheduleRender(
           renderer,
@@ -169,9 +169,9 @@ describe("useSignal and useComputed", () => {
           </>,
         ),
     )
-    WeftCore.TestScheduler.flushTask()->ignore
+    Weft.TestScheduler.flushTask()->ignore
     Atom.set(value, 2)
-    WeftCore.TestScheduler.flushAll()
+    Weft.TestScheduler.flushAll()
     t
     ->expect(textOf(renderer))
     ->Expect.toBe(`<i id="r1">2</i><i id="r2">2</i><i id="r3">2</i>`)

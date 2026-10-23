@@ -9,27 +9,27 @@ Both kinds of component are marked explicitly:
 
 ```rescript
 // src/NotePage.res -- runs only on the server
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 @weft.component({kind: Server})
 let make = async (~id: string) => {
   let note = await Db.note(id)
   <article>
-    <h1> {Weft.Jsx.string(note.title)} </h1>
+    <h1> {WeftDom.Jsx.string(note.title)} </h1>
     <LikeButton noteId=id initial=note.likes />
-    <Weft.Suspense fallback={<p> {Weft.Jsx.string("Loading comments...")} </p>}>
+    <Weft.Suspense fallback={<p> {WeftDom.Jsx.string("Loading comments...")} </p>}>
       <Comments noteId=id />
     </Weft.Suspense>
   </article>
 }
 
 // src/LikeButton.res -- an entrypoint: its code is loaded in the browser, in its own chunk
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~initial: int) => {
   let (likes, setLikes) = Weft.Hooks.useState(() => initial)
-  <button onClick={_ => setLikes(n => n + 1)}> {Weft.Jsx.int(likes)} </button>
+  <button onClick={_ => setLikes(n => n + 1)}> {WeftDom.Jsx.int(likes)} </button>
 }
 ```
 
@@ -57,14 +57,14 @@ the names here are the new ones.
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
 | 0     | `ppx_weft` (attribute rename and checks), shared opam switch        | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
-| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`                   | `packages/weft_core`, `packages/weft`                          |
+| 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`                   | `packages/weft`                                                |
 | 2     | async server components, entrypoint ids and directives              | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
-| 3     | `Payload`, `Render`, `Decoder`, `Testing`; `Deferred`               | `packages/weft_server`, `packages/weft_core`                   |
-| 4     | the Vite plugin, `serve`; the `weft_split` example                  | `packages/vite_plugin_weft`, `examples/weft_split`             |
-| 5     | `Page`, `Bootstrap`, `Navigation`, `useRefetchable`; tier 2 harness | `packages/weft_server`, `packages/vite_plugin_weft`            |
+| 3     | `Payload`, `Render`, `Decoder`, `Testing`; `Deferred`               | `packages/weft_server`, `packages/weft`                        |
+| 4     | the Vite plugin, `serve`; the `weft_split` example                  | `tools/weft_vite_plugin`, `examples/weft_split`                |
+| 5     | `Page`, `Bootstrap`, `Navigation`, `useRefetchable`; tier 2 harness | `packages/weft_server`, `tools/weft_vite_plugin`               |
 |       | `weft_notes` (tier 2 scenarios, tier 3 browser tests)               | `examples/weft_notes`, `examples/weft_split`                   |
 | 6     | Weft RPCs: `Rpc`, `Rpc.Codec`; `@weft.rpc`, `@@weft.server`; IDs    | `packages/weft_server`, `tools/ppx/weft`, the plugin           |
-|       | `weft_notes`' changes as RPCs, `rewriteBodies` in the harness       | `examples/weft_notes`, `packages/vite_plugin_weft`             |
+|       | `weft_notes`' changes as RPCs, `rewriteBodies` in the harness       | `examples/weft_notes`, `tools/weft_vite_plugin`                |
 | 7     | HTML on the server and hydration: its own plan, 7.0 to 7.8          | every package above, `packages/weft_dom`, the examples         |
 
 Where the implementation went its own way, the sections below say so. Things learned on the way, for
@@ -99,7 +99,7 @@ whoever picks this up:
 - **A TypeScript test importing `vite-plus/test` fails in a ReScript package** under the root `vp`
   ("Vitest failed to find the runner"): the workspace has two copies of vite-plus 1.3.0 (different
   peer sets), the root `vp` runs its own Vitest, and the package's `vite-plus/test` is the other's.
-  It passes when run with the package's own `vp`, and in `vite_plugin_weft` either way. ReScript
+  It passes when run with the package's own `vp`, and in `weft_vite_plugin` either way. ReScript
   tests, through `rescript-vitest`, are fine, so `weft_split`'s build test is `Build_test.res`, with
   the file and Vite work in a JavaScript helper (`BuildSupport.mjs`).
 - **Rolldown doesn't know a module's importers yet in `transform`**: the plugin's build reports a
@@ -109,9 +109,9 @@ whoever picks this up:
   (`Bootstrap.main` does nothing then).
 - **`vp run` loads every package's Vite config to make its task graph**, and an example's config
   imports the plugin's `dist`: a stale or broken `dist` fails every `vp run`, even the plugin's own
-  build. `npx vp pack` in `packages/vite_plugin_weft` breaks the loop. A fresh checkout has no
-  `dist` at all, so CI (and CONTRIBUTING's setup) run `vp pack` there before the first `vp run`: the
-  PR's first CI run failed on exactly this.
+  build. `npx vp pack` in `tools/weft_vite_plugin` breaks the loop. A fresh checkout has no `dist`
+  at all, so CI (and CONTRIBUTING's setup) run `vp pack` there before the first `vp run`: the PR's
+  first CI run failed on exactly this.
 - **jsdom's `click()` doesn't move the focus**, and a browser's does: a browser test that checks
   focus submits a form with Enter, not by clicking its button.
 - **A page streams for as long as its gates are closed**, so the harness's `settle` can't wait for
@@ -166,9 +166,8 @@ throwaway ppxlib probe built from the existing `ppx_pretty_print` opam switch:
    That's what the PPX uses to mark files for the Vite plugin (§4).
 8. **Package-level `ppx-flags` work in the root build** (`examples/pretty_print` already relies on
    it), so only the packages using server components need the new PPX.
-9. **`Weft.Jsx` loads without a DOM.** `Weft` is only aliases (its compiled module is empty), so
-   `Weft.Jsx` compiles to an import of `WeftDom.Jsx`, whose module imports only `WeftCore.JsxCore`.
-   So server components can build host elements with it on the server.
+9. **`WeftDom.Jsx` loads without a DOM.** Its module imports only `Weft.JsxCore`. So server
+   components can build host elements with it on the server.
 10. **The bundled Vite (`vite-plus-core` 1.3.0) has the Environment API** (`buildApp`,
     `createRunnableDevEnvironment`, `createServerModuleRunner`), which the plugin is built on.
 
@@ -185,7 +184,7 @@ throwaway ppxlib probe built from the existing `ppx_pretty_print` opam switch:
    - server/shared components: called                  - host elements, Suspense: as they are
    - host elements: serialized                         - entrypoint refs: import() the chunk,
    - entrypoints: a reference + their props              row blocked until it's loaded
-   - async / suspended under <Suspense>:               - lazy rows: WeftCore.Lazy elements,
+   - async / suspended under <Suspense>:               - lazy rows: Weft.Lazy elements,
      a placeholder now, a row later                      resolved as rows arrive
               │                                        │
               └──── rows, streamed in the HTML ───────>│
@@ -218,13 +217,13 @@ Rules, enforced where noted:
   dicts and tuples as ReScript represents them), `Date`, elements, and promises of any of these
   (streamed: §5). Functions and class instances are not. A development build of the server renderer
   fails with the component, the prop and the path to the bad value; a production build with a
-  numbered error, as `weft_core`'s errors are. The PPX also rejects a labelled argument whose
-  written type is a function (`~onSave: string => unit`), which catches the common mistake at
-  compile time, but it can't see through type aliases.
+  numbered error, as `weft`'s errors are. The PPX also rejects a labelled argument whose written
+  type is a function (`~onSave: string => unit`), which catches the common mistake at compile time,
+  but it can't see through type aliases.
 - **Host elements rendered on the server can't have event handlers or refs.** Same error, with a
   hint to move the element into an entrypoint.
 - **Stateful hooks don't run on the server.** Server and shared components rendered by the server
-  renderer have no fiber; the renderer calls them through `WeftCore.ServerRender.run`, which sets a
+  renderer have no fiber; the renderer calls them through `Weft.ServerRender.run`, which sets a
   "rendering on the server" flag in `HookImpl` (and sets aside any client render in progress) so
   `useState`, effects, `useContext` and the rest fail with a message saying so (rather than "called
   outside a component"). `Hooks.use(promise)` works: it suspends the component, which the server
@@ -258,7 +257,7 @@ let make = async (~id: string) => {
 @@directive("'use weft server'")
 @jsx.component
 let make = (~id: string) =>
-  WeftCore.Lazy.fromPromise(
+  Weft.Lazy.fromPromise(
     (async () => {
       let note = await Db.note(id)
       <Note note />
@@ -267,7 +266,7 @@ let make = (~id: string) =>
 ```
 
 - `@weft.component({kind: Server})` becomes a plain `@jsx.component`.
-- An `async` function becomes a synchronous one returning a `WeftCore.Lazy` element (§6) around the
+- An `async` function becomes a synchronous one returning a `Weft.Lazy` element (§6) around the
   body's promise. That sidesteps the transform's hard-coded `Jsx.promise` (verified point 5), and
   the component's type is an ordinary `component<props>`. A non-async server component is left
   alone.
@@ -287,7 +286,7 @@ module LikeButton = {
 module LikeButton = {
   @jsx.component
   let make = (~noteId: string, ~initial: int) => ...
-  let () = WeftCore.Entrypoint.mark(make, "@e-cline/weft_notes_example/src/Likes.res#LikeButton")
+  let () = Weft.Entrypoint.mark(make, "@e-cline/weft_notes_example/src/Likes.res#LikeButton")
 }
 ```
 
@@ -311,8 +310,8 @@ component is already `(~id: string) => element`. (An interface still needs its o
 line, as it does today.)
 
 **Why a PPX rather than a function call?** Without one, an entrypoint could be written
-`let make = WeftCore.Entrypoint.mark(make, ~id="...")` by hand, with the id kept in sync with the
-file's path by convention. The PPX makes the id impossible to get wrong, gives every kind the same
+`let make = Weft.Entrypoint.mark(make, ~id="...")` by hand, with the id kept in sync with the file's
+path by convention. The PPX makes the id impossible to get wrong, gives every kind the same
 `@weft.component` marking, and is needed anyway for `async`.
 
 **Toolchain.** The two PPXs need the same OCaml and ppxlib (the ReScript AST pins ppxlib 0.34, which
@@ -356,7 +355,7 @@ Copying ReScript's list of renamed names into the PPX instead was considered and
 and the compiler can change it, while trying both names can't go wrong (a module can't export both
 `Error` and `$$Error`).
 
-### 4. The Vite plugin (`packages/vite_plugin_weft`, `@e-cline/vite_plugin_weft`)
+### 4. The Vite plugin (`tools/weft_vite_plugin`, `@e-cline/weft_vite_plugin`)
 
 TypeScript, on the Environment API (Vite 8, through Vite+). Configured with the server entry (a
 module whose default export is a fetch handler, as `@e-cline/servy`'s `App.t` is:
@@ -423,7 +422,7 @@ What it does:
   manifest. The client's one entry is the bootstrap: the entrypoint files are chunks because
   `virtual:weft/client-references` `import()`s each, which also keeps all their exports (making them
   entries too, as first planned, wasn't needed). Output: `dist/client/` (static files) and
-  `dist/server/index.js` (the handler). `serve` (in `@e-cline/vite_plugin_weft/node`) runs both,
+  `dist/server/index.js` (the handler). `serve` (in `@e-cline/weft_vite_plugin/node`) runs both,
   `dist/client` as static files (not the manifest) and the rest through the handler; the example's
   `start` task uses it.
 - **Conditions.** `@e-cline/js_env`'s development/production export conditions (which
@@ -433,10 +432,9 @@ What it does:
 
 ### 5. The wire format and the server renderer (`packages/weft_server`)
 
-A new ReScript package, namespace `WeftServer`, depending on `weft_core` and nothing
-server-specific: `Render` produces a Web `ReadableStream<Uint8Array>`, which `@e-cline/servy`'s
-`Respond.stream` (or any fetch-style server) can send. `Decoder` is browser-safe and shares the
-format module, `Payload`.
+A new ReScript package, namespace `WeftServer`, depending on `weft` and nothing server-specific:
+`Render` produces a Web `ReadableStream<Uint8Array>`, which `@e-cline/servy`'s `Respond.stream` (or
+any fetch-style server) can send. `Decoder` is browser-safe and shares the format module, `Payload`.
 
 **Rows.** A payload is newline-separated rows, `<id>:<tag><json>`. Row `0` is the root.
 
@@ -486,10 +484,10 @@ preserved (a cycle is an error); that keeps the encoder a plain recursive walk.
   cancelling the stream (it went away), stops everything pending: nothing more is written, and
   components waiting on promises aren't called again.
 - Elements are recognized in values by their shape (a plain object with exactly `kind`,
-  `elementType`, `key` and `props`), since `weft_core`'s elements carry no brand. A record of the
-  same shape would be taken for one.
+  `elementType`, `key` and `props`), since `weft`'s elements carry no brand. A record of the same
+  shape would be taken for one.
 
-### 6. The client decoder, and `WeftCore.Lazy`
+### 6. The client decoder, and `Weft.Lazy`
 
 `let client = WeftServer.Decoder.make(~loadModule, ~fetch=?)` makes a client, and
 `client->Decoder.fromStream(stream) : promise<Element.t>` resolves with row 0's element once it's
@@ -501,7 +499,7 @@ before `#`, to a promise of the compiled file's module) is what the bootstrap fi
 each other (the newest cancels the one before, and only its element is returned), which `navigate`
 and `useRefetchable` use.
 
-- Each row is a `WeftCore.Deferred`: a promise settled from outside, whose outcome `Hooks.use` and
+- Each row is a `Weft.Deferred`: a promise settled from outside, whose outcome `Hooks.use` and
   `Lazy` can read the moment it's settled (an ordinary promise's outcome is only known a microtask
   later, so a render right after a row arrived would suspend once for nothing). A row is created
   when it's first referred to or first arrives. Once the stream has ended, a row that never arrived
@@ -512,13 +510,13 @@ and `useRefetchable` use.
   type is always the component's real `make`, never a loader wrapper. That matters for refetching:
   the same entrypoint in the same place in the next payload is the same type, so the reconciler
   keeps its state.
-- `"$L5"` becomes a `WeftCore.Lazy` element around row 5's promise. `"$@5"` becomes the promise
-  itself. `"$S"` becomes a `WeftCore.Suspense` element; host types become `JsxCore.hostJsx`
-  elements. Children that arrive as a list are passed on as `jsxs` marks static children, since they
-  were written out in the server's JSX: no missing-key warnings for server output (duplicate keys
-  are still reported).
+- `"$L5"` becomes a `Weft.Lazy` element around row 5's promise. `"$@5"` becomes the promise itself.
+  `"$S"` becomes a `Weft.Suspense` element; host types become `JsxCore.hostJsx` elements. Children
+  that arrive as a list are passed on as `jsxs` marks static children, since they were written out
+  in the server's JSX: no missing-key warnings for server output (duplicate keys are still
+  reported).
 
-**`WeftCore.Lazy` is the one change the reconciler needs.** A new `Element.kind`, `Lazy`, holds a
+**`Weft.Lazy` is the one change the reconciler needs.** A new `Element.kind`, `Lazy`, holds a
 promise of an element (`Lazy.fromPromise`). The child reconciler unwraps it before comparing types:
 a settled one is reconciled as the element it resolved to, in its place, with no fiber of its own; a
 pending one throws `Suspended(promise)` from the parent's render, which the existing Suspense
@@ -608,7 +606,7 @@ the server (as any element prop is), it returns the element to show, `refetch` a
 // in CommentsPanel, the entrypoint
 let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
 <div>
-  <button onClick={_ => comments.refetch()->ignore}> {Weft.Jsx.string("Reload")} </button>
+  <button onClick={_ => comments.refetch()->ignore}> {WeftDom.Jsx.string("Reload")} </button>
   {comments.element}
 </div>
 // comments.isPending is true until the new subtree has rendered
@@ -634,8 +632,8 @@ in every app's reference map.
 
 **Keys.** A list a server component builds at runtime (`Jsx.array`) and one written out in JSX look
 the same once they've been through the payload, so the client marks every list it decodes as written
-out (`JsxCore.markStaticList`, new in `weft_core`), and the server warns instead, in development,
-about a runtime list of children with elements missing keys, naming where it is.
+out (`JsxCore.markStaticList`, new in `weft`), and the server warns instead, in development, about a
+runtime list of children with elements missing keys, naming where it is.
 
 ### 8. Weft RPCs (phase 6)
 
@@ -899,10 +897,9 @@ second round trip, as Next's server actions can. All of these are possible later
 
 Planned in full in [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md), which supersedes this
 sketch: the HTML is rendered from the payload decoded on the server, in the `rsc` environment;
-entrypoints' hooks run there through `weft_core`'s mount path on fibers in no tree; boundaries
-stream as `<template>` segments swapped in by an inline script; and boundaries still pending when
-hydration reaches them stay as the server's HTML until their segment arrives. The sketch, as first
-written:
+entrypoints' hooks run there through `weft`'s mount path on fibers in no tree; boundaries stream as
+`<template>` segments swapped in by an inline script; and boundaries still pending when hydration
+reaches them stay as the server's HTML until their segment arrives. The sketch, as first written:
 
 Streaming rows without HTML means a blank page until the JavaScript runs. Proper first paint needs
 three more things, which are as big as everything above put together, so they come last:
@@ -966,7 +963,7 @@ browser tests, which are TypeScript.
   and 4 (the PPX sees the source's path) gets its test in phase 2, when the PPX first uses the path.
   A ReScript upgrade that changes any of them fails a named test rather than something downstream.
 
-#### `weft_core` (`Lazy`, `Entrypoint`, the server-render flag)
+#### `weft` (`Lazy`, `Entrypoint`, the server-render flag)
 
 On the TestRenderer and TestScheduler, as the existing Suspense tests are:
 
@@ -1032,9 +1029,9 @@ On the TestRenderer and TestScheduler, as the existing Suspense tests are:
   - _errors_: a refetch that fails with an `X` row inside a boundary shows that boundary's error
     while everything else keeps its state; one that fails at row 0 leaves the screen as it was and
     rejects the refetch.
-- **Fuzz**, like `weft_core`'s: random trees of server, shared and entrypoint components, then a
-  random sequence of mutations (props changed, keyed children moved, inserted, removed, types and
-  keys changed, subtrees made async), each rendered on the server and refetched over the last, with
+- **Fuzz**, like `weft`'s: random trees of server, shared and entrypoint components, then a random
+  sequence of mutations (props changed, keyed children moved, inserted, removed, types and keys
+  changed, subtrees made async), each rendered on the server and refetched over the last, with
   random delays and random chunking. The oracle is the reconciler itself: after each step the host
   tree must equal rendering the same tree, with the server components already evaluated, directly on
   the client; host node identity must be kept for every node the direct render keeps; and each
@@ -1044,7 +1041,7 @@ On the TestRenderer and TestScheduler, as the existing Suspense tests are:
   bootstrap (in jsdom) picking up rows pushed before and after it loads, and the `Accept` header
   choosing HTML or the bare payload.
 
-#### The Vite plugin (`packages/vite_plugin_weft/tests`)
+#### The Vite plugin (`tools/weft_vite_plugin/tests`)
 
 TypeScript, against small fixture apps (`tests/fixtures`): ReScript packages in the workspace,
 compiled through the PPX by the root build like any other, with the output committed. (They were
@@ -1075,7 +1072,7 @@ app.
   again, changing an entrypoint file sends a full reload, and an entrypoint file appearing (or being
   deleted) updates the references.
 
-#### Tier 2: the app harness (`@e-cline/vite_plugin_weft/testing`)
+#### Tier 2: the app harness (`@e-cline/weft_vite_plugin/testing`)
 
 The harness for testing an application, which apps outside this repository can use too. It's
 TypeScript, since it's Vite and worker plumbing, and ships ReScript bindings (`WeftTesting`, a
@@ -1159,9 +1156,9 @@ each test opens pages on it, in containers of its own.
 **Proving it out first.** This leans on less-trodden Vite APIs: a module runner in a worker with a
 custom transport, and Vitest applying a plugin's client environment to the test's own graph. Phase 5
 started with a spike of the transport against the plugin's `basic` fixture
-(`packages/vite_plugin_weft/tests/harness.test.ts`): the worker approach worked first time (the
-server has no `document` or `window`, runs with the development conditions, and runs changed code
-once Vite sees the change), so the one-thread fallback wasn't needed.
+(`tools/weft_vite_plugin/tests/harness.test.ts`): the worker approach worked first time (the server
+has no `document` or `window`, runs with the development conditions, and runs changed code once Vite
+sees the change), so the one-thread fallback wasn't needed.
 
 #### Weft RPCs (phase 6)
 
@@ -1281,8 +1278,7 @@ anything that can be checked in tier 2 is, and these cover what only a browser c
 ```
 tools/ppx/setup.sh, rescript_ppx.opam.locked   the shared OCaml toolchain (moved from pretty_print)
 tools/ppx/weft/                    @e-cline/ppx_weft: ppx_src/ppx_weft.ml, bin/main.ml, ppx script
-packages/weft/src/Weft.res(i)      gains a `Lazy` alias (useful in client-only apps too)
-packages/weft_core/src/
+packages/weft/src/
   Lazy.res(i)                      `Lazy.fromPromise`; Element.kind gains `Lazy`
   Entrypoint.res(i)                `mark` (what the PPX calls) and `idOf`, for renderers
   ServerRender.res(i)              `run`: call a component as a server render (the hooks flag)
@@ -1297,7 +1293,7 @@ packages/weft_server/              namespace WeftServer (by where it runs, since
   src/server/RpcServer.res(i)      handler, router, respond (split from `Rpc` in phase 7.0)
   src/shared/RpcCodec.res(i)       their codecs, as Rpc.Codec
   src/testing/Testing.res(i)       tier 1 helpers: a stub stream, entrypoints served from a map
-packages/vite_plugin_weft/         @e-cline/vite_plugin_weft (TypeScript)
+tools/weft_vite_plugin/         @e-cline/weft_vite_plugin (TypeScript)
   src/testing.ts, testingWorker.ts the tier 2 harness (`/testing` export): Vite server, worker, port
   src/WeftTesting.res(i)           its ReScript bindings
   tests/fixtures/                  small ReScript apps, compiled by the root build
@@ -1322,11 +1318,11 @@ attribute: its argument, where it is, and that a binding has it once and not wit
 The PPX test package with the first good fixtures, those errors and the compiler canaries (§10), and
 the opam setup moved to the shared switch.
 
-**Phase 1 -- `WeftCore.Lazy` and `Entrypoint`.** The new element kind, unwrapped in
-`ChildReconciler`; `Entrypoint.mark`; the server-render flag in `HookImpl`, set through a public
-`ServerRender.run` (since `weft_server` is another package), with `Hooks.use` allowed under it;
-error codes 13 (an unresolved lazy reaching the reconciler) and 14 (a stateful hook on the server);
-the `Weft.Lazy` alias; with their tests (§10).
+**Phase 1 -- `Weft.Lazy` and `Entrypoint`.** The new element kind, unwrapped in `ChildReconciler`;
+`Entrypoint.mark`; the server-render flag in `HookImpl`, set through a public `ServerRender.run`
+(since `weft_server` is another package), with `Hooks.use` allowed under it; error codes 13 (an
+unresolved lazy reaching the reconciler) and 14 (a stateful hook on the server); the `Weft.Lazy`
+alias; with their tests (§10).
 
 **Phase 2 -- The PPX in full.** Async rewriting, marks, ids, directives and the rest of the errors
 in §2 (`async` outside a server component, server components and entrypoints in one file,
@@ -1338,7 +1334,7 @@ the PPX is given, so the tests of the ids are that canary.
 `Decoder`), each tested on its own and then together into the TestRenderer, including every in-place
 update test and the update fuzz test (§10), with `fetchElement` and request ordering
 (`Decoder.Latest`). `WeftServer.Testing` (the tier 1 helpers: a pipe the test controls, modules from
-a map) comes with them. `weft_core` gains `Deferred` (rows readable the moment they arrive),
+a map) comes with them. `weft` gains `Deferred` (rows readable the moment they arrive),
 `ServerRender.suspendedOn` (so the renderer needn't reach into its internals), and rejected lazies
 throwing from their own position. Refetching part of a page (§7) waits for phase 5, with pages and
 navigation; those cases of the in-place tests come with them.

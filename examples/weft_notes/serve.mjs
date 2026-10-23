@@ -1,6 +1,6 @@
 // Serves the build (`vp run build` first): the client's files from `dist/client`, and every other
 // request answered by the server's handler. Run with `vp run start`.
-import {serve} from '@e-cline/vite_plugin_weft/node';
+import {serve} from '@e-cline/weft_vite_plugin/node';
 
 const port = Number(process.env.PORT ?? 3000);
 // This machine only, unless told otherwise.

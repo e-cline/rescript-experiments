@@ -11,10 +11,10 @@ DOM events in the portal bubble through the DOM, to `container`'s ancestors, not
 around the portal in the component tree (unlike React, which re-dispatches them through the tree).
 */
 
-type props = {container: Dom.element, children: WeftCore.Element.t}
+type props = {container: Dom.element, children: Weft.Element.t}
 
 /** The component form: `<Portal container> ... </Portal>`. */
-let make: WeftCore.JsxCore.component<props>
+let make: Weft.JsxCore.component<props>
 
 /** `children`, rendered into `container`. */
-let create: (WeftCore.Element.t, ~container: Dom.element, ~key: string=?) => WeftCore.Element.t
+let create: (Weft.Element.t, ~container: Dom.element, ~key: string=?) => Weft.Element.t

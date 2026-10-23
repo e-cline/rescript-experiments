@@ -4,21 +4,21 @@ import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Vitest$1 from "vitest";
 import * as Stdlib_Dict from "@rescript/runtime/lib/es6/Stdlib_Dict.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
+import * as Deferred$Weft from "@e-cline/weft/src/shared/Deferred.res.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Rpc$WeftServer from "../src/shared/Rpc.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Vitest_Matchers from "rescript-vitest/src/Vitest_Matchers.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
+import * as TestRenderer$Weft from "@e-cline/weft/src/testing/TestRenderer.res.js";
 import * as Values$WeftServer from "../src/shared/internal/Values.res.js";
 import * as Payload$WeftServer from "../src/shared/Payload.res.js";
 import * as Support$WeftServer from "./Support.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
 import * as RpcCodec$WeftServer from "../src/shared/RpcCodec.res.js";
 import * as RpcServer$WeftServer from "../src/server/RpcServer.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 let commentCodec = RpcCodec$WeftServer.object2([
   "noteId",
@@ -51,7 +51,7 @@ let addComment = Rpc$WeftServer.make("notes.addComment", commentCodec, comment =
 let calls = [];
 
 let gate = {
-  contents: Deferred$WeftCore.make()
+  contents: Deferred$Weft.make()
 };
 
 let sawAbort = {
@@ -105,9 +105,9 @@ let render = Rpc$WeftServer.make("notes.render", RpcCodec$WeftServer.string, und
 
 let renderHandler = RpcServer$WeftServer.handler(render, async (id, param) => ({
   TAG: "Ok",
-  _0: TestJsx$WeftCore.jsx(Support$WeftServer.Wrap.make, {
+  _0: TestJsx$Weft.jsx(Support$WeftServer.Wrap.make, {
     id: id,
-    children: TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+    children: TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
       label: id
     })
   })
@@ -169,7 +169,7 @@ async function rowsOf(response) {
 function resetCalls() {
   calls.splice(0, calls.length);
   digests.splice(0, digests.length);
-  gate.contents = Deferred$WeftCore.make();
+  gate.contents = Deferred$Weft.make();
   sawAbort.contents = false;
 }
 
@@ -707,10 +707,10 @@ Vitest.describe("calls", undefined, undefined, undefined, undefined, undefined, 
     if (element.TAG !== "Ok") {
       return Stdlib_JsError.throwWithMessage("expected an element");
     }
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, element._0);
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, element._0);
     await Support$WeftServer.settle();
-    return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<div id="c1"><b id="c1">c1:0</b></div>`);
+    return t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<div id="c1"><b id="c1">c1:0</b></div>`);
   });
   Vitest.testAsync("can answer with promises, which stream in after the response", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let match = await call(later, undefined, "note");

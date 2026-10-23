@@ -36,6 +36,6 @@ let like = RpcServer.handler(Api.like, async (noteId, ~http as _) =>
 
 /** What `/_weft/rpc/<id>` answers: these RPCs, and no others. */
 let router = RpcServer.router([saveTitle, addComment, like], ~onError=error => {
-  Console.error(`weft_notes: an RPC failed: ${WeftCore.ErrorBoundary.message(error)}`)
+  Console.error(`weft_notes: an RPC failed: ${Weft.ErrorBoundary.message(error)}`)
   None
 })

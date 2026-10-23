@@ -1,7 +1,7 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
-The server entry: an `@e-cline/servy` application, the fetch handler `@e-cline/vite_plugin_weft`
+The server entry: an `@e-cline/servy` application, the fetch handler `@e-cline/weft_vite_plugin`
 runs (its default export). Each route answers with `WeftServer.Page.respond`: the HTML page, with
 the payload streamed into it, for a first request, and the bare payload for the client's own.
 */
@@ -11,7 +11,7 @@ module Route = Servy.Route
 
 @module("virtual:weft/assets") external assets: WeftServer.Page.assets = "default"
 
-let page = (~title, render: unit => Weft.element): Servy.Handler.t =>
+let page = (~title, render: unit => Weft.Element.t): Servy.Handler.t =>
   async ctx => WeftServer.Page.respond(ctx.request, render(), ~assets, ~title)
 
 let app =

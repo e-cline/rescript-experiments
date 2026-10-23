@@ -11,7 +11,7 @@ DOM ends up as a client render's, made of the HTML's own elements.
 open Vitest
 open DomSupport
 
-module Hooks = WeftCore.Hooks
+module Hooks = Weft.Hooks
 
 let string = Jsx.string
 
@@ -124,9 +124,9 @@ describe("hydrating the server's HTML", () => {
           {string(" & more")}
         </h1>
         <Counter id="c" />
-        <WeftCore.Suspense fallback={string("loading")}>
+        <Weft.Suspense fallback={string("loading")}>
           <p title="t"> {string("in a boundary")} </p>
-        </WeftCore.Suspense>
+        </Weft.Suspense>
         <input value="v" />
         <label htmlFor="i" hidden=true> {string("label")} </label>
       </main>
@@ -146,9 +146,9 @@ describe("hydrating the server's HTML", () => {
       let element =
         <form>
           <Field label="Name" />
-          <WeftCore.Suspense fallback={string("loading")}>
+          <Weft.Suspense fallback={string("loading")}>
             <Field label="Comment" />
-          </WeftCore.Suspense>
+          </Weft.Suspense>
         </form>
       let container = page(await Html.renderToString(element))
       let (_, warnings) = await logging(async () => hydrate(container, element))
@@ -204,10 +204,10 @@ describe("hydrating the server's HTML", () => {
     let (promise, resolve) = deferred()
     let element =
       <div>
-        <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
+        <Weft.Suspense fallback={<i> {string("loading")} </i>}>
           <Waits promise id="w" />
           <Counter id="c" />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
         <Counter id="outside" />
       </div>
     let rendering = Html.render(element)
@@ -249,9 +249,9 @@ describe("hydrating the server's HTML", () => {
   testAsync("hydrates a boundary swapped in before the JavaScript ran, with the rest", async t => {
     let (promise, resolve) = deferred()
     let element =
-      <WeftCore.Suspense fallback={string("loading")}>
+      <Weft.Suspense fallback={string("loading")}>
         <Waits promise id="w" />
-      </WeftCore.Suspense>
+      </Weft.Suspense>
     let rendering = Html.render(element)
     let container = page(await rendering->Html.shell)
     let rest = chunks(rendering->Html.rest)
@@ -271,15 +271,15 @@ describe("hydrating the server's HTML", () => {
     async t => {
       let (promise, resolve) = deferred()
       let element =
-        <WeftCore.Suspense fallback={string("loading")}>
+        <Weft.Suspense fallback={string("loading")}>
           <Waits promise id="w" />
-        </WeftCore.Suspense>
+        </Weft.Suspense>
       // The server's render fails (another component than the client's would have).
       let rendering = Html.render(
         ~onError=_ => Some("d"),
-        <WeftCore.Suspense fallback={string("loading")}>
+        <Weft.Suspense fallback={string("loading")}>
           <FailsAfter promise />
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
       )
       let container = page(await rendering->Html.shell)
       let rest = chunks(rendering->Html.rest)
@@ -312,9 +312,9 @@ describe("hydrating the server's HTML", () => {
       let element =
         <div>
           <h1> {string("kept")} </h1>
-          <WeftCore.Suspense fallback={string("loading")}>
+          <Weft.Suspense fallback={string("loading")}>
             <p> {string("client")} </p>
-          </WeftCore.Suspense>
+          </Weft.Suspense>
         </div>
       let container = page(`<div><h1>kept</h1><!--$--><span>server</span><!--/$--></div>`)
       let heading = find(container, "h1")
@@ -347,7 +347,7 @@ module Identified = {
   let make = (~children: Jsx.element) => {
     let first = Hooks.useId()
     let second = Hooks.useId()
-    let ids = WeftCore.ServerRender.isRenderingComponent() ? serverIds : clientIds
+    let ids = Weft.ServerRender.isRenderingComponent() ? serverIds : clientIds
     ids->Set.add(first)
     ids->Set.add(second)
     // A fragment at the top of what it renders is its contents, on both sides.
@@ -376,27 +376,27 @@ let rec randomTree = (random, ~depth, ~waits: array<waiting>, ~inBoundary): Jsx.
     <Identified> {randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary)} </Identified>
   // What it resolves to, on both sides.
   | 8 =>
-    WeftCore.Lazy.fromPromise(
+    Weft.Lazy.fromPromise(
       Promise.resolve(randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary)),
     )
   | 5 | 6 =>
-    <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
+    <Weft.Suspense fallback={<i> {string("loading")} </i>}>
       {randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary=true)}
-    </WeftCore.Suspense>
+    </Weft.Suspense>
   | _ =>
     let tag = Random.pick(random, ["div", "section", "b", "ul"])
     let props: DomProps.props = {
       className: ?(Random.intBelow(random, 2) == 0 ? Some("c") : None),
       children: randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary),
     }
-    WeftCore.JsxCore.hostJsx(tag, props)
+    Weft.JsxCore.hostJsx(tag, props)
   }
 
 and randomChildren = (random, ~depth, ~waits, ~inBoundary) => {
   let children = Array.fromInitializer(~length=Random.intBelow(random, 4), _ =>
     randomTree(random, ~depth, ~waits, ~inBoundary)
   )
-  WeftCore.JsxCore.markStaticList(children)
+  Weft.JsxCore.markStaticList(children)
   Jsx.array(children)
 }
 

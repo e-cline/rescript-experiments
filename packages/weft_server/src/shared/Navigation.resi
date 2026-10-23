@@ -36,7 +36,7 @@ it (the browser's pushes it onto the history).
 */
 let make: (
   Decoder.t,
-  ~render: WeftCore.Element.t => unit,
+  ~render: Weft.Element.t => unit,
   ~url: string,
   ~onNavigate: string => unit=?,
 ) => t
@@ -53,10 +53,10 @@ let makeForServer: (Decoder.t, ~url: string) => t
 `element` inside the page's context, as `show` renders it: what to hydrate with, so the first render
 matches what the server rendered.
 */
-let wrap: (t, WeftCore.Element.t) => WeftCore.Element.t
+let wrap: (t, Weft.Element.t) => Weft.Element.t
 
 /** Renders `element` (the first page's, say) straight away, not in a transition. */
-let show: (t, WeftCore.Element.t) => unit
+let show: (t, Weft.Element.t) => unit
 
 /**
 Fetches `url`'s payload and renders it in a transition, then calls `onNavigate`. Resolves once
@@ -83,7 +83,7 @@ let useNavigation: unit => t
 /** An element that can be fetched again, from `useRefetchable`. */
 type refetchable = {
   /** What to render: the fetched element, or `children` until there is one (or newer ones come). */
-  element: WeftCore.Element.t,
+  element: Weft.Element.t,
   /** Fetches `src` again (or `url`) and shows what it gets, in a transition. */
   refetch: (~url: string=?) => promise<unit>,
   /** True from a refetch's start until what it fetched has rendered. */
@@ -106,4 +106,4 @@ Render `element` where the children would go. The promise `refetch` returns reso
 render has been started, or straight away if a newer refetch replaced it, and rejects (leaving the
 screen as it was) if the payload's root failed.
 */
-let useRefetchable: (~src: string, WeftCore.Element.t) => refetchable
+let useRefetchable: (~src: string, Weft.Element.t) => refetchable

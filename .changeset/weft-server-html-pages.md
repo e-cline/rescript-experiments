@@ -1,6 +1,6 @@
 ---
 '@e-cline/weft_server': patch
-'@e-cline/vite_plugin_weft': patch
+'@e-cline/weft_vite_plugin': patch
 ---
 
 Pages are rendered on the server: `Page.respond` streams the page as HTML (shell first, then each

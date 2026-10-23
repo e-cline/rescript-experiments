@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 Server components: a synchronous one, which compiles as written, and async ones, which the PPX
@@ -8,7 +8,7 @@ rewrites to return a `Lazy` element around their body's promise. The file starts
 
 module Title = {
   @weft.component({kind: Server})
-  let make = (~title: string) => <h2> {WeftCore.TestJsx.string(title)} </h2>
+  let make = (~title: string) => <h2> {Weft.TestJsx.string(title)} </h2>
 }
 
 /** Stands in for a database: what `Note` awaits. Tests replace it. */
@@ -27,7 +27,7 @@ module Note = {
 /** An async component with a return type and a child, both still allowed. */
 module Section = {
   @weft.component({kind: Server})
-  let make = async (~heading: string, ~children: WeftCore.Element.t): WeftCore.Element.t => {
+  let make = async (~heading: string, ~children: Weft.Element.t): Weft.Element.t => {
     let heading = await Promise.resolve(heading)
     <section>
       <Title title=heading />

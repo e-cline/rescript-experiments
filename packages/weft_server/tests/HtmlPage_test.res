@@ -16,7 +16,7 @@ let indexOf = (html, text) => html->String.indexOf(text)
 let reporting = () => {
   let reported = []
   let onError = error => {
-    reported->Array.push(WeftCore.ErrorBoundary.message(error))
+    reported->Array.push(Weft.ErrorBoundary.message(error))
     Some("d")
   }
   (reported, onError)
@@ -55,11 +55,11 @@ describe("a page with its HTML", () => {
         (promise, () => resolve.contents())
       }
       let reader = Page.toStream(
-        <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
+        <Weft.Suspense fallback={<i> {string("loading")} </i>}>
           <Later ready>
             <p> {string("later")} </p>
           </Later>
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
         ~assets=assets(),
       )->Streams.getReader
       let decoder = Streams.Decoder.make()
@@ -147,9 +147,9 @@ describe("a page with its HTML", () => {
       let (reported, onError) = reporting()
       let html = await Testing.readAll(
         Page.toStream(
-          <WeftCore.Suspense fallback={string("fallback")}>
+          <Weft.Suspense fallback={string("fallback")}>
             <ServerFails message="inside" />
-          </WeftCore.Suspense>,
+          </Weft.Suspense>,
           ~assets=assets(),
           ~onError,
         ),

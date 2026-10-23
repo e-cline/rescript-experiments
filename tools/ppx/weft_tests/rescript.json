@@ -22,7 +22,6 @@
   "dev-dependencies": ["rescript-vitest"],
   "dependencies": [
     "@e-cline/weft",
-    "@e-cline/weft_core",
     "@e-cline/weft_dom",
     "@e-cline/weft_server"
   ],

@@ -5,7 +5,7 @@ import * as Vitest$1 from "vitest";
 import * as Nodeurl from "node:url";
 import * as Nodepath from "node:path";
 import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
-import * as WeftTesting from "@e-cline/vite_plugin_weft/src/WeftTesting.res.js";
+import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";

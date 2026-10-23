@@ -1,6 +1,6 @@
 /***
 The errors WeftDom throws when it's misused, numbered so production builds needn't carry the
-messages (as `weft_core`'s are). The codes are listed in the package README's "Error codes"
+messages (as `weft`'s are). The codes are listed in the package README's "Error codes"
 section, and stay fixed once published.
 */
 

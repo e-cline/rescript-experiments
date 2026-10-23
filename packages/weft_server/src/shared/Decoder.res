@@ -1,5 +1,5 @@
-module Element = WeftCore.Element
-module Deferred = WeftCore.Deferred
+module Element = Weft.Element
+module Deferred = Weft.Deferred
 
 type stream = Streams.t
 type signal = Streams.Signal.t
@@ -138,8 +138,7 @@ let rec decode = (session, json: JSON.t): unknown =>
     switch Payload.decodeString(text) {
     | Literal(text) => toUnknown(text)
     | Undefined => undefined
-    | LazyRow(id) =>
-      toUnknown(WeftCore.Lazy.fromPromise(toElementPromise(row(session, id).promise)))
+    | LazyRow(id) => toUnknown(Weft.Lazy.fromPromise(toElementPromise(row(session, id).promise)))
     | PromiseRow(id) => toUnknown(row(session, id).promise)
     | Number(value) => toUnknown(value)
     | BigInt(value) => toUnknown(value)
@@ -152,7 +151,7 @@ let rec decode = (session, json: JSON.t): unknown =>
     | None =>
       let decoded = items->Array.map(item => decode(session, item))
       // The server checked the lists it wrote for keys (`Render`): no need to again.
-      WeftCore.JsxCore.markStaticList(fromUnknown(toUnknown(decoded)))
+      Weft.JsxCore.markStaticList(fromUnknown(toUnknown(decoded)))
       toUnknown(decoded)
     }
   | Object(fields) => toUnknown(fields->Dict.mapValues(value => decode(session, value)))
@@ -166,17 +165,17 @@ and decodeElement = (session, elementType, key, props): unknown => {
   let static = Array.isArray(childrenField(props))
   let component = (make: unknown) =>
     static
-      ? WeftCore.JsxCore.jsxsKeyed(fromUnknown(make), props, ~key?, ())
-      : WeftCore.JsxCore.jsxKeyed(fromUnknown(make), props, ~key?, ())
+      ? Weft.JsxCore.jsxsKeyed(fromUnknown(make), props, ~key?, ())
+      : Weft.JsxCore.jsxKeyed(fromUnknown(make), props, ~key?, ())
   let element = switch elementType {
   | JSON.String(text) =>
     switch Payload.decodeString(text) {
     | Literal(tag) =>
       static
-        ? WeftCore.JsxCore.hostJsxsKeyed(tag, props, ~key?, ())
-        : WeftCore.JsxCore.hostJsxKeyed(tag, props, ~key?, ())
-    | SuspenseType => component(toUnknown(WeftCore.Suspense.make))
-    | FragmentType => component(toUnknown(WeftCore.JsxCore.Fragment.make))
+        ? Weft.JsxCore.hostJsxsKeyed(tag, props, ~key?, ())
+        : Weft.JsxCore.hostJsxKeyed(tag, props, ~key?, ())
+    | SuspenseType => component(toUnknown(Weft.Suspense.make))
+    | FragmentType => component(toUnknown(Weft.JsxCore.Fragment.make))
     | EntrypointType(id) =>
       switch session.entrypoints->Map.get(id) {
       | Some(make) => component(make)

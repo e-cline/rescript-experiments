@@ -1,5 +1,5 @@
 ---
-'@e-cline/vite_plugin_weft': patch
+'@e-cline/weft_vite_plugin': patch
 '@e-cline/weft_server': patch
 ---
 

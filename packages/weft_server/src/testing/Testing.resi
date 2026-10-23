@@ -68,7 +68,7 @@ let modules: array<(string, unknown)> => modules
 let module_: array<(string, unknown)> => unknown
 
 /** A component, as an export for `module_`. */
-external component: WeftCore.JsxCore.component<'props> => unknown = "%identity"
+external component: Weft.JsxCore.component<'props> => unknown = "%identity"
 
 let loadModule: modules => Decoder.loadModule
 

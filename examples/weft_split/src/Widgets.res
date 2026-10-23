@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 Entrypoints in modules: `Widgets.Toggle`, and `Widgets.Error`, a module ReScript exports as
@@ -10,13 +10,13 @@ module Toggle = {
   let make = (~label: string) => {
     let (open_, setOpen) = Weft.Hooks.useState(() => false)
     <div className="toggle">
-      <button onClick={_ => setOpen(open_ => !open_)}> {Weft.Jsx.string(label)} </button>
-      <p> {Weft.Jsx.string(open_ ? "Open" : "Closed")} </p>
+      <button onClick={_ => setOpen(open_ => !open_)}> {WeftDom.Jsx.string(label)} </button>
+      <p> {WeftDom.Jsx.string(open_ ? "Open" : "Closed")} </p>
     </div>
   }
 }
 
 module Error = {
   @weft.component({kind: Entrypoint})
-  let make = (~message: string) => <p className="error"> {Weft.Jsx.string(message)} </p>
+  let make = (~message: string) => <p className="error"> {WeftDom.Jsx.string(message)} </p>
 }

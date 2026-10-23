@@ -2,7 +2,7 @@
 
 import * as Nodeurl from "node:url";
 import * as Nodepath from "node:path";
-import * as WeftTesting from "@e-cline/vite_plugin_weft/src/WeftTesting.res.js";
+import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 

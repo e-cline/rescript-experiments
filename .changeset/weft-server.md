@@ -1,6 +1,6 @@
 ---
 '@e-cline/weft_server': patch
-'@e-cline/weft_core': patch
+'@e-cline/weft': patch
 ---
 
 New package: `weft_server`, server components for Weft. `Render.toStream` renders a tree, server
@@ -14,8 +14,8 @@ sent) and handled on the server by `RpcServer`'s router, which reads requests as
 through the payload decoder; responses are payloads, so they can carry elements and promises.
 `Testing` connects the server and the client in one process, for tests.
 
-`weft_core`: `ServerRender.renderComponent`, which renders a client component on the server (its
-hooks working as on a first render that never commits), with `useSyncExternalStore`'s new
+`weft`: `ServerRender.renderComponent`, which renders a client component on the server (its hooks
+working as on a first render that never commits), with `useSyncExternalStore`'s new
 `~getServerSnapshot` for it; `Deferred`, a promise whose outcome `Hooks.use` and `Lazy` elements can
 read the moment it's settled; `ServerRender.suspendedOn`; `JsxCore.isStaticList` and
 `markStaticList`; and a rejected `Lazy` element now throws from its own position, so an

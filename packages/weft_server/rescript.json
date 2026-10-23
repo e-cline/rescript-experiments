@@ -15,7 +15,7 @@
   "dev-dependencies": ["rescript-vitest"],
   "dependencies": [
     "@e-cline/common",
-    "@e-cline/weft_core",
+    "@e-cline/weft",
     "@e-cline/weft_dom",
     "@rescript/webapi"
   ]

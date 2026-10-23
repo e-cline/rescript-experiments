@@ -1,5 +1,5 @@
 ---
-'@e-cline/weft_core': patch
+'@e-cline/weft': patch
 '@e-cline/weft_dom': patch
 ---
 

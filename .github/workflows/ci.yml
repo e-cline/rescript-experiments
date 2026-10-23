@@ -38,7 +38,7 @@ jobs:
       # the examples' configs import the Vite plugin from its build (`dist`,
       # not committed): build it first, with `vp pack`, which doesn't.
       - run: vp pack
-        working-directory: packages/vite_plugin_weft
+        working-directory: tools/weft_vite_plugin
 
       # The check type-checks TypeScript that imports files the ReScript
       # compiler generates, so it has to follow the build.
@@ -73,7 +73,7 @@ jobs:
       # the examples' configs import the Vite plugin from its build (`dist`,
       # not committed): build it first, with `vp pack`, which doesn't.
       - run: vp pack
-        working-directory: packages/vite_plugin_weft
+        working-directory: tools/weft_vite_plugin
       - run: vp run build
       - name: Install Chromium for Playwright
         run:

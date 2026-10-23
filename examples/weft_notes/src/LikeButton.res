@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 The likes, from the server, and whether you just liked it (liking is the `notes.like` RPC), which is this button's own state: it
@@ -16,6 +16,6 @@ let make = (~noteId: string, ~likes: int) => {
       like(noteId)->ignore
     }}
   >
-    {Weft.Jsx.string(`${Int.toString(likes)} likes${justLiked ? " (you liked this)" : ""}`)}
+    {WeftDom.Jsx.string(`${Int.toString(likes)} likes${justLiked ? " (you liked this)" : ""}`)}
   </button>
 }

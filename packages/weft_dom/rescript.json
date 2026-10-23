@@ -20,5 +20,5 @@
   "suffix": ".res.js",
   "namespace": "WeftDom",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/common", "@e-cline/weft_core"]
+  "dependencies": ["@e-cline/common", "@e-cline/weft"]
 }

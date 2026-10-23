@@ -14,7 +14,7 @@ Every kind of element is rendered as the client would render it, so the client c
   `ref` left out); `style` as a `style` attribute; `value` and `checked` as the attributes that give
   the same initial state (a `textarea`'s text, `selected` on a `select`'s option).
 - Text escaped, with `<!-- -->` between two texts in a row (which the parser would merge).
-- Components called through `WeftCore.ServerRender.renderComponent`, so their hooks give their
+- Components called through `Weft.ServerRender.renderComponent`, so their hooks give their
   initial state; providers' values reach them.
 - A component that suspends (`Hooks.use` on a pending promise), or a `Lazy` element that hasn't
   resolved, is waited for and rendered again, outside every `Suspense` boundary. Under one, the
@@ -60,7 +60,7 @@ the HTML has to be given the same (`Client.hydrateRoot(~idPrefix)`), and two roo
 different ones.
 */
 let render: (
-  WeftCore.Element.t,
+  Weft.Element.t,
   ~onError: exn => option<string>=?,
   ~signal: signal=?,
   ~idPrefix: string=?,
@@ -80,7 +80,7 @@ let rest: t => stream
 
 /** The shell, then the rest, as one stream. Errors if the shell fails. */
 let renderToStream: (
-  WeftCore.Element.t,
+  Weft.Element.t,
   ~onError: exn => option<string>=?,
   ~signal: signal=?,
   ~idPrefix: string=?,
@@ -91,7 +91,7 @@ All of `element`'s HTML, once everything has rendered: no boundary is left pendi
 its content), though a failed one is still written as failed. For tests, and static pages.
 */
 let renderToString: (
-  WeftCore.Element.t,
+  Weft.Element.t,
   ~onError: exn => option<string>=?,
   ~idPrefix: string=?,
 ) => promise<string>

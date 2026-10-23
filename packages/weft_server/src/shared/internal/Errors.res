@@ -1,6 +1,6 @@
 /***
 The errors WeftServer throws when it's misused, numbered so production builds needn't carry the
-messages (as `weft_core`'s are; see its `Errors`). The codes are listed in the package README's
+messages (as `weft`'s are; see its `Errors`). The codes are listed in the package README's
 "Error codes" section, and stay fixed once published.
 */
 

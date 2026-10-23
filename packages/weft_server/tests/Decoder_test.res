@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 The client on its own, fed rows written by hand.
@@ -91,7 +91,7 @@ describe("Client", () => {
     input.push(`0:J["$","p",null,{"children":["$L2","$L1"]}]\n`)
     let decoded = await element
     let renderer = TestRenderer.create()
-    TestRenderer.render(renderer, <WeftCore.Suspense fallback=loading> decoded </WeftCore.Suspense>)
+    TestRenderer.render(renderer, <Weft.Suspense fallback=loading> decoded </Weft.Suspense>)
     t->expect(TestRenderer.toString(renderer))->Expect.toBe(`<i id="loading">loading</i>`)
     input.push(`2:J"second"\n`)
     input.push(`1:J"first"\n`)

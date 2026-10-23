@@ -1,7 +1,7 @@
 @@directive("'use weft server'")
 
-module Element = WeftCore.Element
-module ServerRender = WeftCore.ServerRender
+module Element = Weft.Element
+module ServerRender = Weft.ServerRender
 
 // A few Web stream, encoding and abort bindings (every runtime this targets has them built in).
 
@@ -255,7 +255,7 @@ let report = (request, error: exn) => {
   let digest = try request.onError(error) catch {
   | _ => None
   }
-  let message = Common.Env.isDev ? Some(WeftCore.ErrorBoundary.message(error)) : None
+  let message = Common.Env.isDev ? Some(Weft.ErrorBoundary.message(error)) : None
   (digest, message)
 }
 
@@ -355,8 +355,8 @@ if one hasn't settled: its promise is added to the attempt's pending ones.
 let rec resolved = (attempt, element: Element.t) =>
   switch Element.classify(element) {
   | Node({kind: Lazy} as node) =>
-    let promise = WeftCore.Lazy.promiseOf(node)
-    switch ServerRender.run(() => WeftCore.Hooks.use(promise)) {
+    let promise = Weft.Lazy.promiseOf(node)
+    switch ServerRender.run(() => Weft.Hooks.use(promise)) {
     | element => resolved(attempt, element)
     | exception error =>
       switch ServerRender.suspendedOn(error) {

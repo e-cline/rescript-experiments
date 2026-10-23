@@ -29,7 +29,7 @@ and the examples' configs import the plugin from its build, which isn't committe
 broken `dist` fails every `vp run`, the plugin's own build included):
 
 ```bash
-pnpm --filter @e-cline/vite_plugin_weft exec vp pack
+pnpm --filter @e-cline/weft_vite_plugin exec vp pack
 ```
 
 ```bash

@@ -16,7 +16,7 @@ type state = {
   mutable closed: bool,
   mutable cancelled: bool,
   mutable written: string,
-  finished: WeftCore.Deferred.t<unit>,
+  finished: Weft.Deferred.t<unit>,
 }
 
 type pipe = {state: state, output: Streams.t}
@@ -52,7 +52,7 @@ let pipe = (source, ~delivery=Immediate, ~chunking=AsWritten) => {
     closed: false,
     cancelled: false,
     written: "",
-    finished: WeftCore.Deferred.make(),
+    finished: Weft.Deferred.make(),
   }
   let output = Streams.make({
     start: controller => state.controller = Some(controller),
@@ -126,7 +126,7 @@ let readAll = async stream => {
 type modules = {
   byFile: Map.t<string, unknown>,
   loads: array<string>,
-  mutable held: option<WeftCore.Deferred.t<unit>>,
+  mutable held: option<Weft.Deferred.t<unit>>,
 }
 
 let modules = entries => {byFile: Map.fromArray(entries), loads: [], held: None}
@@ -134,7 +134,7 @@ let modules = entries => {byFile: Map.fromArray(entries), loads: [], held: None}
 let module_ = (exports: array<(string, unknown)>): unknown =>
   Values.toUnknown(Dict.fromArray(exports))
 
-external component: WeftCore.JsxCore.component<'props> => unknown = "%identity"
+external component: Weft.JsxCore.component<'props> => unknown = "%identity"
 
 let notServed = file =>
   JsError.throwWithMessage(
@@ -159,7 +159,7 @@ let loads = modules => modules.loads
 
 let hold = modules =>
   if Option.isNone(modules.held) {
-    modules.held = Some(WeftCore.Deferred.make())
+    modules.held = Some(Weft.Deferred.make())
   }
 
 let release = modules => {

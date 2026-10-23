@@ -5,10 +5,10 @@ components; `@weft.rpc`, for declaring RPCs; and `@@weft.server`, for marking a 
 See [the server components plan](../../../docs/weft_server_components_plan.md).
 
 ```rescript
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 @weft.component                       // a shared component
-let make = (~name: string) => <p> {Weft.Jsx.string(name)} </p>
+let make = (~name: string) => <p> {WeftDom.Jsx.string(name)} </p>
 
 @weft.component({kind: Server})       // will run only on the server
 let make = ...
@@ -23,21 +23,21 @@ The PPX replaces each `@weft.component` with a plain `@jsx.component`, which ReS
 transform then handles as usual (the compiler runs PPXs before that transform), and then, by kind:
 
 - **Shared** (no argument): nothing else. It compiles exactly as `@jsx.component` would.
-- **Server**: an `async` component is rewritten to be synchronous, returning a `WeftCore.Lazy`
-  element around its body's promise:
+- **Server**: an `async` component is rewritten to be synchronous, returning a `Weft.Lazy` element
+  around its body's promise:
 
   ```rescript
   let make = async (~id) => body
   // becomes
-  let make = (~id) => WeftCore.Lazy.fromPromise((async () => body)())
+  let make = (~id) => Weft.Lazy.fromPromise((async () => body)())
   ```
 
   (The JSX transform can't take an async component itself: it wraps one in the standard library's
   `Jsx.promise`, which doesn't fit Weft's element type.) The file gets
   `@@directive("'use weft server'")`, so its compiled JavaScript starts with that directive.
 
-- **Entrypoint**: after the binding, `WeftCore.Entrypoint.mark(make, id)` marks the component with
-  an id: the package's name, the file's path from the package root (both from the nearest
+- **Entrypoint**: after the binding, `Weft.Entrypoint.mark(make, id)` marks the component with an
+  id: the package's name, the file's path from the package root (both from the nearest
   `rescript.json`), and the modules inside the file leading to it, as in
   `@e-cline/notes/src/Likes.res#Buttons.Like` (or `...Likes.res#` for the file's own `make`). The
   file gets `@@directive("'use weft entrypoint'")`.
@@ -105,12 +105,12 @@ In the package's `package.json`:
 }
 ```
 
-In its `rescript.json`, list the PPX in `ppx-flags`. The code it generates calls `WeftCore`, so
-`@e-cline/weft_core` has to be among the `dependencies` (it already is if the package uses `Weft`);
-this package itself isn't one:
+In its `rescript.json`, list the PPX in `ppx-flags`. The code it generates calls `Weft`, so
+`@e-cline/weft` has to be among the `dependencies` (it already is if the package uses `Weft`); this
+package itself isn't one:
 
 ```json
-"dependencies": ["@e-cline/weft", "@e-cline/weft_core", "@e-cline/weft_dom"],
+"dependencies": ["-cline/weft", "-cline/weft_dom"],
 "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 ```
 
@@ -126,8 +126,8 @@ An interface file declaring a `@weft.component` needs its own `@@jsxConfig` line
 Its tests are a package of their own, [`../weft_tests`](../weft_tests):
 
 - `fixtures/` -- components compiled through the PPX (every kind, sync and async server components,
-  entrypoints at every depth, an interface, `Weft.Jsx`). Their compiled `.res.js` is committed, so a
-  change to what the PPX produces shows up in review.
+  entrypoints at every depth, an interface, `WeftDom.Jsx`). Their compiled `.res.js` is committed,
+  so a change to what the PPX produces shows up in review.
 - `specs/` -- the tests: shared components render exactly as their `@jsx.component` twins do, async
   server components return `Lazy` elements, entrypoints carry the right ids, assertions on the
   compiled output (the directives, the export names the client looks up), and the failing files

@@ -2,16 +2,16 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
+import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as TestRenderer$Weft from "@e-cline/weft/src/testing/TestRenderer.res.js";
 import * as Decoder$WeftServer from "../src/shared/Decoder.res.js";
 import * as Support$WeftServer from "./Support.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 function source() {
   let controller = {
@@ -37,10 +37,10 @@ function source() {
 let counterRow = `1:E{"id":"test/Entrypoints.res#Counter"}\n`;
 
 async function show(element) {
-  let renderer = TestRenderer$WeftCore.create();
-  TestRenderer$WeftCore.render(renderer, element);
+  let renderer = TestRenderer$Weft.create();
+  TestRenderer$Weft.render(renderer, element);
   await Support$WeftServer.settle();
-  return TestRenderer$WeftCore.toString(renderer);
+  return TestRenderer$Weft.toString(renderer);
 }
 
 async function hasSettled(promise) {
@@ -64,11 +64,11 @@ Vitest.describe("Client", undefined, undefined, undefined, undefined, undefined,
     input.push(counterRow);
     input.push(`0:J["$","div","k",{"id":"d","children":["$$1",["$","$E1",null,{"label":"a"}]]}]\n`);
     input.end();
-    return t.expect(await show(await element)).toBe(Support$WeftServer.renderDirectly(TestJsx$WeftCore.Elements.jsxsKeyed("div", {
+    return t.expect(await show(await element)).toBe(Support$WeftServer.renderDirectly(TestJsx$Weft.Elements.jsxsKeyed("div", {
       id: "d",
       children: [
         Support$WeftServer.text("$1"),
-        TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+        TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
           label: "a"
         })
       ]
@@ -93,17 +93,17 @@ Vitest.describe("Client", undefined, undefined, undefined, undefined, undefined,
     let element = Decoder$WeftServer.fromStream(Support$WeftServer.makeClient(undefined), input.stream, undefined);
     input.push(`0:J["$","p",null,{"children":["$L2","$L1"]}]\n`);
     let decoded = await element;
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(Suspense$Weft.make, {
       fallback: Support$WeftServer.loading,
       children: decoded
     }));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<i id="loading">loading</i>`);
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<i id="loading">loading</i>`);
     input.push(`2:J"second"\n`);
     input.push(`1:J"first"\n`);
     input.end();
     await Support$WeftServer.settle();
-    return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("<p>secondfirst</p>");
+    return t.expect(TestRenderer$Weft.toString(renderer)).toBe("<p>secondfirst</p>");
   });
   Vitest.testAsync("an error row is thrown where it's used, for an error boundary", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let input = source();
@@ -188,9 +188,9 @@ Vitest.describe("Client", undefined, undefined, undefined, undefined, undefined,
     input.end();
     let decoded = await element;
     await Testing$WeftServer.tick();
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, decoded);
-    return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<u id="r">ready</u>`);
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, decoded);
+    return t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<u id="r">ready</u>`);
   });
   Vitest.testAsync("a malformed row fails the rows still waiting", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let input = source();

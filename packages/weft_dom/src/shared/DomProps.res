@@ -70,8 +70,8 @@ type props = {
   onFocus?: Dom.event => unit,
   onBlur?: Dom.event => unit,
   // The element itself, from commit until removal.
-  ref?: WeftCore.Ref.t<Nullable.t<Dom.element>>,
-  children?: WeftCore.Element.t,
+  ref?: Weft.Ref.t<Nullable.t<Dom.element>>,
+  children?: Weft.Element.t,
 }
 
 // The rules for applying props, which the DOM host (`DomHost`, setting them on nodes) and the HTML

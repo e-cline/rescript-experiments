@@ -1,4 +1,4 @@
-module Renderer = WeftCore.Reconciler.MakeHydratable(DomHost)
+module Renderer = Weft.Reconciler.MakeHydratable(DomHost)
 
 DomHost.runEvent := (f => Renderer.flushSync(f))
 

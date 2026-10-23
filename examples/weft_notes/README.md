@@ -2,7 +2,7 @@
 
 A small notes app built with [Weft's server components](../../packages/weft_server), and the test
 bed for them: every feature, tested the way a browser uses them, through
-[`@e-cline/vite_plugin_weft`'s harness](../../packages/vite_plugin_weft#testing-an-app), and a few
+[`@e-cline/weft_vite_plugin`'s harness](../../tools/weft_vite_plugin#testing-an-app), and a few
 things only a browser can show, in Chromium.
 
 - The list of notes, and a note's page ([`src/Pages.res`](src/Pages.res)), with three parts that

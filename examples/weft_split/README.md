@@ -2,8 +2,8 @@
 
 Code-splitting with [Weft's server components](../../packages/weft_server), compiled by the real
 ReScript and [`ppx_weft`](../../tools/ppx/weft), and bundled by
-[`@e-cline/vite_plugin_weft`](../../packages/vite_plugin_weft). Its entrypoints come in every shape
-the plugin has to handle:
+[`@e-cline/weft_vite_plugin`](../../tools/weft_vite_plugin). Its entrypoints come in every shape the
+plugin has to handle:
 
 - `Counter`: a file-level entrypoint (the file's own `make`), with state;
 - `Widgets.Toggle` and `Widgets.Error`: entrypoints in modules, the second exported by ReScript as
@@ -41,8 +41,8 @@ built server for each page's payload, and decodes it with the built chunks: `/` 
 entrypoint but `Chart`, and `/other` only `Chart`, `Counter` and `Link`.
 
 [`tests/Source_test.res`](tests/Source_test.res) and [`tests/Built_test.res`](tests/Built_test.res)
-open the pages through [the plugin's harness](../../packages/vite_plugin_weft#testing-an-app), from
-the sources and from a build: every entrypoint renders and works, a link navigates in place (the
+open the pages through [the plugin's harness](../../tools/weft_vite_plugin#testing-an-app), from the
+sources and from a build: every entrypoint renders and works, a link navigates in place (the
 counter, in the same place on both pages, keeps its count), and, from the sources, the chart's file
 is loaded only once a page needs it. A difference between development and the build shows up as one
 passing and the other failing.

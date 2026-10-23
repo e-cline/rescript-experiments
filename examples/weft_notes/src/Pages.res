@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 The server components: the list of notes, and a note's page, with three parts that stream in on
@@ -15,7 +15,7 @@ module Layout = {
   let make = (~children) =>
     <div id="app">
       <nav>
-        <Link id="home-link" href="/"> {Weft.Jsx.string("All notes")} </Link>
+        <Link id="home-link" href="/"> {WeftDom.Jsx.string("All notes")} </Link>
         <Today />
       </nav>
       children
@@ -26,17 +26,17 @@ module NoteList = {
   @weft.component({kind: Server})
   let make = () =>
     <Layout>
-      <h1 id="list-title"> {Weft.Jsx.string("Notes")} </h1>
+      <h1 id="list-title"> {WeftDom.Jsx.string("Notes")} </h1>
       <ul id="notes">
         {Db.all()
         ->Array.map(note =>
           <li key=note.id>
             <Link id={`note-link-${note.id}`} href={`/notes/${note.id}`}>
-              {Weft.Jsx.string(note.title)}
+              {WeftDom.Jsx.string(note.title)}
             </Link>
           </li>
         )
-        ->Weft.Jsx.array}
+        ->WeftDom.Jsx.array}
       </ul>
     </Layout>
 }
@@ -48,10 +48,10 @@ module NoteTitle = {
     switch Db.find(id) {
     | Some(note) =>
       <>
-        <h1 id="title"> {Weft.Jsx.string(note.title)} </h1>
-        <span id="saved-at"> {Weft.Jsx.string(`Saved: ${note.savedAt}`)} </span>
+        <h1 id="title"> {WeftDom.Jsx.string(note.title)} </h1>
+        <span id="saved-at"> {WeftDom.Jsx.string(`Saved: ${note.savedAt}`)} </span>
       </>
-    | None => <p id="not-found"> {Weft.Jsx.string("No such note")} </p>
+    | None => <p id="not-found"> {WeftDom.Jsx.string("No such note")} </p>
     }
 }
 
@@ -79,7 +79,7 @@ module NoteBody = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let body = await Db.body(id, ~signal)
-    <article id="note-body"> {Weft.Jsx.string(body)} </article>
+    <article id="note-body"> {WeftDom.Jsx.string(body)} </article>
   }
 }
 
@@ -98,11 +98,11 @@ module Related = {
       ->Array.map(note =>
         <li key=note.id>
           <Link id={`related-${note.id}`} href={`/notes/${note.id}`}>
-            {Weft.Jsx.string(note.title)}
+            {WeftDom.Jsx.string(note.title)}
           </Link>
         </li>
       )
-      ->Weft.Jsx.array}
+      ->WeftDom.Jsx.array}
     </ul>
   }
 }
@@ -113,7 +113,7 @@ module Broken = {
   let make = () => JsError.throwWithMessage("the recommendations service is down")
 }
 
-let loading = (id, text) => <p id> {Weft.Jsx.string(text)} </p>
+let loading = (id, text) => <p id> {WeftDom.Jsx.string(text)} </p>
 
 module NotePage = {
   @weft.component({kind: Server})
@@ -127,7 +127,7 @@ module NotePage = {
         <NoteBody id signal />
       </Weft.Suspense>
       <section id="comments-section">
-        <h2> {Weft.Jsx.string("Comments")} </h2>
+        <h2> {WeftDom.Jsx.string("Comments")} </h2>
         <CommentsPanel noteId=id>
           <Comments id signal />
         </CommentsPanel>

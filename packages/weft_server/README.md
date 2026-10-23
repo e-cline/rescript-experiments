@@ -5,21 +5,22 @@ it back into elements on the client as it arrives, with interactive components (
 on demand, pages that stream, navigate and fetch parts of themselves again, and RPCs; and the pages
 rendered as HTML on the server, then hydrated. It's phases 3, 5 and 6 of
 [the server components plan](../../docs/weft_server_components_plan.md), and the pages' HTML is
-[its own plan](../../docs/weft_ssr_hydration_plan.md). [The Vite plugin](../vite_plugin_weft)
-bundles an app using it, and [`examples/weft_notes`](../../examples/weft_notes) is one.
+[its own plan](../../docs/weft_ssr_hydration_plan.md).
+[The Vite plugin](../../tools/weft_vite_plugin) bundles an app using it, and
+[`examples/weft_notes`](../../examples/weft_notes) is one.
 
 ## Installing
 
 Needs ReScript 12.
 
 ```bash
-npm install @e-cline/weft_server @e-cline/weft_core rescript @rescript/runtime
+npm install @e-cline/weft_server @e-cline/weft rescript @rescript/runtime
 ```
 
-Add `@e-cline/weft_server` and `@e-cline/weft_core` to the `dependencies` in your `rescript.json`
-(and `@rescript/webapi`, whose `Request.t` and `Response.t` `Page.respond` takes and returns).
-Components are marked with `@weft.component({kind: Server})` and
-`@weft.component({kind: Entrypoint})`, which need [the `ppx_weft` PPX](../../tools/ppx/weft).
+Add `@e-cline/weft_server` and `@e-cline/weft` to the `dependencies` in your `rescript.json` (and
+`@rescript/webapi`, whose `Request.t` and `Response.t` `Page.respond` takes and returns). Components
+are marked with `@weft.component({kind: Server})` and `@weft.component({kind: Entrypoint})`, which
+need [the `ppx_weft` PPX](../../tools/ppx/weft).
 
 ## Using it
 
@@ -69,7 +70,7 @@ refetched, fetches replacing each other, rendering in a transition):
 // in CommentsPanel, the entrypoint
 let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
 <div>
-  <button onClick={_ => comments.refetch()->ignore}> {Weft.Jsx.string(comments.isPending ? "…" : "Reload")} </button>
+  <button onClick={_ => comments.refetch()->ignore}> {WeftDom.Jsx.string(comments.isPending ? "…" : "Reload")} </button>
   {comments.element}
 </div>
 ```
@@ -184,7 +185,7 @@ server files.
   every boundary. Under one, it's sent as a placeholder, and its content follows in a row of its
   own. Errors under a boundary are sent in place, for an `ErrorBoundary` in an entrypoint to catch.
 - **`Decoder`** decodes rows as they come in. A row that has arrived can be read straight away
-  (`WeftCore.Deferred`), so a payload that has fully arrived renders without suspending.
+  (`Weft.Deferred`), so a payload that has fully arrived renders without suspending.
 - **Modules are cached per client, not per payload**, so rendering a refetched payload over the one
   on screen patches it in place: entrypoints in the same place keep their state and get the new
   props, and host nodes are reused. `Decoder.Latest` runs fetches that replace each other, so a slow
@@ -213,8 +214,7 @@ test controls (everything at once, one chunk at a time, or re-cut every _n_ byte
 modules served from a map, whose loads can be held. This package's own tests use it:
 
 - **Unit tests:** the format, the renderer's rows, and the client fed hand-written rows.
-- **End-to-end tests:** round trips into weft_core's `TestRenderer`, including refetches over the
-  screen.
+- **End-to-end tests:** round trips into weft's `TestRenderer`, including refetches over the screen.
 - **A fuzz test:** random trees and refetches, compared with rendering the same trees directly.
 - **Pages and navigation:** `Page`'s HTML (the shell, rows that would end a script, preloads, rows
   streaming under a boundary) read back by `Bootstrap.rows`; navigating, refreshing, parts of a page

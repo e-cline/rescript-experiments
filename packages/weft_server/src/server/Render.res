@@ -1,6 +1,6 @@
 @@directive("'use weft server'")
 
-module Element = WeftCore.Element
+module Element = Weft.Element
 
 type signal = Streams.Signal.t
 type stream = Streams.t
@@ -162,10 +162,10 @@ let checkKeys = (context, value: unknown) => {
   if (
     isChildList &&
     Array.length(items) > 1 &&
-    !WeftCore.JsxCore.isStaticList(Values.fromUnknown(value)) &&
+    !Weft.JsxCore.isStaticList(Values.fromUnknown(value)) &&
     items->Array.some(item => Values.isElementNode(item) && Nullable.isNullable(nodeKey(item)))
   ) {
-    let message = `WeftCore: Each child in a list should have a unique "key" prop. The list at ${where(
+    let message = `Weft: Each child in a list should have a unique "key" prop. The list at ${where(
         context,
       )} (rendered on the server) has children without one.`
     if !(warned->Set.has(message)) {
@@ -272,7 +272,7 @@ and encodeNode = async (context, node: Element.node): JSON.t =>
   | Component | Memo =>
     let make = toComponent(node.elementType)
     let context = enter(context, `<${Values.componentName(node.elementType)}>`)
-    switch WeftCore.Entrypoint.idOf(make) {
+    switch Weft.Entrypoint.idOf(make) {
     | Some(id) =>
       let row = entrypointRow(context, id)
       Payload.element(
@@ -330,12 +330,12 @@ and encodeNode = async (context, node: Element.node): JSON.t =>
     )
   | Lazy =>
     if context.inSuspense {
-      switch await pending(context, () => WeftCore.Lazy.promiseOf(node)) {
+      switch await pending(context, () => Weft.Lazy.promiseOf(node)) {
       | json => json
       | exception error => errorRow(context, error)
       }
     } else {
-      await pending(context, () => WeftCore.Lazy.promiseOf(node))
+      await pending(context, () => Weft.Lazy.promiseOf(node))
     }
   | Provider =>
     fail(
@@ -357,10 +357,10 @@ and encodeNode = async (context, node: Element.node): JSON.t =>
 /** What `make` rendered, encoded, calling it again whenever it suspends. */
 and renderComponent = async (context, make, props): JSON.t => {
   let call = () =>
-    switch WeftCore.ServerRender.run(() => make(props)) {
+    switch Weft.ServerRender.run(() => make(props)) {
     | element => Ok(element)
     | exception error =>
-      switch WeftCore.ServerRender.suspendedOn(error) {
+      switch Weft.ServerRender.suspendedOn(error) {
       | Some(promise) => Error(promise)
       | None => throw(error)
       }

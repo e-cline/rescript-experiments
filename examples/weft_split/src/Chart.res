@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 An entrypoint only `/other` renders, with a large module (`BigTable`) nothing else uses.
@@ -10,9 +10,9 @@ let make = (~rows: int) => {
   <figure className="chart">
     <ul>
       {Array.fromInitializer(~length=shown, i =>
-        <li key={Int.toString(i)}> {Weft.Jsx.string(BigTable.row(i))} </li>
-      )->Weft.Jsx.array}
+        <li key={Int.toString(i)}> {WeftDom.Jsx.string(BigTable.row(i))} </li>
+      )->WeftDom.Jsx.array}
     </ul>
-    <button onClick={_ => setShown(shown => shown + 1)}> {Weft.Jsx.string("More")} </button>
+    <button onClick={_ => setShown(shown => shown + 1)}> {WeftDom.Jsx.string("More")} </button>
   </figure>
 }

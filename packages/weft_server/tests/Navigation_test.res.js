@@ -2,29 +2,29 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_Dict from "@rescript/runtime/lib/es6/Stdlib_Dict.js";
+import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
+import * as Deferred$Weft from "@e-cline/weft/src/shared/Deferred.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as TestRenderer$Weft from "@e-cline/weft/src/testing/TestRenderer.res.js";
 import * as Decoder$WeftServer from "../src/shared/Decoder.res.js";
 import * as Support$WeftServer from "./Support.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
 import * as Navigation$WeftServer from "../src/shared/Navigation.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 function uid(renderer, id) {
-  return Stdlib_Option.map(TestRenderer$WeftCore.findById(renderer, id), TestRenderer$WeftCore.uid);
+  return Stdlib_Option.map(TestRenderer$Weft.findById(renderer, id), TestRenderer$Weft.uid);
 }
 
 function textIn(renderer, id) {
-  return Stdlib_Option.map(TestRenderer$WeftCore.findById(renderer, id), node => TestRenderer$WeftCore.children(node).map(TestRenderer$WeftCore.text).join(""));
+  return Stdlib_Option.map(TestRenderer$Weft.findById(renderer, id), node => TestRenderer$Weft.children(node).map(TestRenderer$Weft.text).join(""));
 }
 
 async function start(fetch, route, url, onNavigate) {
-  let renderer = TestRenderer$WeftCore.create();
+  let renderer = TestRenderer$Weft.create();
   let client = Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch);
-  let navigation = Navigation$WeftServer.make(client, element => TestRenderer$WeftCore.scheduleRender(renderer, element), url, onNavigate);
+  let navigation = Navigation$WeftServer.make(client, element => TestRenderer$Weft.scheduleRender(renderer, element), url, onNavigate);
   let element = await Support$WeftServer.roundTrip(Primitive_option.some(client), undefined, route(url));
   Navigation$WeftServer.show(navigation, element);
   await Support$WeftServer.settle();
@@ -53,14 +53,14 @@ function reset() {
 }
 
 function Navigation_test$CommentList(props) {
-  return TestJsx$WeftCore.Elements.jsxs("ul", {
+  return TestJsx$Weft.Elements.jsxs("ul", {
     id: "comment-list",
     children: [
-      TestJsx$WeftCore.Elements.jsx("li", {
+      TestJsx$Weft.Elements.jsx("li", {
         id: "text",
         children: Support$WeftServer.text(commentsOf(props.page))
       }),
-      TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+      TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
         label: "in-part"
       })
     ]
@@ -77,32 +77,32 @@ function route(url) {
     case "/comments/b" :
       break;
     case "/fails" :
-      return TestJsx$WeftCore.jsx(Support$WeftServer.Fails.make, {
+      return TestJsx$Weft.jsx(Support$WeftServer.Fails.make, {
         message: "the page failed"
       });
     default:
       let page = url.slice(1);
-      return TestJsx$WeftCore.Elements.jsxs("section", {
+      return TestJsx$Weft.Elements.jsxs("section", {
         id: "page",
         children: [
-          TestJsx$WeftCore.Elements.jsx("h1", {
+          TestJsx$Weft.Elements.jsx("h1", {
             id: "title",
             children: Support$WeftServer.text(title(page))
           }),
-          TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+          TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
             label: "outside"
           }),
-          TestJsx$WeftCore.jsx(Support$WeftServer.Refetching.make, {
+          TestJsx$Weft.jsx(Support$WeftServer.Refetching.make, {
             id: "comments",
             src: `/comments/` + page,
-            children: TestJsx$WeftCore.jsx(Navigation_test$CommentList, {
+            children: TestJsx$Weft.jsx(Navigation_test$CommentList, {
               page: page
             })
           })
         ]
       });
   }
-  return TestJsx$WeftCore.jsx(Navigation_test$CommentList, {
+  return TestJsx$Weft.jsx(Navigation_test$CommentList, {
     page: url.slice(10)
   });
 }
@@ -122,7 +122,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     await Navigation$WeftServer.navigate(navigation, "/b");
     await Support$WeftServer.settle();
     t.expect(textIn(renderer, "title")).toEqual("b");
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("outside:1")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes("outside:1")).toBe(true);
     t.expect(uid(renderer, "title")).toEqual(titleNode);
     t.expect(navigated).toEqual(["/b"]);
     t.expect(Navigation$WeftServer.url(navigation)).toBe("/b");
@@ -138,7 +138,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     titles["a"] = "A, renamed";
     await Navigation$WeftServer.refresh(match$1[1]);
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(match$1[0]).includes("A, renamed")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(match$1[0]).includes("A, renamed")).toBe(true);
     t.expect(navigated).toEqual([]);
     return t.expect(match[1].map(request => request.url)).toEqual(["/a"]);
   });
@@ -162,22 +162,22 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
     await slow;
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(match$1[0]).includes(`id="title">fast`)).toBe(true);
+    t.expect(TestRenderer$Weft.toString(match$1[0]).includes(`id="title">fast`)).toBe(true);
     t.expect(Navigation$WeftServer.url(navigation)).toBe("/fast");
     return t.expect(Testing$WeftServer.cancelled(served[0].pipe)).toBe(true);
   });
   Vitest.testAsync("a navigation replacing one still streaming leaves its waiting parts waiting, not failing", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
-    let gate = Deferred$WeftCore.make();
+    let gate = Deferred$Weft.make();
     let route$1 = url => {
       if (url === "/streaming") {
-        return TestJsx$WeftCore.Elements.jsx("section", {
+        return TestJsx$Weft.Elements.jsx("section", {
           id: "streaming",
-          children: TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+          children: TestJsx$Weft.jsx(Suspense$Weft.make, {
             fallback: Support$WeftServer.loading,
-            children: TestJsx$WeftCore.jsx(Support$WeftServer.Async.make, {
+            children: TestJsx$Weft.jsx(Support$WeftServer.Async.make, {
               ready: gate.promise,
-              children: TestJsx$WeftCore.Elements.jsx("b", {
+              children: TestJsx$Weft.Elements.jsx("b", {
                 id: "late",
                 children: Support$WeftServer.text("late")
               })
@@ -201,17 +201,17 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let renderer = match$1[0];
     await Navigation$WeftServer.navigate(navigation, "/streaming");
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes(`id="loading"`)).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes(`id="loading"`)).toBe(true);
     let next = Navigation$WeftServer.navigate(navigation, "/next");
     await Support$WeftServer.settle();
     t.expect(Testing$WeftServer.cancelled(served[0].pipe)).toBe(true);
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes(`id="loading"`)).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes(`id="loading"`)).toBe(true);
     gate.resolve();
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
     await next;
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes(`id="title">next`)).toBe(true);
-    return t.expect(TestRenderer$WeftCore.toString(renderer).includes("late")).toBe(false);
+    t.expect(TestRenderer$Weft.toString(renderer).includes(`id="title">next`)).toBe(true);
+    return t.expect(TestRenderer$Weft.toString(renderer).includes("late")).toBe(false);
   });
   Vitest.testAsync("a page whose root fails rejects, and leaves the screen as it was", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
@@ -219,7 +219,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let match$1 = await start(match[0], route, "/a", undefined);
     let navigation = match$1[1];
     let renderer = match$1[0];
-    let before = TestRenderer$WeftCore.toString(renderer);
+    let before = TestRenderer$Weft.toString(renderer);
     let failed;
     try {
       await Navigation$WeftServer.navigate(navigation, "/fails");
@@ -229,7 +229,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     }
     await Support$WeftServer.settle();
     t.expect(failed).toBe(true);
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(before);
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(before);
     return t.expect(Navigation$WeftServer.url(navigation)).toBe("/a");
   });
 });
@@ -239,7 +239,7 @@ function refetch(src) {
 }
 
 function pending(renderer) {
-  return Stdlib_Option.flatMap(TestRenderer$WeftCore.findById(renderer, "comments"), node => TestRenderer$WeftCore.props(node).title);
+  return Stdlib_Option.flatMap(TestRenderer$Weft.findById(renderer, "comments"), node => TestRenderer$Weft.props(node).title);
 }
 
 Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
@@ -267,9 +267,9 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
     await done;
     await Support$WeftServer.settle();
     t.expect(pending(renderer)).toEqual("idle");
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("two comments")).toBe(true);
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("in-part:1")).toBe(true);
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("outside:1")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes("two comments")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes("in-part:1")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes("outside:1")).toBe(true);
     t.expect(Support$WeftServer.rendersOf("outside")).toBe(outsideRenders);
     t.expect(uid(renderer, "text")).toEqual(textNode);
     return t.expect(served.map(request => request.url)).toEqual(["/comments/a"]);
@@ -282,15 +282,15 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
     comments["a"] = "refetched";
     await Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("refetched")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes("refetched")).toBe(true);
     comments["a"] = "refreshed";
     await Navigation$WeftServer.refresh(match$1[1]);
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(renderer).includes("refreshed")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(renderer).includes("refreshed")).toBe(true);
     comments["a"] = "refetched again";
     await Support$WeftServer.refetchers["/comments/a"](undefined);
     await Support$WeftServer.settle();
-    return t.expect(TestRenderer$WeftCore.toString(renderer).includes("refetched again")).toBe(true);
+    return t.expect(TestRenderer$Weft.toString(renderer).includes("refetched again")).toBe(true);
   });
   Vitest.testAsync("refetched twice, shows only the newer, cancelling the older", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
@@ -318,7 +318,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
     await older;
     await Support$WeftServer.settle();
-    t.expect(TestRenderer$WeftCore.toString(match$1[0]).includes("newer")).toBe(true);
+    t.expect(TestRenderer$Weft.toString(match$1[0]).includes("newer")).toBe(true);
     return t.expect(Testing$WeftServer.cancelled(served[0].pipe)).toBe(true);
   });
   Vitest.testAsync("a refetch whose root fails rejects, and leaves the part as it was", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -326,7 +326,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
     let match = Support$WeftServer.serve(undefined, route);
     let match$1 = await start(match[0], route, "/a", undefined);
     let renderer = match$1[0];
-    let before = TestRenderer$WeftCore.toString(renderer);
+    let before = TestRenderer$Weft.toString(renderer);
     let failed;
     try {
       await Support$WeftServer.refetchers["/comments/a"]("/fails");
@@ -336,33 +336,33 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
     }
     await Support$WeftServer.settle();
     t.expect(failed).toBe(true);
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(before);
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(before);
     return t.expect(pending(renderer)).toEqual("idle");
   });
 });
 
 function Navigation_test$TwoParts(props) {
   let version = props.version;
-  return TestJsx$WeftCore.jsxs(Support$WeftServer.Themed.make, {
+  return TestJsx$Weft.jsxs(Support$WeftServer.Themed.make, {
     value: "dark",
     children: [
-      TestJsx$WeftCore.jsxs(Support$WeftServer.Refetching.make, {
+      TestJsx$Weft.jsxs(Support$WeftServer.Refetching.make, {
         id: "left-part",
         src: "/left",
         children: [
-          TestJsx$WeftCore.Elements.jsx("p", {
+          TestJsx$Weft.Elements.jsx("p", {
             id: "left",
             children: Support$WeftServer.text(`left ` + version)
           }),
-          TestJsx$WeftCore.jsx(Support$WeftServer.ThemeReader.make, {
+          TestJsx$Weft.jsx(Support$WeftServer.ThemeReader.make, {
             id: "left-theme"
           })
         ]
       }),
-      TestJsx$WeftCore.jsx(Support$WeftServer.Refetching.make, {
+      TestJsx$Weft.jsx(Support$WeftServer.Refetching.make, {
         id: "right-part",
         src: "/right",
-        children: TestJsx$WeftCore.Elements.jsx("p", {
+        children: TestJsx$Weft.Elements.jsx("p", {
           id: "right",
           children: Support$WeftServer.text(`right ` + version)
         })
@@ -383,24 +383,24 @@ Vitest.describe("two parts", undefined, undefined, undefined, undefined, undefin
   let route = url => {
     switch (url) {
       case "/left" :
-        return TestJsx$WeftCore.jsxs(TestJsx$WeftCore.jsxFragment, {
+        return TestJsx$Weft.jsxs(TestJsx$Weft.jsxFragment, {
           children: [
-            TestJsx$WeftCore.Elements.jsx("p", {
+            TestJsx$Weft.Elements.jsx("p", {
               id: "left",
               children: Support$WeftServer.text(`left ` + version.contents)
             }),
-            TestJsx$WeftCore.jsx(Support$WeftServer.ThemeReader.make, {
+            TestJsx$Weft.jsx(Support$WeftServer.ThemeReader.make, {
               id: "left-theme"
             })
           ]
         });
       case "/right" :
-        return TestJsx$WeftCore.Elements.jsx("p", {
+        return TestJsx$Weft.Elements.jsx("p", {
           id: "right",
           children: Support$WeftServer.text(`right ` + version.contents)
         });
       default:
-        return TestJsx$WeftCore.jsx(Navigation_test$TwoParts, {
+        return TestJsx$Weft.jsx(Navigation_test$TwoParts, {
           version: version.contents
         });
     }
@@ -416,7 +416,7 @@ Vitest.describe("two parts", undefined, undefined, undefined, undefined, undefin
   return t.expect(textIn(renderer, "left-theme")).toEqual("dark");
 }));
 
-let shows = TestRenderer$WeftCore.toString;
+let shows = TestRenderer$Weft.toString;
 
 export {
   shows,

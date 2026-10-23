@@ -1,4 +1,4 @@
-module Element = WeftCore.Element
+module Element = Weft.Element
 
 type t = {
   client: Decoder.t,
@@ -10,8 +10,8 @@ type t = {
   onServer: bool,
 }
 
-let context: WeftCore.Context.t<option<t>> = WeftCore.Context.make(None)
-let provider = WeftCore.Context.provider(context)
+let context: Weft.Context.t<option<t>> = Weft.Context.make(None)
+let provider = Weft.Context.provider(context)
 
 let make = (client, ~render, ~url, ~onNavigate=_ => ()) => {
   client,
@@ -42,7 +42,7 @@ let checkOnClient = navigation =>
   }
 
 let wrap = (navigation, element) =>
-  WeftCore.JsxCore.jsx(provider, {value: Some(navigation), children: element})
+  Weft.JsxCore.jsx(provider, {value: Some(navigation), children: element})
 
 let show = (navigation, element) => navigation.render(wrap(navigation, element))
 
@@ -50,7 +50,7 @@ let fetchAndShowOnClient = async (navigation, url, ~push) =>
   switch await navigation.latest->Decoder.Latest.fetchElement(navigation.client, url) {
   | Some(element) =>
     navigation.url = url
-    WeftCore.Transition.start(() => show(navigation, element))
+    Weft.Transition.start(() => show(navigation, element))
     if push {
       navigation.onNavigate(url)
     }
@@ -71,7 +71,7 @@ let url = navigation => navigation.url
 let client = navigation => navigation.client
 
 let useNavigation = () =>
-  switch WeftCore.Hooks.useContext(context) {
+  switch Weft.Hooks.useContext(context) {
   | Some(navigation) => navigation
   | None =>
     Errors.fail(
@@ -92,7 +92,7 @@ type refetchable = {
 type refetched = {fetched: Element.t, over: Element.t}
 
 let useRefetchable = (~src, children) => {
-  open WeftCore.Hooks
+  open Weft.Hooks
   let navigation = useNavigation()
   let (refetched, setRefetched) = useState(() => None)
   let (fetching, setFetching) = useState(() => false)

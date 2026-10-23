@@ -1,6 +1,6 @@
 @@weft.server
 
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 The server entry: an `@e-cline/servy` app (the default export). Pages answer with
@@ -23,11 +23,11 @@ external toSignal: EventTypes.abortSignal => Gates.signal = "%identity"
 
 /** What the server does with an error a component throws: a line in the log, and no digest. */
 let onError = error => {
-  Console.error(`weft_notes: a component failed: ${WeftCore.ErrorBoundary.message(error)}`)
+  Console.error(`weft_notes: a component failed: ${Weft.ErrorBoundary.message(error)}`)
   None
 }
 
-let page = (~title, render: Gates.signal => Weft.element): Servy.Handler.t =>
+let page = (~title, render: Gates.signal => Weft.Element.t): Servy.Handler.t =>
   async ctx =>
     WeftServer.Page.respond(
       ctx.request,

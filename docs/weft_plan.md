@@ -1,4 +1,4 @@
-# Plan: Weft (`weft_core`) -- a React-like component library in ReScript
+# Plan: Weft (`weft`) -- a React-like component library in ReScript
 
 Weft is a ReScript-native UI library: components are written with `@jsx.component`, rendered through
 a React-style fiber tree with hooks, and drawn by a pluggable host renderer (DOM, an in-memory test
@@ -6,10 +6,10 @@ renderer, and anything else that implements the host interface). It doesn't use 
 
 ## Status
 
-Phases 0 to 4 are done (`packages/weft_core`, `packages/weft_dom`, `examples/weft_app`), and so is
-phase 5: error boundaries, portals, the `signals` bridge (`packages/weft_signals`) and the
-benchmarks (`packages/weft_core/benchmarks`). Phase 6 (Suspense) was added afterwards, and is done
-too. Where they differ from the plan below:
+Phases 0 to 4 are done (`packages/weft`, `packages/weft_dom`, `examples/weft_app`), and so is phase
+5: error boundaries, portals, the `signals` bridge (`packages/weft_signals`) and the benchmarks
+(`packages/weft/benchmarks`). Phase 6 (Suspense) was added afterwards, and is done too. Where they
+differ from the plan below:
 
 - Additions: `Ref.t` (the `{current}` box `useRef` returns), `Jsx.Fragment` (a keyed fragment, since
   `<>` can't take one), `TestJsx` (the test renderer's JSX module), `useReducerWithMapState`, and
@@ -23,7 +23,7 @@ too. Where they differ from the plan below:
   being held until the render ends as React does. A component rendered after the update sees it a
   little early; nothing is lost or reordered, which the lane-ordering fuzz test checks.
 - `TestScheduler` keeps its tasks in a sorted array; only `Scheduler.Default` uses `priority_queue`,
-  now a dependency of `weft_core`.
+  now a dependency of `weft`.
 - `Reconciler.S.flushAllWork` renders every root's pending work, transitions included, without
   yielding: what the renderers' `act` uses.
 - When an exception escapes a root's render or commit, the root drops its pending lanes and renders
@@ -102,7 +102,7 @@ because they decide how the library plugs into the compiler:
 3. **`module_` takes a dotted path**, so a namespaced `"WeftDom.Jsx"` works.
 4. **A JSX module with no `Elements` submodule works**, and a lowercase tag in such a file is a
    compile error (`Core.Elements can't be found`). That gives renderer-agnostic components for free:
-   write them against `WeftCore.Jsx` (no `Elements`) and the compiler rejects host tags.
+   write them against `Weft.Jsx` (no `Elements`) and the compiler rejects host tags.
 5. **What the transform emits** (what `Jsx` has to accept):
    - `<Child a=1 />` → `Jsx.jsx(Child.make, {a: 1})`; with several children →
      `Jsx.jsxs(..., {children: [a, b]})`, a raw JS array.
@@ -123,7 +123,7 @@ Two published packages plus an example, following the existing conventions (ReSc
 `.resi` for every public module, namespace per package).
 
 ```
-packages/weft_core/                 namespace WeftCore -- renderer-independent core
+packages/weft/                 namespace Weft -- renderer-independent core
   src/
     Element.res(i)                  element representation + classification
     JsxCore.res(i)                  everything the JSX transform needs except `Elements`
@@ -155,7 +155,7 @@ packages/weft_dom/             namespace WeftDom -- DOM host renderer
     Dom.res                         minimal hand-written DOM bindings (no webapi dependency)
     DomProps.res                    the `Elements.props` record: attributes, style, events, ref
     Style.res(i)                    typed-ish style dict
-    Jsx.res(i)                      include WeftCore.JsxCore + module Elements = DomElements
+    Jsx.res(i)                      include Weft.JsxCore + module Elements = DomElements
     DomHost.res                     HostConfig.S for the DOM
     PropDiff.res                    attribute / property / style / listener diffing
     Client.res(i)                   createRoot, render, unmount, flushSync
@@ -176,7 +176,7 @@ a changeset.
 module Counter = {
   @jsx.component
   let make = (~label: string) => {
-    let (count, setCount) = WeftCore.Hooks.useState(() => 0)
+    let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button onClick={_ => setCount(c => c + 1)}>
       {WeftDom.Jsx.string(`${label}: ${Int.toString(count)}`)}
     </button>
@@ -215,9 +215,9 @@ same position with the same key reuses the fiber.
 provider `make` functions are tagged with a hidden property so `jsx` can recognize them without a
 lookup table.
 
-A renderer's `Jsx` is `include WeftCore.JsxCore` plus its own `Elements` submodule, so the element
-type is shared: a component written against `WeftCore.Jsx` (no host tags) can be used from any
-renderer, and a renderer's components return the same `element` type.
+A renderer's `Jsx` is `include Weft.JsxCore` plus its own `Elements` submodule, so the element type
+is shared: a component written against `Weft.Jsx` (no host tags) can be used from any renderer, and
+a renderer's components return the same `element` type.
 
 **Known soundness gap:** host props are erased in the element, so a `<div>` created through
 `WeftDom.Jsx` could in principle be handed to a different renderer whose `props` record differs.
@@ -348,8 +348,8 @@ the JSX transform requires comes out right:
 
 ```rescript
 module Theme = {
-  let context = WeftCore.Context.make(Light)
-  module Provider = WeftCore.Context.MakeProvider({type t = theme; let context = context})
+  let context = Weft.Context.make(Light)
+  module Provider = Weft.Context.MakeProvider({type t = theme; let context = context})
 }
 <Theme.Provider value=Dark> ... </Theme.Provider>
 ```
@@ -442,7 +442,7 @@ Hooks find their root's scheduler through `FiberRoot` (a closure the functor sto
 
 ### 10. Renderers
 
-**TestRenderer (in `weft_core`):** nodes are plain records
+**TestRenderer (in `weft`):** nodes are plain records
 `{tag, mutable props, mutable children: array<node>, mutable text}`. It provides `toTree` and
 `toString` snapshots, `findByTestId`, and an **operation log** (`"create li#a"`,
 `"insertBefore li#c li#a"`, `"update div {class}"`, `"remove li#b"`) so tests can assert both the
@@ -475,7 +475,7 @@ commit or PR on its own.
 - Create both packages with configs, wiring, empty `.resi` files, and a changeset.
 - Move the scratch `MyJsx.res` probe into a test, `Jsx_test.res`, so the transform's output shape is
   locked in by CI: it compiles a component, keyed children, a fragment and a provider through
-  `WeftCore.Jsx`, then checks the elements produced.
+  `Weft.Jsx`, then checks the elements produced.
 - Confirm `@@jsxConfig` behaves the same inside the real monorepo build as in the scratch project.
 
 **Phase 1 -- Synchronous core (TestRenderer only)**
@@ -532,10 +532,10 @@ commit or PR on its own.
   catches during render (unwind to the nearest boundary and re-render it with the error) and during
   commit.
 - Portals: `Portal.make(~container)`, a fiber whose host parent is a different container.
-- A `signals` bridge (`WeftCore`-side `useAtom`/`useComputed` on `useSyncExternalStore`), as a third
+- A `signals` bridge (`Weft`-side `useAtom`/`useComputed` on `useSyncExternalStore`), as a third
   package or in the example, to keep the core free of dependencies.
-- A benchmark package (`weft_core/benchmarks`, on `tools/benchmarking`) covering mounting, updating
-  and reordering a list of 1k–10k rows on the TestRenderer.
+- A benchmark package (`weft/benchmarks`, on `tools/benchmarking`) covering mounting, updating and
+  reordering a list of 1k–10k rows on the TestRenderer.
 
 **Phase 6 -- Suspense** (added after phase 5)
 
@@ -576,5 +576,5 @@ Out of scope: class components, server rendering and hydration (and so streaming
 - **Host props typing is per renderer, not per tag.** One `Elements.props` record covers every DOM
   tag, as `@rescript/react`'s `JsxDOM.domProps` does. Per-tag typing isn't something the generic
   transform supports.
-- **Naming:** `weft_core` / `weft_dom` / namespaces `WeftCore`, `WeftDom` are proposals; renaming is
-  cheap before phase 0 lands.
+- **Naming:** `weft` / `weft_dom` / namespaces `Weft`, `WeftDom` are proposals; renaming is cheap
+  before phase 0 lands.

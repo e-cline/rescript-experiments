@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "WeftCore.TestJsx"})
+@@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 /***
 `Page`, the HTML a first request gets, and `Bootstrap.rows`, which reads the payload back out of
@@ -95,11 +95,11 @@ describe("Page.toStream", () => {
     let ready = Deferred.make()
     let pipe = Testing.pipe(
       Page.toStream(
-        <WeftCore.Suspense fallback=loading>
+        <Weft.Suspense fallback=loading>
           <Async ready=ready.promise>
             <b id="late"> {text("late")} </b>
           </Async>
-        </WeftCore.Suspense>,
+        </Weft.Suspense>,
         ~assets,
       ),
     )

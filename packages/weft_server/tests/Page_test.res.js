@@ -2,20 +2,20 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
+import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
+import * as Deferred$Weft from "@e-cline/weft/src/shared/Deferred.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Page$WeftServer from "../src/server/Page.res.js";
 import * as Stdlib_Nullable from "@rescript/runtime/lib/es6/Stdlib_Nullable.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
-import * as Deferred$WeftCore from "@e-cline/weft_core/src/shared/Deferred.res.js";
 import * as Render$WeftServer from "../src/server/Render.res.js";
-import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as TestRenderer$Weft from "@e-cline/weft/src/testing/TestRenderer.res.js";
 import * as Decoder$WeftServer from "../src/shared/Decoder.res.js";
 import * as Payload$WeftServer from "../src/shared/Payload.res.js";
 import * as Support$WeftServer from "./Support.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
 import * as Bootstrap$WeftServer from "../src/client/Bootstrap.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
 
 let assets_scripts = [
   "/@vite/client",
@@ -51,7 +51,7 @@ function pushedRows(html) {
 
 Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("writes the head, the root, then each row, then the end", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(TestJsx$WeftCore.Elements.jsx("p", {
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(TestJsx$Weft.Elements.jsx("p", {
       id: "x",
       children: Support$WeftServer.text("hello")
     }), assets, undefined, undefined, "A <title>", undefined, undefined, undefined));
@@ -62,7 +62,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     t.expect(html.includes(`<script type="module" async src="/src/Decoder.res.js"></script>`)).toBe(true);
     t.expect(html.includes(`</head><body><div id="root"></div><script>`)).toBe(true);
     t.expect(html.endsWith(`.push(null)</script></body></html>`)).toBe(true);
-    let payload = await Testing$WeftServer.readAll(Render$WeftServer.toStream(TestJsx$WeftCore.Elements.jsx("p", {
+    let payload = await Testing$WeftServer.readAll(Render$WeftServer.toStream(TestJsx$Weft.Elements.jsx("p", {
       id: "x",
       children: Support$WeftServer.text("hello")
     }), undefined, undefined));
@@ -72,7 +72,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     ]);
   });
   Vitest.testAsync("carries rows that would end a script, or hold line separators, intact", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let element = TestJsx$WeftCore.Elements.jsx("p", {
+    let element = TestJsx$Weft.Elements.jsx("p", {
       id: "x",
       children: Support$WeftServer.text("</script><script>alert(1)</script> <!--     \"quoted\" \\ end")
     });
@@ -87,15 +87,15 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     ]);
   });
   Vitest.testAsync("preloads an entrypoint's chunks before the first row using it, once", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(TestJsx$WeftCore.Elements.jsxs("div", {
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(TestJsx$Weft.Elements.jsxs("div", {
       children: [
-        TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+        TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
           label: "a"
         }),
-        TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+        TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
           label: "b"
         }),
-        TestJsx$WeftCore.jsx(Support$WeftServer.Probe.make, {
+        TestJsx$Weft.jsx(Support$WeftServer.Probe.make, {
           name: "p",
           value: 1
         })
@@ -106,12 +106,12 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     return t.expect(html.indexOf(preload) < html.indexOf(`push("1:E`)).toBe(true);
   });
   Vitest.testAsync("streams rows under a boundary as they're ready, after the rest", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let ready = Deferred$WeftCore.make();
-    let pipe = Testing$WeftServer.pipe(Page$WeftServer.toStream(TestJsx$WeftCore.jsx(Suspense$WeftCore.make, {
+    let ready = Deferred$Weft.make();
+    let pipe = Testing$WeftServer.pipe(Page$WeftServer.toStream(TestJsx$Weft.jsx(Suspense$Weft.make, {
       fallback: Support$WeftServer.loading,
-      children: TestJsx$WeftCore.jsx(Support$WeftServer.Async.make, {
+      children: TestJsx$Weft.jsx(Support$WeftServer.Async.make, {
         ready: ready.promise,
-        children: TestJsx$WeftCore.Elements.jsx("b", {
+        children: TestJsx$Weft.Elements.jsx("b", {
           id: "late",
           children: Support$WeftServer.text("late")
         })
@@ -140,7 +140,7 @@ Vitest.describe("Page.respond", undefined, undefined, undefined, undefined, unde
     t.expect(Page$WeftServer.wantsPayload(undefined)).toBe(false);
   });
   Vitest.testAsync("answers with the payload, or the page, by the Accept header", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let element = TestJsx$WeftCore.Elements.jsx("p", {
+    let element = TestJsx$Weft.Elements.jsx("p", {
       id: "x",
       children: Support$WeftServer.text("hello")
     });
@@ -180,13 +180,13 @@ Vitest.describe("Bootstrap.rows", undefined, undefined, undefined, undefined, un
     return t.expect(await all).toBe("0:J\"a\"\n1:J2\n2:J3\n");
   });
   Vitest.testAsync("a page's rows, read back, render as the element did", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-    let element = TestJsx$WeftCore.Elements.jsxs("section", {
+    let element = TestJsx$Weft.Elements.jsxs("section", {
       id: "page",
       children: [
-        TestJsx$WeftCore.jsx(Support$WeftServer.Counter.make, {
+        TestJsx$Weft.jsx(Support$WeftServer.Counter.make, {
           label: "a"
         }),
-        TestJsx$WeftCore.jsx(Support$WeftServer.Wrap.make, {
+        TestJsx$Weft.jsx(Support$WeftServer.Wrap.make, {
           id: "w",
           children: Support$WeftServer.text("text")
         })
@@ -197,10 +197,10 @@ Vitest.describe("Bootstrap.rows", undefined, undefined, undefined, undefined, un
       __weft: pushedRows(html).map(Stdlib_Nullable.fromOption)
     };
     let decoded = await Decoder$WeftServer.fromStream(Support$WeftServer.makeClient(undefined), Bootstrap$WeftServer.rows(target), undefined);
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, decoded);
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, decoded);
     await Support$WeftServer.settle();
-    return t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(Support$WeftServer.renderDirectly(element));
+    return t.expect(TestRenderer$Weft.toString(renderer)).toBe(Support$WeftServer.renderDirectly(element));
   });
 });
 

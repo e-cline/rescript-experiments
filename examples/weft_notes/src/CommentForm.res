@@ -1,4 +1,4 @@
-@@jsxConfig({version: 4, module_: "Weft.Jsx"})
+@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 Posts a comment (the `notes.addComment` RPC), then fetches the page again to show it. The author
@@ -16,7 +16,7 @@ let make = (~noteId: string) => {
   let navigation = WeftServer.Navigation.useNavigation()
   let addComment = WeftServer.Rpc.use(Api.addComment)
   let submit = event => {
-    Weft.Dom.Event.preventDefault(event)
+    WeftDom.Dom.Event.preventDefault(event)
 
     (
       async () => {
@@ -35,22 +35,22 @@ let make = (~noteId: string) => {
       id="comment-author"
       ariaLabel="Name"
       value=author
-      onInput={event => setAuthor(_ => Weft.Dom.Event.targetValue(event))}
+      onInput={event => setAuthor(_ => WeftDom.Dom.Event.targetValue(event))}
     />
     <input
       id="comment-text"
       ariaLabel="Comment"
       ariaDescribedby=hintId
       value=text
-      onInput={event => setText(_ => Weft.Dom.Event.targetValue(event))}
+      onInput={event => setText(_ => WeftDom.Dom.Event.targetValue(event))}
     />
     <p id=hintId className="hint">
-      {Weft.Jsx.string(`At most ${Int.toString(Api.maxLength)} characters.`)}
+      {WeftDom.Jsx.string(`At most ${Int.toString(Api.maxLength)} characters.`)}
     </p>
-    <button id="post-comment" type_="submit"> {Weft.Jsx.string("Post")} </button>
+    <button id="post-comment" type_="submit"> {WeftDom.Jsx.string("Post")} </button>
     {switch error {
-    | Some(message) => <p id="comment-error" role="alert"> {Weft.Jsx.string(message)} </p>
-    | None => Weft.Jsx.null
+    | Some(message) => <p id="comment-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+    | None => WeftDom.Jsx.null
     }}
   </form>
 }

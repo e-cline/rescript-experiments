@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@e-cline/common": "workspace:^",
-    "@e-cline/weft_core": "workspace:^",
+    "@e-cline/weft": "workspace:^",
     "@e-cline/weft_dom": "workspace:^",
     "@rescript/webapi": "catalog:"
   },

@@ -2,19 +2,19 @@
 
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as Atom$Signals from "@e-cline/signals/src/Atom.res.js";
+import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
 import * as Batch$Signals from "@e-cline/signals/src/Batch.res.js";
+import * as Transition$Weft from "@e-cline/weft/src/shared/Transition.res.js";
 import * as Computed$Signals from "@e-cline/signals/src/Computed.res.js";
-import * as TestJsx$WeftCore from "@e-cline/weft_core/src/testing/TestJsx.res.js";
-import * as Transition$WeftCore from "@e-cline/weft_core/src/shared/Transition.res.js";
-import * as TestRenderer$WeftCore from "@e-cline/weft_core/src/testing/TestRenderer.res.js";
-import * as TestScheduler$WeftCore from "@e-cline/weft_core/src/testing/TestScheduler.res.js";
+import * as TestRenderer$Weft from "@e-cline/weft/src/testing/TestRenderer.res.js";
+import * as TestScheduler$Weft from "@e-cline/weft/src/testing/TestScheduler.res.js";
 import * as SignalHooks$WeftSignals from "../src/SignalHooks.res.js";
 
 let renders = {
   contents: 0
 };
 
-let textOf = TestRenderer$WeftCore.toString;
+let textOf = TestRenderer$Weft.toString;
 
 Vitest.describe("useAtom", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.test("renders the atom's value and follows writes from anywhere", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
@@ -22,25 +22,25 @@ Vitest.describe("useAtom", undefined, undefined, undefined, undefined, undefined
     let SignalHooks_test = props => {
       let match = SignalHooks$WeftSignals.useAtom(count);
       let update = match[1];
-      return TestJsx$WeftCore.Elements.jsx("button", {
+      return TestJsx$Weft.Elements.jsx("button", {
         id: "count",
         onClick: () => update(n => n + 1 | 0),
         children: match[0]
       });
     };
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {}));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<button id="count">1</button>`);
-    TestRenderer$WeftCore.click(renderer, "count");
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {}));
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<button id="count">1</button>`);
+    TestRenderer$Weft.click(renderer, "count");
     t.expect([
       Atom$Signals.peek(count),
-      TestRenderer$WeftCore.toString(renderer)
+      TestRenderer$Weft.toString(renderer)
     ]).toEqual([
       2,
       `<button id="count">2</button>`
     ]);
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(count, undefined, 10));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<button id="count">10</button>`);
+    TestRenderer$Weft.act(() => Atom$Signals.set(count, undefined, 10));
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<button id="count">10</button>`);
   });
   Vitest.test("writes in one batch render once", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let a = Atom$Signals.make(undefined, undefined, 0);
@@ -51,15 +51,15 @@ Vitest.describe("useAtom", undefined, undefined, undefined, undefined, undefined
       let match$1 = SignalHooks$WeftSignals.useAtom(b);
       return match[0] + match$1[0] | 0;
     };
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {}));
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {}));
     renders.contents = 0;
-    TestRenderer$WeftCore.act(() => Batch$Signals.run(() => {
+    TestRenderer$Weft.act(() => Batch$Signals.run(() => {
       Atom$Signals.set(a, undefined, 1);
       Atom$Signals.set(b, undefined, 2);
     }));
     t.expect([
-      TestRenderer$WeftCore.toString(renderer),
+      TestRenderer$Weft.toString(renderer),
       renders.contents
     ]).toEqual([
       "3",
@@ -76,13 +76,13 @@ Vitest.describe("useAtom", undefined, undefined, undefined, undefined, undefined
       return (Atom$Signals.get(count) << 1);
     });
     let SignalHooks_test = props => SignalHooks$WeftSignals.useSignal(doubled);
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {}));
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(count, undefined, 1));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("2");
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.$$null);
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {}));
+    TestRenderer$Weft.act(() => Atom$Signals.set(count, undefined, 1));
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe("2");
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.$$null);
     let before = computations.contents;
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(count, undefined, 2));
+    TestRenderer$Weft.act(() => Atom$Signals.set(count, undefined, 2));
     t.expect(computations.contents).toBe(before);
   });
 });
@@ -101,20 +101,20 @@ Vitest.describe("useSignal and useComputed", undefined, undefined, undefined, un
       renders.contents = renders.contents + 1 | 0;
       return SignalHooks$WeftSignals.useSignal(parity);
     };
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {}));
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {}));
     renders.contents = 0;
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(count, undefined, 3));
+    TestRenderer$Weft.act(() => Atom$Signals.set(count, undefined, 3));
     t.expect([
-      TestRenderer$WeftCore.toString(renderer),
+      TestRenderer$Weft.toString(renderer),
       renders.contents
     ]).toEqual([
       "odd",
       0
     ]);
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(count, undefined, 4));
+    TestRenderer$Weft.act(() => Atom$Signals.set(count, undefined, 4));
     t.expect([
-      TestRenderer$WeftCore.toString(renderer),
+      TestRenderer$Weft.toString(renderer),
       renders.contents
     ]).toEqual([
       "even",
@@ -127,19 +127,19 @@ Vitest.describe("useSignal and useComputed", undefined, undefined, undefined, un
       let quantity = props.quantity;
       return SignalHooks$WeftSignals.useComputed1(undefined, () => Atom$Signals.get(price) * quantity | 0, [quantity]);
     };
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {
       quantity: 2
     }));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("20");
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(price, undefined, 11));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("22");
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe("20");
+    TestRenderer$Weft.act(() => Atom$Signals.set(price, undefined, 11));
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe("22");
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {
       quantity: 3
     }));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("33");
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(price, undefined, 1));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("3");
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe("33");
+    TestRenderer$Weft.act(() => Atom$Signals.set(price, undefined, 1));
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe("3");
   });
   Vitest.test("useComputed0 keeps one computed for the component's lifetime", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let name = Atom$Signals.make(undefined, undefined, "ada");
@@ -153,51 +153,51 @@ Vitest.describe("useSignal and useComputed", undefined, undefined, undefined, un
       });
       return loud + props.suffix;
     };
-    let renderer = TestRenderer$WeftCore.create();
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {
+    let renderer = TestRenderer$Weft.create();
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {
       suffix: "!"
     }));
-    TestRenderer$WeftCore.render(renderer, TestJsx$WeftCore.jsx(SignalHooks_test, {
+    TestRenderer$Weft.render(renderer, TestJsx$Weft.jsx(SignalHooks_test, {
       suffix: "?"
     }));
     t.expect([
-      TestRenderer$WeftCore.toString(renderer),
+      TestRenderer$Weft.toString(renderer),
       computations.contents
     ]).toEqual([
       "ADA?",
       1
     ]);
-    TestRenderer$WeftCore.act(() => Atom$Signals.set(name, undefined, "grace"));
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe("GRACE?");
+    TestRenderer$Weft.act(() => Atom$Signals.set(name, undefined, "grace"));
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe("GRACE?");
   });
   Vitest.test("an atom changed while a transition is paused doesn't commit mixed values", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let value = Atom$Signals.make(undefined, undefined, 1);
     let SignalHooks_test = props => {
       let match = SignalHooks$WeftSignals.useAtom(value);
-      TestScheduler$WeftCore.advanceTime(3.0);
-      return TestJsx$WeftCore.Elements.jsx("i", {
+      TestScheduler$Weft.advanceTime(3.0);
+      return TestJsx$Weft.Elements.jsx("i", {
         id: props.id,
         children: match[0]
       });
     };
-    let renderer = TestRenderer$WeftCore.create();
-    Transition$WeftCore.start(() => TestRenderer$WeftCore.scheduleRender(renderer, TestJsx$WeftCore.jsxs(TestJsx$WeftCore.jsxFragment, {
+    let renderer = TestRenderer$Weft.create();
+    Transition$Weft.start(() => TestRenderer$Weft.scheduleRender(renderer, TestJsx$Weft.jsxs(TestJsx$Weft.jsxFragment, {
       children: [
-        TestJsx$WeftCore.jsx(SignalHooks_test, {
+        TestJsx$Weft.jsx(SignalHooks_test, {
           id: "r1"
         }),
-        TestJsx$WeftCore.jsx(SignalHooks_test, {
+        TestJsx$Weft.jsx(SignalHooks_test, {
           id: "r2"
         }),
-        TestJsx$WeftCore.jsx(SignalHooks_test, {
+        TestJsx$Weft.jsx(SignalHooks_test, {
           id: "r3"
         })
       ]
     })));
-    TestScheduler$WeftCore.flushTask();
+    TestScheduler$Weft.flushTask();
     Atom$Signals.set(value, undefined, 2);
-    TestScheduler$WeftCore.flushAll();
-    t.expect(TestRenderer$WeftCore.toString(renderer)).toBe(`<i id="r1">2</i><i id="r2">2</i><i id="r3">2</i>`);
+    TestScheduler$Weft.flushAll();
+    t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<i id="r1">2</i><i id="r2">2</i><i id="r3">2</i>`);
   });
 });
 

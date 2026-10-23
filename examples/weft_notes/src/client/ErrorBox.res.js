@@ -15,7 +15,7 @@ function ErrorBox(props) {
   });
 }
 
-Entrypoint$Weft.mark(ErrorBox, "@e-cline/weft_notes_example/src/ErrorBox.res#");
+Entrypoint$Weft.mark(ErrorBox, "@e-cline/weft_notes_example/src/client/ErrorBox.res#");
 
 let make = ErrorBox;
 

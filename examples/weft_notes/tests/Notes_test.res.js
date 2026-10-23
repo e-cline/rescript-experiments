@@ -41,7 +41,7 @@ Vitest.describe("the first page", undefined, undefined, undefined, undefined, un
   t.expect(shell.includes(`<template id="ws:`)).toBe(true);
   t.expect(shell.endsWith(`</body></html>`)).toBe(true);
   t.expect(shell.includes("__weft")).toBe(false);
-  return t.expect(shell.includes(`<link rel="modulepreload" href="/src/LikeButton.res.js">`)).toBe(true);
+  return t.expect(shell.includes(`<link rel="modulepreload" href="/src/client/LikeButton.res.js">`)).toBe(true);
 }));
 
 async function openGates(noteOpt) {
@@ -66,9 +66,9 @@ async function openNote(noteOpt, delivery) {
   return page;
 }
 
-let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#";
+let likeButton = "@e-cline/weft_notes_example/src/client/LikeButton.res#";
 
-let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#";
+let commentForm = "@e-cline/weft_notes_example/src/client/CommentForm.res#";
 
 Vitest.describe("hydrating the first page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("isn't needed to read it: the title, then each boundary as its gate opens, with nothing working", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -173,7 +173,7 @@ Vitest.describe("hydrating the first page", undefined, undefined, undefined, und
     await NotesSupport$WeftNotes.hydratedAsServed(page, NotesSupport$WeftNotes.errorBoxPart);
     WeftTesting.click(page, "#like");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "3 likes (you liked this)");
-    return t.expect(WeftTesting.loads(page).filter(id => id.includes("LikeButton"))).toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"]);
+    return t.expect(WeftTesting.loads(page).filter(id => id.includes("LikeButton"))).toEqual(["@e-cline/weft_notes_example/src/client/LikeButton.res"]);
   });
   Vitest.testAsync("links the comment's hint by an ID that's the same in the HTML and once hydrated", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openNote(undefined, undefined);

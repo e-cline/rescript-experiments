@@ -2,11 +2,11 @@ import {weft} from '@e-cline/weft_vite_plugin';
 
 import {makeRescriptLibConfig, rootResTask} from '../../vite.config.base.ts';
 
-// The root `res` task compiles `src/*.res` (through ppx_weft) to `src/*.res.js`, which the plugin
+// The root `res` task compiles `src/**/*.res` (through ppx_weft) to `src/**/*.res.js`, which the plugin
 // serves and bundles. The tests (`tests/Notes_test.res`) run the app through the plugin's harness:
 // the server in a worker, the pages in jsdom.
 export default makeRescriptLibConfig({
-  plugins: [weft({server: 'src/Server.res.js'})],
+  plugins: [weft({server: 'src/server/Server.res.js'})],
   testEnvironment: 'jsdom',
   testTimeout: 60_000,
   tasks: {

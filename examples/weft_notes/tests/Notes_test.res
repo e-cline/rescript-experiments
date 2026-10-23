@@ -46,7 +46,9 @@ describe("the first page", () => {
       t->expect(shell->String.endsWith(`</body></html>`))->Expect.toBe(true)
       t->expect(shell->String.includes("__weft"))->Expect.toBe(false)
       t
-      ->expect(shell->String.includes(`<link rel="modulepreload" href="/src/LikeButton.res.js">`))
+      ->expect(
+        shell->String.includes(`<link rel="modulepreload" href="/src/client/LikeButton.res.js">`),
+      )
       ->Expect.toBe(true)
     },
   )
@@ -73,8 +75,8 @@ let openNote = async (~note="1", ~delivery=?) => {
   page
 }
 
-let likeButton = "@e-cline/weft_notes_example/src/LikeButton.res#"
-let commentForm = "@e-cline/weft_notes_example/src/CommentForm.res#"
+let likeButton = "@e-cline/weft_notes_example/src/client/LikeButton.res#"
+let commentForm = "@e-cline/weft_notes_example/src/client/CommentForm.res#"
 
 describe("hydrating the first page", () => {
   testAsync(
@@ -184,7 +186,7 @@ describe("hydrating the first page", () => {
       await page->WeftTesting.waitFor(() => text(page, "#like") == "3 likes (you liked this)")
       t
       ->expect(page->WeftTesting.loads->Array.filter(id => id->String.includes("LikeButton")))
-      ->Expect.toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"])
+      ->Expect.toEqual(["@e-cline/weft_notes_example/src/client/LikeButton.res"])
     },
   )
 

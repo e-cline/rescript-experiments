@@ -6,15 +6,15 @@ import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Db$WeftNotes from "./Db.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
-import * as Link$WeftNotes from "./Link.res.js";
+import * as Link$WeftNotes from "../client/Link.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
-import * as Today$WeftNotes from "./Today.res.js";
-import * as ErrorBox$WeftNotes from "./ErrorBox.res.js";
-import * as LikeButton$WeftNotes from "./LikeButton.res.js";
-import * as NoteEditor$WeftNotes from "./NoteEditor.res.js";
-import * as CommentForm$WeftNotes from "./CommentForm.res.js";
-import * as CommentList$WeftNotes from "./CommentList.res.js";
-import * as CommentsPanel$WeftNotes from "./CommentsPanel.res.js";
+import * as Today$WeftNotes from "../client/Today.res.js";
+import * as ErrorBox$WeftNotes from "../client/ErrorBox.res.js";
+import * as LikeButton$WeftNotes from "../client/LikeButton.res.js";
+import * as NoteEditor$WeftNotes from "../client/NoteEditor.res.js";
+import * as CommentForm$WeftNotes from "../client/CommentForm.res.js";
+import * as CommentList$WeftNotes from "../client/CommentList.res.js";
+import * as CommentsPanel$WeftNotes from "../client/CommentsPanel.res.js";
 
 function Pages$Layout(props) {
   return Jsx$WeftDom.Elements.jsxs("div", {

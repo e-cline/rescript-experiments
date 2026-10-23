@@ -11,7 +11,7 @@ function Today(props) {
   });
 }
 
-Entrypoint$Weft.mark(Today, "@e-cline/weft_notes_example/src/Today.res#");
+Entrypoint$Weft.mark(Today, "@e-cline/weft_notes_example/src/client/Today.res#");
 
 let make = Today;
 

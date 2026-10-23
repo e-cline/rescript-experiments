@@ -19,7 +19,7 @@ function Link(props) {
   });
 }
 
-Entrypoint$Weft.mark(Link, "@e-cline/weft_notes_example/src/Link.res#");
+Entrypoint$Weft.mark(Link, "@e-cline/weft_notes_example/src/client/Link.res#");
 
 let make = Link;
 

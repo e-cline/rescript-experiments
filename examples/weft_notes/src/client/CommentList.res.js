@@ -37,7 +37,7 @@ function CommentList(props) {
   });
 }
 
-Entrypoint$Weft.mark(CommentList, "@e-cline/weft_notes_example/src/CommentList.res#");
+Entrypoint$Weft.mark(CommentList, "@e-cline/weft_notes_example/src/client/CommentList.res#");
 
 let make = CommentList;
 

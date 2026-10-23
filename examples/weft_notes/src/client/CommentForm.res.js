@@ -4,7 +4,7 @@
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
-import * as Api$WeftNotes from "./Api.res.js";
+import * as Api$WeftNotes from "../shared/Api.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigation.res.js";
@@ -76,7 +76,7 @@ function CommentForm(props) {
   });
 }
 
-Entrypoint$Weft.mark(CommentForm, "@e-cline/weft_notes_example/src/CommentForm.res#");
+Entrypoint$Weft.mark(CommentForm, "@e-cline/weft_notes_example/src/client/CommentForm.res#");
 
 let make = CommentForm;
 

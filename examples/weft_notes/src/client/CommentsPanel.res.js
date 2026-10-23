@@ -23,7 +23,7 @@ function CommentsPanel(props) {
   });
 }
 
-Entrypoint$Weft.mark(CommentsPanel, "@e-cline/weft_notes_example/src/CommentsPanel.res#");
+Entrypoint$Weft.mark(CommentsPanel, "@e-cline/weft_notes_example/src/client/CommentsPanel.res#");
 
 let make = CommentsPanel;
 

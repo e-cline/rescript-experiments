@@ -5,8 +5,9 @@ bed for them: every feature, tested the way a browser uses them, through
 [`@e-cline/weft_vite_plugin`'s harness](../../tools/weft_vite_plugin#testing-an-app), and a few
 things only a browser can show, in Chromium.
 
-- The list of notes, and a note's page ([`src/Pages.res`](src/Pages.res)), with three parts that
-  stream in on their own (the body, the comments, related notes), each under a `Suspense` boundary.
+- The list of notes, and a note's page ([`src/server/Pages.res`](src/server/Pages.res)), with three
+  parts that stream in on their own (the body, the comments, related notes), each under a `Suspense`
+  boundary.
 - `LikeButton`, an entrypoint with state of its own (whether you just liked it), whose count comes
   from the server.
 - `NoteEditor`, a draft of the title in state, and the saved title and time, rendered on the server,
@@ -16,10 +17,11 @@ things only a browser can show, in Chromium.
   button, a `CommentList` entrypoint given them as a promise (and showing its own fallback until it
   resolves), and `CommentForm`, which posts a comment (an RPC) and then `refresh`es the page.
 - Weft RPCs for every change: saving a title, adding a comment and liking, declared in
-  [`src/Api.res`](src/Api.res) (each one's ID, codec, and the checks made before anything is sent)
-  and handled in [`src/ApiServer.res`](src/ApiServer.res), a server-only file (`@@weft.server`, as
-  are the database and its gates). Errors are the RPCs' own: an empty comment is refused before it's
-  sent, a too long one on both sides, and one on a note that's gone by the handler.
+  [`src/shared/Api.res`](src/shared/Api.res) (each one's ID, codec, and the checks made before
+  anything is sent) and handled in [`src/server/ApiServer.res`](src/server/ApiServer.res), a
+  server-only file (`@@weft.server`, as are the database and its gates). Errors are the RPCs' own:
+  an empty comment is refused before it's sent, a too long one on both sides, and one on a note
+  that's gone by the handler.
 - A server component that fails, inside an `ErrorBox` entrypoint (an error boundary), itself in a
   `Suspense` boundary (so hydrating renders only that part on the client, to show the error), and
   links that `navigate` in place.
@@ -28,10 +30,10 @@ things only a browser can show, in Chromium.
 
 Every page is rendered on the server first, and hydrated in the browser.
 
-The "database" ([`src/Db.res`](src/Db.res)) is in memory, and the queries the page streams each wait
-on a gate ([`src/Gates.res`](src/Gates.res)): in `vp dev`, a timer, so the streaming is visible by
-hand; in the tests, closed until the test opens it, so the order things arrive in is the test's
-choice.
+The "database" ([`src/server/Db.res`](src/server/Db.res)) is in memory, and the queries the page
+streams each wait on a gate ([`src/server/Gates.res`](src/server/Gates.res)): in `vp dev`, a timer,
+so the streaming is visible by hand; in the tests, closed until the test opens it, so the order
+things arrive in is the test's choice.
 
 Run it:
 

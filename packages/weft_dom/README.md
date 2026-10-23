@@ -122,6 +122,11 @@ page's runtime swaps its content in (it calls the marker's `$weftRetry`), then h
 HTML and `element` disagree, the nearest boundary (or the root) is rendered on the client, a text
 that differs is patched, and attributes that differ are warned about (in development) and left.
 
+`Hooks.useId` gives the same IDs in the HTML as once hydrated: both sides number the tree's levels
+the same way (`Html` walks the levels the reconciler makes fibers for). They start with a prefix,
+`"w"` unless `Html.render(~idPrefix)` and `Client.hydrateRoot(~idPrefix)` say otherwise, which two
+roots on one page need to.
+
 **Events from before hydration** are replayed. `Html.eventRuntime`, in the page's head (`WeftServer`
 writes it), records the clicks, submits, inputs and changes on elements under the root that haven't
 hydrated yet (not a link's click, which the browser follows; a submit's default is prevented, so the

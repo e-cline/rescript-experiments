@@ -44,6 +44,14 @@ let providedContext: Element.node => contextValue
 type options = {
   /** The providers above the component, outermost first: what its `useContext` reads. */
   contexts: array<contextValue>,
+  /**
+  Where the component is, from the root down, as the reconciler numbers its fibers (an index per
+  level; a `Suspense` boundary's content 0, its fallback 1): what `useId` makes its IDs from, so they
+  match the hydrating client's. The root, by default.
+  */
+  position?: array<int>,
+  /** What `useId`'s IDs start with: `"w"` by default. */
+  idPrefix?: string,
 }
 
 /**
@@ -58,6 +66,7 @@ work as on a first render that never commits.
   somewhere) is dropped.
 - `useSyncExternalStore` reads its `getServerSnapshot`, and fails without one.
 - `useTransition` is never pending; `useDeferredValue` gives its value.
+- `useId` gives the ID for `options.position`, the one the hydrating client's gives.
 - `Hooks.use` on a pending promise throws its `Suspended` (see `suspendedOn`), for the renderer to
   wait on and call the component again.
 

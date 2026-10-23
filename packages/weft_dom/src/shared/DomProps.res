@@ -28,6 +28,8 @@ type props = {
   @as("aria-label") ariaLabel?: string,
   @as("aria-pressed") ariaPressed?: string,
   @as("aria-checked") ariaChecked?: string,
+  @as("aria-describedby") ariaDescribedby?: string,
+  @as("aria-labelledby") ariaLabelledby?: string,
   @as("data-testid") dataTestId?: string,
   // Links and media
   href?: string,

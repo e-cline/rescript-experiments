@@ -175,6 +175,14 @@ Vitest.describe("hydrating the first page", undefined, undefined, undefined, und
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "3 likes (you liked this)");
     return t.expect(WeftTesting.loads(page).filter(id => id.includes("LikeButton"))).toEqual(["@e-cline/weft_notes_example/src/LikeButton.res"]);
   });
+  Vitest.testAsync("links the comment's hint by an ID that's the same in the HTML and once hydrated", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = await openNote(undefined, undefined);
+    let attribute = (selector, name) => Stdlib_Option.flatMap(WeftTesting.query(page, selector), element => Primitive_option.fromNullable(element.getAttribute(name)));
+    let hint = attribute(".hint", "id");
+    t.expect(Stdlib_Option.isSome(hint)).toBe(true);
+    t.expect(attribute("#comment-text", "aria-describedby")).toEqual(hint);
+    return t.expect((await WeftTesting.shell(page)).includes(`aria-describedby="` + hint + `"`)).toBe(true);
+  });
   Vitest.testAsync("renders the failing component's error box on the client, and only that", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openNote(undefined, undefined);
     t.expect(NotesSupport$WeftNotes.text(page, "#error-box")).toBe("Couldn't show this: the recommendations service is down");

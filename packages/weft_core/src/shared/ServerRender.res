@@ -10,7 +10,7 @@ let suspendedOn = (error: exn) =>
 external contextImpl: Context.t<'value> => ContextImpl.t<unknown> = "%identity"
 
 type contextValue = {context: ContextImpl.t<unknown>, value: unknown}
-type options = {contexts: array<contextValue>}
+type options = {contexts: array<contextValue>, position?: array<int>, idPrefix?: string}
 
 let contextValue = (context, value) => {
   context: contextImpl(context),
@@ -32,6 +32,13 @@ let renderComponent = (component, props, options) => {
       let (context, before) = previous->Array.getUnsafe(index)
       context.currentValue = before
     }
+  let previousId = HookImpl.serverId.contents
+  HookImpl.serverId :=
+    Some((options.idPrefix->Option.getOr("w"), options.position->Option.getOr([])))
+  let restore = () => {
+    HookImpl.serverId := previousId
+    restore()
+  }
   switch HookImpl.renderForServer(toComponent(component), Unsafe.toUnknown(props)) {
   | element =>
     restore()

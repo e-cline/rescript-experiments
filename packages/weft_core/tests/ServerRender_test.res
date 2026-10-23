@@ -38,6 +38,7 @@ describe("ServerRender.run", () => {
       ("useContext", () => Hooks.useContext(Context.make(0))->ignore),
       ("useTransition", () => Hooks.useTransition()->ignore),
       ("useDeferredValue", () => Hooks.useDeferredValue(0)->ignore),
+      ("useId", () => Hooks.useId()->ignore),
     ]
     hooks->Array.forEach(
       ((name, call)) =>

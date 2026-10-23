@@ -19,6 +19,7 @@ type kind =
   | Effect
   | LayoutEffect
   | Deferred
+  | Id
 
 type rec hook = {
   kind: kind,
@@ -145,6 +146,7 @@ let kindName = (kind: kind) =>
   | Effect => "useEffect"
   | LayoutEffect => "useLayoutEffect"
   | Deferred => "useDeferredValue"
+  | Id => "useId"
   }
 
 /** Development only, as in React: production builds skip the check (and its messages). */
@@ -729,3 +731,102 @@ let commitEffectsMount = (fiber: Fiber.t, ~effectKind: effectKind) =>
       guard(fiber, () => effect.inst.destroy = effect.create())
     }
   )
+
+// IDs
+
+/**
+What `ServerRender.renderComponent` was given for the component it's calling: the root's prefix, and
+the component's position.
+*/
+let serverId: ref<option<(string, array<int>)>> = ref(None)
+
+/** How many IDs components mounted on the client (not hydrating) have taken, across every root. */
+let clientIds = ref(0)
+
+let base32 = (n: int) => n->Int.toString(~radix=32)
+
+/**
+A position, compactly and unambiguously: an index below 32 as one base-32 digit (`0` to `v`), a
+larger one as `w<digits>x`, and three or more zeros in a row as `y<count>x`.
+*/
+let encodePosition = (position: array<int>) => {
+  let out = []
+  let zeros = ref(0)
+  let flush = () => {
+    if zeros.contents >= 3 {
+      out->Array.push(`y${base32(zeros.contents)}x`)
+    } else {
+      out->Array.push(String.repeat("0", zeros.contents))
+    }
+    zeros := 0
+  }
+  position->Array.forEach(index =>
+    if index == 0 {
+      zeros := zeros.contents + 1
+    } else {
+      flush()
+      out->Array.push(index < 32 ? base32(index) : `w${base32(index)}x`)
+    }
+  )
+  flush()
+  out->Array.join("")
+}
+
+/**
+`fiber`'s position in its tree: one index per level from the root down, its index among its
+siblings, but a `Suspense` boundary's content is 0 and its fallback 1 (its `Offscreen` fiber, and
+the fallback's fragment, aren't levels: the HTML renderer has neither). With its root.
+*/
+let positionOf = (fiber: Fiber.t): (array<int>, Fiber.t) => {
+  let path = []
+  let node = ref(fiber)
+  let climbing = ref(true)
+  while climbing.contents {
+    let current = node.contents
+    switch current.parent {
+    | Some(parent) if current.tag != HostRoot =>
+      path->Array.push(
+        parent.tag == SuspenseComponent ? current.tag == OffscreenComponent ? 0 : 1 : current.index,
+      )
+      node := parent
+    | _ => climbing := false
+    }
+  }
+  (path->Array.toReversed, node.contents)
+}
+
+/** How many `useId` hooks `fiber` called before the newest. */
+let idsBefore = (fiber: Fiber.t) => {
+  let count = ref(0)
+  let hook = ref(firstHook(fiber))
+  while Option.isSome(hook.contents) {
+    let current = Option.getUnsafe(hook.contents)
+    if current.kind == Id {
+      count := count.contents + 1
+    }
+    hook := current.next
+  }
+  count.contents - 1
+}
+
+let useId = (): string => {
+  let (fiber, hook, isNew) = nextHook(Id)
+  if isNew {
+    let id = if renderingForServer.contents {
+      let (prefix, position) = serverId.contents->Option.getOr(("w", []))
+      `${prefix}-${encodePosition(position)}-${base32(idsBefore(fiber))}`
+    } else if hydrating.contents {
+      // Hydrating: from where it is, as the server's HTML did.
+      let (position, root) = positionOf(fiber)
+      `${FiberRoot.ofFiber(root).idPrefix}-${encodePosition(position)}-${base32(idsBefore(fiber))}`
+    } else {
+      // Mounted on the client: a position could be one a component moved away from still has (a
+      // keyed list reordered), so a count instead, which no position's ID can be.
+      clientIds := clientIds.contents + 1
+      let (_, root) = positionOf(fiber)
+      `${FiberRoot.ofFiber(root).idPrefix}-z${base32(clientIds.contents)}`
+    }
+    hook.memoizedState = Unsafe.toUnknown(id)
+  }
+  Unsafe.fromUnknown(hook.memoizedState)
+}

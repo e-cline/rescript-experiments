@@ -105,6 +105,8 @@ function kindName(kind) {
       return "useLayoutEffect";
     case "Deferred" :
       return "useDeferredValue";
+    case "Id" :
+      return "useId";
   }
 }
 
@@ -637,6 +639,103 @@ function commitEffectsMount(fiber, effectKind) {
   });
 }
 
+let serverId = {
+  contents: undefined
+};
+
+let clientIds = {
+  contents: 0
+};
+
+function base32(n) {
+  return n.toString(32);
+}
+
+function encodePosition(position) {
+  let out = [];
+  let zeros = {
+    contents: 0
+  };
+  let flush = () => {
+    if (zeros.contents >= 3) {
+      out.push(`y` + zeros.contents.toString(32) + `x`);
+    } else {
+      out.push("0".repeat(zeros.contents));
+    }
+    zeros.contents = 0;
+  };
+  position.forEach(index => {
+    if (index === 0) {
+      zeros.contents = zeros.contents + 1 | 0;
+    } else {
+      flush();
+      out.push(index < 32 ? index.toString(32) : `w` + index.toString(32) + `x`);
+    }
+  });
+  flush();
+  return out.join("");
+}
+
+function positionOf(fiber) {
+  let path = [];
+  let node = fiber;
+  let climbing = true;
+  while (climbing) {
+    let current = node;
+    let parent = current.parent;
+    if (parent !== undefined && current.tag !== "HostRoot") {
+      path.push(parent.tag === "SuspenseComponent" ? (
+          current.tag === "OffscreenComponent" ? 0 : 1
+        ) : current.index);
+      node = parent;
+    } else {
+      climbing = false;
+    }
+  };
+  return [
+    path.toReversed(),
+    node
+  ];
+}
+
+function idsBefore(fiber) {
+  let count = 0;
+  let hook = Primitive_option.fromNullable(fiber.memoizedState);
+  while (Stdlib_Option.isSome(hook)) {
+    let current = hook;
+    if (current.kind === "Id") {
+      count = count + 1 | 0;
+    }
+    hook = current.next;
+  };
+  return count - 1 | 0;
+}
+
+function useId() {
+  let match = nextHook("Id");
+  let hook = match[1];
+  let fiber = match[0];
+  if (match[2]) {
+    let id;
+    if (renderingForServer.contents) {
+      let match$1 = Stdlib_Option.getOr(serverId.contents, [
+        "w",
+        []
+      ]);
+      id = match$1[0] + `-` + encodePosition(match$1[1]) + `-` + idsBefore(fiber).toString(32);
+    } else if (hydrating.contents) {
+      let match$2 = positionOf(fiber);
+      id = FiberRoot$WeftCore.ofFiber(match$2[1]).idPrefix + `-` + encodePosition(match$2[0]) + `-` + idsBefore(fiber).toString(32);
+    } else {
+      clientIds.contents = clientIds.contents + 1 | 0;
+      let match$3 = positionOf(fiber);
+      id = FiberRoot$WeftCore.ofFiber(match$3[1]).idPrefix + `-z` + clientIds.contents.toString(32);
+    }
+    hook.memoizedState = id;
+  }
+  return hook.memoizedState;
+}
+
 let maxRerenders = 25;
 
 export {
@@ -684,5 +783,12 @@ export {
   rethrowCommitError,
   commitEffectsUnmount,
   commitEffectsMount,
+  serverId,
+  clientIds,
+  base32,
+  encodePosition,
+  positionOf,
+  idsBefore,
+  useId,
 }
 /* Env-Common Not a pure module */

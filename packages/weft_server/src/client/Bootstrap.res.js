@@ -66,7 +66,7 @@ async function start(loadModule, fetch, container, url, onRefresh, param) {
   }
   let element = await Decoder$WeftServer.fromStream(client, rows(self), undefined);
   if (hydrating) {
-    root.contents = Primitive_option.some(Client$WeftDom.hydrateRoot(container$1, Navigation$WeftServer.wrap(navigation, element)));
+    root.contents = Primitive_option.some(Client$WeftDom.hydrateRoot(undefined, container$1, Navigation$WeftServer.wrap(navigation, element)));
   } else {
     Navigation$WeftServer.show(navigation, element);
   }

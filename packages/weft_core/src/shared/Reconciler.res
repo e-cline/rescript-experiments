@@ -22,7 +22,7 @@ external refOf: unknown => Nullable.t<Ref.t<unknown>> = "ref"
 
 module type Hydratable = {
   include S
-  let hydrateRoot: (container, Element.t) => root
+  let hydrateRoot: (~idPrefix: string=?, container, Element.t) => root
 }
 
 /** Raised while hydrating, where the client's tree and the server's content disagree. */
@@ -1365,6 +1365,7 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
       callbackTask: None,
       callbackLane: Lanes.none,
       isUnmounted: false,
+      idPrefix: "w",
       ensureScheduled: () => (),
     }
     rootFiber.stateNode = Unsafe.toUnknown(root)
@@ -1373,8 +1374,9 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
     root
   }
 
-  let hydrateRoot = (container: container, element: Element.t): root => {
+  let hydrateRoot = (~idPrefix="w", container: container, element: Element.t): root => {
     let root = createRoot(container)
+    root.idPrefix = idPrefix
     hydratingRoots->Set.add(root)
     root.pendingElement = element
     root.hasPendingElement = true

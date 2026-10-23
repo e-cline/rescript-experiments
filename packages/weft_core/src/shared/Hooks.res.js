@@ -192,6 +192,8 @@ function use(promise) {
 
 let useRef = HookImpl$WeftCore.useRef;
 
+let useId = HookImpl$WeftCore.useId;
+
 let useDeferredValue = HookImpl$WeftCore.useDeferredValue;
 
 export {
@@ -199,6 +201,7 @@ export {
   useReducer,
   useReducerWithMapState,
   useRef,
+  useId,
   useMemo0,
   useMemo1,
   useMemo2,

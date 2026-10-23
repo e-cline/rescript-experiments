@@ -55,9 +55,16 @@ type t
 Starts rendering `element`. `onError` (by default, logging with `Console.error`) is called with each
 error: one that fails a boundary, or the shell. It returns the digest to write with a boundary's,
 if any; the message is written in development builds only. Aborting `signal` stops whatever is
-pending.
+pending. `idPrefix` (`"w"` by default) starts the IDs `Hooks.useId` gives: the root that hydrates
+the HTML has to be given the same (`Client.hydrateRoot(~idPrefix)`), and two roots on one page need
+different ones.
 */
-let render: (WeftCore.Element.t, ~onError: exn => option<string>=?, ~signal: signal=?) => t
+let render: (
+  WeftCore.Element.t,
+  ~onError: exn => option<string>=?,
+  ~signal: signal=?,
+  ~idPrefix: string=?,
+) => t
 
 /**
 The shell: everything outside `Suspense` boundaries that are still pending, once all of it is
@@ -76,13 +83,18 @@ let renderToStream: (
   WeftCore.Element.t,
   ~onError: exn => option<string>=?,
   ~signal: signal=?,
+  ~idPrefix: string=?,
 ) => stream
 
 /**
 All of `element`'s HTML, once everything has rendered: no boundary is left pending (each waits for
 its content), though a failed one is still written as failed. For tests, and static pages.
 */
-let renderToString: (WeftCore.Element.t, ~onError: exn => option<string>=?) => promise<string>
+let renderToString: (
+  WeftCore.Element.t,
+  ~onError: exn => option<string>=?,
+  ~idPrefix: string=?,
+) => promise<string>
 
 /** The inline runtime's source (`$weftSwap`, `$weftFail`), written once before the first segment. */
 let runtime: string

@@ -62,7 +62,7 @@ function serverPage(markup) {
 
 function hydrate(container, element) {
   Client$WeftDom.act(() => {
-    Client$WeftDom.hydrateRoot(container, element);
+    Client$WeftDom.hydrateRoot(undefined, container, element);
   });
 }
 
@@ -155,7 +155,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
     let element = Jsx$WeftDom.jsx(Replay_test$Counter, {
       id: "c"
     });
-    let container = serverPage(await Html$WeftDom.renderToString(element, undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(element, undefined, undefined));
     find(container, "#c").click();
     t.expect(recorded()).toBe(1);
     t.expect(find(container, "#c").textContent).toBe("0");
@@ -175,7 +175,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
       id: "a",
       log: log
     });
-    let container = serverPage(await Html$WeftDom.renderToString(element, undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(element, undefined, undefined));
     find(container, "#a").click();
     hydrate(container, element);
     await settle();
@@ -191,7 +191,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
       },
       children: "link"
     });
-    let container = serverPage(await Html$WeftDom.renderToString(element, undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(element, undefined, undefined));
     find(container, "#link").click();
     let outside = document.createElement("button");
     document.body.appendChild(outside);
@@ -204,7 +204,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
   });
   Vitest.testAsync("keeps the last input on each element, and the state follows it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let element = Jsx$WeftDom.jsx(Replay_test$Mirror, {});
-    let container = serverPage(await Html$WeftDom.renderToString(element, undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(element, undefined, undefined));
     let field = find(container, "#field");
     typeInto(field, "a");
     typeInto(field, "ab");
@@ -232,7 +232,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
         children: "Send"
       })
     });
-    let container = serverPage(await Html$WeftDom.renderToString(element, undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(element, undefined, undefined));
     find(container, "#send").click();
     t.expect(recorded()).toBe(2);
     t.expect(submitPrevented()).toBe(true);
@@ -252,7 +252,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
         log.push(event.target.checked);
       }
     });
-    let container = serverPage(await Html$WeftDom.renderToString(element, undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(element, undefined, undefined));
     find(container, "#box").click();
     hydrate(container, element);
     await settle();
@@ -282,7 +282,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
         })
       ]
     });
-    let container = serverPage(await Html$WeftDom.renderToString(page(Promise.resolve("ready")), undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(page(Promise.resolve("ready")), undefined, undefined));
     find(container, "#a").click();
     find(container, "#b").click();
     let match = deferred();
@@ -317,7 +317,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
         ]
       })
     });
-    let container = serverPage(await Html$WeftDom.renderToString(page(Promise.resolve("ready")), undefined));
+    let container = serverPage(await Html$WeftDom.renderToString(page(Promise.resolve("ready")), undefined, undefined));
     let match = deferred();
     hydrate(container, page(match[0]));
     await settle();
@@ -348,7 +348,7 @@ Vitest.describe("events from before hydration", undefined, undefined, undefined,
           log: log
         })
       ]
-    }), undefined));
+    }), undefined, undefined));
     find(container, "#gone").click();
     find(container, "#b").click();
     await quietly(async () => {

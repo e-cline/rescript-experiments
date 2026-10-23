@@ -12,6 +12,7 @@ let useReducerWithMapState = (reducer, initial, init) =>
   HookImpl.useReducerWith(~kind=Reducer, ~eager=false, reducer, () => init(initial))
 
 let useRef = HookImpl.useRef
+let useId = HookImpl.useId
 
 let useMemo0 = create => HookImpl.useMemo(create, Some([]))
 let useMemo1 = (create, a) => HookImpl.useMemo(create, Some(deps(a)))

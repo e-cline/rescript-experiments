@@ -95,6 +95,12 @@ Vitest.describe("ServerRender.run", undefined, undefined, undefined, undefined, 
         () => {
           Hooks$WeftCore.useDeferredValue(0);
         }
+      ],
+      [
+        "useId",
+        () => {
+          Hooks$WeftCore.useId();
+        }
       ]
     ];
     hooks.forEach(param => {

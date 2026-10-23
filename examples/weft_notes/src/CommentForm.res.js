@@ -20,6 +20,7 @@ function CommentForm(props) {
   let match$2 = Hooks$WeftCore.useState(() => {});
   let setError = match$2[1];
   let error = match$2[0];
+  let hintId = Hooks$WeftCore.useId();
   let navigation = Navigation$WeftServer.useNavigation();
   let addComment = Rpc$WeftServer.use(Api$WeftNotes.addComment, undefined);
   let submit = event => {
@@ -52,8 +53,14 @@ function CommentForm(props) {
       Jsx$WeftDom.Elements.jsx("input", {
         id: "comment-text",
         "aria-label": "Comment",
+        "aria-describedby": hintId,
         value: text,
         onInput: event => setText(param => Dom$WeftDom.Event.targetValue(event))
+      }),
+      Jsx$WeftDom.Elements.jsx("p", {
+        id: hintId,
+        className: "hint",
+        children: `At most ` + Api$WeftNotes.maxLength.toString() + ` characters.`
       }),
       Jsx$WeftDom.Elements.jsx("button", {
         id: "post-comment",

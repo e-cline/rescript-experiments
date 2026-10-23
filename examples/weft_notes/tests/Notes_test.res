@@ -188,6 +188,28 @@ describe("hydrating the first page", () => {
     },
   )
 
+  testAsync(
+    "links the comment's hint by an ID that's the same in the HTML and once hydrated",
+    async t => {
+      let page = await openNote()
+      let attribute = (selector, name) =>
+        page
+        ->WeftTesting.query(selector)
+        ->Option.flatMap(element => WeftDom.Dom.getAttribute(element, name)->Nullable.toOption)
+      let hint = attribute(".hint", "id")
+      t->expect(Option.isSome(hint))->Expect.toBe(true)
+      t->expect(attribute("#comment-text", "aria-describedby"))->Expect.toEqual(hint)
+      // As the server wrote it (`openNote` checked hydration warned of no attribute differing).
+      t
+      ->expect(
+        (await page->WeftTesting.shell)->String.includes(
+          `aria-describedby="${Option.getUnsafe(hint)}"`,
+        ),
+      )
+      ->Expect.toBe(true)
+    },
+  )
+
   testAsync("renders the failing component's error box on the client, and only that", async t => {
     let page = await openNote()
     t

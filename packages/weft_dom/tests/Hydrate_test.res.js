@@ -6,15 +6,19 @@ import * as Dom$WeftDom from "../src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "../src/shared/Jsx.res.js";
 import * as Html$WeftDom from "../src/server/Html.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as Lazy$WeftCore from "@e-cline/weft_core/src/shared/Lazy.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Client$WeftDom from "../src/client/Client.res.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/shared/Hooks.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
+import * as Stdlib_Nullable from "@rescript/runtime/lib/es6/Stdlib_Nullable.js";
 import * as JsxCore$WeftCore from "@e-cline/weft_core/src/shared/JsxCore.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as Primitive_string from "@rescript/runtime/lib/es6/Primitive_string.js";
 import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
 import * as DomSupport$WeftDom from "./DomSupport.res.js";
+import * as ServerRender$WeftCore from "@e-cline/weft_core/src/shared/ServerRender.res.js";
 
 function string(prim) {
   return prim;
@@ -81,7 +85,7 @@ function hydrate(container, element) {
     contents: undefined
   };
   Client$WeftDom.act(() => {
-    root.contents = Primitive_option.some(Client$WeftDom.hydrateRoot(container, element));
+    root.contents = Primitive_option.some(Client$WeftDom.hydrateRoot(undefined, container, element));
   });
   return root.contents;
 }
@@ -139,6 +143,25 @@ function clicked(container, selector) {
   return find(container, selector).textContent;
 }
 
+function Hydrate_test$Field(props) {
+  let id = Hooks$WeftCore.useId();
+  return Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
+    children: [
+      Jsx$WeftDom.Elements.jsx("label", {
+        htmlFor: id,
+        children: props.label
+      }),
+      Jsx$WeftDom.Elements.jsx("input", {
+        id: id
+      })
+    ]
+  });
+}
+
+let Field = {
+  make: Hydrate_test$Field
+};
+
 Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("adopts every node, the same objects, and attaches handlers", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let element = Jsx$WeftDom.Elements.jsxs("main", {
@@ -174,7 +197,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
         })
       ]
     });
-    let html = await Html$WeftDom.renderToString(element, undefined);
+    let html = await Html$WeftDom.renderToString(element, undefined, undefined);
     let container = DomSupport$WeftDom.page(html);
     let before = nodesOf(container);
     let match = await logging(async () => hydrate(container, element));
@@ -182,6 +205,42 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
     t.expect(sameNodes(before, nodesOf(container))).toBe(true);
     t.expect(container.innerHTML).toBe(html);
     return t.expect(clicked(container, "#c")).toBe("1");
+  });
+  Vitest.testAsync("links labels to their inputs with the same IDs on the server and hydrating", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let element = Jsx$WeftDom.Elements.jsxs("form", {
+      children: [
+        Jsx$WeftDom.jsx(Hydrate_test$Field, {
+          label: "Name"
+        }),
+        Jsx$WeftDom.jsx(Suspense$WeftCore.make, {
+          fallback: "loading",
+          children: Jsx$WeftDom.jsx(Hydrate_test$Field, {
+            label: "Comment"
+          })
+        })
+      ]
+    });
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(element, undefined, undefined));
+    let match = await logging(async () => hydrate(container, element));
+    t.expect(match[1]).toEqual([]);
+    let inputs = Dom$WeftDom.querySelectorAll(container, "input");
+    let ids = inputs.map(input => Stdlib_Nullable.getOr(input.getAttribute("id"), ""));
+    t.expect(new Set(ids).size).toBe(2);
+    return t.expect(Dom$WeftDom.querySelectorAll(container, "label").map(label => Stdlib_Nullable.getOr(label.getAttribute("for"), ""))).toEqual(ids);
+  });
+  Vitest.testAsync("makes IDs with the root's prefix, which hydrating has to be given too", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let element = Jsx$WeftDom.jsx(Hydrate_test$Field, {
+      label: "Name"
+    });
+    let html = await Html$WeftDom.renderToString(element, undefined, "notes");
+    let container = DomSupport$WeftDom.page(html);
+    let match = await logging(async () => Client$WeftDom.act(() => {
+      Client$WeftDom.hydrateRoot("notes", container, element);
+    }));
+    t.expect(match[1]).toEqual([]);
+    t.expect(Stdlib_Nullable.getOr(find(container, "input").getAttribute("id"), "")).toBe("notes-0-0");
+    let match$1 = await logging(async () => hydrate(DomSupport$WeftDom.page(html), element));
+    return t.expect(match$1[1].length !== 0).toBe(true);
   });
   Vitest.testAsync("keeps what the user typed or ticked before it hydrated", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let element = Jsx$WeftDom.Elements.jsxs("form", {
@@ -201,7 +260,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
         })
       ]
     });
-    let container = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(element, undefined));
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(element, undefined, undefined));
     find(container, "#text")["value"] = "typed";
     find(container, "#box")["checked"] = true;
     hydrate(container, element);
@@ -232,7 +291,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
         })
       ]
     });
-    let rendering = Html$WeftDom.render(element, undefined, undefined);
+    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let segments = [];
     let reader = async () => {
@@ -270,7 +329,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
         id: "w"
       })
     });
-    let rendering = Html$WeftDom.render(element, undefined, undefined);
+    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("early");
@@ -298,7 +357,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
       children: Jsx$WeftDom.jsx(Hydrate_test$FailsAfter, {
         promise: promise
       })
-    }), param => "d", undefined);
+    }), param => "d", undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     hydrate(container, element);
@@ -351,8 +410,33 @@ let Echo = {
   make: Hydrate_test$Echo
 };
 
+let serverIds = new Set();
+
+let clientIds = new Set();
+
+let identified = {
+  contents: 0
+};
+
+function Hydrate_test$Identified(props) {
+  let first = Hooks$WeftCore.useId();
+  let second = Hooks$WeftCore.useId();
+  let ids = ServerRender$WeftCore.isRenderingComponent() ? serverIds : clientIds;
+  ids.add(first);
+  ids.add(second);
+  return Jsx$WeftDom.jsx(Jsx$WeftDom.jsxFragment, {
+    children: Primitive_option.some(Jsx$WeftDom.Elements.jsx("s", {
+      children: props.children
+    }))
+  });
+}
+
+let Identified = {
+  make: Hydrate_test$Identified
+};
+
 function randomTree(random, depth, waits, inBoundary) {
-  let match = DomSupport$WeftDom.Random.intBelow(random, depth <= 0 ? 3 : 9);
+  let match = DomSupport$WeftDom.Random.intBelow(random, depth <= 0 ? 3 : 11);
   let exit = 0;
   switch (match) {
     case 0 :
@@ -392,6 +476,13 @@ function randomTree(random, depth, waits, inBoundary) {
     case 6 :
       exit = 2;
       break;
+    case 7 :
+      identified.contents = identified.contents + 1 | 0;
+      return Jsx$WeftDom.jsx(Hydrate_test$Identified, {
+        children: randomChildren(random, depth - 1 | 0, waits, inBoundary)
+      });
+    case 8 :
+      return Lazy$WeftCore.fromPromise(Promise.resolve(randomChildren(random, depth - 1 | 0, waits, inBoundary)));
     default:
       let tag = DomSupport$WeftDom.Random.pick(random, [
         "div",
@@ -436,13 +527,17 @@ function elementsOf(container) {
 }
 
 Vitest.describe("hydrating, fuzzed", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("random trees' streamed HTML hydrates into a client render's DOM, of the HTML's elements", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-  for (let seed = 1; seed <= 60; ++seed) {
+  let withIds = 0;
+  for (let seed = 1; seed <= 100; ++seed) {
     let random = DomSupport$WeftDom.Random.make(seed);
+    serverIds.clear();
+    clientIds.clear();
+    identified.contents = 0;
     let waits = [];
     let element = Jsx$WeftDom.Elements.jsx("div", {
       children: randomChildren(random, 4, waits, false)
     });
-    let rendering = Html$WeftDom.render(element, undefined, undefined);
+    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let fromHtml = new Set(Dom$WeftDom.querySelectorAll(container, "*"));
     let segments = [];
@@ -493,6 +588,24 @@ Vitest.describe("hydrating, fuzzed", undefined, undefined, undefined, undefined,
     await reading;
     apply();
     await settle();
+    let sorted = ids => ids.values().toArray().toSorted(Primitive_string.compare);
+    t.expect([
+      seed,
+      serverIds.size
+    ]).toEqual([
+      seed,
+      (identified.contents << 1)
+    ]);
+    t.expect([
+      seed,
+      sorted(clientIds)
+    ]).toEqual([
+      seed,
+      sorted(serverIds)
+    ]);
+    if (identified.contents > 0) {
+      withIds = withIds + 1 | 0;
+    }
     let expected = DomSupport$WeftDom.clientRender(element);
     await settle();
     t.expect([
@@ -511,6 +624,7 @@ Vitest.describe("hydrating, fuzzed", undefined, undefined, undefined, undefined,
       0
     ]);
   }
+  return t.expect(withIds > 25).toBe(true);
 }));
 
 let Hooks;
@@ -531,7 +645,12 @@ export {
   FailsAfter,
   Waits,
   clicked,
+  Field,
   Echo,
+  serverIds,
+  clientIds,
+  identified,
+  Identified,
   randomTree,
   randomChildren,
   elementsOf,

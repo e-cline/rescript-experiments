@@ -22,6 +22,8 @@ type t = {
   mutable callbackTask: option<unknown>,
   mutable callbackLane: Lanes.t,
   mutable isUnmounted: bool,
+  /** What `Hooks.useId`'s IDs start with (`hydrateRoot`'s `idPrefix`). */
+  mutable idPrefix: string,
   /** Set by the renderer that created the root: arranges for its pending lanes to be rendered. */
   mutable ensureScheduled: unit => unit,
 }

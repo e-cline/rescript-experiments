@@ -639,7 +639,7 @@ function hydrate(markup, element) {
     contents: undefined
   };
   act(() => {
-    root.contents = Primitive_option.some(Renderer.hydrateRoot(container, element));
+    root.contents = Primitive_option.some(Renderer.hydrateRoot(undefined, container, element));
   });
   return {
     container: container,

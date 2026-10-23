@@ -23,7 +23,7 @@ function string(prim) {
 }
 
 function html(onError, element) {
-  return Html$WeftDom.renderToString(element, onError);
+  return Html$WeftDom.renderToString(element, onError, undefined);
 }
 
 async function rejection(f) {
@@ -133,7 +133,7 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
         children: "B"
       })
     ]
-  }), undefined)).toBe(`<div id="a" class="b c" title="t" hidden="" tabindex="2"><label for="x">L</label><button>B</button></div>`));
+  }), undefined, undefined)).toBe(`<div id="a" class="b c" title="t" hidden="" tabindex="2"><label for="x">L</label><button>B</button></div>`));
   Vitest.testAsync("leaves out event handlers and refs", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let ref = {
       current: null
@@ -142,7 +142,7 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
       onClick: param => {},
       ref: ref,
       children: "go"
-    }), undefined)).toBe("<button>go</button>");
+    }), undefined, undefined)).toBe("<button>go</button>");
   });
   Vitest.testAsync("writes style as CSS, in kebab case", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     t.expect(await Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsx("p", {
@@ -153,15 +153,15 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
         WebkitTransform: "none",
         msFilter: "x"
       }
-    }), undefined)).toBe(`<p style="background-color: red; --accent: blue; font-size: 2em; -webkit-transform: none; -ms-filter: x;"></p>`);
+    }), undefined, undefined)).toBe(`<p style="background-color: red; --accent: blue; font-size: 2em; -webkit-transform: none; -ms-filter: x;"></p>`);
     return t.expect(await Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsx("p", {
       style: {}
-    }), undefined)).toBe("<p></p>");
+    }), undefined, undefined)).toBe("<p></p>");
   });
   Vitest.testAsync("escapes text and attributes, so nothing ends a tag or a script", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => t.expect(await Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsx("p", {
     title: `"quoted" & 'single' <b>`,
     children: `</script><script>alert(1)</script> & <`
-  }), undefined)).toBe(`<p title="&quot;quoted&quot; &amp; &#39;single&#39; &lt;b&gt;">&lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;</p>`));
+  }), undefined, undefined)).toBe(`<p title="&quot;quoted&quot; &amp; &#39;single&#39; &lt;b&gt;">&lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;</p>`));
   Vitest.testAsync("writes void elements without a closing tag, and refuses their children", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     t.expect(await Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsxs("div", {
       children: [
@@ -170,18 +170,18 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
           type: "text"
         })
       ]
-    }), undefined)).toBe(`<div><br><input type="text"></div>`);
+    }), undefined, undefined)).toBe(`<div><br><input type="text"></div>`);
     return t.expect(await rejection(() => Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsx("br", {
       children: "x"
-    }), undefined))).toEqual("WeftDom: a <br> can't have children, at <br>");
+    }), undefined, undefined))).toEqual("WeftDom: a <br> can't have children, at <br>");
   });
   Vitest.testAsync("refuses a tag that isn't one, and script or style content", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let bad = JsxCore$WeftCore.hostJsx("div onclick=x", {});
-    t.expect(await rejection(() => Html$WeftDom.renderToString(bad, undefined))).toEqual(`WeftDom: "div onclick=x" isn't a tag name, at the root`);
+    t.expect(await rejection(() => Html$WeftDom.renderToString(bad, undefined, undefined))).toEqual(`WeftDom: "div onclick=x" isn't a tag name, at the root`);
     let script = JsxCore$WeftCore.hostJsx("script", {
       children: "alert(1)"
     });
-    return t.expect(await rejection(() => Html$WeftDom.renderToString(script, undefined))).toEqual("WeftDom: a <script>'s content isn't HTML, so it can't be rendered from children, at <script>");
+    return t.expect(await rejection(() => Html$WeftDom.renderToString(script, undefined, undefined))).toEqual("WeftDom: a <script>'s content isn't HTML, so it can't be rendered from children, at <script>");
   });
   Vitest.testAsync("writes value and checked as the attributes that give the same initial state", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     t.expect(await Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsxs("form", {
@@ -201,7 +201,7 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
           value: "\nstarts with a newline"
         })
       ]
-    }), undefined)).toBe(`<form><input value="typed"><input type="checkbox" checked=""><input type="checkbox"><textarea>\n\nstarts with a newline</textarea></form>`);
+    }), undefined, undefined)).toBe(`<form><input value="typed"><input type="checkbox" checked=""><input type="checkbox"><textarea>\n\nstarts with a newline</textarea></form>`);
     return t.expect(await Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsxs("select", {
       value: "b",
       children: [
@@ -217,7 +217,7 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
           children: "b"
         })
       ]
-    }), undefined)).toBe(`<select><option value="a">A</option><option value="b" selected="">B</option><option selected="">b</option></select>`);
+    }), undefined, undefined)).toBe(`<select><option value="a">A</option><option value="b" selected="">B</option><option selected="">b</option></select>`);
   });
 });
 
@@ -240,7 +240,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
         }),
         "f"
       ]
-    }), undefined)).toBe("<p>a<!-- -->b<!-- -->c<!-- -->d<b>e</b>f</p>");
+    }), undefined, undefined)).toBe("<p>a<!-- -->b<!-- -->c<!-- -->d<b>e</b>f</p>");
   });
   Vitest.testAsync("calls components with their initial state, providers' values, and memo", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let Html_test = props => {
@@ -264,7 +264,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
         themeProvider("dark", Jsx$WeftDom.jsx(Html_test$Themed, {})),
         themeProvider("outer", themeProvider("inner", Jsx$WeftDom.jsx(Html_test$Themed, {})))
       ]
-    }), undefined)).toBe("<div><b>3</b><b>4</b><i>plain</i><i>dark</i><i>inner</i></div>");
+    }), undefined, undefined)).toBe("<div><b>3</b><b>4</b><i>plain</i><i>dark</i><i>inner</i></div>");
   });
   Vitest.testAsync("renders nothing for a portal, and an error boundary's children", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let elsewhere = document.createElement("div");
@@ -278,7 +278,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
           children: "children"
         })
       ]
-    }), undefined)).toBe("<div>children</div>");
+    }), undefined, undefined)).toBe("<div>children</div>");
   });
   Vitest.testAsync("waits for what suspends outside every boundary", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let match = deferred();
@@ -286,7 +286,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
       children: Jsx$WeftDom.jsx(Html_test$Waits, {
         promise: match[0]
       })
-    }), undefined);
+    }), undefined, undefined);
     await tick();
     match[1]("ready");
     return t.expect(await rendered).toBe("<div><em>ready</em></div>");
@@ -312,7 +312,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
           promise: match$1[0]
         })
       ]
-    }), undefined);
+    }), undefined, undefined);
     await tick();
     match$1[1]("2");
     match[1]("1");
@@ -324,7 +324,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
     let lazy_ = Lazy$WeftCore.fromPromise(match[0]);
     let rendered = Html$WeftDom.renderToString(Jsx$WeftDom.Elements.jsx("div", {
       children: lazy_
-    }), undefined);
+    }), undefined, undefined);
     await tick();
     match[1](Jsx$WeftDom.Elements.jsx("b", {
       children: "lazy"
@@ -346,7 +346,7 @@ Vitest.describe("text, components and the rest", undefined, undefined, undefined
             })
           })
         ]
-      }), undefined);
+      }), undefined, undefined);
     });
     return t.expect(messages).toEqual([
       "WeftDom: <div> can't be inside a <p>: the parser ends the <p> before it, so the page's HTML wouldn't hydrate as rendered. At <div><p><span>.",
@@ -365,7 +365,7 @@ Vitest.describe("boundaries, all at once (renderToString)", undefined, undefined
           promise: match[0]
         })
       })
-    }), undefined);
+    }), undefined, undefined);
     await tick();
     match[1]("done");
     return t.expect(await rendered).toBe("<div><!--$--><em>done</em><!--/$--></div>");
@@ -389,7 +389,7 @@ Vitest.describe("boundaries, all at once (renderToString)", undefined, undefined
           })
         })
       ]
-    }), onError);
+    }), onError, undefined);
     await tick();
     match[1]("ok");
     t.expect(await rendered).toBe(`<div><em>ok</em><!--$!--><template data-digest="d1" data-message="boom"></template>fallback<!--/$--></div>`);
@@ -399,7 +399,7 @@ Vitest.describe("boundaries, all at once (renderToString)", undefined, undefined
     children: Jsx$WeftDom.jsx(Html_test$Fails, {
       message: "shell"
     })
-  }), param => {}))).toEqual("shell"));
+  }), param => {}, undefined))).toEqual("shell"));
 });
 
 function withoutRuntime(text) {
@@ -418,7 +418,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           promise: match[0]
         })
       })
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     t.expect(await Html$WeftDom.shell(rendering)).toBe(`<div><!--$?--><template id="wb:0"></template><i>loading</i><!--/$--></div>`);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("done");
@@ -442,7 +442,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           })
         })
       ]
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     t.expect(await Html$WeftDom.shell(rendering)).toBe(`<!--$?--><template id="wb:0"></template>outer loading<!--/$-->`);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match$1[1]("inner");
@@ -464,7 +464,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           })
         })
       ]
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     await Html$WeftDom.shell(rendering$1);
     let rest$1 = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering$1));
     match$2[1]("outer");
@@ -484,7 +484,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       children: Jsx$WeftDom.jsx(Html_test, {
         promise: match[0]
       })
-    }), param => "d2", undefined);
+    }), param => "d2", undefined, undefined);
     await Html$WeftDom.shell(rendering);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("waiting");
@@ -495,7 +495,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       children: Jsx$WeftDom.jsx(Html_test$Fails, {
         message: "shell"
       })
-    }), param => {}, undefined);
+    }), param => {}, undefined, undefined);
     t.expect(await rejection(() => Html$WeftDom.shell(rendering))).toEqual("shell");
     return t.expect(await DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering))).toEqual([]);
   });
@@ -507,7 +507,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       children: Jsx$WeftDom.jsx(Html_test$Waits, {
         promise: match[0]
       })
-    }), undefined, Primitive_option.some(controller.signal));
+    }), undefined, Primitive_option.some(controller.signal), undefined);
     await Html$WeftDom.shell(rendering);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     controller.abort();
@@ -523,7 +523,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           promise: match[0]
         })
       })
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     let all = DomSupport$WeftDom.chunks(stream);
     await tick();
     match[1]("done");
@@ -554,7 +554,7 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
         }),
         "after"
       ]
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let retried = {
       contents: false
@@ -603,7 +603,7 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
           })
         ]
       })
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match$1[1]("two");
@@ -623,7 +623,7 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
       children: Jsx$WeftDom.jsx(Html_test, {
         promise: match[0]
       })
-    }), param => "d3", undefined);
+    }), param => "d3", undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let retried = {
       contents: false
@@ -730,7 +730,7 @@ Vitest.describe("the HTML, parsed", undefined, undefined, undefined, undefined, 
     let tree = Jsx$WeftDom.Elements.jsx("div", {
       children: randomChildren(random, 4)
     });
-    let fromHtml = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(tree, undefined));
+    let fromHtml = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(tree, undefined, undefined));
     let fromClient = DomSupport$WeftDom.clientRender(tree);
     t.expect([
       seed,

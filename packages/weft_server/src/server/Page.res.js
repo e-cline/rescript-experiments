@@ -176,7 +176,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
         writeShell(undefined);
       }
       if (exit === 1) {
-        let rendering = Html$WeftDom.render(Navigation$WeftServer.wrap(navigation, decoded), htmlOnError, Stdlib_Option.map(signal, prim => prim));
+        let rendering = Html$WeftDom.render(Navigation$WeftServer.wrap(navigation, decoded), htmlOnError, Stdlib_Option.map(signal, prim => prim), undefined);
         let exit$1 = 0;
         let shell;
         try {

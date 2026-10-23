@@ -137,6 +137,11 @@ type context = {
   selectValue: option<string>,
   /** For messages: how the walk got here, innermost first. */
   path: list<string>,
+  /**
+  Where the walk is, innermost first, as the reconciler numbers its fibers (`useId`'s position): one
+  index per level, a `Suspense` boundary's content 0 and its fallback 1.
+  */
+  position: list<int>,
 }
 
 /**
@@ -165,6 +170,8 @@ type attempt = {
 
 type request = {
   onError: exn => option<string>,
+  /** The root's `useId` prefix. */
+  idPrefix: string,
   /** `renderToString`: every boundary waited for, none left pending. */
   waitForAll: bool,
   mutable nextBoundary: int,
@@ -338,12 +345,64 @@ let attributes = (context, tag, props: dict<unknown>) => {
   written->Array.join("")
 }
 
-let rec renderElement = (request, attempt, context, element: Element.t) =>
+/** `context` one level down, at `index` among its siblings. */
+let at = (context, index) => {...context, position: list{index, ...context.position}}
+
+/**
+`element` with its lazy elements resolved (again and again, as `LazyImpl.resolve` does), or `None`
+if one hasn't settled: its promise is added to the attempt's pending ones.
+*/
+let rec resolved = (attempt, element: Element.t) =>
   switch Element.classify(element) {
-  | Empty => ()
-  | Text(text) => writeText(attempt, text)
-  | List(items) => items->Array.forEach(item => renderElement(request, attempt, context, item))
-  | Node(node) => renderNode(request, attempt, context, node)
+  | Node({kind: Lazy} as node) =>
+    let promise = WeftCore.Lazy.promiseOf(node)
+    switch ServerRender.run(() => WeftCore.Hooks.use(promise)) {
+    | element => resolved(attempt, element)
+    | exception error =>
+      switch ServerRender.suspendedOn(error) {
+      | Some(promise) =>
+        attempt.pending->Array.push(promise)
+        None
+      | None => throw(error)
+      }
+    }
+  | _ => Some(element)
+  }
+
+/**
+`element` as the children of what `context` is in, at the positions the reconciler gives the fibers
+it makes of them (`ChildReconciler.reconcileChildFibers`): a lazy element is what it resolves to, an
+unkeyed fragment at the top is its contents, a single element is at 0, and a list's items are at
+their indices (a list in a list being a fragment there). Both sides have to walk the same levels for
+`useId`'s positions to agree.
+*/
+let rec renderChildren = (request, attempt, context, element: Element.t) =>
+  switch resolved(attempt, element) {
+  | None => ()
+  | Some(element) =>
+    let element = switch Element.classify(element) {
+    | Node({kind: Fragment, key, props}) if Nullable.isNullable(key) =>
+      resolved(attempt, Element.childrenOf(props))
+    | _ => Some(element)
+    }
+    switch element->Option.map(Element.classify) {
+    | None | Some(Empty) => ()
+    | Some(Text(text)) => writeText(attempt, text)
+    | Some(Node(node)) => renderNode(request, attempt, at(context, 0), node)
+    | Some(List(items)) =>
+      items->Array.forEachWithIndex((item, index) =>
+        renderItem(request, attempt, at(context, index), item)
+      )
+    }
+  }
+
+/** A list's item, at its level (`context`): a list in it is a fragment's children. */
+and renderItem = (request, attempt, context, item: Element.t) =>
+  switch resolved(attempt, item)->Option.map(Element.classify) {
+  | None | Some(Empty) => ()
+  | Some(Text(text)) => writeText(attempt, text)
+  | Some(Node(node)) => renderNode(request, attempt, context, node)
+  | Some(List(_)) => renderChildren(request, attempt, context, item)
   }
 
 and renderNode = (request, attempt, context, node: Element.node) =>
@@ -355,9 +414,13 @@ and renderNode = (request, attempt, context, node: Element.node) =>
     switch ServerRender.renderComponent(
       toComponent(make),
       node.props,
-      {contexts: context.contexts},
+      {
+        contexts: context.contexts,
+        position: context.position->List.reverse->List.toArray,
+        idPrefix: request.idPrefix,
+      },
     ) {
-    | output => renderElement(request, attempt, context, output)
+    | output => renderChildren(request, attempt, context, output)
     | exception error =>
       switch ServerRender.suspendedOn(error) {
       | Some(promise) => attempt.pending->Array.push(promise)
@@ -367,24 +430,16 @@ and renderNode = (request, attempt, context, node: Element.node) =>
   | Fragment | ErrorBoundary =>
     // An error boundary doesn't catch on the server (its fallback would be the HTML, which the
     // client, rendering the children, would never match): the error goes to a `Suspense` above.
-    renderElement(request, attempt, context, Element.childrenOf(node.props))
+    renderChildren(request, attempt, context, Element.childrenOf(node.props))
   | Provider =>
     let context = {
       ...context,
       contexts: [...context.contexts, ServerRender.providedContext(node)],
     }
-    renderElement(request, attempt, context, Element.childrenOf(node.props))
+    renderChildren(request, attempt, context, Element.childrenOf(node.props))
   | Suspense => renderBoundary(request, attempt, context, node)
-  | Lazy =>
-    let promise = WeftCore.Lazy.promiseOf(node)
-    switch ServerRender.run(() => WeftCore.Hooks.use(promise)) {
-    | resolved => renderElement(request, attempt, context, resolved)
-    | exception error =>
-      switch ServerRender.suspendedOn(error) {
-      | Some(promise) => attempt.pending->Array.push(promise)
-      | None => throw(error)
-      }
-    }
+  // What it resolves to, at its level (`renderChildren` and `renderItem` resolve it first).
+  | Lazy => renderItem(request, attempt, context, Element.fromNode(node))
   // Its children go in another container, which the page's HTML doesn't have.
   | Portal => ()
   | Offscreen => fail(context, 6, "an internal element (Offscreen) reached the HTML renderer")
@@ -423,7 +478,7 @@ and renderHost = (request, attempt, context, node) => {
       // The parser drops a newline straight after `<textarea>`: one more keeps the value's own.
       writeMarkup(attempt, (text->String.startsWith("\n") ? "\n" : "") ++ escapeText(text))
     } else {
-      renderElement(request, attempt, context, children)
+      renderChildren(request, attempt, context, children)
     }
     writeMarkup(attempt, `</${tag}>`)
   }
@@ -437,8 +492,12 @@ in it isn't ready, its fallback is written, and the content rendered later, in a
 and renderBoundary = (request, attempt, context, node) => {
   let props = toBoundaryProps(node.props)
   let context = {...context, path: list{"<Suspense>", ...context.path}}
+  // Its content and its fallback, told apart (the reconciler's `Offscreen` and fallback fragment
+  // between it and them aren't levels).
+  let contentContext = at(context, 0)
+  let fallbackContext = at(context, 1)
   let content = newAttempt()
-  switch renderElement(request, content, context, props.children) {
+  switch renderChildren(request, content, contentContext, props.children) {
   | () if Array.length(content.pending) == 0 =>
     writeMarkup(attempt, "<!--$-->")
     content.buffer->Array.forEach(piece => attempt.buffer->Array.push(piece))
@@ -448,17 +507,17 @@ and renderBoundary = (request, attempt, context, node) => {
     // Nothing is left pending: the whole attempt waits.
     content.pending->Array.forEach(promise => attempt.pending->Array.push(promise))
   | () =>
-    let spawn = {id: -1, children: props.children, context}
+    let spawn = {id: -1, children: props.children, context: contentContext}
     writeMarkup(attempt, "<!--$?-->")
     attempt.buffer->Array.push(Anchor(spawn))
-    renderElement(request, attempt, context, props.fallback)
+    renderChildren(request, attempt, fallbackContext, props.fallback)
     writeMarkup(attempt, "<!--/$-->")
     attempt.spawns->Array.push(spawn)
   | exception error =>
     writeMarkup(attempt, "<!--$!--><template")
     attempt.buffer->Array.push(Failure(error))
     writeMarkup(attempt, "></template>")
-    renderElement(request, attempt, context, props.fallback)
+    renderChildren(request, attempt, fallbackContext, props.fallback)
     writeMarkup(attempt, "<!--/$-->")
   }
 }
@@ -479,7 +538,7 @@ let renderUntilReady = async (request, context, element) => {
       throw(Aborted)
     }
     let attempt = newAttempt()
-    renderElement(request, attempt, context, element)
+    renderChildren(request, attempt, context, element)
     if Array.length(attempt.pending) == 0 {
       result := Some(attempt)
     } else {
@@ -519,15 +578,21 @@ let html = (request, attempt) =>
 
 type t = {shell: promise<string>, rest: stream}
 
-let rootContext = {contexts: [], ancestors: list{}, selectValue: None, path: list{}}
+let rootContext = {
+  contexts: [],
+  ancestors: list{},
+  selectValue: None,
+  path: list{},
+  position: list{},
+}
 
 let defaultOnError = error => {
   Console.error(error)
   None
 }
 
-let render = (element, ~onError=defaultOnError, ~signal=?) => {
-  let request = {onError, waitForAll: false, nextBoundary: 0, aborted: false}
+let render = (element, ~onError=defaultOnError, ~signal=?, ~idPrefix="w") => {
+  let request = {onError, idPrefix, waitForAll: false, nextBoundary: 0, aborted: false}
   let encoder = makeEncoder()
   let output = ref(None)
   let closed = ref(false)
@@ -619,8 +684,8 @@ let render = (element, ~onError=defaultOnError, ~signal=?) => {
 let shell = rendering => rendering.shell
 let rest = rendering => rendering.rest
 
-let renderToString = async (element, ~onError=defaultOnError) => {
-  let request = {onError, waitForAll: true, nextBoundary: 0, aborted: false}
+let renderToString = async (element, ~onError=defaultOnError, ~idPrefix="w") => {
+  let request = {onError, idPrefix, waitForAll: true, nextBoundary: 0, aborted: false}
   html(request, await renderUntilReady(request, rootContext, element))
 }
 
@@ -629,8 +694,8 @@ type readResult = {done: bool, value?: Uint8Array.t}
 @send external getReader: stream => reader = "getReader"
 @send external read: reader => promise<readResult> = "read"
 
-let renderToStream = (element, ~onError=?, ~signal=?) => {
-  let rendering = render(element, ~onError?, ~signal?)
+let renderToStream = (element, ~onError=?, ~signal=?, ~idPrefix=?) => {
+  let rendering = render(element, ~onError?, ~signal?, ~idPrefix?)
   let encoder = makeEncoder()
   makeStream({
     start: controller => {

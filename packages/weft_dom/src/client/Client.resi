@@ -29,8 +29,10 @@ changed it before hydration. A `Suspense` boundary the server hadn't finished st
 the page's runtime swaps its content in, then hydrates. Where the HTML and `element` disagree, the
 nearest boundary (or the whole root) is rendered on the client instead, with a warning in
 development; a text that differs is patched, and attributes that differ are warned about and left.
+`idPrefix` is the HTML's (`Html.render(~idPrefix)`, `"w"` by default), for `Hooks.useId`'s IDs to
+match.
 */
-let hydrateRoot: (Dom.element, WeftCore.Element.t) => root
+let hydrateRoot: (~idPrefix: string=?, Dom.element, WeftCore.Element.t) => root
 
 /** Renders `element` into the root, replacing what it rendered before, in a microtask. */
 let render: (root, WeftCore.Element.t) => unit

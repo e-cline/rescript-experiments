@@ -54,8 +54,8 @@ function createRoot(container) {
   return Renderer.createRoot(container);
 }
 
-function hydrateRoot(container, element) {
-  return Renderer.hydrateRoot(container, element);
+function hydrateRoot(idPrefix, container, element) {
+  return Renderer.hydrateRoot(idPrefix, container, element);
 }
 
 function act(f) {

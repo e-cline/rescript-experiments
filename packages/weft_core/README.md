@@ -18,6 +18,9 @@ This is an early stage of the [plan](../../docs/weft_plan.md). What works:
   layout effects in the commit, passive effects after it, every cleanup before any effect.
 - `ref` props on host elements, `Context` with `useContext`, `Memo.memo`, and
   `useSyncExternalStore`.
+- `useId`, for linking elements (`htmlFor`, `aria-describedby`): the same on the server and once
+  hydrated, since it comes from the component's position in the tree, not the order things render
+  in; a component mounted later on the client gets a fresh one.
 - Automatic batching (updates in one task render once, in a microtask), `flushSync`, setting state
   while rendering, skipping components whose props and state didn't change.
 - Concurrent rendering: `Transition.start`, `useTransition` and `useDeferredValue`. Transitions

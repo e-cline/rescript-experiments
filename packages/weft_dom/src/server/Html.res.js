@@ -110,6 +110,23 @@ function writeMarkup(attempt, markup) {
   attempt.lastWasText = false;
 }
 
+function writeText(attempt, text) {
+  if (text !== "") {
+    if (attempt.lastWasText) {
+      attempt.buffer.push({
+        TAG: "Markup",
+        _0: "<!-- -->"
+      });
+    }
+    attempt.buffer.push({
+      TAG: "Markup",
+      _0: escapeText(text)
+    });
+    attempt.lastWasText = true;
+    return;
+  }
+}
+
 function where(context) {
   let path = context.path;
   if (path !== 0) {
@@ -261,237 +278,297 @@ function attributes(context, tag, props) {
   return written.join("");
 }
 
-function renderElement(request, attempt, context, element) {
-  let text = Element$WeftCore.classify(element);
-  if (typeof text !== "object") {
+function at(context, index) {
+  return {
+    contexts: context.contexts,
+    ancestors: context.ancestors,
+    selectValue: context.selectValue,
+    path: context.path,
+    position: {
+      hd: index,
+      tl: context.position
+    }
+  };
+}
+
+function resolved(attempt, _element) {
+  while (true) {
+    let element = _element;
+    let node = Element$WeftCore.classify(element);
+    if (typeof node !== "object") {
+      return Primitive_option.some(element);
+    }
+    if (node.TAG !== "Node") {
+      return Primitive_option.some(element);
+    }
+    let node$1 = node._0;
+    if (node$1.kind !== "Lazy") {
+      return Primitive_option.some(element);
+    }
+    let promise = Lazy$WeftCore.promiseOf(node$1);
+    let element$1;
+    try {
+      element$1 = ServerRender$WeftCore.run(() => Hooks$WeftCore.use(promise));
+    } catch (raw_error) {
+      let error = Primitive_exceptions.internalToException(raw_error);
+      let promise$1 = ServerRender$WeftCore.suspendedOn(error);
+      if (promise$1 !== undefined) {
+        attempt.pending.push(promise$1);
+        return;
+      }
+      throw error;
+    }
+    _element = element$1;
+    continue;
+  };
+}
+
+function renderChildren(request, attempt, context, element) {
+  let element$1 = resolved(attempt, element);
+  if (element$1 === undefined) {
     return;
   }
-  switch (text.TAG) {
+  let element$2 = Primitive_option.valFromOption(element$1);
+  let match = Element$WeftCore.classify(element$2);
+  let element$3;
+  if (typeof match !== "object" || match.TAG !== "Node") {
+    element$3 = Primitive_option.some(element$2);
+  } else {
+    let match$1 = match._0;
+    element$3 = match$1.kind === "Fragment" && (match$1.key == null) ? resolved(attempt, match$1.props.children) : Primitive_option.some(element$2);
+  }
+  let match$2 = Stdlib_Option.map(element$3, Element$WeftCore.classify);
+  if (match$2 === undefined) {
+    return;
+  }
+  if (typeof match$2 !== "object") {
+    return;
+  }
+  switch (match$2.TAG) {
     case "Text" :
-      let text$1 = text._0;
-      if (text$1 !== "") {
-        if (attempt.lastWasText) {
-          attempt.buffer.push({
-            TAG: "Markup",
-            _0: "<!-- -->"
-          });
-        }
-        attempt.buffer.push({
-          TAG: "Markup",
-          _0: escapeText(text$1)
-        });
-        attempt.lastWasText = true;
-        return;
-      } else {
-        return;
-      }
+      return writeText(attempt, match$2._0);
     case "List" :
-      text._0.forEach(item => renderElement(request, attempt, context, item));
+      match$2._0.forEach((item, index) => renderItem(request, attempt, at(context, index), item));
       return;
     case "Node" :
-      let node = text._0;
-      let match = node.kind;
-      let exit = 0;
-      switch (match) {
-        case "Host" :
-          let tag = node.elementType;
-          if (!tagPattern.test(tag)) {
-            fail(context, 1, `"` + tag + `" isn't a tag name`);
-          }
-          if (Env$Common.isDev) {
-            checkNesting(context, tag);
-          }
-          let props = node.props;
-          let children = node.props.children;
-          let context_contexts = context.contexts;
-          let context_ancestors = {
-            hd: tag,
-            tl: context.ancestors
-          };
-          let context_selectValue = tag === "select" ? optionalString(props["value"]) : context.selectValue;
-          let context_path = {
-            hd: `<` + tag + `>`,
-            tl: context.path
-          };
-          let context$1 = {
-            contexts: context_contexts,
-            ancestors: context_ancestors,
-            selectValue: context_selectValue,
-            path: context_path
-          };
-          writeMarkup(attempt, `<` + tag + attributes(context$1, tag, props) + `>`);
-          if (voidElements.includes(tag)) {
-            if (Element$WeftCore.classify(children) !== "Empty") {
-              return fail(context$1, 3, `a <` + tag + `> can't have children`);
-            } else {
-              return;
-            }
-          }
-          if (rawTextElements.includes(tag) && Element$WeftCore.classify(children) !== "Empty") {
-            fail(context$1, 4, `a <` + tag + `>'s content isn't HTML, so it can't be rendered from children`);
-          }
-          if (tag === "textarea") {
-            let value = optionalString(props["value"]);
-            let text$2 = value !== undefined ? value : Stdlib_Option.getOr(textOf(children), "");
-            writeMarkup(attempt, (
-              text$2.startsWith("\n") ? "\n" : ""
-            ) + escapeText(text$2));
-          } else {
-            renderElement(request, attempt, context$1, children);
-          }
-          return writeMarkup(attempt, `</` + tag + `>`);
-        case "Provider" :
-          let context_contexts$1 = Belt_Array.concatMany([
-            context.contexts,
-            [ServerRender$WeftCore.providedContext(node)]
-          ]);
-          let context_ancestors$1 = context.ancestors;
-          let context_selectValue$1 = context.selectValue;
-          let context_path$1 = context.path;
-          let context$2 = {
-            contexts: context_contexts$1,
-            ancestors: context_ancestors$1,
-            selectValue: context_selectValue$1,
-            path: context_path$1
-          };
-          return renderElement(request, attempt, context$2, node.props.children);
-        case "Component" :
-        case "Memo" :
-          exit = 1;
-          break;
-        case "Fragment" :
-        case "ErrorBoundary" :
-          exit = 2;
-          break;
-        case "Portal" :
+      return renderNode(request, attempt, at(context, 0), match$2._0);
+  }
+}
+
+function renderItem(request, attempt, context, item) {
+  let match = Stdlib_Option.map(resolved(attempt, item), Element$WeftCore.classify);
+  if (match === undefined) {
+    return;
+  }
+  if (typeof match !== "object") {
+    return;
+  }
+  switch (match.TAG) {
+    case "Text" :
+      return writeText(attempt, match._0);
+    case "List" :
+      return renderChildren(request, attempt, context, item);
+    case "Node" :
+      return renderNode(request, attempt, context, match._0);
+  }
+}
+
+function renderNode(request, attempt, context, node) {
+  let match = node.kind;
+  let exit = 0;
+  switch (match) {
+    case "Host" :
+      let tag = node.elementType;
+      if (!tagPattern.test(tag)) {
+        fail(context, 1, `"` + tag + `" isn't a tag name`);
+      }
+      if (Env$Common.isDev) {
+        checkNesting(context, tag);
+      }
+      let props = node.props;
+      let children = node.props.children;
+      let context_contexts = context.contexts;
+      let context_ancestors = {
+        hd: tag,
+        tl: context.ancestors
+      };
+      let context_selectValue = tag === "select" ? optionalString(props["value"]) : context.selectValue;
+      let context_path = {
+        hd: `<` + tag + `>`,
+        tl: context.path
+      };
+      let context_position = context.position;
+      let context$1 = {
+        contexts: context_contexts,
+        ancestors: context_ancestors,
+        selectValue: context_selectValue,
+        path: context_path,
+        position: context_position
+      };
+      writeMarkup(attempt, `<` + tag + attributes(context$1, tag, props) + `>`);
+      if (voidElements.includes(tag)) {
+        if (Element$WeftCore.classify(children) !== "Empty") {
+          return fail(context$1, 3, `a <` + tag + `> can't have children`);
+        } else {
           return;
-        case "Suspense" :
-          let props$1 = node.props;
-          let context_contexts$2 = context.contexts;
-          let context_ancestors$2 = context.ancestors;
-          let context_selectValue$2 = context.selectValue;
-          let context_path$2 = {
-            hd: "<Suspense>",
-            tl: context.path
-          };
-          let context$3 = {
-            contexts: context_contexts$2,
-            ancestors: context_ancestors$2,
-            selectValue: context_selectValue$2,
-            path: context_path$2
-          };
-          let content = {
-            buffer: [],
-            lastWasText: false,
-            pending: [],
-            spawns: []
-          };
-          let val;
-          try {
-            val = renderElement(request, content, context$3, props$1.children);
-          } catch (raw_error) {
-            let error = Primitive_exceptions.internalToException(raw_error);
-            writeMarkup(attempt, "<!--$!--><template");
-            attempt.buffer.push({
-              TAG: "Failure",
-              _0: error
-            });
-            writeMarkup(attempt, "></template>");
-            renderElement(request, attempt, context$3, props$1.fallback);
-            return writeMarkup(attempt, "<!--/$-->");
-          }
-          if (content.pending.length === 0) {
-            writeMarkup(attempt, "<!--$-->");
-            content.buffer.forEach(piece => {
-              attempt.buffer.push(piece);
-            });
-            content.spawns.forEach(spawn => {
-              attempt.spawns.push(spawn);
-            });
-            return writeMarkup(attempt, "<!--/$-->");
-          }
-          if (request.waitForAll) {
-            content.pending.forEach(promise => {
-              attempt.pending.push(promise);
-            });
-            return;
-          }
-          let spawn = {
-            id: -1,
-            children: props$1.children,
-            context: context$3
-          };
-          writeMarkup(attempt, "<!--$?-->");
-          attempt.buffer.push({
-            TAG: "Anchor",
-            _0: spawn
-          });
-          renderElement(request, attempt, context$3, props$1.fallback);
-          writeMarkup(attempt, "<!--/$-->");
+        }
+      }
+      if (rawTextElements.includes(tag) && Element$WeftCore.classify(children) !== "Empty") {
+        fail(context$1, 4, `a <` + tag + `>'s content isn't HTML, so it can't be rendered from children`);
+      }
+      if (tag === "textarea") {
+        let value = optionalString(props["value"]);
+        let text = value !== undefined ? value : Stdlib_Option.getOr(textOf(children), "");
+        writeMarkup(attempt, (
+          text.startsWith("\n") ? "\n" : ""
+        ) + escapeText(text));
+      } else {
+        renderChildren(request, attempt, context$1, children);
+      }
+      return writeMarkup(attempt, `</` + tag + `>`);
+    case "Provider" :
+      let context_contexts$1 = Belt_Array.concatMany([
+        context.contexts,
+        [ServerRender$WeftCore.providedContext(node)]
+      ]);
+      let context_ancestors$1 = context.ancestors;
+      let context_selectValue$1 = context.selectValue;
+      let context_path$1 = context.path;
+      let context_position$1 = context.position;
+      let context$2 = {
+        contexts: context_contexts$1,
+        ancestors: context_ancestors$1,
+        selectValue: context_selectValue$1,
+        path: context_path$1,
+        position: context_position$1
+      };
+      return renderChildren(request, attempt, context$2, node.props.children);
+    case "Component" :
+    case "Memo" :
+      exit = 1;
+      break;
+    case "Fragment" :
+    case "ErrorBoundary" :
+      exit = 2;
+      break;
+    case "Portal" :
+      return;
+    case "Suspense" :
+      let props$1 = node.props;
+      let context_contexts$2 = context.contexts;
+      let context_ancestors$2 = context.ancestors;
+      let context_selectValue$2 = context.selectValue;
+      let context_path$2 = {
+        hd: "<Suspense>",
+        tl: context.path
+      };
+      let context_position$2 = context.position;
+      let context$3 = {
+        contexts: context_contexts$2,
+        ancestors: context_ancestors$2,
+        selectValue: context_selectValue$2,
+        path: context_path$2,
+        position: context_position$2
+      };
+      let contentContext = at(context$3, 0);
+      let fallbackContext = at(context$3, 1);
+      let content = {
+        buffer: [],
+        lastWasText: false,
+        pending: [],
+        spawns: []
+      };
+      let val;
+      try {
+        val = renderChildren(request, content, contentContext, props$1.children);
+      } catch (raw_error) {
+        let error = Primitive_exceptions.internalToException(raw_error);
+        writeMarkup(attempt, "<!--$!--><template");
+        attempt.buffer.push({
+          TAG: "Failure",
+          _0: error
+        });
+        writeMarkup(attempt, "></template>");
+        renderChildren(request, attempt, fallbackContext, props$1.fallback);
+        return writeMarkup(attempt, "<!--/$-->");
+      }
+      if (content.pending.length === 0) {
+        writeMarkup(attempt, "<!--$-->");
+        content.buffer.forEach(piece => {
+          attempt.buffer.push(piece);
+        });
+        content.spawns.forEach(spawn => {
           attempt.spawns.push(spawn);
+        });
+        return writeMarkup(attempt, "<!--/$-->");
+      }
+      if (request.waitForAll) {
+        content.pending.forEach(promise => {
+          attempt.pending.push(promise);
+        });
+        return;
+      }
+      let spawn = {
+        id: -1,
+        children: props$1.children,
+        context: contentContext
+      };
+      writeMarkup(attempt, "<!--$?-->");
+      attempt.buffer.push({
+        TAG: "Anchor",
+        _0: spawn
+      });
+      renderChildren(request, attempt, fallbackContext, props$1.fallback);
+      writeMarkup(attempt, "<!--/$-->");
+      attempt.spawns.push(spawn);
+      return;
+    case "Offscreen" :
+      return fail(context, 6, "an internal element (Offscreen) reached the HTML renderer");
+    case "Lazy" :
+      return renderItem(request, attempt, context, node);
+  }
+  switch (exit) {
+    case 1 :
+      let make = node.elementType;
+      let context_contexts$3 = context.contexts;
+      let context_ancestors$3 = context.ancestors;
+      let context_selectValue$3 = context.selectValue;
+      let context_path$3 = {
+        hd: `<` + componentName(make) + `>`,
+        tl: context.path
+      };
+      let context_position$3 = context.position;
+      let context$4 = {
+        contexts: context_contexts$3,
+        ancestors: context_ancestors$3,
+        selectValue: context_selectValue$3,
+        path: context_path$3,
+        position: context_position$3
+      };
+      let exit$1 = 0;
+      let output;
+      try {
+        output = ServerRender$WeftCore.renderComponent(make, node.props, {
+          contexts: context_contexts$3,
+          position: Stdlib_List.toArray(Stdlib_List.reverse(context_position$3)),
+          idPrefix: request.idPrefix
+        });
+        exit$1 = 3;
+      } catch (raw_error$1) {
+        let error$1 = Primitive_exceptions.internalToException(raw_error$1);
+        let promise = ServerRender$WeftCore.suspendedOn(error$1);
+        if (promise !== undefined) {
+          attempt.pending.push(promise);
           return;
-        case "Offscreen" :
-          return fail(context, 6, "an internal element (Offscreen) reached the HTML renderer");
-        case "Lazy" :
-          let promise = Lazy$WeftCore.promiseOf(node);
-          let exit$1 = 0;
-          let resolved;
-          try {
-            resolved = ServerRender$WeftCore.run(() => Hooks$WeftCore.use(promise));
-            exit$1 = 3;
-          } catch (raw_error$1) {
-            let error$1 = Primitive_exceptions.internalToException(raw_error$1);
-            let promise$1 = ServerRender$WeftCore.suspendedOn(error$1);
-            if (promise$1 !== undefined) {
-              attempt.pending.push(promise$1);
-              return;
-            }
-            throw error$1;
-          }
-          if (exit$1 === 3) {
-            return renderElement(request, attempt, context, resolved);
-          }
-          break;
+        }
+        throw error$1;
       }
-      switch (exit) {
-        case 1 :
-          let make = node.elementType;
-          let context_contexts$3 = context.contexts;
-          let context_ancestors$3 = context.ancestors;
-          let context_selectValue$3 = context.selectValue;
-          let context_path$3 = {
-            hd: `<` + componentName(make) + `>`,
-            tl: context.path
-          };
-          let context$4 = {
-            contexts: context_contexts$3,
-            ancestors: context_ancestors$3,
-            selectValue: context_selectValue$3,
-            path: context_path$3
-          };
-          let exit$2 = 0;
-          let output;
-          try {
-            output = ServerRender$WeftCore.renderComponent(make, node.props, {
-              contexts: context_contexts$3
-            });
-            exit$2 = 3;
-          } catch (raw_error$2) {
-            let error$2 = Primitive_exceptions.internalToException(raw_error$2);
-            let promise$2 = ServerRender$WeftCore.suspendedOn(error$2);
-            if (promise$2 !== undefined) {
-              attempt.pending.push(promise$2);
-              return;
-            }
-            throw error$2;
-          }
-          if (exit$2 === 3) {
-            return renderElement(request, attempt, context$4, output);
-          }
-          break;
-        case 2 :
-          return renderElement(request, attempt, context, node.props.children);
+      if (exit$1 === 3) {
+        return renderChildren(request, attempt, context$4, output);
       }
+      break;
+    case 2 :
+      return renderChildren(request, attempt, context, node.props.children);
   }
 }
 
@@ -517,7 +594,7 @@ async function renderUntilReady(request, context, element) {
       pending: [],
       spawns: []
     };
-    renderElement(request, attempt, context, element);
+    renderChildren(request, attempt, context, element);
     if (attempt.pending.length === 0) {
       result = attempt;
     } else {
@@ -554,17 +631,20 @@ let rootContext = {
   contexts: rootContext_contexts,
   ancestors: /* [] */0,
   selectValue: undefined,
-  path: /* [] */0
+  path: /* [] */0,
+  position: /* [] */0
 };
 
 function defaultOnError(error) {
   console.error(error);
 }
 
-function render(element, onErrorOpt, signal) {
+function render(element, onErrorOpt, signal, idPrefixOpt) {
   let onError = onErrorOpt !== undefined ? onErrorOpt : defaultOnError;
+  let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
   let request = {
     onError: onError,
+    idPrefix: idPrefix,
     waitForAll: false,
     nextBoundary: 0,
     aborted: false
@@ -698,10 +778,12 @@ function rest(rendering) {
   return rendering.rest;
 }
 
-async function renderToString(element, onErrorOpt) {
+async function renderToString(element, onErrorOpt, idPrefixOpt) {
   let onError = onErrorOpt !== undefined ? onErrorOpt : defaultOnError;
+  let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
   let request = {
     onError: onError,
+    idPrefix: idPrefix,
     waitForAll: true,
     nextBoundary: 0,
     aborted: false
@@ -709,8 +791,8 @@ async function renderToString(element, onErrorOpt) {
   return html(request, await renderUntilReady(request, rootContext, element));
 }
 
-function renderToStream(element, onError, signal) {
-  let rendering = render(element, onError, signal);
+function renderToStream(element, onError, signal, idPrefix) {
+  let rendering = render(element, onError, signal, idPrefix);
   let encoder = new TextEncoder();
   return new ReadableStream({
     start: controller => {

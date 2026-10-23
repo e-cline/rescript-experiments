@@ -1264,6 +1264,7 @@ function MakeHydratableWithScheduler(Host) {
         callbackTask: undefined,
         callbackLane: Lanes$WeftCore.none,
         isUnmounted: false,
+        idPrefix: "w",
         ensureScheduled: () => {}
       };
       rootFiber.stateNode = root;
@@ -1271,8 +1272,10 @@ function MakeHydratableWithScheduler(Host) {
       liveRoots.push(root);
       return root;
     };
-    let hydrateRoot = (container, element) => {
+    let hydrateRoot = (idPrefixOpt, container, element) => {
+      let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
       let root = createRoot(container);
+      root.idPrefix = idPrefix;
       hydratingRoots.add(root);
       root.pendingElement = element;
       root.hasPendingElement = true;
@@ -2603,6 +2606,7 @@ function MakeWithScheduler(Host) {
         callbackTask: undefined,
         callbackLane: Lanes$WeftCore.none,
         isUnmounted: false,
+        idPrefix: "w",
         ensureScheduled: () => {}
       };
       rootFiber.stateNode = root;
@@ -2610,8 +2614,10 @@ function MakeWithScheduler(Host) {
       liveRoots.push(root);
       return root;
     };
-    let hydrateRoot = (container, element) => {
+    let hydrateRoot = (idPrefixOpt, container, element) => {
+      let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
       let root = createRoot(container);
+      root.idPrefix = idPrefix;
       hydratingRoots.add(root);
       root.pendingElement = element;
       root.hasPendingElement = true;
@@ -3941,6 +3947,7 @@ function Make(Host) {
       callbackTask: undefined,
       callbackLane: Lanes$WeftCore.none,
       isUnmounted: false,
+      idPrefix: "w",
       ensureScheduled: () => {}
     };
     rootFiber.stateNode = root;
@@ -3948,8 +3955,10 @@ function Make(Host) {
     liveRoots.push(root);
     return root;
   };
-  let hydrateRoot = (container, element) => {
+  let hydrateRoot = (idPrefixOpt, container, element) => {
+    let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
     let root = createRoot(container);
+    root.idPrefix = idPrefix;
     hydratingRoots.add(root);
     root.pendingElement = element;
     root.hasPendingElement = true;
@@ -5238,6 +5247,7 @@ function MakeHydratable(Host) {
       callbackTask: undefined,
       callbackLane: Lanes$WeftCore.none,
       isUnmounted: false,
+      idPrefix: "w",
       ensureScheduled: () => {}
     };
     rootFiber.stateNode = root;
@@ -5245,8 +5255,10 @@ function MakeHydratable(Host) {
     liveRoots.push(root);
     return root;
   };
-  let hydrateRoot = (container, element) => {
+  let hydrateRoot = (idPrefixOpt, container, element) => {
+    let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
     let root = createRoot(container);
+    root.idPrefix = idPrefix;
     hydratingRoots.add(root);
     root.pendingElement = element;
     root.hasPendingElement = true;

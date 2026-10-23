@@ -36,10 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 to 7.7 are done (§0, §2 to §10 say where they went their own way); the follow-up 7.8
-(`useId`) is next, after a review. The decisions are settled (Decisions, at the end). The phases
-(7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same branch as phases 0 to 6, a commit or a
-few each, each ending green, with a review before the next.
+Every phase, 7.0 to 7.8, is done (§0, §2 to §11 say where they went their own way). The decisions
+are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on
+the same branch as phases 0 to 6, a commit or a few each, each ending green, with a review before
+the next.
 
 ## What was verified before writing this
 
@@ -841,6 +841,39 @@ tests' random trees (every component's position, compared); IDs surviving a boun
 later, a keyed list reordered after hydration (positions are fixed at mount), and a boundary
 switching between fallback and content; and `weft_notes`' comment form linking its labels.
 
+**As built (phase 7.8).** As designed, with these differences:
+
+- **Only the server and hydration use positions.** A component mounted on the client afterwards
+  takes its ID from a count, across every root (`<prefix>-z<count>`): a position could be one a
+  component that moved still has as its ID (a keyed list reordered, then a new item mounted at an
+  index another one left), which would give two the same. React does the same.
+- **The position is the whole path from the root**, one index per fiber (the reconciler's `index`),
+  computed by walking up from the component when it mounts, rather than from its nearest
+  function-component ancestor's (which would need that ancestor's position kept for it). The
+  `Suspense` rule: a fiber whose parent is a boundary contributes 0 if it's the `Offscreen` (the
+  content) and 1 otherwise (the fallback's fragment), instead of its own index; both are keyed in
+  `SuspenseImpl`, so neither is ever flattened away. On the server, `Html` keeps the same path in
+  its context, through `renderChildren`, which does what `ChildReconciler.reconcileChildFibers` does
+  to a component's or an element's children: lazy elements resolved (repeatedly), an unkeyed
+  fragment at the top flattened once, a single element at 0, a list's items at their indices, and a
+  list in a list a fragment there.
+- **The encoding**: an index below 32 is one base-32 digit (`0` to `v`), a larger one `w<digits>x`,
+  and three or more zeros in a row `y<count>x`; the ID is `<prefix>-<path>-<n>`, `n` the component's
+  `useId` call (in base 32).
+- **The prefix** is on `Html.render`/`renderToString`/`renderToStream` and `Client.hydrateRoot` (and
+  the reconciler's `hydrateRoot`), kept on the root (`FiberRoot.idPrefix`). `Page` doesn't take one:
+  it has one root, and a root an app makes beside it with `createRoot` gets counted IDs, which no
+  positioned one can be. `ServerRender.renderComponent`'s options gained `position` and `idPrefix`,
+  both optional.
+
+`weft_dom`'s `DomProps` gained `aria-describedby` and `aria-labelledby`, what `useId` is mostly for.
+Tests: `weft_core/tests/UseId_test.res` (an ID per call, kept; a fresh one after a keyed reorder;
+the encoding; the client's positions while hydrating against the server's for the same tree;
+`ServerRender_test`'s failure in a server component), the DOM fuzz test (every component's IDs over
+100 random trees, with fragments at the top of a component's output and lazy elements, the same on
+both sides), labels and inputs linked through hydration and prefixes in `Hydrate_test.res`, and
+`weft_notes`' comment form, whose input is described by a hint through an ID.
+
 ## Packages and layout
 
 After phase 7.0 (§0), and with what phase 7 adds:
@@ -923,7 +956,8 @@ found and fixed three hydration bugs in the reconciler (§6) and the bootstrap r
 hydration, which turned out to have nothing to speed up (§10).
 
 **Phase 7.8 -- `useId`** (§11), a follow-up: positions on both sides, the hook, prefixes, and their
-tests. Independent of 7.7; either can come first.
+tests. Independent of 7.7; either can come first. Done, with IDs from a count for components mounted
+on the client (§11).
 
 ## Decisions
 
@@ -950,9 +984,10 @@ designed here and built after the rest, as phases 7.7 and 7.8), and the rest as 
    `ErrorBoundary` can catch it if not.
 8. **Hydration renders in a transition lane**, so a suspension outside every boundary waits with the
    server's HTML on screen, rather than needing a boundary.
-9. **`useId`** (§11), settled: designed now, built as phase 7.8. Its one demand on the earlier
-   phases is a rule for 7.2 and 7.3 (the HTML renderer and the reconciler walk the same levels), and
-   an options record for `renderComponent`; with those, it doesn't change the architecture.
+9. **`useId`** (§11), settled: designed now, built as phase 7.8 (done). Its one demand on the
+   earlier phases is a rule for 7.2 and 7.3 (the HTML renderer and the reconciler walk the same
+   levels), and an options record for `renderComponent`; with those, it doesn't change the
+   architecture.
 
 10. **Input typed before hydration is kept** (§7), as React does: hydration doesn't put a controlled
     `value` or `checked` back over what the user typed or ticked. Event replay (7.7) then replays

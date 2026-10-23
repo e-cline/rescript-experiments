@@ -80,10 +80,13 @@ on screen), and that's an ordinary root after. While hydrating:
   hydrated: its server content is removed, and it's rendered on the client from scratch (where an
   error happens again, for an error boundary to catch). With no boundary above, the whole root is.
 - a dehydrated boundary that gets new props before it has hydrated is rendered on the client.
+
+`idPrefix` (`"w"` by default) is what `Hooks.useId`'s IDs start with: the same as the server's (two
+roots on one page need different ones).
 */
 module type Hydratable = {
   include S
-  let hydrateRoot: (container, Element.t) => root
+  let hydrateRoot: (~idPrefix: string=?, container, Element.t) => root
 }
 
 /** Raised while hydrating where the client's tree and the server's content disagree. */

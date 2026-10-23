@@ -29,6 +29,15 @@ let useReducerWithMapState: (
 /** A box created on mount and kept, unchanged, for the component's lifetime. */
 let useRef: 'value => Ref.t<'value>
 
+/**
+A string unique on the page, kept for the component's lifetime, for linking elements: `htmlFor` and
+`id`, `aria-labelledby`, `aria-describedby`. Rendered on the server and hydrated, it's the same on
+both sides: it comes from where the component is in the tree (the server and the client render the
+same one), not from the order they render in. A component mounted later on the client gets a
+fresh one. Call it once per ID needed (each call gives another). Not in a server component.
+*/
+let useId: unit => string
+
 let useMemo0: (unit => 'value) => 'value
 let useMemo1: (unit => 'value, array<'a>) => 'value
 let useMemo2: (unit => 'value, ('a, 'b)) => 'value

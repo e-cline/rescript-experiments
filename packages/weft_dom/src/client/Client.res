@@ -9,7 +9,8 @@ let createRoot = (container: Dom.element) => {
   Renderer.createRoot(container)
 }
 
-let hydrateRoot = (container: Dom.element, element) => Renderer.hydrateRoot(container, element)
+let hydrateRoot = (~idPrefix=?, container: Dom.element, element) =>
+  Renderer.hydrateRoot(~idPrefix?, container, element)
 
 let render = Renderer.render
 let flushSync = Renderer.flushSync

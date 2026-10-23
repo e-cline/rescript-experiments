@@ -103,6 +103,18 @@ let clicked = (container, selector) => {
   Dom.textContent(find(container, selector))
 }
 
+module Field = {
+  /** A label and its input, linked by an ID from `useId`. */
+  @jsx.component
+  let make = (~label: string) => {
+    let id = Hooks.useId()
+    <>
+      <label htmlFor=id> {string(label)} </label>
+      <input id />
+    </>
+  }
+}
+
 describe("hydrating the server's HTML", () => {
   testAsync("adopts every node, the same objects, and attaches handlers", async t => {
     let element =
@@ -126,6 +138,49 @@ describe("hydrating the server's HTML", () => {
     t->expect(sameNodes(before, nodesOf(container)))->Expect.toBe(true)
     t->expect(Dom.innerHTML(container))->Expect.toBe(html)
     t->expect(clicked(container, "#c"))->Expect.toBe("1")
+  })
+
+  testAsync(
+    "links labels to their inputs with the same IDs on the server and hydrating",
+    async t => {
+      let element =
+        <form>
+          <Field label="Name" />
+          <WeftCore.Suspense fallback={string("loading")}>
+            <Field label="Comment" />
+          </WeftCore.Suspense>
+        </form>
+      let container = page(await Html.renderToString(element))
+      let (_, warnings) = await logging(async () => hydrate(container, element))
+      t->expect(warnings)->Expect.toEqual([])
+      let inputs = Dom.querySelectorAll(container, "input")
+      let ids = inputs->Array.map(input => Dom.getAttribute(input, "id")->Nullable.getOr(""))
+      t->expect(Set.fromArray(ids)->Set.size)->Expect.toBe(2)
+      t
+      ->expect(
+        Dom.querySelectorAll(container, "label")->Array.map(
+          label => Dom.getAttribute(label, "for")->Nullable.getOr(""),
+        ),
+      )
+      ->Expect.toEqual(ids)
+    },
+  )
+
+  testAsync("makes IDs with the root's prefix, which hydrating has to be given too", async t => {
+    let element = <Field label="Name" />
+    let html = await Html.renderToString(element, ~idPrefix="notes")
+    let container = page(html)
+    let (_, warnings) = await logging(
+      async () =>
+        Client.act(() => Client.hydrateRoot(~idPrefix="notes", container, element)->ignore),
+    )
+    t->expect(warnings)->Expect.toEqual([])
+    t
+    ->expect(Dom.getAttribute(find(container, "input"), "id")->Nullable.getOr(""))
+    ->Expect.toBe("notes-0-0")
+    // Without it, the IDs differ.
+    let (_, warnings) = await logging(async () => hydrate(page(html), element))
+    t->expect(Array.length(warnings) > 0)->Expect.toBe(true)
   })
 
   testAsync("keeps what the user typed or ticked before it hydrated", async t => {
@@ -281,11 +336,32 @@ module Echo = {
   }
 }
 
+/** The IDs `Identified` got on the server, and while hydrating (or on the client). */
+let serverIds: Set.t<string> = Set.make()
+let clientIds: Set.t<string> = Set.make()
+let identified = ref(0)
+
+module Identified = {
+  /** Takes two IDs, and records them, by where it rendered. */
+  @jsx.component
+  let make = (~children: Jsx.element) => {
+    let first = Hooks.useId()
+    let second = Hooks.useId()
+    let ids = WeftCore.ServerRender.isRenderingComponent() ? serverIds : clientIds
+    ids->Set.add(first)
+    ids->Set.add(second)
+    // A fragment at the top of what it renders is its contents, on both sides.
+    <>
+      <s> children </s>
+    </>
+  }
+}
+
 /** What a random tree's boundaries wait on: each a promise, resolved when the test says. */
 type waiting = {promise: promise<string>, resolve: string => unit, label: string}
 
 let rec randomTree = (random, ~depth, ~waits: array<waiting>, ~inBoundary): Jsx.element =>
-  switch Random.intBelow(random, depth <= 0 ? 3 : 9) {
+  switch Random.intBelow(random, depth <= 0 ? 3 : 11) {
   | 0 | 1 => string(Random.pick(random, ["a", "b", "", "c d"]))
   | 2 if inBoundary =>
     let (promise, resolve) = deferred()
@@ -295,6 +371,14 @@ let rec randomTree = (random, ~depth, ~waits: array<waiting>, ~inBoundary): Jsx.
   | 2 => <input value={Random.pick(random, ["", "x"])} />
   | 3 => <Echo> {randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary)} </Echo>
   | 4 => <> {randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary)} </>
+  | 7 =>
+    identified := identified.contents + 1
+    <Identified> {randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary)} </Identified>
+  // What it resolves to, on both sides.
+  | 8 =>
+    WeftCore.Lazy.fromPromise(
+      Promise.resolve(randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary)),
+    )
   | 5 | 6 =>
     <WeftCore.Suspense fallback={<i> {string("loading")} </i>}>
       {randomChildren(random, ~depth=depth - 1, ~waits, ~inBoundary=true)}
@@ -323,8 +407,12 @@ describe("hydrating, fuzzed", () => {
   testAsync(
     "random trees' streamed HTML hydrates into a client render's DOM, of the HTML's elements",
     async t => {
-      for seed in 1 to 60 {
+      let withIds = ref(0)
+      for seed in 1 to 100 {
         let random = Random.make(Int.toFloat(seed))
+        serverIds->Set.clear
+        clientIds->Set.clear
+        identified := 0
         let waits = []
         let element = <div> {randomChildren(random, ~depth=4, ~waits, ~inBoundary=false)} </div>
         let rendering = Html.render(element)
@@ -380,6 +468,15 @@ describe("hydrating, fuzzed", () => {
         await reading
         apply()
         await settle()
+        // Every component's IDs: two each, all different, and the same on both sides.
+        let sorted = ids => ids->Set.values->Iterator.toArray->Array.toSorted(String.compare)
+        t
+        ->expect((seed, Set.size(serverIds)))
+        ->Expect.toEqual((seed, 2 * identified.contents))
+        t->expect((seed, sorted(clientIds)))->Expect.toEqual((seed, sorted(serverIds)))
+        if identified.contents > 0 {
+          withIds := withIds.contents + 1
+        }
         let expected = clientRender(element)
         await settle()
         t
@@ -389,6 +486,8 @@ describe("hydrating, fuzzed", () => {
         t->expect((seed, Array.length(made)))->Expect.toEqual((seed, 0))
         ignore(root)
       }
+      // The trees had some to compare.
+      t->expect(withIds.contents > 25)->Expect.toBe(true)
     },
   )
 })

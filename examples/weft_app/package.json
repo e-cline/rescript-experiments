@@ -10,6 +10,7 @@
     "@rescript/runtime": "catalog:"
   },
   "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
     "jsdom": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:",

@@ -6,7 +6,7 @@ they read changes.
 let count = Signals.Atom.make(0)
 let doubled = Signals.Computed.make(() => Signals.Atom.get(count) * 2)
 
-@jsx.component
+@weft.component
 let make = () => {
   let (value, setCount) = WeftSignals.SignalHooks.useAtom(count)
   let twice = WeftSignals.SignalHooks.useSignal(doubled)

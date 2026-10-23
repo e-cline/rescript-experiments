@@ -5,7 +5,7 @@ Shows a fallback while the components below it wait for data.
 let user = fetchUser(id) // a promise, made once (outside the component, or cached)
 
 module Profile = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let user = Weft.Hooks.use(user)
     <h1> {Jsx.string(user.name)} </h1>

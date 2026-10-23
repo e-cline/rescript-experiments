@@ -38,7 +38,7 @@ type rec spec =
 
 /** A server component: its child, after `delay` macrotasks (0: synchronously). */
 module FuzzServer = {
-  @jsx.component
+  @weft.component
   let make = (~delay: int, ~child: Weft.Element.t) =>
     delay == 0
       ? child

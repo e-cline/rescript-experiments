@@ -17,7 +17,7 @@ module FilterContext = {
 }
 
 module NewTodo = {
-  @jsx.component
+  @weft.component
   let make = (~onAdd: string => unit) => {
     let (title, setTitle) = useState(() => "")
     let input = useRef(Nullable.null)
@@ -47,7 +47,7 @@ module NewTodo = {
 }
 
 module TodoItem = {
-  @jsx.component
+  @weft.component
   let make = Weft.Memo.memo((~todo: Todo.todo, ~dispatch: Todo.action => unit) => {
     let id = Int.toString(todo.id)
     <li id={`todo-${id}`} className={todo.done ? "done" : ""}>
@@ -66,7 +66,7 @@ module TodoItem = {
 }
 
 module TodoList = {
-  @jsx.component
+  @weft.component
   let make = (~todos: array<Todo.todo>, ~dispatch: Todo.action => unit) => {
     let filter = useContext(FilterContext.context)
     <ul id="todo-list">
@@ -78,7 +78,7 @@ module TodoList = {
 }
 
 module Filters = {
-  @jsx.component
+  @weft.component
   let make = (~filter: Todo.filter, ~setFilter: (Todo.filter => Todo.filter) => unit) =>
     <nav>
       {[Todo.All, Active, Completed]
@@ -97,7 +97,7 @@ module Filters = {
     </nav>
 }
 
-@jsx.component
+@weft.component
 let make = (~storageKey: string="weft-todos") => {
   let (todos, dispatch) = useReducerWithMapState(Todo.reducer, storageKey, Todo.Storage.load)
   let (filter, setFilter) = useState(() => Todo.All)

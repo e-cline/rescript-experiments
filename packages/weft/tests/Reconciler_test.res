@@ -22,7 +22,7 @@ let uidOf = (renderer, id) =>
   }
 
 module KeyedList = {
-  @jsx.component
+  @weft.component
   let make = (~items: array<string>) =>
     <ul id="list">
       {items
@@ -32,13 +32,13 @@ module KeyedList = {
 }
 
 module Item = {
-  @jsx.component
+  @weft.component
   let make = (~name: string) => <li id=name> {TestJsx.string(name)} </li>
 }
 
 /** Keyed components, each rendering one `<li>`: moves go through non-host fibers. */
 module ComponentList = {
-  @jsx.component
+  @weft.component
   let make = (~items: array<string>) =>
     <ul id="list"> {items->Array.map(item => <Item key=item name=item />)->TestJsx.array} </ul>
 }
@@ -84,7 +84,7 @@ describe("Reconciler: mounting", () => {
 
   test("a component that renders nothing renders nothing", t => {
     module Nothing = {
-      @jsx.component
+      @weft.component
       let make = () => TestJsx.null
     }
     let renderer = rendered(
@@ -273,7 +273,7 @@ describe("Reconciler: keyed children", () => {
 external asElement: 'a => TestJsx.element = "%identity"
 
 module Nothing = {
-  @jsx.component
+  @weft.component
   let make = () => TestJsx.null
 }
 
@@ -368,7 +368,7 @@ describe("Reconciler: edge cases", () => {
 
   testAsync("an error rendering one root doesn't strand another root's update", async t => {
     module Throws = {
-      @jsx.component
+      @weft.component
       let make = () => JsError.throwWithMessage("root A failed")
     }
     let a = rendered(<div id="a" />)

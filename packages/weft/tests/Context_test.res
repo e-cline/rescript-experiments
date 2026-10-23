@@ -17,7 +17,7 @@ module Theme = {
 }
 
 module ThemeLabel = {
-  @jsx.component
+  @weft.component
   let make = (~id: string) => {
     Renders.record(id)
     let theme = Hooks.useContext(Theme.context)
@@ -27,7 +27,7 @@ module ThemeLabel = {
 
 /** Renders `children` (made by its parent) and its own state: it bails out of its children's work. */
 module Toggle = {
-  @jsx.component
+  @weft.component
   let make = (~id: string, ~children: TestJsx.element) => {
     Renders.record(id)
     let (on, setOn) = Hooks.useState(() => false)
@@ -37,7 +37,7 @@ module Toggle = {
 
 /** Holds the theme in state, so a click changes the provider's value. */
 module ThemeSwitcher = {
-  @jsx.component
+  @weft.component
   let make = (~children: TestJsx.element) => {
     let (theme, setTheme) = Hooks.useState(() => "dark")
     <Theme.Provider value=theme>
@@ -111,7 +111,7 @@ describe("Context", () => {
 
   test("a component that updates on its own still reads its provider's value", t => {
     module Reader = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let theme = Hooks.useContext(Theme.context)
         let (count, setCount) = Hooks.useState(() => 0)
@@ -142,7 +142,7 @@ describe("Context", () => {
 })
 
 module Rounded = {
-  @jsx.component
+  @weft.component
   let make = (~value: float) => {
     Renders.record("rounded")
     TestJsx.float(Math.round(value))
@@ -152,7 +152,7 @@ module Rounded = {
 
 describe("Memo", () => {
   module Row = {
-    @jsx.component
+    @weft.component
     let make = Memo.memo((~label: string) => {
       Renders.record(label)
       <li id=label> {TestJsx.string(label)} </li>
@@ -160,7 +160,7 @@ describe("Memo", () => {
   }
 
   module CountingRow = {
-    @jsx.component
+    @weft.component
     let make = Memo.memo((~label: string) => {
       Renders.record(label)
       let (count, setCount) = Hooks.useState(() => 0)
@@ -169,7 +169,7 @@ describe("Memo", () => {
   }
 
   module Parent = {
-    @jsx.component
+    @weft.component
     let make = (~second: string) => {
       let (count, setCount) = Hooks.useState(() => 0)
       <ul id="parent" onClick={() => setCount(c => c + 1)} title={Int.toString(count)}>
@@ -211,7 +211,7 @@ describe("Memo", () => {
 
   test("still renders for a context it reads", t => {
     module MemoLabel = {
-      @jsx.component
+      @weft.component
       let make = Memo.memo(
         (~id: string) => {
           let theme = Hooks.useContext(Theme.context)
@@ -259,7 +259,7 @@ describe("Context and Memo: more cases", () => {
   test("a component reading two contexts renders again for either", t => {
     Renders.reset()
     module Both = {
-      @jsx.component
+      @weft.component
       let make = Memo.memo(
         () => {
           Renders.record("both")

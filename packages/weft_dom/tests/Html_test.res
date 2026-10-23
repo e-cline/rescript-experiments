@@ -52,19 +52,19 @@ let tick = () => Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ig
 
 module Waits = {
   /** Suspends until `promise` resolves, then shows what it resolved to. */
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>) => <em> {string(Hooks.use(promise))} </em>
 }
 
 module Fails = {
-  @jsx.component
+  @weft.component
   let make = (~message: string) => JsError.throwWithMessage(message)
 }
 
 let theme = Weft.Context.make("plain")
 
 module Themed = {
-  @jsx.component
+  @weft.component
   let make = () => <i> {string(Hooks.useContext(theme))} </i>
 }
 
@@ -190,7 +190,7 @@ describe("text, components and the rest", () => {
     "separates texts in a row, wherever they come from, and writes nothing for empty text",
     async t => {
       module Word = {
-        @jsx.component
+        @weft.component
         let make = (~word: string) => string(word)
       }
       t
@@ -213,7 +213,7 @@ describe("text, components and the rest", () => {
 
   testAsync("calls components with their initial state, providers' values, and memo", async t => {
     module Counter = {
-      @jsx.component
+      @weft.component
       let make = (~start: int) => {
         let (count, _) = Hooks.useState(() => start)
         Hooks.useEffect0(() => JsError.throwWithMessage("effects don't run on the server"))
@@ -267,7 +267,7 @@ describe("text, components and the rest", () => {
   testAsync("waits for sibling suspensions together, not one after the other", async t => {
     let renders = ref(0)
     module Counted = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) => {
         renders := renders.contents + 1
         <em> {string(Hooks.use(promise))} </em>
@@ -473,7 +473,7 @@ describe("streaming", () => {
   testAsync("fails a boundary whose content fails later, with a script", async t => {
     let (promise, resolve) = deferred()
     module FailsAfter = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) =>
         JsError.throwWithMessage(`failed after ${Hooks.use(promise)}`)
     }
@@ -573,7 +573,7 @@ describe("the runtime", () => {
     let (first, resolveFirst) = deferred()
     let (second, resolveSecond) = deferred()
     module Row = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) =>
         <tr>
           <td> {string(Hooks.use(promise))} </td>
@@ -620,7 +620,7 @@ describe("the runtime", () => {
   testAsync("marks a boundary failed, keeping its fallback, and tells hydration", async t => {
     let (promise, resolve) = deferred()
     module FailsAfter = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) => JsError.throwWithMessage(Hooks.use(promise))
     }
     let rendering = Html.render(
@@ -647,7 +647,7 @@ describe("the runtime", () => {
 
 module Echo = {
   /** A component that renders its children, with state, as an entrypoint might. */
-  @jsx.component
+  @weft.component
   let make = (~children: Jsx.element) => {
     let (label, _) = Hooks.useState(() => "echo")
     <span title=label> children </span>

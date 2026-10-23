@@ -35,6 +35,7 @@
     "@e-cline/weft": "workspace:^"
   },
   "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
     "@rescript/runtime": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:"

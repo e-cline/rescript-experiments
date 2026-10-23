@@ -1,6 +1,6 @@
 # @e-cline/weft_dom
 
-The DOM renderer for [`@e-cline/weft`](../weft): renders `@jsx.component` components into a browser
+The DOM renderer for [`@e-cline/weft`](../weft): renders `@weft.component` components into a browser
 page. It's a `Weft.HostConfig.S` for the DOM, plus a JSX module whose host tags take DOM props. On
 the server, `Html` renders the same trees to HTML, streamed, for the client to hydrate.
 
@@ -21,7 +21,7 @@ namespace.
 @@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button onClick={_ => setCount(c => c + 1)}> {WeftDom.Jsx.int(count)} </button>

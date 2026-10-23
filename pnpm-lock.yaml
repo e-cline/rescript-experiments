@@ -477,6 +477,9 @@ importers:
         specifier: 'catalog:'
         version: 12.3.1
     devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
       jsdom:
         specifier: 'catalog:'
         version: 30.1.3
@@ -784,6 +787,9 @@ importers:
         specifier: workspace:^
         version: link:../priority_queue
     devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -812,6 +818,9 @@ importers:
         specifier: 'catalog:'
         version: 1.0.34
     devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../tools/ppx/weft
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -843,6 +852,9 @@ importers:
         specifier: workspace:^
         version: link:../weft
     devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -871,6 +883,9 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
     devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -890,6 +905,9 @@ importers:
         specifier: workspace:^
         version: link:../weft
     devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1

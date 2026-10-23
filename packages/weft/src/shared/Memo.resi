@@ -3,16 +3,16 @@ Components that skip rendering when their props haven't changed.
 
 ```rescript
 module Row = {
-  @jsx.component
+  @weft.component
   let make = Weft.Memo.memo((~label: string) => <li> {TestJsx.string(label)} </li>)
 }
 ```
 
-`@jsx.component` only accepts a one-argument wrapper, so for `memoCustomComparison`, shadow `make`:
+`@weft.component` only accepts a one-argument wrapper, so for `memoCustomComparison`, shadow `make`:
 
 ```rescript
 module Row = {
-  @jsx.component
+  @weft.component
   let make = (~label: string, ~onClick: unit => unit) => ...
   let make = Weft.Memo.memoCustomComparison(make, (a, b) => a.label == b.label)
 }

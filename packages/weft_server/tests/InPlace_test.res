@@ -427,7 +427,7 @@ describe("refetching, in order", () => {
     let data = Deferred.make()
     let calls = ref(0)
     module Counted = {
-      @jsx.component
+      @weft.component
       let make = (~promise) => {
         calls := calls.contents + 1
         text(Weft.Hooks.use(promise))

@@ -18,7 +18,7 @@ let take = () => {
 
 /** Logs its renders and each kind of effect, mounting and cleaning up. `dep` drives the deps. */
 module Logger = {
-  @jsx.component
+  @weft.component
   let make = (~name: string, ~dep: int=0, ~children: TestJsx.element=TestJsx.null) => {
     Log.add(`render ${name}`)
     Hooks.useLayoutEffect1(() => {
@@ -135,7 +135,7 @@ describe("useEffect and useLayoutEffect", () => {
     let runs = ref(0)
     let onceRuns = ref(0)
     module Every = {
-      @jsx.component
+      @weft.component
       let make = (~n: int) => {
         Hooks.useEffect(
           () => {
@@ -161,7 +161,7 @@ describe("useEffect and useLayoutEffect", () => {
 
   test("an update in a layout effect renders before the commit returns", t => {
     module Measure = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (width, setWidth) = Hooks.useState(() => 0)
         Hooks.useLayoutEffect0(
@@ -180,7 +180,7 @@ describe("useEffect and useLayoutEffect", () => {
 
   test("an update in an effect renders, inside act", t => {
     module Load = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (data, setData) = Hooks.useState(() => "loading")
         Hooks.useEffect0(
@@ -200,7 +200,7 @@ describe("useEffect and useLayoutEffect", () => {
   test("an effect that throws doesn't stop the others, and its error comes out", t => {
     Log.clear()
     module Throws = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useEffect0(() => JsError.throwWithMessage("effect failed"))
         TestJsx.null
@@ -224,7 +224,7 @@ describe("useEffect and useLayoutEffect", () => {
 
   test("an effect updating state forever throws", t => {
     module Loop = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (n, setN) = Hooks.useState(() => 0)
         Hooks.useLayoutEffect1(
@@ -245,7 +245,7 @@ describe("useEffect and useLayoutEffect", () => {
 
 describe("Refs", () => {
   module WithRef = {
-    @jsx.component
+    @weft.component
     let make = (~box: Ref.t<Nullable.t<TestJsx.node>>, ~seen: ref<string>) => {
       Hooks.useLayoutEffect0(() => {
         seen :=
@@ -299,7 +299,7 @@ describe("useSyncExternalStore", () => {
   }
 
   module Reader = {
-    @jsx.component
+    @weft.component
     let make = () => {
       let value = Hooks.useSyncExternalStore(
         ~subscribe=Store.subscribe,
@@ -323,7 +323,7 @@ describe("useSyncExternalStore", () => {
 
   test("a change between rendering and subscribing is caught", t => {
     module Racy = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let value = Hooks.useSyncExternalStore(
           ~subscribe=Store.subscribe,
@@ -358,7 +358,7 @@ describe("useSyncExternalStore: more cases", () => {
 
   test("a change after the commit but before subscribing is caught", t => {
     module Changer = {
-      @jsx.component
+      @weft.component
       let make = () => {
         // An earlier sibling's effect runs before the reader subscribes.
         Hooks.useEffect0(
@@ -371,7 +371,7 @@ describe("useSyncExternalStore: more cases", () => {
       }
     }
     module Reader = {
-      @jsx.component
+      @weft.component
       let make = () =>
         <i id="value">
           {TestJsx.int(
@@ -393,7 +393,7 @@ describe("useSyncExternalStore: more cases", () => {
 
   test("a change during the commit is caught before the commit returns", t => {
     module ChangesInLayout = {
-      @jsx.component
+      @weft.component
       let make = () => {
         // A child's layout effect runs before its parent's.
         Hooks.useLayoutEffect0(
@@ -406,7 +406,7 @@ describe("useSyncExternalStore: more cases", () => {
       }
     }
     module Reader = {
-      @jsx.component
+      @weft.component
       let make = (~children: TestJsx.element) => {
         let value = Hooks.useSyncExternalStore(
           ~subscribe=Quiet.subscribe,

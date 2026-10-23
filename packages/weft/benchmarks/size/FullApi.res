@@ -22,17 +22,17 @@ let getSnapshot = () => 0
 let greeting = Promise.resolve("hello")
 
 module Greeting = {
-  @jsx.component
+  @weft.component
   let make = () => Jsx.string(use(greeting))
 }
 
 module Label = {
-  @jsx.component
+  @weft.component
   let make = Weft.Memo.memo((~text: string) => <span> {Jsx.string(text)} </span>)
 }
 
 module App = {
-  @jsx.component
+  @weft.component
   let make = (~layer: Dom.element) => {
     let (count, setCount) = useState(() => 0)
     let (total, dispatch) = useReducer((total, n) => total + n, 0)

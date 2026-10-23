@@ -13,6 +13,7 @@
     "mitata": "catalog:"
   },
   "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
     "@types/node": "catalog:",
     "rescript": "catalog:",
     "terser": "catalog:",

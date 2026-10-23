@@ -37,6 +37,7 @@
     "@rescript/webapi": "catalog:"
   },
   "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
     "@rescript/runtime": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:"

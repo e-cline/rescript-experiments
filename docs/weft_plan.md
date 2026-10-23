@@ -1,8 +1,9 @@
 # Plan: Weft (`weft`) -- a React-like component library in ReScript
 
-Weft is a ReScript-native UI library: components are written with `@jsx.component`, rendered through
-a React-style fiber tree with hooks, and drawn by a pluggable host renderer (DOM, an in-memory test
-renderer, and anything else that implements the host interface). It doesn't use React at all.
+Weft is a ReScript-native UI library: components are written with `@weft.component`, rendered
+through a React-style fiber tree with hooks, and drawn by a pluggable host renderer (DOM, an
+in-memory test renderer, and anything else that implements the host interface). It doesn't use React
+at all.
 
 ## Status
 
@@ -41,9 +42,9 @@ differ from the plan below:
   `module Provider = { let make = Context.provider(context) }` needs no `props` type, so the plan's
   `MakeProvider` functor wasn't needed. Provider and memo components are plain functions marked with
   hidden properties, which `jsx` reads to pick the element's kind.
-- `Memo.memoCustomComparison` can't wrap a `@jsx.component` definition directly (the JSX PPX accepts
-  only one-argument wrappers), so it's applied by shadowing `make`, as with `@rescript/react`'s
-  `memoCustomCompareProps`.
+- `Memo.memoCustomComparison` can't wrap a `@weft.component` definition directly (the JSX PPX
+  accepts only one-argument wrappers), so it's applied by shadowing `make`, as with
+  `@rescript/react`'s `memoCustomCompareProps`.
 - A memoized component whose props compare equal also checks its context dependencies, so a context
   change reaches it even when propagation wouldn't be needed.
 - The DOM renderer has no separate `Style` or `PropDiff` modules: `DomProps.style` is a
@@ -176,7 +177,7 @@ a changeset.
 @@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~label: string) => {
     let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button onClick={_ => setCount(c => c + 1)}>

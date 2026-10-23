@@ -27,7 +27,7 @@ let setter: ref<option<(int => int) => unit>> = ref(None)
 let setFromOutside = f => (setter.contents->Option.getUnsafe)(f)
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~name: string) => {
     Renders.record(name)
     let (count, setCount) = Hooks.useState(() => 0)
@@ -111,7 +111,7 @@ describe("useState", () => {
 
   test("setting state while rendering renders again before committing", t => {
     module Converge = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (count, setCount) = Hooks.useState(() => 0)
         if count < 3 {
@@ -129,7 +129,7 @@ describe("useState", () => {
 
   test("setting state on every render throws", t => {
     module Forever = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (_, setCount) = Hooks.useState(() => 0)
         setCount(c => c + 1)
@@ -151,7 +151,7 @@ type action = Add(int) | Reset
 
 describe("useReducer", () => {
   module Total = {
-    @jsx.component
+    @weft.component
     let make = () => {
       let (total, dispatch) = Hooks.useReducer((total, action) =>
         switch action {
@@ -172,7 +172,7 @@ describe("useReducer", () => {
 
   test("useReducerWithMapState computes the initial state", t => {
     module Mapped = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (value, _) = Hooks.useReducerWithMapState((s, _: unit) => s, 4, n => n * n)
         <span id="v"> {TestJsx.int(value)} </span>
@@ -186,7 +186,7 @@ describe("useMemo, useCallback and useRef", () => {
   let computations = ref(0)
 
   module Memo = {
-    @jsx.component
+    @weft.component
     let make = (~a: int, ~b: int) => {
       let sum = Hooks.useMemo1(() => {
         computations := computations.contents + 1
@@ -220,7 +220,7 @@ describe("useMemo, useCallback and useRef", () => {
 
 describe("Bailing out", () => {
   module Child = {
-    @jsx.component
+    @weft.component
     let make = () => {
       Renders.record("child")
       <span id="child" />
@@ -228,7 +228,7 @@ describe("Bailing out", () => {
   }
 
   module Parent = {
-    @jsx.component
+    @weft.component
     let make = (~children: TestJsx.element) => {
       Renders.record("parent")
       let (count, setCount) = Hooks.useState(() => 0)
@@ -279,7 +279,7 @@ describe("Bailing out", () => {
 
 describe("Rules of hooks", () => {
   module Conditional = {
-    @jsx.component
+    @weft.component
     let make = (~first: bool) => {
       if first {
         let _ = Hooks.useState(() => 0)
@@ -304,7 +304,7 @@ describe("Rules of hooks", () => {
 
   test("calling fewer hooks throws", t => {
     module Fewer = {
-      @jsx.component
+      @weft.component
       let make = (~two: bool) => {
         let _ = Hooks.useRef(0)
         if two {
@@ -321,7 +321,7 @@ describe("Rules of hooks", () => {
 
   test("calling more hooks throws", t => {
     module More = {
-      @jsx.component
+      @weft.component
       let make = (~two: bool) => {
         let _ = Hooks.useRef(0)
         if two {
@@ -339,7 +339,7 @@ describe("Rules of hooks", () => {
 
 describe("Errors while rendering", () => {
   module Fails = {
-    @jsx.component
+    @weft.component
     let make = (~fail: bool) =>
       fail
         ? JsError.throwWithMessage("render failed")
@@ -381,7 +381,7 @@ describe("Errors while rendering", () => {
 describe("Hooks: more cases", () => {
   test("setting state while rendering works on updates too (deriving state from props)", t => {
     module Changes = {
-      @jsx.component
+      @weft.component
       let make = (~value: int) => {
         let (previous, setPrevious) = Hooks.useState(() => value)
         let (changes, setChanges) = Hooks.useState(() => 0)
@@ -420,7 +420,7 @@ describe("Hooks: more cases", () => {
 
   test("TestRenderer.input calls onInput", t => {
     module Field = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (text, setText) = Hooks.useState(() => "")
         <input id="field" value=text onInput={value => setText(_ => value)} />
@@ -446,7 +446,7 @@ let seeCallback = (name, f) =>
   }
 
 module EveryArity = {
-  @jsx.component
+  @weft.component
   let make = (~a: int, ~b: int, ~c: int, ~d: int, ~e: int) => {
     let effect = name =>
       () => {

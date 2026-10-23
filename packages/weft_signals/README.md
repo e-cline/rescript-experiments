@@ -22,7 +22,7 @@ let count = Signals.Atom.make(0)
 let parity = Signals.Computed.make(() => mod(Signals.Atom.get(count), 2) == 0 ? "even" : "odd")
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (value, update) = WeftSignals.SignalHooks.useAtom(count)
     let label = WeftSignals.SignalHooks.useSignal(parity)

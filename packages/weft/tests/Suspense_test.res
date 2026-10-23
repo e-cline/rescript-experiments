@@ -26,7 +26,7 @@ let settle = async () => {
 }
 
 module Reads = {
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>, ~id: string) =>
     <span id> {TestJsx.string(Hooks.use(promise))} </span>
 }
@@ -173,7 +173,7 @@ describe("Suspense", () => {
       let make = Context.provider(theme)
     }
     module Label = {
-      @jsx.component
+      @weft.component
       let make = () => <u id="label"> {TestJsx.string(Hooks.useContext(theme))} </u>
     }
     let data = deferred()
@@ -197,7 +197,7 @@ describe("Suspense", () => {
   testAsync("children's effects wait until they're shown", async t => {
     let ran = ref(0)
     module WithEffect = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useEffect0(
           () => {
@@ -256,7 +256,7 @@ describe("Suspense", () => {
 let setCount: ref<(int => int) => unit> = ref(_ => ())
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (count, set) = Hooks.useState(() => 0)
     setCount := set
@@ -409,7 +409,7 @@ let startSearch: ref<(unit => unit) => unit> = ref(_ => ())
 let setQuery: ref<(string => string) => unit> = ref(_ => ())
 
 module Search = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (isPending, startTransition) = Hooks.useTransition()
     let (query, set) = Hooks.useState(() => "a")

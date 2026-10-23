@@ -26,7 +26,7 @@ let renderWarnings = (element: TestJsx.element): array<string> =>
 
 /** A `<ul>` of `<li>`s from a `Jsx.array` list: `Some(key)` with that key and id, `None` without. */
 module Items = {
-  @jsx.component
+  @weft.component
   let make = (~keys: array<option<string>>) =>
     <ul id="list">
       {keys
@@ -41,7 +41,7 @@ module Items = {
 }
 
 module Item = {
-  @jsx.component
+  @weft.component
   let make = () => <li />
 }
 

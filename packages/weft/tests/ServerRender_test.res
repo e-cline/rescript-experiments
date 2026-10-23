@@ -19,7 +19,7 @@ let errorOf = (f: unit => 'a): option<string> =>
 let serverMessage = "Weft: this hook can't be used in a component rendered on the server. Only Hooks.use works there; a component with state or effects has to run in the browser (an entrypoint)."
 
 module Stateful = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (count, _) = Hooks.useState(() => 0)
     <b> {TestJsx.int(count)} </b>
@@ -76,7 +76,7 @@ describe("ServerRender.run", () => {
 
   test("calls a component, and returns what it rendered", t => {
     module Greeting = {
-      @jsx.component
+      @weft.component
       let make = (~name: string) => <p> {TestJsx.string(`Hello, ${name}`)} </p>
     }
     let element = ServerRender.run(() => Greeting.make({name: "server"}))
@@ -105,7 +105,7 @@ describe("ServerRender.run", () => {
   test("sets aside a client render it's called from, so hooks can't reach its component", t => {
     let insideServer = ref(None)
     module Host = {
-      @jsx.component
+      @weft.component
       let make = () => {
         // A server render started while this component renders: its hooks must not land here.
         insideServer := Some(errorOf(() => ServerRender.run(() => Hooks.useState(() => 1))))
@@ -138,7 +138,7 @@ let storeReads = () => Array.length(HookImpl.storeChecks)
 describe("ServerRender.renderComponent", () => {
   test("gives each hook its initial value, as a first render does", t => {
     module Everything = {
-      @jsx.component
+      @weft.component
       let make = (~start: int) => {
         let (count, _) = Hooks.useState(() => start)
         let (total, _) = Hooks.useReducer((total, n) => total + n, 10)
@@ -172,7 +172,7 @@ describe("ServerRender.renderComponent", () => {
   test("renders again when the component sets its own state while rendering", t => {
     let renders = ref(0)
     module Derived = {
-      @jsx.component
+      @weft.component
       let make = () => {
         renders := renders.contents + 1
         let (count, setCount) = Hooks.useState(() => 0)
@@ -188,7 +188,7 @@ describe("ServerRender.renderComponent", () => {
 
   test("reads contexts from its options, innermost last, and puts them back after", t => {
     module Themed = {
-      @jsx.component
+      @weft.component
       let make = () => <i> {TestJsx.string(Hooks.useContext(theme))} </i>
     }
     t->expect(rendered(Themed.make, {}))->Expect.toBe("<i>plain</i>")
@@ -215,7 +215,7 @@ describe("ServerRender.renderComponent", () => {
     let ran = []
     let setLater = ref(None)
     module Effects = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (count, setCount) = Hooks.useState(() => 0)
         setLater := Some(setCount)
@@ -245,7 +245,7 @@ describe("ServerRender.renderComponent", () => {
   test("reads useSyncExternalStore's server snapshot, and fails without one", t => {
     let subscribe = _ => () => ()
     module Store = {
-      @jsx.component
+      @weft.component
       let make = (~withServer: bool) => {
         let value = withServer
           ? Hooks.useSyncExternalStore(
@@ -282,7 +282,7 @@ describe("ServerRender.renderComponent", () => {
       (promise, resolve)
     }
     module Waits = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) => {
         let (prefix, _) = Hooks.useState(() => "got ")
         <u> {TestJsx.string(prefix ++ Hooks.use(promise))} </u>
@@ -308,7 +308,7 @@ describe("ServerRender.renderComponent", () => {
 
   test("rethrows a component's JS error as itself, and is only in effect during the call", t => {
     module Fails = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (_, _) = Hooks.useState(() => 0)
         JsError.throwWithMessage("failed")
@@ -317,7 +317,7 @@ describe("ServerRender.renderComponent", () => {
     t->expect(errorOf(() => rendered(Fails.make, {})))->Expect.toEqual(Some("failed"))
     t->expect(ServerRender.isRenderingComponent())->Expect.toBe(false)
     module Inside = {
-      @jsx.component
+      @weft.component
       let make = () => <b> {TestJsx.string(ServerRender.isRenderingComponent() ? "yes" : "no")} </b>
     }
     t->expect(rendered(Inside.make, {}))->Expect.toBe("<b>yes</b>")
@@ -326,7 +326,7 @@ describe("ServerRender.renderComponent", () => {
 
   test("sets aside a client render it's called from, which carries on as before", t => {
     module Stateful = {
-      @jsx.component
+      @weft.component
       let make = (~label: string) => {
         let (value, _) = Hooks.useState(() => label)
         <i> {TestJsx.string(value)} </i>
@@ -334,7 +334,7 @@ describe("ServerRender.renderComponent", () => {
     }
     let inner = ref(TestJsx.null)
     module Host = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (count, _) = Hooks.useState(() => 0)
         inner := ServerRender.renderComponent(Stateful.make, {label: "inner"}, {contexts: []})
@@ -356,7 +356,7 @@ describe("ServerRender.renderComponent", () => {
     "sets aside a server component's run too: inside one, hooks work, and fail again after",
     t => {
       module Stateful = {
-        @jsx.component
+        @weft.component
         let make = () => {
           let (value, _) = Hooks.useState(() => "client")
           <i> {TestJsx.string(value)} </i>
@@ -375,12 +375,12 @@ describe("ServerRender.renderComponent", () => {
 
 describe("Entrypoint", () => {
   module Marked = {
-    @jsx.component
+    @weft.component
     let make = (~label: string) => <button> {TestJsx.string(label)} </button>
     let () = Entrypoint.mark(make, "@e-cline/example/src/Marked.res#")
   }
   module Unmarked = {
-    @jsx.component
+    @weft.component
     let make = (~label: string) => <button> {TestJsx.string(label)} </button>
   }
 

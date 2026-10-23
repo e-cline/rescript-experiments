@@ -9,7 +9,7 @@ open Vitest
 let loading = <i id="loading"> {TestJsx.string("loading")} </i>
 
 module Reads = {
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>) => TestJsx.string(Hooks.use(promise))
 }
 

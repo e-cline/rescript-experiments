@@ -3,7 +3,7 @@
 let string = WeftDom.Jsx.string
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~label: string) => {
     let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button className="counter" onClick={_ => setCount(count => count + 1)}>
@@ -15,14 +15,14 @@ module Counter = {
 
 module Where = {
   /** Shows the page's URL, from `useNavigation`: the server's page, when rendered there. */
-  @jsx.component
+  @weft.component
   let make = () => <code> {string(Navigation.useNavigation()->Navigation.url)} </code>
   let () = Weft.Entrypoint.mark(make, "test/Dom.res#Where")
 }
 
 module Fetches = {
   /** Asks the page to fetch while rendering, which the server's page refuses. */
-  @jsx.component
+  @weft.component
   let make = () => {
     Navigation.useNavigation()->Navigation.refresh->ignore
     <p />
@@ -31,7 +31,7 @@ module Fetches = {
 }
 
 module Throws = {
-  @jsx.component
+  @weft.component
   let make = () => JsError.throwWithMessage("the entrypoint failed")
   let () = Weft.Entrypoint.mark(make, "test/Dom.res#Throws")
 }
@@ -59,7 +59,7 @@ let assets = (): Page.assets => {
 
 module Later = {
   /** A server component: its children, once `ready` resolves. */
-  @jsx.component
+  @weft.component
   let make = (~ready: promise<unit>, ~children: Weft.Element.t) =>
     Weft.Lazy.fromPromise(
       (
@@ -72,6 +72,6 @@ module Later = {
 }
 
 module ServerFails = {
-  @jsx.component
+  @weft.component
   let make = (~message: string) => JsError.throwWithMessage(message)
 }

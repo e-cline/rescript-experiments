@@ -21,7 +21,7 @@ components for it are under way: `weft_server` and `weft_vite_plugin`, with the 
 | [`@e-cline/signals`](packages/signals)                | Reactive signals: atoms, computeds and effects, with diff-driven history for incremental consumers.                                                  |
 | [`@e-cline/signal_maps`](packages/signal_maps)        | A sorted, signal-backed map whose derived views update incrementally. Built on the two packages above.                                               |
 | [`@e-cline/servy`](packages/servy)                    | A small framework for HTTP servers on the Web-standard `Request`/`Response` APIs, running on Node.                                                   |
-| [`@e-cline/weft`](packages/weft)                      | A React-like component library: `@jsx.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.             |
+| [`@e-cline/weft`](packages/weft)                      | A React-like component library: `@weft.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.            |
 | [`@e-cline/weft_dom`](packages/weft_dom)              | The DOM renderer for `weft`: render components into a browser page.                                                                                  |
 | [`@e-cline/weft_signals`](packages/weft_signals)      | Hooks for reading `signals` atoms and computeds from `weft` components.                                                                              |
 | [`@e-cline/weft_server`](packages/weft_server)        | Server components for Weft: render on the server into a streamed payload, decode it on the client, with entrypoints loaded on demand.                |

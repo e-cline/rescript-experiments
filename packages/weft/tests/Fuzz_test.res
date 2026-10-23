@@ -42,7 +42,7 @@ let liveEffects = ref(0)
 let liveLayoutEffects = ref(0)
 
 module Item = {
-  @jsx.component
+  @weft.component
   let make = Memo.memo((~name: string) => {
     let theme = Hooks.useContext(Theme.context)
     Hooks.useEffect0(() => {
@@ -58,7 +58,7 @@ module Item = {
 }
 
 module List = {
-  @jsx.component
+  @weft.component
   let make = Memo.memo((~slots: array<option<string>>, ~theme: string) =>
     <ul id="list">
       {slots
@@ -160,7 +160,7 @@ were made, possibly missing some transitions; once everything is flushed it must
 let setTokens: ref<(array<string> => array<string>) => unit> = ref(_ => ())
 
 module Tokens = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (tokens, set) = Hooks.useState(() => [])
     setTokens := set

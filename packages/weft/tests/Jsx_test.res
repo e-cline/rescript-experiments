@@ -12,7 +12,7 @@ external toUnknown: 'a => unknown = "%identity"
 external fromUnknown: unknown => 'a = "%identity"
 
 module Leaf = {
-  @jsx.component
+  @weft.component
   let make = (~label: string) => {
     ignore(label)
     Jsx.null
@@ -20,7 +20,7 @@ module Leaf = {
 }
 
 module Box = {
-  @jsx.component
+  @weft.component
   let make = (~children: Jsx.element) => children
 }
 

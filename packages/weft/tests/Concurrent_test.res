@@ -20,7 +20,7 @@ module Log = {
 
 /** Takes 2 ms to render, so three of them use up a 5 ms slice. */
 module Slow = {
-  @jsx.component
+  @weft.component
   let make = (~name: string, ~text: string) => {
     Log.add(name)
     TestScheduler.advanceTime(2.0)
@@ -32,7 +32,7 @@ let setText: ref<(string => string) => unit> = ref(_ => ())
 let setCount: ref<(int => int) => unit> = ref(_ => ())
 
 module App = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (text, set) = Hooks.useState(() => "a")
     let (count, setC) = Hooks.useState(() => 0)
@@ -102,7 +102,7 @@ describe("Transitions", () => {
   test("skipped updates are applied later, in their original order", t => {
     let setLetters = ref(_ => ())
     module Letters = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (letters, set) = Hooks.useState(() => "")
         setLetters := set
@@ -134,7 +134,7 @@ describe("useTransition and useDeferredValue", () => {
     let start = ref(_ => ())
     let setQuery = ref(_ => ())
     module Search = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (isPending, startTransition) = Hooks.useTransition()
         let (query, set) = Hooks.useState(() => "")
@@ -156,7 +156,7 @@ describe("useTransition and useDeferredValue", () => {
   test("useDeferredValue lags an urgent update by one transition", t => {
     let setText = ref(_ => ())
     module Deferred = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (text, set) = Hooks.useState(() => "")
         setText := set
@@ -181,7 +181,7 @@ describe("useSyncExternalStore in a paused render", () => {
   }
 
   module Reader = {
-    @jsx.component
+    @weft.component
     let make = (~id: string) => {
       let value = Hooks.useSyncExternalStore(
         ~subscribe=Store.subscribe,
@@ -227,7 +227,7 @@ module Theme = {
 let setLabelCount: ref<(int => int) => unit> = ref(_ => ())
 
 module Label = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (count, set) = Hooks.useState(() => 0)
     setLabelCount := set
@@ -329,7 +329,7 @@ describe("useDeferredValue: more cases", () => {
   test("an unchanged value schedules no transition", t => {
     let setOther = ref(_ => ())
     module Deferred = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (other, set) = Hooks.useState(() => 0)
         setOther := set

@@ -80,7 +80,7 @@ let idOf = element => Dom.getAttribute(element, "id")->Nullable.getOr("")
 
 module Logs = {
   /** A button that logs its id, and the `currentTarget` its handler saw. */
-  @jsx.component
+  @weft.component
   let make = (~id: string, ~log: array<string>) =>
     <button
       id
@@ -92,7 +92,7 @@ module Logs = {
 }
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~id: string) => {
     let (count, setCount) = Hooks.useState(() => 0)
     <button id onClick={_ => setCount(count => count + 1)}> {Jsx.int(count)} </button>
@@ -100,13 +100,13 @@ module Counter = {
 }
 
 module Waits = {
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>, ~id: string) => <em id> {string(Hooks.use(promise))} </em>
 }
 
 module Mirror = {
   /** An input whose state follows what's typed, shown beside it. */
-  @jsx.component
+  @weft.component
   let make = () => {
     let (value, setValue) = Hooks.useState(() => "")
     <>

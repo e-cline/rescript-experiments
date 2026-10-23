@@ -44,7 +44,7 @@ let loading = <i id="loading"> {TestJsx.string("loading")} </i>
 let setCounts: dict<(int => int) => unit> = Dict.make()
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~id: string) => {
     let (count, set) = Hooks.useState(() => 0)
     setCounts->Dict.set(id, set)

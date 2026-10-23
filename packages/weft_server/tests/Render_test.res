@@ -142,7 +142,7 @@ describe("Render: waiting and streaming", () => {
       let (first, second) = (Deferred.make(), Deferred.make())
       let started = []
       module Track = {
-        @jsx.component
+        @weft.component
         let make = (~name: string, ~ready: promise<unit>) => {
           started->Array.push(name)
           <Async ready> {text(name)} </Async>
@@ -203,7 +203,7 @@ describe("Render: waiting and streaming", () => {
     "a component that suspends on a new promise every time gives up, with an error",
     async t => {
       module Forever = {
-        @jsx.component
+        @weft.component
         let make = () =>
           text(Weft.Hooks.use(Promise.resolve("never read")->Promise.thenResolve(x => x)))
       }
@@ -336,7 +336,7 @@ describe("Render: errors", () => {
 
   testAsync("a hook that keeps state fails with the server message", async t => {
     module Stateful = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (count, _) = Weft.Hooks.useState(() => 0)
         TestJsx.int(count)
@@ -354,7 +354,7 @@ describe("Render: aborting", () => {
     let data = Deferred.make()
     let calls = ref(0)
     module Counted = {
-      @jsx.component
+      @weft.component
       let make = (~promise) => {
         calls := calls.contents + 1
         text(Weft.Hooks.use(promise))
@@ -381,7 +381,7 @@ describe("Render: aborting", () => {
     let data = Deferred.make()
     let calls = ref(0)
     module Counted = {
-      @jsx.component
+      @weft.component
       let make = (~promise) => {
         calls := calls.contents + 1
         text(Weft.Hooks.use(promise))

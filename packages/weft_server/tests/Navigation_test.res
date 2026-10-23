@@ -47,7 +47,7 @@ let reset = () => {
 
 module CommentList = {
   /** A server component: the comments on `page`, with a counter (an entrypoint) beside them. */
-  @jsx.component
+  @weft.component
   let make = (~page: string) =>
     <ul id="comment-list">
       <li id="text"> {text(commentsOf(page))} </li>
@@ -421,7 +421,7 @@ describe("part of a page, refetched (useRefetchable)", () => {
 })
 
 module TwoParts = {
-  @jsx.component
+  @weft.component
   let make = (~version: string) =>
     <Themed value="dark">
       <Refetching id="left-part" src="/left">

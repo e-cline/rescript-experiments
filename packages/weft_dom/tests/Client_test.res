@@ -135,7 +135,7 @@ describe("Rendering", () => {
   test("unmount empties the container and runs cleanups", t => {
     let cleaned = ref(false)
     module Cleans = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useEffect0(() => Some(() => cleaned := true))
         <p />
@@ -149,7 +149,7 @@ describe("Rendering", () => {
 })
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (count, setCount) = Hooks.useState(() => 0)
     <button id="count" onClick={_ => setCount(c => c + 1)}> {Jsx.int(count)} </button>
@@ -181,7 +181,7 @@ describe("Events", () => {
 
   test("a controlled input shows what its state makes of the input", t => {
     module Upper = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (value, setValue) = Hooks.useState(() => "")
         <input
@@ -206,7 +206,7 @@ describe("Events", () => {
 
   test("a controlled checkbox follows its state", t => {
     module Check = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (checked, setChecked) = Hooks.useState(() => false)
         <input id="c" type_="checkbox" checked onChange={_ => setChecked(c => !c)} />
@@ -248,7 +248,7 @@ describe("Events", () => {
 describe("Refs and focus", () => {
   test("a ref gets the element, in time for an effect to focus it", t => {
     module AutoFocus = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let input = Hooks.useRef(Nullable.null)
         Hooks.useEffect0(
@@ -280,7 +280,7 @@ describe("Refs and focus", () => {
 describe("Transitions in the page", () => {
   testAsync("a transition from an event renders in a later task", async t => {
     module Tabs = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (tab, setTab) = Hooks.useState(() => "home")
         <button id="tab" onClick={_ => Weft.Transition.start(() => setTab(_ => "settings"))}>
@@ -325,7 +325,7 @@ describe("Suspense in the page", () => {
     let second = ref(None)
     let next = Promise.make((resolve, _) => second := Some(resolve))
     module Reads = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) =>
         <p id="content" style={dict{"display": "flex"}}> {Jsx.string(Hooks.use(promise))} </p>
     }
@@ -426,7 +426,7 @@ describe("More DOM cases", () => {
     let second = ref(None)
     let next = Promise.make((resolve, _) => second := Some(resolve))
     module Reads = {
-      @jsx.component
+      @weft.component
       let make = (~promise: promise<string>) => Jsx.string(Hooks.use(promise))
     }
     let view = promise =>

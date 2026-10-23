@@ -68,7 +68,7 @@ describe("Portals", () => {
     }
     let mounted = ref(0)
     module Label = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useEffect0(
           () => {
@@ -92,7 +92,7 @@ describe("Portals", () => {
 
   test("an error in a portal reaches the boundary around it", t => {
     module Throws = {
-      @jsx.component
+      @weft.component
       let make = () => JsError.throwWithMessage("portal failed")
     }
     let (renderer, modal) = setup()

@@ -16,5 +16,6 @@
     "@e-cline/weft",
     "@e-cline/weft_dom",
     "@e-cline/benchmarking"
-  ]
+  ],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 }

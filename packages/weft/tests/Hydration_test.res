@@ -61,7 +61,7 @@ let direct = element => {
 }
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~id: string) => {
     let (count, setCount) = Hooks.useState(() => 0)
     <button id onClick={() => setCount(count => count + 1)}> {TestJsx.int(count)} </button>
@@ -69,7 +69,7 @@ module Counter = {
 }
 
 module Reads = {
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>, ~id: string) => <b id> {text(Hooks.use(promise))} </b>
 }
 
@@ -104,7 +104,7 @@ describe("hydrating", () => {
     let log = []
     let ref: Ref.t<Nullable.t<TestJsx.node>> = {current: Nullable.null}
     module Effects = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useLayoutEffect0(
           () => {
@@ -130,7 +130,7 @@ describe("hydrating", () => {
 
   test("takes texts apart where the server kept them apart, and makes an empty one", t => {
     module Word = {
-      @jsx.component
+      @weft.component
       let make = (~word: string) => text(word)
     }
     let element =
@@ -222,7 +222,7 @@ describe("hydrating", () => {
   test("leaves components, fragments and providers' nodes to their hosts", t => {
     let theme = Context.make("plain")
     module Themed = {
-      @jsx.component
+      @weft.component
       let make = () => <i> {text(Hooks.useContext(theme))} </i>
     }
     let memo = Memo.memo(Counter.make)
@@ -248,7 +248,7 @@ describe("hydrating", () => {
   test("reads useSyncExternalStore's server snapshot, then catches up with the store", t => {
     let subscribe = _ => () => ()
     module Store = {
-      @jsx.component
+      @weft.component
       let make = () =>
         <s>
           {text(
@@ -358,7 +358,7 @@ describe("hydrating boundaries", () => {
     "a boundary that failed on the server, whose error an error boundary above catches",
     () => {
       module Throws = {
-        @jsx.component
+        @weft.component
         let make = () => JsError.throwWithMessage("broken")
       }
       let caught =
@@ -568,7 +568,7 @@ describe("hydrating boundaries", () => {
 
   test("gives an error to the client to throw again, where an error boundary catches it", t => {
     module Throws = {
-      @jsx.component
+      @weft.component
       let make = () => JsError.throwWithMessage("broken")
     }
     let element =
@@ -614,7 +614,7 @@ type rec spec =
   | Boundary(array<spec>)
 
 module Stateful = {
-  @jsx.component
+  @weft.component
   let make = (~children: Element.t) => {
     let (title, _) = Hooks.useState(() => "s")
     <span title> children </span>

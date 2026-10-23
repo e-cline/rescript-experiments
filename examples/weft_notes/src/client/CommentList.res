@@ -4,7 +4,7 @@ rest): read with `Hooks.use`, under a fallback of this component's own.
 */
 
 module Items = {
-  @jsx.component
+  @weft.component
   let make = (~comments: promise<array<Types.comment>>) =>
     <ul id="comment-list">
       {Weft.Hooks.use(comments)

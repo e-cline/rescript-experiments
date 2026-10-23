@@ -9,7 +9,7 @@ let fallback = (~error, ~reset as _) =>
 let failing = ref(false)
 
 module Thrower = {
-  @jsx.component
+  @weft.component
   let make = (~name: string) => {
     if failing.contents {
       JsError.throwWithMessage(`${name} failed`)
@@ -114,7 +114,7 @@ describe("ErrorBoundary: errors while rendering", () => {
       let make = Context.provider(theme)
     }
     module Label = {
-      @jsx.component
+      @weft.component
       let make = () => <i id="label"> {TestJsx.string(Hooks.useContext(theme))} </i>
     }
     failing := true
@@ -138,7 +138,7 @@ describe("ErrorBoundary: errors while rendering", () => {
   test("children's effects are cleaned up when the fallback replaces them", t => {
     let cleanedUp = ref(false)
     module WithEffect = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useEffect0(() => Some(() => cleanedUp := true))
         <Thrower name="widget" />
@@ -188,7 +188,7 @@ describe("ErrorBoundary: errors while rendering", () => {
   test("a ReScript exception's message is its name", t => {
     let renderer = TestRenderer.create()
     module Raises = {
-      @jsx.component
+      @weft.component
       let make = () => throw(Not_found)
     }
     TestRenderer.render(
@@ -208,7 +208,7 @@ describe("ErrorBoundary: errors in effects", () => {
 
   test("a layout effect's error shows the fallback", t => {
     module BadLayout = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useLayoutEffect0(() => JsError.throwWithMessage("layout failed"))
         <span id="ok" />
@@ -228,7 +228,7 @@ describe("ErrorBoundary: errors in effects", () => {
 
   test("a passive effect's error shows the fallback", t => {
     module BadEffect = {
-      @jsx.component
+      @weft.component
       let make = () => {
         Hooks.useEffect0(() => JsError.throwWithMessage("effect failed"))
         <span id="ok" />

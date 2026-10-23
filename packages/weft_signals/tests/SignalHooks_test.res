@@ -15,7 +15,7 @@ describe("useAtom", () => {
   test("renders the atom's value and follows writes from anywhere", t => {
     let count = Atom.make(1)
     module Count = {
-      @jsx.component
+      @weft.component
       let make = () => {
         let (value, update) = SignalHooks.useAtom(count)
         <button id="count" onClick={() => update(n => n + 1)}> {TestJsx.int(value)} </button>
@@ -36,7 +36,7 @@ describe("useAtom", () => {
     let a = Atom.make(0)
     let b = Atom.make(0)
     module Sum = {
-      @jsx.component
+      @weft.component
       let make = () => {
         renders := renders.contents + 1
         let (x, _) = SignalHooks.useAtom(a)
@@ -70,7 +70,7 @@ describe("useAtom", () => {
       },
     )
     module Doubled = {
-      @jsx.component
+      @weft.component
       let make = () => TestJsx.int(SignalHooks.useSignal(doubled))
     }
     let renderer = TestRenderer.create()
@@ -89,7 +89,7 @@ describe("useSignal and useComputed", () => {
     let count = Atom.make(1)
     let parity = Signals.Computed.make(() => mod(Atom.get(count), 2) == 0 ? "even" : "odd")
     module Parity = {
-      @jsx.component
+      @weft.component
       let make = () => {
         renders := renders.contents + 1
         TestJsx.string(SignalHooks.useSignal(parity))
@@ -107,7 +107,7 @@ describe("useSignal and useComputed", () => {
   test("useComputed1 derives from signals and props, remade when deps change", t => {
     let price = Atom.make(10)
     module Total = {
-      @jsx.component
+      @weft.component
       let make = (~quantity: int) => {
         let total = SignalHooks.useComputed1(() => Atom.get(price) * quantity, [quantity])
         TestJsx.int(total)
@@ -128,7 +128,7 @@ describe("useSignal and useComputed", () => {
     let name = Atom.make("ada")
     let computations = ref(0)
     module Shout = {
-      @jsx.component
+      @weft.component
       let make = (~suffix: string) => {
         let loud = SignalHooks.useComputed0(
           () => {
@@ -150,7 +150,7 @@ describe("useSignal and useComputed", () => {
   test("an atom changed while a transition is paused doesn't commit mixed values", t => {
     let value = Atom.make(1)
     module Reader = {
-      @jsx.component
+      @weft.component
       let make = (~id: string) => {
         let (current, _) = SignalHooks.useAtom(value)
         Weft.TestScheduler.advanceTime(3.0)

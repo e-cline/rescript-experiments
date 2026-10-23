@@ -1,12 +1,12 @@
 # @e-cline/weft
 
 Weft is a React-like component library written in ReScript, with no React underneath: components are
-ordinary `@jsx.component` functions, state lives in hooks, and a fiber reconciler (the same design
+ordinary `@weft.component` functions, state lives in hooks, and a fiber reconciler (the same design
 as React's) works out what changed and hands the changes to a pluggable host renderer.
 
 This is an early stage of the [plan](../../docs/weft_plan.md). What works:
 
-- `@jsx.component` components, host elements, text, fragments (`<>`, and `<Jsx.Fragment key>`),
+- `@weft.component` components, host elements, text, fragments (`<>`, and `<Jsx.Fragment key>`),
   keyed and unkeyed lists.
 - React's child reconciliation: nodes are reused by key and type, and moves, insertions and removals
   touch only what changed.
@@ -64,7 +64,7 @@ A file opts in to this library's JSX with a `@@jsxConfig` line naming a JSX modu
 @@jsxConfig({version: 4, module_: "Weft.TestJsx"})
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~label: string) => {
     let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button id="counter" onClick={() => setCount(c => c + 1)}>
@@ -156,7 +156,7 @@ as before.
 let user = fetchUser(id) // made once, outside the component (or cached)
 
 module Profile = {
-  @jsx.component
+  @weft.component
   let make = () => <h1> {Jsx.string(Weft.Hooks.use(user).name)} </h1>
 }
 
@@ -209,13 +209,13 @@ where the portal is. Renderers wrap it with their container type: `TestRenderer.
 
 ```rescript
 module Row = {
-  @jsx.component
+  @weft.component
   let make = Weft.Memo.memo((~label: string) => ...)
 }
 ```
 
 `Memo.memo` compares props field by field with `Object.is`. For a custom comparison, shadow `make`
-with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@jsx.component` only accepts a
+with `Memo.memoCustomComparison(make, (a, b) => ...)`, since `@weft.component` only accepts a
 one-argument wrapper.
 
 ## Where it runs

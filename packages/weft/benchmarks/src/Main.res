@@ -26,12 +26,12 @@ let makeRows = (count: int, ~generation: int): array<row> =>
   })
 
 module Row = {
-  @jsx.component
+  @weft.component
   let make = (~row: row) => <li id=row.id> {TestJsx.string(row.label)} </li>
 }
 
 module List = {
-  @jsx.component
+  @weft.component
   let make = (~rows: array<row>) =>
     <ul> {rows->Array.map(row => <Row key=row.id row />)->TestJsx.array} </ul>
 }
@@ -86,7 +86,7 @@ let alternating = (rows: array<row>, other: array<row>, ~expect: BenchHost.node 
 let setters: array<(int => int) => unit> = []
 
 module StatefulRow = {
-  @jsx.component
+  @weft.component
   let make = (~row: row) => {
     let (count, setCount) = Hooks.useState(() => 0)
     setters->Array.setUnsafe(Int.fromString(row.id)->Option.getUnsafe, setCount)
@@ -95,7 +95,7 @@ module StatefulRow = {
 }
 
 module StatefulList = {
-  @jsx.component
+  @weft.component
   let make = (~rows: array<row>) =>
     <ul> {rows->Array.map(row => <StatefulRow key=row.id row />)->TestJsx.array} </ul>
 }
@@ -108,7 +108,7 @@ module Theme = {
 }
 
 module ThemedRow = {
-  @jsx.component
+  @weft.component
   let make = Weft.Memo.memo((~row: row) => {
     let theme = Hooks.useContext(Theme.context)
     <li id=row.id className=theme> {TestJsx.string(row.label)} </li>
@@ -116,7 +116,7 @@ module ThemedRow = {
 }
 
 module ThemedList = {
-  @jsx.component
+  @weft.component
   let make = Weft.Memo.memo((~rows: array<row>) =>
     <ul> {rows->Array.map(row => <ThemedRow key=row.id row />)->TestJsx.array} </ul>
   )

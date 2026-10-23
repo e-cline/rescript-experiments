@@ -20,5 +20,6 @@
   "suffix": ".res.js",
   "namespace": "WeftDom",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/common", "@e-cline/weft"]
+  "dependencies": ["@e-cline/common", "@e-cline/weft"],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 }

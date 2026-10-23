@@ -14,7 +14,7 @@ let text = TestJsx.string
 
 module Probe = {
   /** Takes two IDs, records them under `name`, and shows them. */
-  @jsx.component
+  @weft.component
   let make = (~name: string, ~ids: dict<(string, string)>) => {
     let first = Hooks.useId()
     let second = Hooks.useId()
@@ -27,7 +27,7 @@ module Probe = {
 let idsOf = (ids, name) => ids->Dict.get(name)->Option.getOrThrow
 
 module Reads = {
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>) => text(Hooks.use(promise))
 }
 

@@ -79,7 +79,7 @@ external toUnknown: 'a => unknown = "%identity"
 let valueOf = element => toString(Dom.getProperty(element, "value"))
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = (~id: string) => {
     let (count, setCount) = Hooks.useState(() => 0)
     <button id onClick={_ => setCount(count => count + 1)}> {Jsx.int(count)} </button>
@@ -88,13 +88,13 @@ module Counter = {
 
 module FailsAfter = {
   /** Fails once `promise` resolves (on the server, in place of `Waits`). */
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>) =>
     JsError.throwWithMessage(`failed after ${Hooks.use(promise)}`)
 }
 
 module Waits = {
-  @jsx.component
+  @weft.component
   let make = (~promise: promise<string>, ~id: string) => <em id> {string(Hooks.use(promise))} </em>
 }
 
@@ -105,7 +105,7 @@ let clicked = (container, selector) => {
 
 module Field = {
   /** A label and its input, linked by an ID from `useId`. */
-  @jsx.component
+  @weft.component
   let make = (~label: string) => {
     let id = Hooks.useId()
     <>
@@ -144,7 +144,7 @@ describe("hydrating the server's HTML", () => {
     "keeps the newline a <pre> or <listing> starts with, which the parser drops",
     async t => {
       module Code = {
-        @jsx.component
+        @weft.component
         let make = () => string("\nfrom a component")
       }
       let element =
@@ -368,7 +368,7 @@ describe("hydrating the server's HTML", () => {
 // The fuzz test
 
 module Echo = {
-  @jsx.component
+  @weft.component
   let make = (~children: Jsx.element) => {
     let (title, _) = Hooks.useState(() => "echo")
     <span title> children </span>
@@ -382,7 +382,7 @@ let identified = ref(0)
 
 module Identified = {
   /** Takes two IDs, and records them, by where it rendered. */
-  @jsx.component
+  @weft.component
   let make = (~children: Jsx.element) => {
     let first = Hooks.useId()
     let second = Hooks.useId()

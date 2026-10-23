@@ -18,5 +18,6 @@
     "@e-cline/weft",
     "@e-cline/weft_dom",
     "@rescript/webapi"
-  ]
+  ],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 }

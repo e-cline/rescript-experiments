@@ -7,7 +7,7 @@ module Dom = WeftDom.Dom
 module Jsx = WeftDom.Jsx
 
 module Counter = {
-  @jsx.component
+  @weft.component
   let make = () => {
     let (count, setCount) = Weft.Hooks.useState(() => 0)
     <button onClick={_ => setCount(count => count + 1)}> {Jsx.int(count)} </button>

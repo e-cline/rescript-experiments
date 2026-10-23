@@ -49,7 +49,10 @@ async function start(fixture: string) {
   }
   server = await createServer({
     ...config(root),
-    server: {host: '127.0.0.1', port: 0, ws: false},
+    // No file watching: each test tells the watcher what changed (`rewrite`, and `emit` for files
+    // added and removed). With it on, the change's own event comes too, at a time that depends on
+    // the platform (soon enough on Linux to be a second message), so what's sent wouldn't be fixed.
+    server: {host: '127.0.0.1', port: 0, ws: false, watch: null},
   });
   // This server's own record: one closed after its test can still send something.
   const record: Record<string, HotPayload[]> = {};

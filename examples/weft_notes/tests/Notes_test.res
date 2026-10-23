@@ -127,6 +127,39 @@ describe("hydrating the first page", () => {
   )
 
   testAsync(
+    "does what was clicked and typed before the bootstrap ran, once it has, in order",
+    async t => {
+      await openGates()
+      let page = app()->open_(~bootstrap=false, "/notes/1")
+      await page->WeftTesting.waitFor(() => has(page, "#like") && has(page, "#comment-list"))
+      page->WeftTesting.click("#like")
+      page->WeftTesting.input("#comment-author", "Early")
+      page->WeftTesting.input("#comment-text", "Before the JavaScript")
+      page->WeftTesting.click("#post-comment")
+      await page->WeftTesting.idle
+      // Nothing's happened yet: no handler is there to run.
+      t->expect(text(page, "#like"))->Expect.toBe("3 likes")
+      t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
+      page->WeftTesting.startBootstrap
+      await page->WeftTesting.waitFor(
+        () => text(page, "#comment-list")->String.includes("Early: Before the JavaScript"),
+      )
+      // Liked (the comment's refresh brought the server's count with it).
+      await page->WeftTesting.waitFor(() => text(page, "#like") == "4 likes (you liked this)")
+      t->expect(await app()->likes(~noteId="1"))->Expect.toBe(4)
+      t
+      ->expect(page->WeftTesting.pageRequests)
+      ->Expect.toEqual([
+        "/notes/1",
+        "/_weft/rpc/notes.like",
+        "/_weft/rpc/notes.addComment",
+        "/notes/1",
+      ])
+      t->expect(page->WeftTesting.warnings)->Expect.toEqual([])
+    },
+  )
+
+  testAsync(
     "hydrates the rest while an entrypoint's chunk loads, and a boundary arriving meanwhile, then it",
     async t => {
       await app()->release("comments:1")

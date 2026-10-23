@@ -36,10 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 to 7.6 are done (§0, §2 to §9 say where they went their own way); the follow-ups 7.7
-(event replay) and 7.8 (`useId`) are next, each after a review. The decisions are settled
-(Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same
-branch as phases 0 to 6, a commit or a few each, each ending green, with a review before the next.
+Phases 7.0 to 7.7 are done (§0, §2 to §10 say where they went their own way); the follow-up 7.8
+(`useId`) is next, after a review. The decisions are settled (Decisions, at the end). The phases
+(7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on the same branch as phases 0 to 6, a commit or a
+few each, each ending green, with a review before the next.
 
 ## What was verified before writing this
 
@@ -591,8 +591,8 @@ helpers both test files use are in `weft_dom/tests/DomSupport.res`.
 **Events before hydration.** Weft attaches a listener to each element, so until an element has
 hydrated, its handlers aren't there: a click on it does nothing (a link still navigates, as a plain
 link; a form submits as an HTML form would, to its `action`, or by default to the page itself).
-Phases 7.1 to 7.6 leave it at that; replaying those events once their elements hydrate is designed
-in §10, and comes after as phase 7.7. Nothing before it has to change for it.
+Phases 7.1 to 7.6 leave it at that; phase 7.7 replays those events once their elements hydrate
+(§10). Nothing before it had to change for it.
 
 ### 8. Errors and mismatches, together
 
@@ -692,10 +692,11 @@ less the fallbacks the swaps take out, so `removedSince(htmlNodes)` is what hydr
 renders after; in `build` mode, for the first element to have its props. Segments are found by id in
 the whole document, so one page is open in a document at a time (`weft_notes`' tests remove the last
 page's container when they open the next). The apps' scenarios that click right after a page shows
-now wait for `hydrated` first: a click before hydration does nothing until phase 7.7. The mismatch
-scenario uses a `Today` entrypoint in `weft_notes` (the date by the clock where it renders), with
-the test's clock (the browser's, not the worker's) turned back. The browser tests wait for an
-element to have its props before clicking it, and fail on any console error or warning.
+now wait for `hydrated` first (a click before hydration did nothing until phase 7.7, and is still
+replayed only later). The mismatch scenario uses a `Today` entrypoint in `weft_notes` (the date by
+the clock where it renders), with the test's clock (the browser's, not the worker's) turned back.
+The browser tests wait for an element to have its props before clicking it, and fail on any console
+error or warning.
 
 #### Example apps
 
@@ -766,6 +767,37 @@ inputs); replay after the root hydrates and after a boundary does, in order, hol
 unhydrated target; a boundary touched before it has hydrated being hydrated first; the `weft_notes`
 like button and comment form used before the bootstrap has run (the harness opening the page with
 its bootstrap held back, then releasing it); and a browser test clicking before a slowed bootstrap.
+
+**As built (phase 7.7).** The recorder is `WeftDom.Html.eventRuntime`, which `Page` writes in the
+head of a page with HTML (it's a constant the server writes; the replay that reads it is
+`DomHost`'s). It records into `self.$weftEvents` (a new queue for each page; its listeners go on
+once), and an event on the hydrating root itself isn't recorded (nothing would ever hydrate it).
+Three things came out differently:
+
+- **Replay runs the elements' own listeners**, from the target up, rather than dispatching a new
+  event. A dispatched click does the browser's default action again: a checkbox would toggle back, a
+  label's click would reach its input twice, and a submit button would submit again (so the recorded
+  submit is replayed itself, after its button's click, rather than left to the click). React replays
+  through its own dispatch for the same reason. The handlers get the recorded event, with
+  `currentTarget` set to each element in turn, and `stopPropagation` still stops it.
+- **An element above that had already hydrated saw the event when it happened**, so it isn't given
+  it again: each record keeps the nearest hydrated element above its target, and replay stops there.
+  (A boundary still dehydrated inside a hydrated `div onClick`: the `div`'s handler runs at the
+  click, the button's once it hydrates, the other way round from a live click.)
+- **No selective hydration.** A dehydrated boundary's retry is already scheduled, at the blocking
+  lane, as soon as it can make progress (its content arriving, or what it waits on settling), and
+  one waiting on a row or a chunk can't hydrate before that arrives: retrying it early only suspends
+  again. What would help is moving a touched part ahead within the root's time-sliced hydration,
+  which needs React's full selective hydration, and is left out.
+
+Replay is scheduled (a microtask) after every commit while the queue has anything in it, so it runs
+once the commit is done, through `flushSync` as live events do. The queue isn't cleared on
+navigation: a record whose element is gone is dropped when replay reaches it, and an event on an
+element that has hydrated is never queued. In the harness, `readPage` hands over the head's inline
+scripts too, so the recorder runs there as in the browser. Tests: `weft_dom/tests/Replay_test.res`
+(each rule, in jsdom), a `weft_notes` scenario (the like button, the comment form typed into and
+posted, all before the bootstrap ran, done in order once it has), and a browser test (a click and
+typing before a held-back bootstrap, the typed draft then saved).
 
 ### 11. `useId` (phase 7.8, a follow-up)
 
@@ -887,7 +919,8 @@ found and fixed three hydration bugs in the reconciler (§6) and the bootstrap r
 (§5).
 
 **Phase 7.7 -- Event replay** (§10), a follow-up: the runtime's recording, replay in
-`resetAfterCommit`, the cheap selective hydration, and their tests.
+`resetAfterCommit`, the cheap selective hydration, and their tests. Done, without the selective
+hydration, which turned out to have nothing to speed up (§10).
 
 **Phase 7.8 -- `useId`** (§11), a follow-up: positions on both sides, the hook, prefixes, and their
 tests. Independent of 7.7; either can come first.
@@ -904,11 +937,10 @@ designed here and built after the rest, as phases 7.7 and 7.8), and the rest as 
 3. **Dehydrated boundaries** (§6), settled: a boundary still pending when hydration reaches it keeps
    the server's HTML and hydrates once its segment is swapped in, rather than being rendered on the
    client from scratch (which would throw away HTML the server already sent, and could flash the
-   client's fallback over it). Selective hydration by priority comes with event replay (§10),
-   cheaply.
-4. **Event replay** (§10), settled: designed now, built as phase 7.7. Until then a click on an
-   element before it has hydrated is lost (links and forms still work as HTML, and the bootstrap
-   loads early, so the window is short). It's additive: nothing in 7.1 to 7.6 changes for it.
+   client's fallback over it). Selective hydration by priority was to come with event replay (§10),
+   cheaply; as built, there was nothing for it to do.
+4. **Event replay** (§10), settled: designed now, built as phase 7.7 (before it, a click on an
+   element before it had hydrated was lost). It was additive: nothing in 7.1 to 7.6 changed for it.
 5. **Mismatch policy** (§8): text patched with a warning; anything structural renders the nearest
    boundary on the client, with a warning; attributes warned about, not changed. The same recovery
    in production, without the warnings.
@@ -923,8 +955,8 @@ designed here and built after the rest, as phases 7.7 and 7.8), and the rest as 
    an options record for `renderComponent`; with those, it doesn't change the architecture.
 
 10. **Input typed before hydration is kept** (§7), as React does: hydration doesn't put a controlled
-    `value` or `checked` back over what the user typed or ticked. Until event replay (7.7) tells the
-    component, its state lags what's on screen until its next update.
+    `value` or `checked` back over what the user typed or ticked. Event replay (7.7) then replays
+    the last `input` and `change`, so the component's state catches up with what's on screen.
 11. **The HTML renderer is `weft_dom`'s**, as `WeftDom.Html`, in its `server/` (§0, §3), and the
     code is reorganized first so client and server code are told apart (phase 7.0).
 

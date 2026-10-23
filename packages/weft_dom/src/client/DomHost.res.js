@@ -244,12 +244,80 @@ function prepareForCommit(container) {
   focused.contents = container.ownerDocument.activeElement;
 }
 
+function hasProps(element) {
+  return Stdlib_Option.isSome(Primitive_option.fromNullable(element.$$resFiberProps));
+}
+
+let setCurrentTarget = ((event, element) =>
+  Object.defineProperty(event, "currentTarget", {configurable: true, value: element}));
+
+function replay(event, stop) {
+  let element = Primitive_option.some(event.target);
+  while ((() => {
+      let current = element;
+      if (current !== undefined) {
+        return Primitive_option.valFromOption(current) !== stop && !event.cancelBubble;
+      } else {
+        return false;
+      }
+    })()) {
+    let current = element;
+    let listener = Stdlib_Option.flatMap(Primitive_option.fromNullable(current.$$resFiberListeners), listeners => listeners[event.type]);
+    if (listener !== undefined) {
+      setCurrentTarget(event, current);
+      listener(event);
+    }
+    element = Primitive_option.fromNullable(current.parentElement);
+  };
+  setCurrentTarget(event, null);
+}
+
+function replayRecorded() {
+  let queue = globalThis.$weftEvents;
+  if (queue == null) {
+    return;
+  }
+  let blocked = false;
+  while (!blocked && queue.length !== 0) {
+    let match = queue[0];
+    let e = match.e;
+    let target = e.target;
+    if (target.isConnected) {
+      if (Stdlib_Option.isSome(Primitive_option.fromNullable(target.$$resFiberProps))) {
+        queue.shift();
+        replay(e, match.h);
+      } else {
+        blocked = true;
+      }
+    } else {
+      queue.shift();
+    }
+  };
+}
+
+let replayScheduled = {
+  contents: false
+};
+
+function scheduleReplay() {
+  let queue = globalThis.$weftEvents;
+  if (!(queue == null) && queue.length !== 0 && !replayScheduled.contents) {
+    replayScheduled.contents = true;
+    queueMicrotask(() => {
+      replayScheduled.contents = false;
+      replayRecorded();
+    });
+    return;
+  }
+}
+
 function resetAfterCommit(container) {
   let element = focused.contents;
   if (!(element == null) && element.isConnected && container.ownerDocument.activeElement !== element) {
     element.focus();
   }
   focused.contents = null;
+  scheduleReplay();
 }
 
 function isStartMarker(node) {
@@ -542,6 +610,12 @@ export {
   removeChildFromContainer,
   focused,
   prepareForCommit,
+  hasProps,
+  setCurrentTarget,
+  replay,
+  replayRecorded,
+  replayScheduled,
+  scheduleReplay,
   resetAfterCommit,
   elementNode,
   textNode,

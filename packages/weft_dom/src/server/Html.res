@@ -56,6 +56,15 @@ let scriptString = text =>
 
 let runtime = `$weftSwap=function(n){var a=document.getElementById("wb:"+n),t=document.getElementById("ws:"+n);if(!a||!t)return;var m=a.previousSibling,p=a.parentNode,e=a.nextSibling,d=0;while(e){if(e.nodeType===8){if(e.data==="/$"){if(d===0)break;d--}else if(e.data[0]==="$")d++}var x=e.nextSibling;p.removeChild(e);e=x}p.insertBefore(t.content,e);p.removeChild(a);t.parentNode.removeChild(t);m.data="$";if(m.$weftRetry)m.$weftRetry()};$weftFail=function(n,g,s){var a=document.getElementById("wb:"+n);if(!a)return;var m=a.previousSibling;a.removeAttribute("id");if(g!=null)a.setAttribute("data-digest",g);if(s!=null)a.setAttribute("data-message",s);m.data="$!";if(m.$weftRetry)m.$weftRetry()};`
 
+// The event runtime: written in the page's head (by `WeftServer.Page`), before the shell. Until an
+// element under the hydrating root (`[data-weft-html]`) has hydrated (has its props), its clicks,
+// submits, inputs and changes go on `self.$weftEvents`, for `DomHost` to replay once it has: each
+// with `h`, the nearest element above it that had hydrated (which saw the event already). A link's
+// click isn't recorded (the browser follows it); a submit's default is prevented (the page would
+// leave); only the last input and change on each element are kept (what was typed is in it). The
+// listeners go on once, and each page gets a new queue.
+let eventRuntime = `self.$weftEvents=[];if(!self.$weftRecording){self.$weftRecording=1;["click","submit","input","change"].forEach(function(n){document.addEventListener(n,function(e){var q=self.$weftEvents,t=e.target;if(!q||!t||!t.closest||"$$resFiberProps" in t||t.hasAttribute("data-weft-html")||!t.closest("[data-weft-html]"))return;if(n==="click"&&t.closest("a[href]"))return;if(n==="submit")e.preventDefault();if(n==="input"||n==="change")for(var i=q.length-1;i>=0;i--)if(q[i].e.type===n&&q[i].e.target===t)q.splice(i,1);var h=t.parentElement;while(h&&!("$$resFiberProps" in h)&&!h.hasAttribute("data-weft-html"))h=h.parentElement;q.push({e:e,h:h})},true)})}`
+
 // Element rules
 
 let voidElements = [

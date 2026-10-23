@@ -54,11 +54,11 @@ server in a worker thread (with the database's controls,
 - the first page's shell and first row, then each boundary as its gate opens, in either order, and
   the same page whatever size of chunks the HTML comes in; every first page hydrated over the
   server's nodes (none replaced but the error box's part), with no warnings;
-- hydration: the page readable without the bootstrap (and nothing on it working), boundaries swapped
-  in before the bootstrap runs and after, the rest of the page hydrated while the like button's
-  chunk loads (and a boundary arriving meanwhile), the failing component's error box rendered on the
-  client, and a text the client renders differently (`Today`, with the test's clock turned back)
-  patched and warned about;
+- hydration: the page readable without the bootstrap (and nothing on it working), what was clicked
+  and typed before the bootstrap ran done once it has, boundaries swapped in before the bootstrap
+  runs and after, the rest of the page hydrated while the like button's chunk loads (and a boundary
+  arriving meanwhile), the failing component's error box rendered on the client, and a text the
+  client renders differently (`Today`, with the test's clock turned back) patched and warned about;
 - the comments' own fallback until their promise resolves, and the failing component's error in its
   box;
 - the like button's state across notes and a refresh, links fetching payloads rather than pages, and
@@ -76,10 +76,10 @@ server in a worker thread (with the database's controls,
 [`e2e/notes.e2e.ts`](e2e/notes.e2e.ts) checks, in Chromium against the build, what only a browser
 can: the HTML streaming, a chunk loaded once a page needs it and only once, focus and selection
 across a refetch, the back button, a comment posted through its RPC (the request as the browser
-sends it, `Origin` and all), a boundary's content painted before the bootstrap's chunk has loaded,
-and the page readable with JavaScript off; each over a hydrated page, with nothing in the console.
-With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes that open the gates, for these tests. Run
-them (they need Chromium:
+sends it, `Origin` and all), a boundary's content painted before the bootstrap's chunk has loaded, a
+click and typing before then done once it has, and the page readable with JavaScript off; each over
+a hydrated page, with nothing in the console. With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes
+that open the gates, for these tests. Run them (they need Chromium:
 `pnpm --filter @e-cline/weft_notes_example exec playwright install chromium`):
 
 ```bash

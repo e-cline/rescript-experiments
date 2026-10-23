@@ -126,7 +126,8 @@ describe('readPage', () => {
 
   test("hands over the body's nodes as they complete, however the HTML is cut", async () => {
     const html =
-      '<!doctype html><html><head><script type="module" async src="/b.js"></script></head>' +
+      '<!doctype html><html><head><script>record()</script>' +
+      '<script type="module" async src="/b.js"></script></head>' +
       '<body><link rel="modulepreload" href="/c.js">' +
       '<div id="root" data-weft-html="" title="a &quot;b&quot; &gt; c"><div><p>x</p></div>' +
       '<!--$?--><template id="wb:0"></template><i>…</i><!--/$--><input value="v"></div>' +
@@ -142,6 +143,7 @@ describe('readPage', () => {
       const pieces: Piece[] = [];
       const shell = await readPage(page(chunks), (piece) => pieces.push(piece));
       expect(pieces).toEqual([
+        {type: 'script', code: 'record()'},
         {type: 'markup', html: '<link rel="modulepreload" href="/c.js">'},
         {
           type: 'root',

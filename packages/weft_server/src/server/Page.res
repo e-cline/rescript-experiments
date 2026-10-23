@@ -31,9 +31,11 @@ let rowScript = row => {
   `<script>(self.__weft||=[]).push(${argument})</script>`
 }
 
-let head = (assets, ~title, ~head) => {
+let head = (assets, ~title, ~head, ~recordEvents=false) => {
   let tags = (urls, tag) => urls->Array.map(tag)->Array.join("")
   `<!doctype html><html lang="en"><head><meta charset="utf-8">` ++
+  (// Before the shell: what's clicked or typed before it hydrates is replayed once it has.
+  recordEvents ? `<script>${WeftDom.Html.eventRuntime}</script>` : "") ++
   `<meta name="viewport" content="width=device-width, initial-scale=1">` ++
   title->Option.mapOr("", title => `<title>${escape(title)}</title>`) ++
   assets.styles->tags(url => `<link rel="stylesheet" href="${escape(url)}">`) ++
@@ -233,7 +235,7 @@ let withHtml = (element, ~assets, ~loadModule, ~url, ~title, ~head as extra, ~on
   Streams.make({
     start: controller => {
       output := Some(controller)
-      write(head(assets, ~title, ~head=extra))
+      write(head(assets, ~title, ~head=extra, ~recordEvents=true))
       pumpRows()->ignore
       pumpHtml()->ignore
     },

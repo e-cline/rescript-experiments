@@ -20,9 +20,12 @@ function rowScript(row) {
   return `<script>(self.__weft||=[]).push(` + argument + `)</script>`;
 }
 
-function head(assets, title, head$1) {
+function head(assets, title, head$1, recordEventsOpt) {
+  let recordEvents = recordEventsOpt !== undefined ? recordEventsOpt : false;
   let tags = (urls, tag) => urls.map(tag).join("");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">` + Stdlib_Option.mapOr(title, "", title => `<title>` + escape(title) + `</title>`) + tags(assets.styles, url => `<link rel="stylesheet" href="` + escape(url) + `">`) + tags(assets.preloads, url => `<link rel="modulepreload" href="` + escape(url) + `">`) + tags(assets.scripts, url => `<script type="module" async src="` + escape(url) + `"></script>`) + Stdlib_Option.getOr(head$1, "") + `</head><body>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8">` + (
+    recordEvents ? `<script>` + Html$WeftDom.eventRuntime + `</script>` : ""
+  ) + `<meta name="viewport" content="width=device-width, initial-scale=1">` + Stdlib_Option.mapOr(title, "", title => `<title>` + escape(title) + `</title>`) + tags(assets.styles, url => `<link rel="stylesheet" href="` + escape(url) + `">`) + tags(assets.preloads, url => `<link rel="modulepreload" href="` + escape(url) + `">`) + tags(assets.scripts, url => `<script type="module" async src="` + escape(url) + `"></script>`) + Stdlib_Option.getOr(head$1, "") + `</head><body>`;
 }
 
 function root(shell) {
@@ -220,7 +223,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
     return new ReadableStream({
       start: controller => {
         output.contents = Primitive_option.some(controller);
-        write(head(assets, title, head$1));
+        write(head(assets, title, head$1, true));
         pumpRows();
         pumpHtml();
       },
@@ -238,7 +241,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
   let html$1 = row => preloads(assets, preloaded$1, row) + rowScript(Payload$WeftServer.rowToString(row));
   return new ReadableStream({
     start: controller => {
-      controller.enqueue(encoder$1.encode(head(assets, title, head$1) + root(undefined)));
+      controller.enqueue(encoder$1.encode(head(assets, title, head$1, undefined) + root(undefined)));
     },
     pull: async controller => {
       let exit = 0;

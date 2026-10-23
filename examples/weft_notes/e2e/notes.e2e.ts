@@ -208,6 +208,31 @@ test("a boundary's content is painted before the bootstrap has loaded, and hydra
   await expect(page.locator('#like')).toHaveText('3 likes (you liked this)');
 });
 
+test('what is clicked and typed before the bootstrap has loaded happens once it has', async ({
+  page,
+  request,
+}) => {
+  await openGates(request, '1');
+  let releaseBootstrap!: () => void;
+  const held = new Promise<void>((resolve) => {
+    releaseBootstrap = resolve;
+  });
+  await page.route(/\/assets\/client-[^/]*\.js$/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/notes/1', {waitUntil: 'commit'});
+  await expect(page.locator('#like')).toHaveText('3 likes');
+  await page.locator('#like').click();
+  await page.locator('#title-input').fill('Typed early');
+  await expect(page.locator('#like')).toHaveText('3 likes');
+  releaseBootstrap();
+  await expect(page.locator('#like')).toHaveText('3 likes (you liked this)');
+  // The editor's draft is what was typed (its input event replayed), so that's what's saved.
+  await page.locator('#save').click();
+  await expect(page.locator('#title')).toHaveText('Typed early');
+});
+
 test.describe('with JavaScript off', () => {
   test.use({javaScriptEnabled: false});
 

@@ -102,7 +102,7 @@ a browser uses it, without one:
 let app = await WeftTesting.start(~root=packageRoot) // or ~mode=Build, ~buildDir
 let page = app->WeftTesting.open_(~container, "/notes/1")
 await page->WeftTesting.waitFor(() => page->WeftTesting.has("#title"))
-await page->WeftTesting.hydrated // a click before hydration does nothing
+await page->WeftTesting.hydrated // a click before hydration is only replayed later
 page->WeftTesting.click("#like")
 let _ = await app->WeftTesting.callServer("tests/FakeDbControl.res.js", "release", [JSON.String("body:1")])
 await page->WeftTesting.navigate("/notes/2")

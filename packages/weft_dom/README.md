@@ -70,7 +70,7 @@ switch WeftDom.Dom.document->WeftDom.Dom.body->WeftDom.Dom.querySelector("#app")
   render) is a table write, not a remove and add.
 - `createRoot` empties its container.
 
-Not yet: SVG (elements are created without a namespace), delegated events, hydration.
+Not yet: SVG (elements are created without a namespace), delegated events.
 
 ## Where it runs
 
@@ -122,11 +122,19 @@ page's runtime swaps its content in (it calls the marker's `$weftRetry`), then h
 HTML and `element` disagree, the nearest boundary (or the root) is rendered on the client, a text
 that differs is patched, and attributes that differ are warned about (in development) and left.
 
+**Events from before hydration** are replayed. `Html.eventRuntime`, in the page's head (`WeftServer`
+writes it), records the clicks, submits, inputs and changes on elements under the root that haven't
+hydrated yet (not a link's click, which the browser follows; a submit's default is prevented, so the
+page stays; only the last input and change on each element). After each commit, the ones whose
+elements have hydrated are replayed, in order, through the elements' own listeners (so a checkbox
+isn't toggled twice); one whose element hasn't hydrated yet holds back those after it, and one whose
+element is gone is dropped.
+
 The tests hydrate the renderer's own HTML in jsdom: the same node objects before and after, handlers
 working, typed values kept, boundaries hydrating when swapped in (or already swapped in), failed
-boundaries rendered on the client, and mismatches recovered from; and a fuzz test streams random
-trees' HTML in pieces, hydrates at a random point, and checks the DOM ends up as a client render's,
-made only of elements the HTML put there.
+boundaries rendered on the client, mismatches recovered from, and events from before replayed
+(`Replay_test.res`); and a fuzz test streams random trees' HTML in pieces, hydrates at a random
+point, and checks the DOM ends up as a client render's, made only of elements the HTML put there.
 
 ## Error codes
 

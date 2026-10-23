@@ -231,6 +231,89 @@ let focused: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
 
 let prepareForCommit = container => focused := Dom.activeElement(Dom.ownerDocument(container))
 
+// Replaying the events the page's event runtime (`Html.eventRuntime`) recorded before their
+// elements hydrated.
+
+/** A recorded event, and the nearest element above its target that had hydrated (which saw it). */
+type recorded = {e: Dom.event, h: Nullable.t<Dom.element>}
+
+@val @scope("globalThis") external recordedEvents: Nullable.t<array<recorded>> = "$weftEvents"
+@get external eventType: Dom.event => string = "type"
+@get external eventTarget: Dom.event => Dom.element = "target"
+@get external cancelBubble: Dom.event => bool = "cancelBubble"
+@get external parentElement: Dom.element => Nullable.t<Dom.element> = "parentElement"
+let hasProps = (element: Dom.element) => Option.isSome(Nullable.toOption(storedProps(element)))
+
+/** `event`'s `currentTarget` reads as `element` (it's `null` once the event was dispatched). */
+let setCurrentTarget: (Dom.event, Nullable.t<Dom.element>) => unit = %raw(`(event, element) =>
+  Object.defineProperty(event, "currentTarget", {configurable: true, value: element})`)
+
+/**
+Runs `event`'s listeners again, from its target up to `stop` (which, and whatever is above it, saw
+it when it happened), as bubbling would: the listeners themselves, not a new event, so the
+browser's default action (a checkbox toggling, a label's click) doesn't happen a second time.
+*/
+let replay = (event: Dom.event, ~stop: Nullable.t<Dom.element>) => {
+  let element = ref(Some(eventTarget(event)))
+  while (
+    switch element.contents {
+    | Some(current) => Nullable.make(current) !== stop && !cancelBubble(event)
+    | None => false
+    }
+  ) {
+    let current = Option.getUnsafe(element.contents)
+    switch Nullable.toOption(storedListeners(current))->Option.flatMap(listeners =>
+      listeners->Dict.get(eventType(event))
+    ) {
+    | Some(listener) =>
+      setCurrentTarget(event, Nullable.make(current))
+      listener(event)
+    | None => ()
+    }
+    element := Nullable.toOption(parentElement(current))
+  }
+  setCurrentTarget(event, Nullable.null)
+}
+
+/**
+Replays the recorded events whose targets have hydrated, in order: one whose target hasn't yet
+holds back those after it (so "add", then "save" can't go the other way round), and one whose
+target has gone (a mismatch rendered it again, or the page moved on) is dropped.
+*/
+let replayRecorded = () =>
+  switch Nullable.toOption(recordedEvents) {
+  | Some(queue) =>
+    let blocked = ref(false)
+    while !blocked.contents && Array.length(queue) > 0 {
+      let {e, h} = Array.getUnsafe(queue, 0)
+      let target = eventTarget(e)
+      if !Dom.isConnected(target) {
+        queue->Array.shift->ignore
+      } else if !hasProps(target) {
+        blocked := true
+      } else {
+        queue->Array.shift->ignore
+        replay(e, ~stop=h)
+      }
+    }
+  | None => ()
+  }
+
+let replayScheduled = ref(false)
+@val external queueMicrotask: (unit => unit) => unit = "queueMicrotask"
+
+/** After a commit (which may have hydrated what recorded events were waiting for), once it's done. */
+let scheduleReplay = () =>
+  switch Nullable.toOption(recordedEvents) {
+  | Some(queue) if Array.length(queue) > 0 && !replayScheduled.contents =>
+    replayScheduled := true
+    queueMicrotask(() => {
+      replayScheduled := false
+      replayRecorded()
+    })
+  | _ => ()
+  }
+
 let resetAfterCommit = container => {
   switch Nullable.toOption(focused.contents) {
   | Some(element)
@@ -240,6 +323,7 @@ let resetAfterCommit = container => {
   | _ => ()
   }
   focused := Nullable.null
+  scheduleReplay()
 }
 
 // Hydrating: rendering over the server's HTML (`Client.hydrateRoot`), adopting its nodes.

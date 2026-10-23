@@ -86,3 +86,12 @@ let renderToString: (WeftCore.Element.t, ~onError: exn => option<string>=?) => p
 
 /** The inline runtime's source (`$weftSwap`, `$weftFail`), written once before the first segment. */
 let runtime: string
+
+/**
+The event runtime's source, for the page's head, before the shell: until an element under the
+hydrating root (`[data-weft-html]`) has hydrated, its clicks, submits, inputs and changes are
+recorded, for `Client.hydrateRoot` to replay once it has. A link's click isn't (the browser follows
+it), a submit's default is prevented (the page would leave), and only the last input and change on
+each element are kept (what was typed is already in it).
+*/
+let eventRuntime: string

@@ -750,6 +750,8 @@ function renderToStream(element, onError, signal) {
   });
 }
 
+let eventRuntime = `self.$weftEvents=[];if(!self.$weftRecording){self.$weftRecording=1;["click","submit","input","change"].forEach(function(n){document.addEventListener(n,function(e){var q=self.$weftEvents,t=e.target;if(!q||!t||!t.closest||"$$resFiberProps" in t||t.hasAttribute("data-weft-html")||!t.closest("[data-weft-html]"))return;if(n==="click"&&t.closest("a[href]"))return;if(n==="submit")e.preventDefault();if(n==="input"||n==="change")for(var i=q.length-1;i>=0;i--)if(q[i].e.type===n&&q[i].e.target===t)q.splice(i,1);var h=t.parentElement;while(h&&!("$$resFiberProps" in h)&&!h.hasAttribute("data-weft-html"))h=h.parentElement;q.push({e:e,h:h})},true)})}`;
+
 export {
   render,
   shell,
@@ -757,5 +759,6 @@ export {
   renderToStream,
   renderToString,
   runtime,
+  eventRuntime,
 }
 /* lineSeparator Not a pure module */

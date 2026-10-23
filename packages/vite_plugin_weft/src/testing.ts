@@ -611,9 +611,9 @@ const rowScript =
   /<script>\(self\.__weft\|\|=\[\]\)\.push\((?:"(?:[^"\\]|\\.)*"|null)\)<\/script>/g;
 
 /**
- * Reads a page's HTML as it arrives, as a streaming parser would: `onPiece` gets each top-level
- * node of the body once it has all arrived (`#root` with the shell in it, each inline script, each
- * segment), in order. Resolves with the whole HTML, with the rows' scripts taken out, once it has
+ * Reads a page's HTML as it arrives, as a streaming parser would: `onPiece` gets the head's inline
+ * scripts, then each top-level node of the body once it has all arrived (`#root` with the shell in
+ * it, each inline script, each segment), in order. Resolves with the whole HTML, with the rows' scripts taken out, once it has
  * all arrived.
  */
 export async function readPage(
@@ -626,8 +626,17 @@ export async function readPage(
   let text = '';
   let inBody = false;
   const take = () => {
-    if (!inBody) {
+    while (!inBody) {
+      // The head: its inline scripts run (the event runtime), the rest is the test's own document's.
       const body = /<body(?:[^>"']|"[^"]*"|'[^']*')*>/.exec(text);
+      const script = text.indexOf('<script>');
+      if (script !== -1 && (body === null || script < body.index)) {
+        const end = text.indexOf('</script>', script);
+        if (end === -1) return;
+        onPiece({type: 'script', code: text.slice(script + 8, end)});
+        text = text.slice(end + 9);
+        continue;
+      }
       if (body === null) return;
       text = text.slice(body.index + body[0].length);
       inBody = true;

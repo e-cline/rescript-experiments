@@ -119,6 +119,35 @@ Vitest.describe("hydrating the first page", undefined, undefined, undefined, und
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "3 likes (you liked this)");
     return t.expect(WeftTesting.warnings(page)).toEqual([]);
   });
+  Vitest.testAsync("does what was clicked and typed before the bootstrap ran, once it has, in order", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    await openGates(undefined);
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, false, "/notes/1");
+    await WeftTesting.waitFor(page, undefined, () => {
+      if (NotesSupport$WeftNotes.has(page, "#like")) {
+        return NotesSupport$WeftNotes.has(page, "#comment-list");
+      } else {
+        return false;
+      }
+    });
+    WeftTesting.click(page, "#like");
+    WeftTesting.input(page, "#comment-author", "Early");
+    WeftTesting.input(page, "#comment-text", "Before the JavaScript");
+    WeftTesting.click(page, "#post-comment");
+    await WeftTesting.idle(page);
+    t.expect(NotesSupport$WeftNotes.text(page, "#like")).toBe("3 likes");
+    t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
+    WeftTesting.startBootstrap(page);
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#comment-list").includes("Early: Before the JavaScript"));
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "4 likes (you liked this)");
+    t.expect(await NotesSupport$WeftNotes.likes(app(), "1")).toBe(4);
+    t.expect(WeftTesting.pageRequests(page)).toEqual([
+      "/notes/1",
+      "/_weft/rpc/notes.like",
+      "/_weft/rpc/notes.addComment",
+      "/notes/1"
+    ]);
+    return t.expect(WeftTesting.warnings(page)).toEqual([]);
+  });
   Vitest.testAsync("hydrates the rest while an entrypoint's chunk loads, and a boundary arriving meanwhile, then it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await NotesSupport$WeftNotes.release(app(), "comments:1");
     await NotesSupport$WeftNotes.release(app(), "related:1");

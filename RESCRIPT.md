@@ -29,9 +29,10 @@ already does most of the work:
   alike, and Node runs the output directly (`pretty_print`'s `demo` task is just
   `node src/Demo.res.js`) -- **no bundler plugin is needed at all** for the compiled output itself.
 - JSX in `.res` files compiles to `.res.js` too: the root `rescript.json` sets
-  `"jsx": {"version": 4}` without `preserve`, so it's lowered to function calls
-  (`JsxRuntime.jsx(...)` for React, or a custom module's `Jsx.jsx(...)`, as `weft`'s per-file
-  `@@jsxConfig` uses).
+  `"jsx": {"version": 4, "module": "WeftDom.Jsx"}` without `preserve`, so it's lowered to function
+  calls (`JsxRuntime.jsx(...)` for React, or a custom module's `Jsx.jsx(...)`, as here). `module`
+  makes `WeftDom.Jsx` the default for every file the root builds; a file that wants another JSX
+  module (`Weft.TestJsx`, say) opens with its own `@@jsxConfig`, which wins.
 - A package that wants its JSX preserved in the output (here only `react_ui`) compiles to `.res.jsx`
   instead. Its `rescript.json` sets `"jsx": {"version": 4, "preserve": true}`, so the JSX stays JSX
   in the output instead of being lowered to `JsxRuntime.jsx` calls, and Vite (oxc) and tsdown only
@@ -100,10 +101,12 @@ lists with the _root's_ values, ignoring the package's own (including a `suffix`
 `node_modules` (`rescript-vitest`'s own config says `.mjs`; it's compiled to `.res.js` here). So one
 `rescript build` can emit `.res.js` or `.res.jsx`, never both. To support both:
 
-- The repo-root `rescript.json` has `"suffix": ".res.js"` and `"jsx": {"version": 4}` without
-  `preserve`, and lists every other package. The root `res` task builds them. (Leaving `jsx` out
-  entirely isn't an option: `weft`'s per-file `@@jsxConfig` fails with "JSX support is not enabled"
-  unless the project turns JSX on.)
+- The repo-root `rescript.json` has `"suffix": ".res.js"` and
+  `"jsx": {"version": 4, "module": "WeftDom.Jsx"}` without `preserve`, and lists every other
+  package. The root `res` task builds them. (Leaving `jsx` out entirely isn't an option: a per-file
+  `@@jsxConfig` fails with "JSX support is not enabled" unless the project turns JSX on.) The root's
+  `module` is Weft's DOM renderer because no package the root builds uses React; React JSX lives in
+  `react_ui`, a build root of its own with its own `jsx`.
 - A package with preserved JSX is left out of the root's `dependencies` (and out of the root
   `package.json`'s `devDependencies`, which exist only so the root build can resolve its
   `dependencies`). Its own `rescript.json` sets `"jsx": {"version": 4, "preserve": true}` and

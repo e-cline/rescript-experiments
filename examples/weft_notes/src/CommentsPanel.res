@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The comments (rendered on the server, and given as `children`), with a button that fetches them
 again by themselves (`useRefetchable`), and says so while it's at it.

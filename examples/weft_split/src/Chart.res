@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 An entrypoint only `/other` renders, with a large module (`BigTable`) nothing else uses.
 */

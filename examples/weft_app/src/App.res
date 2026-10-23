@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 A todo app on `weft`: the todos live in a reducer (saved to `localStorage` by an effect), the
 current filter reaches the list through context (switching it is a transition), each item is

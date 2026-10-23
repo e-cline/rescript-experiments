@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 Entrypoints in modules: `Widgets.Toggle`, and `Widgets.Error`, a module ReScript exports as
 `$$Error` (it's the name of a JavaScript global), which the client has to find anyway.

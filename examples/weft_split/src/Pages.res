@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The server components: one page per route, each rendering a different set of entrypoints.
 */

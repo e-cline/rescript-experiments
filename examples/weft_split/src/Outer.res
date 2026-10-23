@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 An entrypoint that renders another (`Counter`) itself, as a client component would: its chunk
 imports `Counter`'s.

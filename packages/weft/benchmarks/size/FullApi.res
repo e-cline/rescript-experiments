@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 An app using every public feature of `weft` and `weft_dom`, for `vp run size`: every kind
 of hook, context, `Memo`, `ErrorBoundary`, `Suspense`, transitions, portals, `flushSync` and

@@ -92,11 +92,13 @@ differ from the plan below:
 These were checked against ReScript 12.3.1 (the version this workspace pins) in a scratch project,
 because they decide how the library plugs into the compiler:
 
-1. **The generic JSX transform works per file.** `@@jsxConfig({version: 4, module_: "Some.Jsx"})` at
-   the top of a `.res` file switches that file to a custom JSX module. This matters because
-   RESCRIPT.md (gap 17) found `jsx` is root-only in this monorepo, and the root is configured for
-   React (`react_ui` depends on that). So the library can't take over the root `jsx` setting; every
-   file that uses it opens with the `@@jsxConfig` line.
+1. **The generic JSX transform works per file, or per project.**
+   `@@jsxConfig({version: 4, module_: "Some.Jsx"})` at the top of a `.res` file switches that file
+   to a custom JSX module. RESCRIPT.md (gap 17) found `jsx` is root-only in this monorepo, and this
+   plan first assumed the root was React's (`react_ui`), so every file opened with the `@@jsxConfig`
+   line. `react_ui` has since become a build root of its own, so the root sets
+   `"jsx": {"version": 4, "module": "WeftDom.Jsx"}` and only a file that wants another module
+   (`Weft.TestJsx`) keeps the line.
 2. **The root's `"preserve": true` doesn't apply to a generic JSX module.** The output is plain
    `Jsx.jsx(...)` calls, never `<div>`, so Vite's React JSX transform never sees it.
 3. **`module_` takes a dotted path**, so a namespaced `"WeftDom.Jsx"` works.

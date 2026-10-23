@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The note's title, with a draft of a new one. The saved title and time are rendered on the server and
 given as `children`: saving sends the draft (the `notes.saveTitle` RPC), then refetches them (with

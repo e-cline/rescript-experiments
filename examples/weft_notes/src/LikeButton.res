@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The likes, from the server, and whether you just liked it (liking is the `notes.like` RPC), which is this button's own state: it
 survives the page being fetched again, or another note's page in the same place.

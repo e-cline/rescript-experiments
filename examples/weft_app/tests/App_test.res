@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 Drives the todo app the way a user would, in jsdom: typing, submitting, clicking.
 */

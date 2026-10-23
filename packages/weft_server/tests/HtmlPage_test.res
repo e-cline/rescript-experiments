@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 `Page` with its HTML (assets with a `loadModule`): the shell in `#root`, the rows after it, each
 pending boundary's segment as it's ready, and today's page (an empty `#root`, the rows) when the

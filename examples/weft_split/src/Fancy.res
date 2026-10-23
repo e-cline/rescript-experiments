@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /*** One of two entrypoints sharing `Format`. */
 
 @weft.component({kind: Entrypoint})

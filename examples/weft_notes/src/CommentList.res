@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The comments, which arrive as a promise (the server doesn't wait for them before sending the
 rest): read with `Hooks.use`, under a fallback of this component's own.

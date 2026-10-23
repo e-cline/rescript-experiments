@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The server entry: an `@e-cline/servy` application, the fetch handler `@e-cline/weft_vite_plugin`
 runs (its default export). Each route answers with `WeftServer.Page.respond`: the HTML page, with

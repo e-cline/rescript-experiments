@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 A file-level entrypoint (the file's own `make`), with state that survives a refetch.
 */

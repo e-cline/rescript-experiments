@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /*** A link that navigates in place (fetching the page's payload) instead of loading a new page. */
 
 @weft.component({kind: Entrypoint})

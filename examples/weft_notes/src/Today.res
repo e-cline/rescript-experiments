@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 Today's date, by the clock where it renders: the server's in its HTML, then the browser's. If the
 two say different days (a page opened over midnight), hydrating patches the text, with a warning in

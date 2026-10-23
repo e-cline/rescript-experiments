@@ -79,9 +79,10 @@ The JSX module decides which host tags exist and what props they take, so each r
 components, and works under any renderer. A `<div>` in such a file is a compile error.
 
 `@@jsxConfig` works per file, so it doesn't need to take over the project's `jsx` setting, though
-the project must turn JSX on (here, the root `rescript.json`'s `"jsx": {"version": 4}`). ReScript
-lowers the JSX to function calls either way, even when the project sets `"preserve": true`, so the
-output is plain `.res.js`.
+the project must turn JSX on. A project that mostly uses one JSX module can name it once instead,
+with `"jsx": {"version": 4, "module": "WeftDom.Jsx"}` in the root `rescript.json` (as this repo
+does), and leave the line out of those files. ReScript lowers the JSX to function calls either way,
+even when the project sets `"preserve": true`, so the output is plain `.res.js`.
 
 Hooks follow `@rescript/react`'s names and the usual rules: call them unconditionally, in the same
 order on every render. Breaking the order throws in development (production builds skip the check,

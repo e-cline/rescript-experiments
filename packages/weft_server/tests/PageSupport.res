@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /*** What the page tests share: DOM entrypoints, served from a map, and server components that wait or fail. */
 
 let string = WeftDom.Jsx.string

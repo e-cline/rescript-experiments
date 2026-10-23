@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /*** A link that navigates in place: an entrypoint on every page. */
 
 @weft.component({kind: Entrypoint})

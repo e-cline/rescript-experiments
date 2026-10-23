@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The server components: the list of notes, and a note's page, with three parts that stream in on
 their own (the body, the comments, related notes), two that entrypoints fetch again by themselves

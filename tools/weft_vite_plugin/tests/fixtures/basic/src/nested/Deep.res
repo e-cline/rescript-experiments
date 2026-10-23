@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /*** An entrypoint in a subdirectory. */
 
 @weft.component({kind: Entrypoint})

@@ -1,5 +1,4 @@
 %%raw("/** @vitest-environment jsdom */")
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
 
 /***
 A page from the server to a hydrated screen, in one process: `Page`'s HTML streamed into jsdom piece

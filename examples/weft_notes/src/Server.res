@@ -1,7 +1,5 @@
 @@weft.server
 
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The server entry: an `@e-cline/servy` app (the default export). Pages answer with
 `WeftServer.Page.respond` (HTML for a first request, the bare payload for the client's), as do the

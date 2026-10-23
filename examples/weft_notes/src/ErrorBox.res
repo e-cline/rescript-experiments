@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /*** An error boundary (it has to be an entrypoint: its fallback is a function). */
 
 @weft.component({kind: Entrypoint})

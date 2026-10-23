@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 The page's entry point (loaded by `index.html`): renders `App` into `#app`.
 */

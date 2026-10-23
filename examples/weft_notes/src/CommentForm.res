@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 Posts a comment (the `notes.addComment` RPC), then fetches the page again to show it. The author
 stays filled in; the text is cleared. If the RPC says no (an empty comment, which never leaves the

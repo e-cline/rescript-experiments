@@ -1,5 +1,3 @@
-@@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
-
 /***
 Entrypoints in modules: `Tabs` (using the shared module and the large one), and `Error`, which
 ReScript exports as `$$Error`.

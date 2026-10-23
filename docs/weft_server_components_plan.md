@@ -109,7 +109,9 @@ whoever picks this up:
   (`Bootstrap.main` does nothing then).
 - **`vp run` loads every package's Vite config to make its task graph**, and an example's config
   imports the plugin's `dist`: a stale or broken `dist` fails every `vp run`, even the plugin's own
-  build. `npx vp pack` in `packages/vite_plugin_weft` breaks the loop.
+  build. `npx vp pack` in `packages/vite_plugin_weft` breaks the loop. A fresh checkout has no
+  `dist` at all, so CI (and CONTRIBUTING's setup) run `vp pack` there before the first `vp run`: the
+  PR's first CI run failed on exactly this.
 - **jsdom's `click()` doesn't move the focus**, and a browser's does: a browser test that checks
   focus submits a form with Enter, not by clicking its button.
 - **A page streams for as long as its gates are closed**, so the harness's `settle` can't wait for

@@ -34,6 +34,12 @@ jobs:
       # The OCaml toolchain the workspace's ReScript PPXs are built with.
       - uses: ./.github/actions/setup-opam
 
+      # `vp run` loads every package's Vite config to make its task graph, and
+      # the examples' configs import the Vite plugin from its build (`dist`,
+      # not committed): build it first, with `vp pack`, which doesn't.
+      - run: vp pack
+        working-directory: packages/vite_plugin_weft
+
       # The check type-checks TypeScript that imports files the ReScript
       # compiler generates, so it has to follow the build.
       - run: vp run build
@@ -63,6 +69,11 @@ jobs:
 
       - uses: ./.github/actions/setup-opam
 
+      # `vp run` loads every package's Vite config to make its task graph, and
+      # the examples' configs import the Vite plugin from its build (`dist`,
+      # not committed): build it first, with `vp pack`, which doesn't.
+      - run: vp pack
+        working-directory: packages/vite_plugin_weft
       - run: vp run build
       - name: Install Chromium for Playwright
         run:

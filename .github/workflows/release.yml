@@ -49,6 +49,11 @@ jobs:
       # The tests compile the workspace's ReScript first, which builds a PPX
       # written in OCaml.
       - uses: ./.github/actions/setup-opam
+      # `vp run` loads every package's Vite config to make its task graph, and
+      # the examples' configs import the Vite plugin from its build (`dist`,
+      # not committed): build it first, with `vp pack`, which doesn't.
+      - run: vp pack
+        working-directory: packages/vite_plugin_weft
       - run: vp run test
 
       # Publishes every package whose current version isn't on npm yet, and

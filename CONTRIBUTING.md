@@ -24,6 +24,14 @@ formatter and linter), the ReScript compiler, and the OCaml toolchain.
 pnpm install
 ```
 
+Then build the Vite plugin, once: `vp run` loads every package's Vite config to make its task graph,
+and the examples' configs import the plugin from its build, which isn't committed (so a missing or
+broken `dist` fails every `vp run`, the plugin's own build included):
+
+```bash
+pnpm --filter @e-cline/vite_plugin_weft exec vp pack
+```
+
 ```bash
 pnpm run build
 ```

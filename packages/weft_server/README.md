@@ -40,6 +40,13 @@ requests (`Accept: text/x-weft-payload`) get the bare payload. With the plugin,
 `virtual:weft/assets` gives the server what it needs (`assets.loadModule`); `~html=false` leaves the
 HTML out of a route's pages.
 
+**Entrypoints run on the server too**, to render that HTML: their hooks give their initial state and
+their effects don't run. So an entrypoint file (and what it imports) mustn't touch the DOM, `window`
+or `document` at the top level of a module or while rendering, only in handlers and effects. If one
+does, rendering it on the server fails (the error goes to `onError`), and the browser renders it
+instead: its `Suspense` boundary, or, outside every boundary, the whole page, as with `~html=false`.
+A store read with `useSyncExternalStore` needs a `~getServerSnapshot`.
+
 In the browser, `Bootstrap.start` reads those rows and hydrates `#root` with them: the server's
 nodes adopted, not rendered again (the Vite plugin's default bootstrap calls it). From there, the
 page is a `Navigation.t`, which entrypoints reach with hooks:

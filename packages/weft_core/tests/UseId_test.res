@@ -26,6 +26,24 @@ module Probe = {
 
 let idsOf = (ids, name) => ids->Dict.get(name)->Option.getOrThrow
 
+module Reads = {
+  @jsx.component
+  let make = (~promise: promise<string>) => text(Hooks.use(promise))
+}
+
+type deferred = {promise: promise<string>, resolve: string => unit}
+let deferred = () => {
+  let resolve = ref(_ => ())
+  let promise = Promise.make((done, _) => resolve := done)
+  {promise, resolve: value => resolve.contents(value)}
+}
+
+let settle = async () =>
+  for _ in 1 to 3 {
+    await Promise.make((resolve, _) => setTimeout(() => resolve(), 0)->ignore)
+    TestRenderer.act(() => ())
+  }
+
 describe("useId", () => {
   test("gives each call its own ID, kept across renders", t => {
     let ids = Dict.make()
@@ -102,5 +120,26 @@ describe("useId", () => {
     t->expect(idsOf(ids, "a"))->Expect.toEqual(server("a", [0, 0]))
     t->expect(idsOf(ids, "b"))->Expect.toEqual(server("b", [0, 2, 0, 0]))
     t->expect(idsOf(ids, "a"))->Expect.toEqual(("w-00-0", "w-00-1"))
+  })
+
+  testAsync("keeps a boundary's content's IDs while it shows its fallback, and after", async t => {
+    let ids = Dict.make()
+    let renderer = TestRenderer.create()
+    let page = promise =>
+      <Suspense fallback={text("loading")}>
+        <Probe name="a" ids />
+        <Reads promise />
+      </Suspense>
+    TestRenderer.render(renderer, page(Promise.resolve("ready")))
+    await settle()
+    let before = idsOf(ids, "a")
+    // Suspending again (not in a transition): the fallback, with the content kept, hidden.
+    let next = deferred()
+    TestRenderer.render(renderer, page(next.promise))
+    t->expect(TestRenderer.toString(renderer)->String.includes("loading"))->Expect.toBe(true)
+    next.resolve("again")
+    await settle()
+    t->expect(TestRenderer.toString(renderer)->String.includes("again"))->Expect.toBe(true)
+    t->expect(idsOf(ids, "a"))->Expect.toEqual(before)
   })
 })

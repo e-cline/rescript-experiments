@@ -37,6 +37,36 @@ function idsOf(ids, name) {
   return Stdlib_Option.getOrThrow(ids[name], undefined);
 }
 
+function UseId_test$Reads(props) {
+  return Hooks$WeftCore.use(props.promise);
+}
+
+let Reads = {
+  make: UseId_test$Reads
+};
+
+function deferred() {
+  let resolve = {
+    contents: param => {}
+  };
+  let promise = new Promise((done, param) => {
+    resolve.contents = done;
+  });
+  return {
+    promise: promise,
+    resolve: value => resolve.contents(value)
+  };
+}
+
+async function settle() {
+  for (let _for = 1; _for <= 3; ++_for) {
+    await new Promise((resolve, param) => {
+      setTimeout(() => resolve(), 0);
+    });
+    TestRenderer$WeftCore.act(() => {});
+  }
+}
+
 Vitest.describe("useId", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.test("gives each call its own ID, kept across renders", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let ids = {};
@@ -173,11 +203,40 @@ Vitest.describe("useId", undefined, undefined, undefined, undefined, undefined, 
       "w-00-1"
     ]);
   });
+  Vitest.testAsync("keeps a boundary's content's IDs while it shows its fallback, and after", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let ids = {};
+    let renderer = TestRenderer$WeftCore.create();
+    let page = promise => TestJsx$WeftCore.jsxs(Suspense$WeftCore.make, {
+      fallback: "loading",
+      children: [
+        TestJsx$WeftCore.jsx(UseId_test$Probe, {
+          name: "a",
+          ids: ids
+        }),
+        TestJsx$WeftCore.jsx(UseId_test$Reads, {
+          promise: promise
+        })
+      ]
+    });
+    TestRenderer$WeftCore.render(renderer, page(Promise.resolve("ready")));
+    await settle();
+    let before = idsOf(ids, "a");
+    let next = deferred();
+    TestRenderer$WeftCore.render(renderer, page(next.promise));
+    t.expect(TestRenderer$WeftCore.toString(renderer).includes("loading")).toBe(true);
+    next.resolve("again");
+    await settle();
+    t.expect(TestRenderer$WeftCore.toString(renderer).includes("again")).toBe(true);
+    return t.expect(idsOf(ids, "a")).toEqual(before);
+  });
 });
 
 export {
   text,
   Probe,
   idsOf,
+  Reads,
+  deferred,
+  settle,
 }
 /*  Not a pure module */

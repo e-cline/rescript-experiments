@@ -43,26 +43,29 @@ is a compile error rather than a component that quietly does the wrong thing (ve
 
 ## Status
 
-Phases 0--6 are done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all
-the phases will go in one PR, not opened yet). Phase 7, HTML rendering and hydration (§9), has a
-plan of its own, [`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md): its phases 7.0 to 7.6
-are done (pages are rendered on the server and hydrated, the harness applies their HTML, and the
-apps and browser tests run over hydrated pages), and so are its follow-ups, 7.7 (events from before
-hydration replayed) and 7.8 (`useId`). Every phase is done; the PR is next. Phase 7.0 sorted the
-packages' sources into `client/`, `server/` and `shared/`, renamed `WeftServer.Client` `Decoder`,
-and split `Rpc`'s server half out as `RpcServer`; the names here are the new ones.
+Every phase is done, on the branch `claude/weft-ppx-phase-0` (one commit or a few per phase; all the
+phases go in one PR). Before the PR, this plan and the next were checked against the code again;
+what had drifted is corrected where it's described, and what's left to do is under Follow-ups, at
+the end. Phase 7, HTML rendering and hydration (§9), has a plan of its own,
+[`weft_ssr_hydration_plan.md`](weft_ssr_hydration_plan.md): its phases 7.0 to 7.6 are done (pages
+are rendered on the server and hydrated, the harness applies their HTML, and the apps and browser
+tests run over hydrated pages), and so are its follow-ups, 7.7 (events from before hydration
+replayed) and 7.8 (`useId`). Phase 7.0 sorted the packages' sources into `client/`, `server/` and
+`shared/`, renamed `WeftServer.Client` `Decoder`, and split `Rpc`'s server half out as `RpcServer`;
+the names here are the new ones.
 
 | Phase | What                                                                | Where                                                          |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------- |
 | 0     | `ppx_weft` (attribute rename and checks), shared opam switch        | `tools/ppx/weft`, `tools/ppx/weft_tests`, `tools/ppx/setup.sh` |
 | 1     | `Lazy`, `Entrypoint`, `ServerRender`, `Weft.Lazy`                   | `packages/weft_core`, `packages/weft`                          |
 | 2     | async server components, entrypoint ids and directives              | `tools/ppx/weft`, `tools/ppx/weft_tests`                       |
-| 3     | `Payload`, `Render`, `Client`, `Testing`; `Deferred`                | `packages/weft_server`, `packages/weft_core`                   |
+| 3     | `Payload`, `Render`, `Decoder`, `Testing`; `Deferred`               | `packages/weft_server`, `packages/weft_core`                   |
 | 4     | the Vite plugin, `serve`; the `weft_split` example                  | `packages/vite_plugin_weft`, `examples/weft_split`             |
 | 5     | `Page`, `Bootstrap`, `Navigation`, `useRefetchable`; tier 2 harness | `packages/weft_server`, `packages/vite_plugin_weft`            |
 |       | `weft_notes` (tier 2 scenarios, tier 3 browser tests)               | `examples/weft_notes`, `examples/weft_split`                   |
 | 6     | Weft RPCs: `Rpc`, `Rpc.Codec`; `@weft.rpc`, `@@weft.server`; IDs    | `packages/weft_server`, `tools/ppx/weft`, the plugin           |
 |       | `weft_notes`' changes as RPCs, `rewriteBodies` in the harness       | `examples/weft_notes`, `packages/vite_plugin_weft`             |
+| 7     | HTML on the server and hydration: its own plan, 7.0 to 7.8          | every package above, `packages/weft_dom`, the examples         |
 
 Where the implementation went its own way, the sections below say so. Things learned on the way, for
 whoever picks this up:
@@ -172,7 +175,7 @@ throwaway ppxlib probe built from the existing `ppx_pretty_print` opam switch:
 ```
  server (Vite "rsc" environment)                     browser (Vite "client" environment)
  ───────────────────────────────                     ───────────────────────────────────
- request ──> route handler                           bootstrap chunk (virtual:weft/client)
+ request ──> route handler                           bootstrap chunk (virtual:weft/bootstrap)
               │                                        │
               ▼                                        ▼
  WeftServer.Render.toStream(<NotePage id />)         WeftServer.Decoder.fromStream(rows)
@@ -185,7 +188,8 @@ throwaway ppxlib probe built from the existing `ppx_pretty_print` opam switch:
               │                                        │
               └──── rows, streamed in the HTML ───────>│
                     (or a fetch, on navigation)        ▼
-                                                     WeftDom.Client root renders, and
+                                                     WeftDom.Client root: hydrates the
+                                                     first page's HTML (phase 7), then
                                                      re-renders as each row lands
 ```
 
@@ -375,7 +379,12 @@ What it does:
   - `virtual:weft/client-references` (client): the map in §3.
   - `virtual:weft/client` (client): what a bootstrap needs from the plugin: `loadModule` (from the
     map), and `onRefresh`, for the server HMR event. The bootstrap reads the rows the HTML stream
-    delivers, creates a `WeftDom.Client` root and renders into it, and wires up navigation (§7).
+    delivers, hydrates the page's HTML (or, with none, creates a `WeftDom.Client` root and renders
+    into it), and wires up navigation (§7).
+  - `virtual:weft/bootstrap` (client): the default bootstrap, `WeftServer.Bootstrap.main` with
+    `virtual:weft/client`'s `loadModule` and `onRefresh`.
+  - `virtual:weft/ssr-references` (rsc, phase 7): the reference map imported on the server, for the
+    server's `Decoder`; `virtual:weft/assets` exports its `loadModule`.
   - `virtual:weft/assets` (rsc): `{scripts, preloads, styles, entrypoints}`: the module scripts to
     load (in dev, `/@vite/client` and the bootstrap), the bootstrap's imports (for `modulepreload`
     links) and stylesheets, and, for each entrypoint file, its chunk and the chunks it imports. In
@@ -424,7 +433,7 @@ What it does:
 
 A new ReScript package, namespace `WeftServer`, depending on `weft_core` and nothing
 server-specific: `Render` produces a Web `ReadableStream<Uint8Array>`, which `@e-cline/servy`'s
-`Respond.stream` (or any fetch-style server) can send. `Client` is browser-safe and shares the
+`Respond.stream` (or any fetch-style server) can send. `Decoder` is browser-safe and shares the
 format module, `Payload`.
 
 **Rows.** A payload is newline-separated rows, `<id>:<tag><json>`. Row `0` is the root.
@@ -481,12 +490,12 @@ preserved (a cycle is an error); that keeps the encoder a plain recursive walk.
 ### 6. The client decoder, and `WeftCore.Lazy`
 
 `let client = WeftServer.Decoder.make(~loadModule, ~fetch=?)` makes a client, and
-`client->Client.fromStream(stream) : promise<Element.t>` resolves with row 0's element once it's
+`client->Decoder.fromStream(stream) : promise<Element.t>` resolves with row 0's element once it's
 decodable, and keeps decoding as rows arrive. `loadModule` (a file id, the part of an entrypoint id
 before `#`, to a promise of the compiled file's module) is what the bootstrap fills in from
 `virtual:weft/client-references`; `fetch` (a URL to a payload stream) defaults to the global
 `fetch`. Taking both as arguments is also what lets tests run without Vite or a network (§10).
-`client->Client.fetchElement(url)` fetches and decodes; `Client.Latest` runs fetches that replace
+`client->Decoder.fetchElement(url)` fetches and decodes; `Decoder.Latest` runs fetches that replace
 each other (the newest cancels the one before, and only its element is returned), which `navigate`
 and `useRefetchable` use.
 
@@ -541,13 +550,17 @@ after that.
 with the bare payload, and renders the result into the root inside `Transition.start`: the old
 screen stays until the new tree can render (Suspense phase c), entrypoints in the same place keep
 their state, and the reconciler only touches what changed. As built, it's `WeftServer.Navigation`
-(not functions in `Client`, which it builds on): a page (`Navigation.t`) made over any renderer,
+(not functions in `Decoder`, which it builds on): a page (`Navigation.t`) made over any renderer,
 with `navigate(url)`, `load(url)` (no history entry), `refresh()`, and `useNavigation()` for
 entrypoints, provided by a context around what it renders. `Bootstrap.start` makes the browser's,
 with `history.pushState` after a navigation and `popstate` loading the URL gone back to; links are
 the app's own entrypoints calling `navigate` (`weft_notes`' and `weft_split`'s `Link`). They use a
 `fetch` the client is created with (the global one, from the bootstrap), so a test can give it one
 that goes to a stubbed server instead (§10).
+
+Since phase 7, the first response carries the page's HTML too: `#root` holds the shell, rendered on
+the server, and each boundary's content follows in a segment; the bootstrap hydrates it
+([the SSR plan](weft_ssr_hydration_plan.md), §5).
 
 `WeftServer.Page.respond(request, element, ~assets)` picks HTML or payload from the `Accept` header,
 and stops rendering when the request is aborted. It takes and returns `@rescript/webapi`'s
@@ -772,7 +785,7 @@ client the way it refuses a server component's file, naming the chain of imports
 2. encodes the request with the codec, to JSON;
 3. `POST`s it to `<base>/<id>` (`/_weft/rpc` by default) with `content-type: application/json` and
    `x-weft-rpc: 1`;
-4. decodes the response (a payload, below) with the page's `Client`, and returns its result.
+4. decodes the response (a payload, below) with the page's `Decoder`, and returns its result.
 
 Network failures, a status other than 2xx, and a handler that threw are `Failed(problem)`:
 `{status: option<int>, message: string, digest: option<string>}`, the message a development build's
@@ -811,7 +824,7 @@ since `weft_server` doesn't depend on servy). In order, it:
    authentication, and its `signal`, which aborts when the client goes away);
 7. answers with a payload whose root row is `{"kind": "ok", "value": v}` or
    `{"kind": "error", "error": e}` (a 200; `Invalid` is `{"kind": "invalid", "message": m}`, a 400),
-   encoded by `Render` (`Render.valueToStream`, decoded by `Client.valueFromStream`: a response can
+   encoded by `Render` (`Render.valueToStream`, decoded by `Decoder.valueFromStream`: a response can
    be or contain elements, rendered server components included, and promises that stream in later
    rows), with `cache-control: no-store`. (As built, `kind` rather than an `ok` field: an `ok` of
    `undefined`, a `unit` response, would be left out of the JSON.) A handler that throws gives a 500
@@ -827,8 +840,8 @@ of what's callable, not everything the scan found.
 get different formats:
 
 - **Responses** (server to client) are the server's own output, so they reuse the payload format
-  (`Render` on the server, `Client` on the client) and everything it can carry. The client only ever
-  loads entrypoints from the reference map, so a response can't make it load anything else.
+  (`Render` on the server, `Decoder` on the client) and everything it can carry. The client only
+  ever loads entrypoints from the reference map, so a response can't make it load anything else.
 - **Requests** (client to server) are anyone's. They must not go through the payload decoder.
   React2Shell (CVE-2025-55182, CVSS 10) was exactly that: React's Flight decoder ran on the server
   against an attacker's request, followed references and property names taken from the payload up
@@ -1121,8 +1134,11 @@ each test opens pages on it, in containers of its own.
   tests open the fake database's gates, ask which queries are waiting, or change data behind the
   app's back ("another user added a comment"). Test-only control modules live in the app's `tests/`,
   so the app itself has no test hooks.
-- **The first page**: the HTML response is read as the bootstrap would, rows taken from the inline
-  scripts and the rest checked to be the shell, so the HTML path is covered without a browser.
+- **The first page**: as built in phase 5, the HTML response was read for its rows, and the rest
+  checked to be the shell. Since phase 7.6 the harness applies it as a browser's parser would (the
+  shell into the container, then each inline script and segment, in order), and the bootstrap
+  hydrates it: the SSR plan's §9 says how, with `hydrated`, `htmlNodes`, `warnings` and
+  `~bootstrap=false`.
 - **Entrypoints** load through the real reference map; `page->WeftTesting.holdLoads` holds them, to
   test a slow chunk.
 - **Rendering** goes through `WeftDom.Client.act`. A page streams for as long as the server has
@@ -1188,12 +1204,12 @@ test-only route opens them.
 
 **`examples/weft_notes`**: the integration test bed, using every feature in a small notes app: a
 list page and a note page with three boundaries (the note, its comments, related notes), a
-`LikeButton` entrypoint with state, a comment form entrypoint that posts to a route and calls
-`refresh()`, a `CommentList` entrypoint receiving its comments as a promise prop, a `NoteEditor`
-entrypoint (a draft in state, the saved title and "saved at" time as children rendered on the
-server) whose save posts and refetches those, the comments in a `CommentsPanel` entrypoint that
-refetches them with a reload button, a server component that fails inside an error boundary, and
-links that `navigate`. Its tests, through the tier 2 harness, from source:
+`LikeButton` entrypoint with state, a comment form entrypoint that posts a comment (an RPC, since
+phase 6) and calls `refresh()`, a `CommentList` entrypoint receiving its comments as a promise prop,
+a `NoteEditor` entrypoint (a draft in state, the saved title and "saved at" time as children
+rendered on the server) whose save posts and refetches those, the comments in a `CommentsPanel`
+entrypoint that refetches them with a reload button, a server component that fails inside an error
+boundary, and links that `navigate`. Its tests, through the tier 2 harness, from source:
 
 - the shell and row 0 render, then each boundary's content replaces its fallback as its gate opens,
   in whichever order the test opens them;
@@ -1202,8 +1218,8 @@ links that `navigate`. Its tests, through the tier 2 harness, from source:
 - posting a comment, then `refresh()`, shows it, with the form's other state kept;
 - the promise prop shows `CommentList`'s own fallback until its gate opens;
 - the failing component shows the boundary's error, and the rest of the page renders;
-- with `LikeButton`'s chunk held, the rest of the page renders, and the button appears once it
-  loads;
+- with `LikeButton`'s chunk held, the rest of the page renders, and the button appears once it loads
+  (since phase 7, the server's button shows meanwhile, and hydrates once its chunk is in);
 - navigating away while the page is still streaming cancels the old response (the fake database sees
   its waiters abandoned) and none of its rows land;
 - saving in `NoteEditor` refetches the saved title: the new title and "saved at" arrive, the draft
@@ -1219,6 +1235,8 @@ links that `navigate`. Its tests, through the tier 2 harness, from source:
 - reloading comments twice, with the first response held until the second has rendered: the first
   never lands.
 
+Phase 7 runs them all over hydrated pages, and adds the hydration scenarios (the SSR plan's §9).
+
 **`examples/weft_split`**: code-splitting, with the real ReScript and PPX output the plugin's
 fixtures stand in for: file-level and nested entrypoints, one in a module named `Error`, two
 entrypoints sharing a module, an entrypoint that renders another, one used on only one route, a
@@ -1232,7 +1250,7 @@ large client-only module (with a sentinel) imported by one entrypoint, and a ser
   exported; then the built server's payload for each route, decoded with the built chunks, loads
   exactly the entrypoint files that route uses;
 - **the built app, through the harness** (`Build` mode): every route renders, and only the chunks a
-  page uses are loaded;
+  page uses are loaded (since phase 7, checked by the chunks the hydrated page preloads);
 - the same scenarios in `Source` mode, so a difference between dev and build shows up as one passing
   and the other failing.
 
@@ -1245,13 +1263,16 @@ enabled by `WEFT_NOTES_TEST_ROUTES=1`, which the test server sets:
 - the first page streams: the shell and row 0 show, then each boundary fills in as its gate opens;
 - an entrypoint's chunk is requested only once a page uses it, and once only (from the network log);
 - saving in `NoteEditor` refetches the saved title and keeps the input's focus and selection;
-- navigating between notes keeps the like button's state, and the back button works.
+- navigating between notes keeps the like button's state, and the back button works;
+- a comment posted through its RPC, as the browser sends it;
+- since phase 7: a boundary painted before the bootstrap's chunk has loaded, a click and typing
+  before then done once it has, and the page read with JavaScript off, each over a hydrated page,
+  with nothing in the console.
 
 They run in CI on one Node version, as a job of their own (`vp run e2e`, after
 `playwright install --with-deps chromium`), since they need a browser installed. (The job was
 written in phase 5 but hasn't run in CI yet: it'll first run on the PR.) They're few by design:
-anything that can be checked in tier 2 is, and these cover what only a browser can show. Phase 7
-adds hydration's (no flash of client rendering, the server's nodes kept).
+anything that can be checked in tier 2 is, and these cover what only a browser can show.
 
 ## Packages and layout
 
@@ -1267,8 +1288,8 @@ packages/weft_server/              namespace WeftServer (by where it runs, since
   src/shared/Payload.res(i)        the row and value encoding, shared by both ends
   src/server/Render.res(i)         server renderer: element => ReadableStream
   src/shared/Decoder.res(i)        stream => elements; fetchElement, Latest (was `Client`)
-  src/server/Page.res(i)           the HTML shell with inlined rows; respond (HTML or payload)
-  src/client/Bootstrap.res(i)      the browser's start: rows from the page, a root, history
+  src/server/Page.res(i)           the page: its HTML (phase 7) and inlined rows; respond (HTML or payload)
+  src/client/Bootstrap.res(i)      the browser's start: rows from the page, hydrating, history
   src/shared/Navigation.res(i)     the page: navigate, refresh, useNavigation, useRefetchable
   src/shared/Rpc.res(i)            Weft RPCs (phase 6): make, makePrepared, call, use
   src/server/RpcServer.res(i)      handler, router, respond (split from `Rpc` in phase 7.0)
@@ -1311,11 +1332,11 @@ function-typed props, an entrypoint not named `make`, no `rescript.json` to name
 rest of the PPX's fixtures, good and bad, and canary 4 (§10): the ids are made from the source path
 the PPX is given, so the tests of the ids are that canary.
 
-**Phase 3 -- Wire format and renderer, no bundler.** `Payload`, `Render` and `Client`, each tested
-on its own and then together into the TestRenderer, including every in-place update test and the
-update fuzz test (§10), with `fetchElement` and request ordering (`Client.Latest`).
-`WeftServer.Testing` (the tier 1 helpers: a pipe the test controls, modules from a map) comes with
-them. `weft_core` gains `Deferred` (rows readable the moment they arrive),
+**Phase 3 -- Wire format and renderer, no bundler.** `Payload`, `Render` and `Client` (now
+`Decoder`), each tested on its own and then together into the TestRenderer, including every in-place
+update test and the update fuzz test (§10), with `fetchElement` and request ordering
+(`Decoder.Latest`). `WeftServer.Testing` (the tier 1 helpers: a pipe the test controls, modules from
+a map) comes with them. `weft_core` gains `Deferred` (rows readable the moment they arrive),
 `ServerRender.suspendedOn` (so the renderer needn't reach into its internals), and rejected lazies
 throwing from their own position. Refetching part of a page (§7) waits for phase 5, with pages and
 navigation; those cases of the in-place tests come with them.
@@ -1347,10 +1368,10 @@ fixtures and errors; the plugin's scan collecting RPC IDs (duplicates fail the b
 Done. Along the way (§8 says where): `Rpc.make` and `Rpc.makePrepared` (with `~prepare`) rather than
 one `make`; `check` returning `result<unit, 'error>`; one `'use weft rpc <id>'` directive per RPC,
 which the scan reads the IDs from; `RpcServer.respond(router, request, ~id)` for the route;
-`Render.valueToStream` and `Client.valueFromStream`, for payloads whose root isn't an element; error
-codes 18 (a bad ID) and 19 (an ID twice in a router); the harness's `rewriteBodies`, to play an
-older client; and in `weft_notes`, `ApiServer` for the handlers, with it, `Db`, `Gates` and `Server`
-marked `@@weft.server`.
+`Render.valueToStream` and `Decoder.valueFromStream`, for payloads whose root isn't an element;
+error codes 18 (a bad ID) and 19 (an ID twice in a router); the harness's `rewriteBodies`, to play
+an older client; and in `weft_notes`, `ApiServer` for the handlers, with it, `Db`, `Gates` and
+`Server` marked `@@weft.server`.
 
 **Phase 7 -- HTML and hydration** (§9): the hook-less HTML renderer, streaming Suspense HTML, then
 hydration in the reconciler and the DOM host. Now its own plan,
@@ -1361,8 +1382,8 @@ and `weft_notes`' scenarios check that hydration kept the server's nodes; the br
 the same in Chromium.
 
 Out of scope: the Flight wire format and interop with React, CSS handling beyond what Vite does
-already, shared references and cycles in payloads, context on the server, and caching rendered
-output.
+already, shared references and cycles in payloads, context in server components, and caching
+rendered output.
 
 ## Decisions
 
@@ -1434,4 +1455,34 @@ Settled before phase 6 (Weft RPCs, §8), as §8 recommended:
   tests cover what the scenarios found jsdom getting differently.
 - **Tiers 1 and 2 never run real HTML streaming or chunk loading.** The browser tests do, but only
   for a few scenarios, so a browser-only problem elsewhere could get through. Keeping the first
-  page's HTML reading in tier 2 identical to the bootstrap's (one shared module) narrows it.
+  page's HTML reading in tier 2 close to a browser's (the harness applies it piece by piece, as a
+  parser would, and the real bootstrap reads the rows) narrows it.
+
+## Follow-ups
+
+What's left after phase 7, most useful first, beyond the hydration-specific ones in
+[the SSR plan's Follow-ups](weft_ssr_hydration_plan.md#follow-ups):
+
+1. **The browser tests in CI.** Their job was written in phase 5 and first runs on this PR; if it
+   needs fixing there, that's the first follow-up.
+2. **Navigation that behaves like a page load.** `navigate` renders the new page in place, but
+   leaves `document.title` as the first response set it (`Page.respond(~title)` only reaches the
+   HTML), doesn't scroll to the top (or to a `#fragment`), and going back doesn't restore the scroll
+   position. A real app needs all three: the title (and other head tags) carried in the payload, and
+   scroll handled by `Navigation` around its renders, as frameworks' routers do. Medium.
+3. **Codecs derived by the PPX** (§8's option 3): `@weft.codec` on a type declaration, giving a
+   value of `Rpc.Codec`'s type, so an RPC's request and response types needn't be described twice.
+   Medium; the combinators have settled.
+4. **More kinds of RPC** (§8's "Not in this phase"): `FormData` and files (a `Codec.file` over
+   multipart), single-flight mutations (the response carrying the refreshed page, saving a round
+   trip), and perhaps `GET` RPCs. Each medium; forms without JavaScript (the SSR plan's follow-up 9)
+   build on the first.
+5. **Entrypoints that don't render again on a refetch whose props didn't change** (Risks): the
+   decoder could reuse the previous payload's values where they're structurally equal, so `Memo`
+   bails out. Medium; the harness's render counts pin down today's behaviour.
+6. **Fast refresh** for client modules in development, keeping state across an edit (today a client
+   module's change reloads the page; a server module's refetches it in place). Large.
+7. **A test cache per package**, for the `ENOTEMPTY` failures parallel Vitest runs sometimes hit on
+   the shared `node_modules/.vitest-cache` (Things learned). Small.
+8. **Context in server components**, and caching rendered output, both out of scope so far: neither
+   has had a use in the examples yet.

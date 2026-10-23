@@ -72,6 +72,9 @@ Types for them are in `@e-cline/vite_plugin_weft/virtual`. A client environment 
   one `ppx_weft` gives it (the package's name, then the source's path in it), and the plugin checks
   that against the ids in the file's marks. Each file is `import()`ed from
   `virtual:weft/client-references`, so each is a chunk of its own, with whatever it alone imports.
+  The server imports the same files (`virtual:weft/ssr-references`) to render the page's HTML, so an
+  entrypoint file mustn't touch the DOM at the top level of a module or while rendering: only in
+  handlers and effects.
 - **RPC IDs** are collected by the same scan, from the `'use weft rpc <id>'` directives: an ID
   declared in two files (the app's, or a dependency's) fails the build and the dev server, naming
   both. (When `rescript build -w` changes a file's RPCs in development, the scan runs again, and

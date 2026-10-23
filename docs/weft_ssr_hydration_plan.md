@@ -1,8 +1,8 @@
 # Plan: server-rendered HTML and hydration for Weft
 
-Today a Weft page's first response is a shell with an empty `<div id="root">` and the payload's rows
-as inline scripts: nothing shows until the bootstrap has loaded, decoded the rows, loaded the
-entrypoints' chunks and rendered. This plan adds the rest of what a first paint needs:
+Before this plan, a Weft page's first response was a shell with an empty `<div id="root">` and the
+payload's rows as inline scripts: nothing showed until the bootstrap had loaded, decoded the rows,
+loaded the entrypoints' chunks and rendered. This plan adds the rest of what a first paint needs:
 
 - **HTML on the server.** The page's first response carries the page as HTML, entrypoints included
   (rendered with their initial state), streamed: everything outside `Suspense` boundaries first (the
@@ -26,20 +26,21 @@ request ──► Render.toStream (server components run, once)
             Decoder.fromStream, on the server (entrypoints imported there)
               │ the element tree the browser will decode, row for row
               ▼
-            WeftDom.Html.renderToStream (entrypoints called, with their initial state)
+            WeftDom.Html.render (entrypoints called, with their initial state)
               │ HTML: the shell, then each boundary's segment
               ▼
-            the page: <div id="root">shell</div>, rows, <template>segment</template><script>swap</script>
+            the page: <div id="root" data-weft-html>shell</div>, rows, <template>segment</template><script>swap</script>
 
 browser:    HTML paints as it streams ──► bootstrap: rows → elements → hydrateRoot(#root)
 ```
 
 ## Status
 
-Every phase, 7.0 to 7.8, is done (§0, §2 to §11 say where they went their own way). The decisions
-are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and 7.8) go on
-the same branch as phases 0 to 6, a commit or a few each, each ending green, with a review before
-the next.
+Every phase, 7.0 to 7.8, is done, on the same branch as phases 0 to 6, a commit each, each ending
+green and reviewed before the next. The design sections are as first written, each followed by "As
+built" notes where the implementation went its own way; before the PR, the whole plan was checked
+against the code again, and what had drifted is corrected in those notes. The decisions are settled
+(Decisions); what's left to do is under Follow-ups, at the end.
 
 ## What was verified before writing this
 
@@ -229,7 +230,9 @@ being rendered; and error 15 is `useSyncExternalStore` without `~getServerSnapsh
 it `Rpc.use` and `useRefetchable`). `Page` renders the HTML inside `Navigation.show`'s provider,
 with a server-side `Navigation.t`: its URL is the request's, its decoder the server's own, and
 calling `navigate` or `refresh` on it fails (they're for handlers and effects, which don't run on
-the server). `Navigation` gains `Navigation.makeForServer(decoder, ~url)` for this.
+the server). `Navigation` gains `Navigation.makeForServer(decoder, ~url)` for this. (As built, the
+provider comes from `Navigation.wrap(navigation, element)`, which both sides use for the first page,
+§5.)
 
 ### 3. The HTML renderer: `WeftDom.Html`
 
@@ -313,6 +316,16 @@ the hydration phases: a `<textarea>`'s value is written as its text, which a cli
 have (it sets the property), so hydration leaves a textarea's children alone (7.4); and `weft_core`
 gained `ServerRender.providedContext`, so the renderer reads a provider element without
 `weft_core`'s internals. `weft_dom`'s error codes start here (1 to 6, in its README).
+
+The concurrency paragraph above isn't what was built: siblings aren't rendered concurrently. Each
+attempt (the shell, or one boundary's content) renders synchronously, depth first; whatever in it
+suspended is waited for together, and the attempt is then rendered again from the top. Boundaries'
+attempts run independently of each other, so one slow boundary doesn't hold up another, and each
+segment is written as soon as its attempt is kept (there's no per-macrotask batching). The cost is
+rendering an attempt again for each round of suspensions in it; caching what an attempt already
+resolved is a follow-up. The nesting warnings also cover a `<form>` in a `<form>`, a `<td>` or
+`<th>` outside a `<tr>`, and a table section outside a `<table>`; the tag check accepts capitals
+(`[a-zA-Z][a-zA-Z0-9-]*`).
 
 ### 4. Streaming: the shell, boundaries and segments
 
@@ -407,6 +420,9 @@ arrive, and the server's content stays meanwhile. Tests: `weft_server/tests/Html
 page's order, fallbacks, errors reported once, the server's page) and `HydratedPage_test.res` (in
 jsdom: a streamed page applied piece by piece, hydrated by the real bootstrap, the server's elements
 kept and working, a boundary hydrating when its segment arrives).
+
+Since phase 7.7, the head also carries the event runtime (`Html.eventRuntime`, §10), before the
+shell, on pages with HTML.
 
 **Found in phase 7.6.** Rule 3's "nothing for it to wait on" missed one thing: the bootstrap's
 script is `async`, so it can run before the parser has reached `#root`, which the page only writes
@@ -529,10 +545,11 @@ and registering a pending boundary's retry are all recorded during the render an
 a render thrown away leaves the host untouched. An error while hydrating is handled like a mismatch
 (the nearest boundary being hydrated, or the root, rendered on the client, where the error happens
 again for an `ErrorBoundary` to catch), rather than by the `ErrorBoundary` discarding hydration
-below it: simpler, and the same in the end. A dehydrated boundary's server content is removed with
-it if it's deleted, and something inserted before it goes before its start marker. Not handled: a
-dehydrated boundary inside content a `Suspense` boundary hides behind its fallback isn't hidden with
-it.
+below it: simpler, and the same in the end. The mismatch warnings say what was expected and what was
+found (`expected <p>, found <b>`), not the component path the paragraph above promises: that's a
+follow-up. A dehydrated boundary's server content is removed with it if it's deleted, and something
+inserted before it goes before its start marker. Not handled: a dehydrated boundary inside content a
+`Suspense` boundary hides behind its fallback isn't hidden with it.
 
 **Found in phase 7.6**, by the apps' scenarios, each now a test in `Hydration_test.res`:
 
@@ -579,7 +596,9 @@ node dropped, a tag changed, a text changed, an extra node), recovering with war
   the container's content on its first render, and is an ordinary root after.
 
 `Bootstrap.start` calls `hydrateRoot` when `#root` has `data-weft-html`, and `createRoot` otherwise
-(the shell failed, or the route opted out). `Navigation.show`'s first render is the hydrating one.
+(the shell failed, or the route opted out). (As built, phase 7.5: the first page is hydrated with
+`hydrateRoot(container, Navigation.wrap(navigation, element))`, the tree the server rendered, and
+`Navigation.show` renders the pages after it.)
 
 **As built (phase 7.4).** A boundary's anchor is recognized as the `<template>` straight after its
 start marker (so an app's own `<template>` isn't skipped). The attribute check compares only what
@@ -678,6 +697,19 @@ hydration algorithm is tested in Node, fast, and fuzzed:
   bootstrap's hydration, `page.htmlNodes` snapshots what the HTML made, and `page.warnings` collects
   the console's mismatch warnings. A page can be opened with JavaScript off (`~bootstrap=false`), to
   check what the HTML alone shows.
+
+**As built, the tests (checked before the PR).** `TestRenderer` hydrates markup with
+`TestRenderer.hydrate(markup, element)` (rather than a `fromMarkup`), and counts nodes created from
+its log of operations. The `weft_core` fuzz test checks that broken markup warns, not what the
+warning names. The DOM fuzz test's random trees are tags with or without a class, inputs, text runs,
+fragments, components with state, `Suspense` boundaries waiting on promises, lazy elements and
+`useId` probes (no styles); its HTML is applied segment by segment as the renderer produces them,
+rather than cut at random. `weft_server`'s end-to-end tests stream `Page.toStream` straight into
+jsdom, without `Support.serve`. `weft_split`'s built page checks the chunks it preloads (the harness
+can't see a built bootstrap's loads), and its source page the loads themselves. The browser tests
+are eight: the five from before, now over hydrated pages, plus a boundary painted before the
+bootstrap's chunk has loaded, a click and typing before it done once it has (7.7), and the page read
+with JavaScript off.
 
 **As built (phase 7.6).** The harness's `readPage` hands over the body one top-level node at a time,
 once each has all arrived (it counts elements, skipping comments and raw text), as a parser would
@@ -882,15 +914,16 @@ After phase 7.0 (§0), and with what phase 7 adds:
 packages/weft_core/src/
   shared/HostConfig.res             gains `Hydratable`
   shared/Reconciler.res(i)          `MakeHydratable`, with `hydrateRoot`; hydration in the work loop
-  shared/internal/Hydration.res     the cursor, claiming, mismatches, dehydrated boundaries
+                                    (the cursor, claiming, mismatches and dehydrated boundaries in it)
   shared/ServerRender.res(i)        gains `renderComponent` (client components, on the server)
   shared/Hooks.res(i)               `useSyncExternalStore(~getServerSnapshot)`; `useId` (7.8)
-  testing/TestRenderer.res(i)       hydratable; `fromMarkup`
+  testing/TestRenderer.res(i)       hydratable: `hydrate`, `resolveBoundary`, `failBoundary`
 packages/weft_dom/src/
   shared/DomProps.res               the prop rules, shared by the host and the HTML renderer
   client/DomHost.res                `HostConfig.Hydratable`; event replay (7.7)
   client/Client.res(i)              gains `hydrateRoot`
-  server/Html.res(i)                the HTML renderer: `renderToStream`, `renderToString`, the runtime
+  server/Html.res(i)                the HTML renderer: `render` (`shell`, `rest`), `renderToStream`,
+                                    `renderToString`; the swap and event runtimes
 packages/weft_server/src/
   shared/Decoder.res(i)             today's `Client`, renamed
   shared/Rpc.res(i), RpcCodec       declaring and calling RPCs
@@ -903,11 +936,11 @@ packages/vite_plugin_weft/          `virtual:weft/ssr-references`; the harness's
 examples/weft_notes/, weft_split/   the scenarios again, over hydrated pages
 ```
 
-New error codes: `weft_core` 15 (`useSyncExternalStore` without `~getServerSnapshot` on the server)
-and 16 (a hydration API used with a host that can't hydrate); `weft_dom`'s first codes (it has none
-yet), for the HTML renderer's refusals (a tag or attribute name that isn't one, children of a void
-element, `<script>` or `<style>` content); `weft_server` 20 (`navigate` or `refresh` on the server's
-page).
+New error codes: `weft_core` 15 (`useSyncExternalStore` without `~getServerSnapshot` on the server;
+16, a hydration API used with a host that can't hydrate, wasn't needed, §6); `weft_dom`'s first
+codes (it has none yet), for the HTML renderer's refusals (a tag or attribute name that isn't one,
+children of a void element, `<script>` or `<style>` content); `weft_server` 20 (`navigate` or
+`refresh` on the server's page).
 
 ## Phases
 
@@ -931,10 +964,10 @@ swap runtime, with their tests. Done.
 
 **Phase 7.3 -- Hydration in the reconciler.** `HostConfig.Hydratable`, `MakeHydratable` and
 `hydrateRoot`; the cursor and claiming; text; complete, pending and failed boundaries; suspending
-while hydrating; mismatches and recovery; `TestRenderer`'s hydration and `fromMarkup`; the unit
-tests and the fuzz test. It walks the same levels as 7.2's renderer (§11's rule, for `useId` later).
-The largest phase, and the riskiest: the work loop's mount path gains a second way through every
-host fiber. Done.
+while hydrating; mismatches and recovery; `TestRenderer`'s hydration (`hydrate`); the unit tests and
+the fuzz test. It walks the same levels as 7.2's renderer (§11's rule, for `useId` later). The
+largest phase, and the riskiest: the work loop's mount path gains a second way through every host
+fiber. Done.
 
 **Phase 7.4 -- Hydration in the DOM.** `DomHost`'s hydration operations,
 `WeftDom.Client.hydrateRoot`, the swap runtime's retry, the attribute warnings; the jsdom round
@@ -1005,8 +1038,9 @@ designed here and built after the rest, as phases 7.7 and 7.8), and the rest as 
   warning saying where.
 - **Entrypoint code now runs on the server.** Module-level DOM access in an entrypoint file, or a
   render that reads `window`, crashes the server render (and only the HTML: the shell fails, and the
-  page falls back to client rendering). The rule (no DOM outside handlers and effects) goes in the
-  READMEs, and the shell's error names the component.
+  page falls back to client rendering). The rule (no DOM outside handlers and effects) is in
+  `weft_server`'s and the plugin's READMEs. The shell's error is the component's own, reported to
+  `onError`; it doesn't name where the component is yet (a follow-up).
 - **Doubling the payload's work on the server** (encoding, then decoding it again) is linear and in
   memory; if it ever shows in profiles, `Render` could hand the decoder its rows without the JSON
   text in between.
@@ -1017,10 +1051,49 @@ designed here and built after the rest, as phases 7.7 and 7.8), and the rest as 
   and its chunks start loading), but the body waits for everything outside every boundary. Pages
   that are slow outside their boundaries should get boundaries, as they would for streaming today.
 
+## Follow-ups
+
+What checking the plan against the code, and building it, left to do, most useful first. None of it
+changes the architecture.
+
+1. **Say where things went wrong.** Hydration's mismatch warnings say what was expected and found
+   (`expected <p>, found <b>`), and a component that throws while the HTML renders is reported as
+   its own error, but neither says where in the tree it was, as §6 and the Risks promised. `Html`
+   already keeps the path for its own messages (`<NotePage> <form> <input>`), and the reconciler can
+   make one from the fibers above. Small, and the first thing someone debugging a mismatch needs.
+2. **Report what hydration recovered from, in production.** A mismatch, or a boundary rendered on
+   the client because of an error, is a development warning and silent otherwise.
+   `hydrateRoot(~onRecoverableError)` (React's name) would let an app log them. Small.
+3. **Hide a dehydrated boundary with the content around it** (the gap §6's "As built" names): when
+   an outer boundary shows its fallback, a dehydrated boundary inside its hidden content keeps
+   showing the server's nodes. Small to medium, and a correctness bug, though it takes a page that
+   suspends again during its first hydration.
+4. **Hydrate a dehydrated boundary that gets new props, rather than dropping its HTML** (§6's
+   "Updates before a boundary has hydrated"): today a `navigate` or `refresh` during the first
+   page's streaming throws away boundaries the server already sent. React hydrates them first, at a
+   higher priority. Medium; it only matters for a navigation while the first page still streams.
+5. **Cache what an HTML attempt resolved** (§3's "As built"): a shell (or a boundary's content) is
+   rendered again from the top for each round of suspensions in it, so a page whose shell waits on
+   several things one after another renders its components several times. The components' positions
+   (§11) are a natural key for keeping what's done. Medium; worth measuring on a real page first.
+6. **Event replay's rough edges** (§10): a recorded event whose element never hydrates (a boundary
+   whose content never arrives) holds back the ones after it for good, which a timeout or a
+   navigation could release; and a hydrated ancestor's handler runs before the target's, the other
+   way round from a live event. Small.
+7. **More than one page per document in the harness**: segments and their anchors are found by id in
+   the whole document, so a test opens one page at a time. Ids made unique per page (a prefix, as
+   `useId`'s) would lift that. Small.
+8. **Selective hydration** (§10's "As built"): hydrating the part the user touched ahead of the rest
+   of the root's time-sliced hydration. Large: it needs the reconciler to switch to a deeper fiber's
+   work mid-render, as React's does.
+9. **Forms that work without JavaScript** (progressive enhancement), which this plan makes possible:
+   an RPC posted by a plain HTML form (a `FormData` codec, and a response that renders the page
+   again or redirects), so a form submitted before hydration, or with JavaScript off, still does its
+   job. Large; §8 of the server components plan left it for after phase 7.
+10. **Static generation**: rendering pages without per-request data to files at build time, which
+    `renderToString` and the plugin's build already come close to. Medium.
+
 ## Out of scope
 
-Selective hydration beyond §10's (hydrating whatever the user is about to touch, by hover or focus);
-`useId` in server components (§11); RPCs called by forms without JavaScript (progressive
-enhancement, which this makes possible: §8 of the server components plan leaves it for later);
-static generation (rendering pages to files at build time, which `renderToString` would allow);
-caching rendered HTML; CSS beyond what Vite does; hydrating a page that wasn't rendered by Weft.
+`useId` in server components (§11); caching rendered HTML; CSS beyond what Vite does; hydrating a
+page that wasn't rendered by Weft.

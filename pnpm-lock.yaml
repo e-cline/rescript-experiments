@@ -985,6 +985,9 @@ importers:
 
   packages/weft_dom:
     dependencies:
+      '@e-cline/common':
+        specifier: workspace:^
+        version: link:../common
       '@e-cline/weft_core':
         specifier: workspace:^
         version: link:../weft_core

@@ -71,3 +71,67 @@ type props = {
   ref?: WeftCore.Ref.t<Nullable.t<Dom.element>>,
   children?: WeftCore.Element.t,
 }
+
+// The rules for applying props, which the DOM host (`DomHost`, setting them on nodes) and the HTML
+// renderer (`Html`, writing them as markup) share, so the server writes what the client would set.
+
+external toNullable: unknown => Nullable.t<unknown> = "%identity"
+external toBool: unknown => bool = "%identity"
+external fromBool: bool => unknown = "%identity"
+@val external stringify: unknown => string = "String"
+
+/** Whether `name` is an event handler's prop: `on` and a capital (`onClick`). */
+let isEventProp = (name: string) =>
+  name->String.startsWith("on") &&
+  String.length(name) > 2 && {
+    let third = name->String.charAt(2)
+    third == String.toUpperCase(third)
+  }
+
+/** The DOM event an `on*` prop listens for. */
+let eventName = (prop: string) =>
+  switch prop {
+  | "onDoubleClick" => "dblclick"
+  | _ => prop->String.slice(~start=2)->String.toLowerCase
+  }
+
+/** The attribute a prop is written as. */
+let attributeName = (prop: string) =>
+  switch prop {
+  | "className" => "class"
+  | "htmlFor" => "for"
+  | "tabIndex" => "tabindex"
+  | "readOnly" => "readonly"
+  | "autoFocus" => "autofocus"
+  | "colSpan" => "colspan"
+  | name => name
+  }
+
+/** Whether a prop's value is absent (`undefined` or `null`). */
+let isNothing = (value: unknown) => Nullable.isNullable(toNullable(value))
+
+/**
+What an attribute prop's value is written as, or `None` to leave the attribute out: absent and
+`false` leave it out, `true` is the empty string (a boolean attribute), anything else its string.
+*/
+let attributeValue = (value: unknown): option<string> =>
+  if isNothing(value) || value === fromBool(false) {
+    None
+  } else if value === fromBool(true) {
+    Some("")
+  } else {
+    Some(stringify(value))
+  }
+
+/**
+A `style` key as CSS writes it: one with a `-` already is (`background-color`, `--custom`), and
+camel case becomes kebab case (`backgroundColor` as `background-color`, `WebkitTransform` as
+`-webkit-transform`, `msTransform` as `-ms-transform`).
+*/
+let cssName = (name: string) =>
+  if name->String.includes("-") {
+    name
+  } else {
+    let kebab = name->String.replaceRegExp(/[A-Z]/g, "-$&")->String.toLowerCase
+    kebab->String.startsWith("ms-") ? "-" ++ kebab : kebab
+  }

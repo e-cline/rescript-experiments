@@ -2,7 +2,8 @@
 
 The DOM renderer for [`@e-cline/weft_core`](../weft_core): renders `@jsx.component` components into
 a browser page. It's a `WeftCore.HostConfig.S` for the DOM, plus a JSX module whose host tags take
-DOM props.
+DOM props. On the server, `Html` renders the same trees to HTML, streamed, for the client to
+hydrate.
 
 ## Installing
 
@@ -73,7 +74,8 @@ Not yet: SVG (elements are created without a namespace), delegated events, hydra
 
 ## Where it runs
 
-The sources are in `src/client/` and `src/shared/` by where they run.
+The sources are in `src/client/`, `src/server/` and `src/shared/` by where they run. `Html` starts
+with the `'use weft server'` directive, so the Vite plugin refuses it to an app's client build.
 
 | Module     | Where   | What it is                                                                |
 | ---------- | ------- | ------------------------------------------------------------------------- |
@@ -83,8 +85,44 @@ The sources are in `src/client/` and `src/shared/` by where they run.
 | `Dom`      | both    | DOM bindings (only touching the DOM when called).                         |
 | `Jsx`      | both    | The JSX module for `@@jsxConfig`.                                         |
 | `Portal`   | both    | `Portal.make(container, children)`: made anywhere, rendered in a browser. |
+| `Html`     | server  | The HTML renderer: a tree to HTML, streamed (`render`, `renderToString`). |
 
 ## Testing
 
 `Client.act(f)` calls `f`, then renders every update and runs every effect before returning. The
 package's own tests run in jsdom (Vitest's `environment: 'jsdom'`).
+
+## HTML on the server
+
+`Html.render(element)` renders the tree as the client would render it: host elements and their props
+by `DomProps`' rules (the same ones `DomHost` follows, so the server writes what the client would
+set), text escaped (with `<!-- -->` between two texts in a row, which the parser would merge),
+components called through `WeftCore.ServerRender.renderComponent` (their hooks giving initial
+state), providers' values reaching them. `shell` is everything outside pending `Suspense`
+boundaries; `rest` streams each boundary's content once it's ready, in a `<template>` an inline
+script swaps in over the fallback. `renderToString` waits for everything instead.
+
+A boundary's content is tried at once, and written in place if it's ready. If something in it
+suspends, its fallback is written, with markers the client's hydration reads, and the content is
+rendered again (with everything that suspended in that try waited for together) until it's ready. An
+error under a boundary fails it (`onError` gives the digest); outside every boundary, it fails the
+shell. A development build warns about nesting the HTML parser would repair.
+
+The package's tests check, besides each rule, that the HTML parses (in jsdom) into exactly the DOM a
+client render of the same tree makes, over random trees, and run the swap runtime against the
+segments.
+
+## Error codes
+
+Production builds throw `WeftDom error <code>` instead of these messages:
+
+| Code | Development message                                                          |
+| ---: | ---------------------------------------------------------------------------- |
+|    1 | A host element's tag isn't a tag name.                                       |
+|    2 | A prop's attribute name isn't one.                                           |
+|    3 | A void element (`<br>`, `<input>`, …) was given children.                    |
+|    4 | A `<script>` or `<style>` was given children (their content isn't HTML).     |
+|    5 | The HTML suspended 100 times in a row (a new promise every call?).           |
+|    6 | An internal element (`Offscreen`) reached the HTML renderer (a bug in Weft). |
+
+Codes don't change once published: a new error gets the next number.

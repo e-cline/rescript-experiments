@@ -32,6 +32,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@e-cline/common": "workspace:^",
     "@e-cline/weft_core": "workspace:^"
   },
   "devDependencies": {

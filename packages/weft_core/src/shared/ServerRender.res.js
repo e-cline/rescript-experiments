@@ -57,6 +57,13 @@ function isRenderingComponent() {
   return HookImpl$WeftCore.renderingForServer.contents;
 }
 
+function providedContext(node) {
+  return {
+    context: node.elementType.$$fiberContext,
+    value: node.props.value
+  };
+}
+
 let run = HookImpl$WeftCore.renderOnServer;
 
 export {
@@ -64,6 +71,7 @@ export {
   isRunning,
   suspendedOn,
   contextValue,
+  providedContext,
   renderComponent,
   isRenderingComponent,
 }

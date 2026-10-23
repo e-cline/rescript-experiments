@@ -78,18 +78,8 @@ let restoreControlledState = (element: Dom.element) =>
   | None => ()
   }
 
-let isEventProp = (name: string) =>
-  name->String.startsWith("on") &&
-  String.length(name) > 2 && {
-    let third = name->String.charAt(2)
-    third == String.toUpperCase(third)
-  }
-
-let eventName = (prop: string) =>
-  switch prop {
-  | "onDoubleClick" => "dblclick"
-  | _ => prop->String.slice(~start=2)->String.toLowerCase
-  }
+let isEventProp = DomProps.isEventProp
+let eventName = DomProps.eventName
 
 let setHandler = (element: Dom.element, event: string, handler: Nullable.t<Dom.event => unit>) => {
   let handlers = tableOf(element, storedHandlers, storeHandlers)
@@ -140,17 +130,6 @@ let setStyle = (element: Dom.element, ~previous: unknown, ~next: unknown) => {
   )
 }
 
-let attributeName = (prop: string) =>
-  switch prop {
-  | "className" => "class"
-  | "htmlFor" => "for"
-  | "tabIndex" => "tabindex"
-  | "readOnly" => "readonly"
-  | "autoFocus" => "autofocus"
-  | "colSpan" => "colspan"
-  | name => name
-  }
-
 /** Applies one prop's change from `previous` to `next` (`undefined` meaning absent). */
 let setProp = (element: Dom.element, name: string, ~previous: unknown, ~next: unknown) =>
   switch name {
@@ -168,13 +147,10 @@ let setProp = (element: Dom.element, name: string, ~previous: unknown, ~next: un
     }
   | name if isEventProp(name) => setHandler(element, eventName(name), unknownToHandler(next))
   | name =>
-    let attribute = attributeName(name)
-    if isNothing(next) || next === boolToUnknown(false) {
-      Dom.removeAttribute(element, attribute)
-    } else if next === boolToUnknown(true) {
-      Dom.setAttribute(element, attribute, "")
-    } else {
-      Dom.setAttribute(element, attribute, stringify(next))
+    let attribute = DomProps.attributeName(name)
+    switch DomProps.attributeValue(next) {
+    | Some(value) => Dom.setAttribute(element, attribute, value)
+    | None => Dom.removeAttribute(element, attribute)
     }
   }
 

@@ -46,3 +46,8 @@ let renderComponent = (component, props, options) => {
 }
 
 let isRenderingComponent = () => HookImpl.renderingForServer.contents
+
+let providedContext = (node: Element.node) => {
+  context: ContextImpl.fromUnknown(Marker.context(node.elementType)),
+  value: ContextImpl.propsOf(node.props).value,
+}

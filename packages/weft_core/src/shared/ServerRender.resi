@@ -34,6 +34,13 @@ type contextValue
 
 let contextValue: (Context.t<'value>, 'value) => contextValue
 
+/**
+What a `Provider` element (a `Context.provider`'s, with `kind: Provider`) provides: its context, and
+the value it gives it. For server renderers walking an element tree, which keep the contexts above
+each component themselves.
+*/
+let providedContext: Element.node => contextValue
+
 type options = {
   /** The providers above the component, outermost first: what its `useContext` reads. */
   contexts: array<contextValue>,

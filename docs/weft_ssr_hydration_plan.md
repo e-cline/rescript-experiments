@@ -36,7 +36,7 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 and 7.1 are done (§0 and §2 say where they went their own way); 7.2 is next. The
+Phases 7.0 to 7.2 are done (§0, §2, §3 and §4 say where they went their own way); 7.3 is next. The
 decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and
 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
 review before the next.
@@ -299,6 +299,21 @@ holding up the rest; output is buffered in order (a segment's HTML is written in
 its parts finish) and flushed per macrotask. Aborting `signal` (the client went away) stops
 everything pending.
 
+**As built (phase 7.2).** `Html.render(element)` gives `shell` (a promise of the shell's HTML,
+rejecting if the shell fails) and `rest` (a stream of what follows), the two parts `Page` will need
+to put the shell inside `#root` and the rest after the rows; `renderToStream` and `renderToString`
+are built on them. How a boundary is rendered: its content is tried synchronously; written in place
+if nothing in it was pending, or else its fallback written and the content tried again once
+everything that try found pending has settled (siblings' suspensions found in one try, and waited
+for together), which is what lets a component's `Hooks.use` and an unresolved `Lazy` be handled the
+same way. An error in a boundary is reported to `onError` only once the attempt it's in is kept, and
+pending boundaries get their ids then too, so retried attempts don't report twice or leave gaps. The
+`style` attribute is written as the browser serializes it (`background-color: red;`). Two things for
+the hydration phases: a `<textarea>`'s value is written as its text, which a client render doesn't
+have (it sets the property), so hydration leaves a textarea's children alone (7.4); and `weft_core`
+gained `ServerRender.providedContext`, so the renderer reads a provider element without
+`weft_core`'s internals. `weft_dom`'s error codes start here (1 to 6, in its README).
+
 ### 4. Streaming: the shell, boundaries and segments
 
 `Suspense` boundaries are the unit of streaming, as in `Render`. The shell is everything outside
@@ -334,8 +349,13 @@ segment: `$weftSwap(n)` finds `wb:n`'s marker, removes the fallback's nodes up t
 inserts the template's content in their place, removes the template and the anchor, and rewrites the
 marker to `$`. Then, if hydration has already reached that boundary and left it waiting (§6), it
 tells it: the anchor's marker carries a callback (`marker.$weftRetry`) the hydrator set, which the
-swap calls. The runtime's source lives in `weft_dom` (`Html.swapRuntime`), and its own tests run it
-in jsdom.
+swap calls. The runtime's source lives in `weft_dom` (`Html.runtime`), and its own tests run it in
+jsdom.
+
+**As built**, a boundary whose content fails after it was left pending gets
+`<script>$weftFail(n, digest, message)</script>` instead of a segment: the runtime turns its marker
+to `$!` and puts the digest and message on its anchor, as for a boundary that failed in place, and
+tells hydration.
 
 **A boundary's segment waits for its rows.** The page writes payload rows as they come and a segment
 once the HTML renderer has it; the renderer can only finish a segment once the rows it needed had
@@ -744,7 +764,7 @@ during hydration, wired in 7.3); with their tests. Small, and everything after d
 **Phase 7.2 -- The HTML renderer.** `DomProps`' shared rules (with `DomHost` moved onto them, its
 tests unchanged), then `WeftDom.Html.renderToString`: every element kind, props, escaping, special
 elements, nesting warnings. Then streaming: `renderToStream`, boundaries, markers, segments and the
-swap runtime, with their tests.
+swap runtime, with their tests. Done.
 
 **Phase 7.3 -- Hydration in the reconciler.** `HostConfig.Hydratable`, `MakeHydratable` and
 `hydrateRoot`; the cursor and claiming; text; complete, pending and failed boundaries; suspending

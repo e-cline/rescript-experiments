@@ -2,6 +2,7 @@
 
 import * as Stdlib_Dict from "@rescript/runtime/lib/es6/Stdlib_Dict.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as DomProps$WeftDom from "../shared/DomProps.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
@@ -48,22 +49,6 @@ function restoreControlledState(element) {
   if (checked !== undefined && element["checked"] !== checked) {
     element["checked"] = checked;
     return;
-  }
-}
-
-function isEventProp(name) {
-  if (!(name.startsWith("on") && name.length > 2)) {
-    return false;
-  }
-  let third = name.charAt(2);
-  return third === third.toUpperCase();
-}
-
-function eventName(prop) {
-  if (prop === "onDoubleClick") {
-    return "dblclick";
-  } else {
-    return prop.slice(2).toLowerCase();
   }
 }
 
@@ -128,25 +113,6 @@ function setStyle(element, previous, next) {
   });
 }
 
-function attributeName(prop) {
-  switch (prop) {
-    case "autoFocus" :
-      return "autofocus";
-    case "className" :
-      return "class";
-    case "colSpan" :
-      return "colspan";
-    case "htmlFor" :
-      return "for";
-    case "readOnly" :
-      return "readonly";
-    case "tabIndex" :
-      return "tabindex";
-    default:
-      return prop;
-  }
-}
-
 function setProp(element, name, previous, next) {
   switch (name) {
     case "checked" :
@@ -171,16 +137,15 @@ function setProp(element, name, previous, next) {
         return;
       }
     default:
-      if (isEventProp(name)) {
-        return setHandler(element, eventName(name), next);
+      if (DomProps$WeftDom.isEventProp(name)) {
+        return setHandler(element, DomProps$WeftDom.eventName(name), next);
       }
-      let attribute = attributeName(name);
-      if ((next == null) || next === false) {
-        element.removeAttribute(attribute);
-      } else if (next === true) {
-        element.setAttribute(attribute, "");
+      let attribute = DomProps$WeftDom.attributeName(name);
+      let value$1 = DomProps$WeftDom.attributeValue(next);
+      if (value$1 !== undefined) {
+        element.setAttribute(attribute, value$1);
       } else {
-        element.setAttribute(attribute, String(next));
+        element.removeAttribute(attribute);
       }
       return;
   }
@@ -288,6 +253,10 @@ function resetAfterCommit(container) {
 
 let nothing;
 
+let isEventProp = DomProps$WeftDom.isEventProp;
+
+let eventName = DomProps$WeftDom.eventName;
+
 export {
   instanceToNode,
   textToNode,
@@ -301,7 +270,6 @@ export {
   eventName,
   setHandler,
   setStyle,
-  attributeName,
   setProp,
   createInstance,
   createTextInstance,

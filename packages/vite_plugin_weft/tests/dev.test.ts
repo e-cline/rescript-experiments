@@ -241,10 +241,10 @@ describe('the dev server', () => {
   });
 });
 
-describe("weft_server's own server-only modules", () => {
+describe("Weft's own server-only modules", () => {
   test("are refused to the client, as an app's server files are; the shared ones are not", async () => {
     const root = copyFixture('basic');
-    // The copy is in a temporary directory, and weft_server outside it: let the dev server serve it.
+    // The copy is in a temporary directory, and Weft's packages outside it: let the dev server serve them.
     const vite = await createServer({
       ...config(root),
       server: {fs: {strict: false}},
@@ -252,21 +252,23 @@ describe("weft_server's own server-only modules", () => {
     try {
       const client = vite.environments[clientEnvironment]!;
       const file = (path: string) =>
-        realpathSync(join(root, 'node_modules/@e-cline/weft_server/src', path));
-      // `Render`, `Page` and `RpcServer` are marked server-only.
+        realpathSync(join(root, 'node_modules/@e-cline', path));
+      // weft_server's `Render`, `Page` and `RpcServer`, and weft_dom's `Html`, are server-only.
       for (const path of [
-        'server/Render.res.js',
-        'server/Page.res.js',
-        'server/RpcServer.res.js',
+        'weft_server/src/server/Render.res.js',
+        'weft_server/src/server/Page.res.js',
+        'weft_server/src/server/RpcServer.res.js',
+        'weft_dom/src/server/Html.res.js',
       ]) {
         await expect(client.transformRequest(file(path))).rejects.toThrow(
           /is a server file \('use weft server'.*so the client can't import it/,
         );
       }
       for (const path of [
-        'shared/Rpc.res.js',
-        'shared/Decoder.res.js',
-        'client/Bootstrap.res.js',
+        'weft_server/src/shared/Rpc.res.js',
+        'weft_server/src/shared/Decoder.res.js',
+        'weft_server/src/client/Bootstrap.res.js',
+        'weft_dom/src/shared/DomProps.res.js',
       ]) {
         await expect(client.transformRequest(file(path))).resolves.toBeTruthy();
       }

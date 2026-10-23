@@ -7,8 +7,6 @@ import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
 import * as Lazy$WeftCore from "@e-cline/weft_core/src/shared/Lazy.res.js";
 import * as Memo$WeftCore from "@e-cline/weft_core/src/shared/Memo.res.js";
-import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
-import * as Client$WeftDom from "../src/client/Client.res.js";
 import * as Hooks$WeftCore from "@e-cline/weft_core/src/shared/Hooks.res.js";
 import * as Portal$WeftDom from "../src/shared/Portal.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
@@ -16,6 +14,7 @@ import * as Context$WeftCore from "@e-cline/weft_core/src/shared/Context.res.js"
 import * as JsxCore$WeftCore from "@e-cline/weft_core/src/shared/JsxCore.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Suspense$WeftCore from "@e-cline/weft_core/src/shared/Suspense.res.js";
+import * as DomSupport$WeftDom from "./DomSupport.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
 import * as ErrorBoundary$WeftCore from "@e-cline/weft_core/src/shared/ErrorBoundary.res.js";
 
@@ -403,27 +402,6 @@ Vitest.describe("boundaries, all at once (renderToString)", undefined, undefined
   }), param => {}))).toEqual("shell"));
 });
 
-async function chunks(stream) {
-  let reader = stream.getReader();
-  let decoder = new TextDecoder();
-  let all = [];
-  let finished = false;
-  while (!finished) {
-    let match = await reader.read();
-    if (match.done) {
-      finished = true;
-    } else {
-      let value = match.value;
-      if (value !== undefined) {
-        all.push(decoder.decode(value));
-      } else {
-        finished = true;
-      }
-    }
-  };
-  return all;
-}
-
 function withoutRuntime(text) {
   return text.replace(`<script>` + Html$WeftDom.runtime + `</script>`, "");
 }
@@ -442,7 +420,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       })
     }), undefined, undefined);
     t.expect(await Html$WeftDom.shell(rendering)).toBe(`<div><!--$?--><template id="wb:0"></template><i>loading</i><!--/$--></div>`);
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("done");
     let rest$1 = await rest;
     t.expect(rest$1.join("").startsWith(`<script>` + Html$WeftDom.runtime + `</script>`)).toBe(true);
@@ -466,7 +444,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       ]
     }), undefined, undefined);
     t.expect(await Html$WeftDom.shell(rendering)).toBe(`<!--$?--><template id="wb:0"></template>outer loading<!--/$-->`);
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match$1[1]("inner");
     await tick();
     match[1]("outer");
@@ -488,7 +466,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       ]
     }), undefined, undefined);
     await Html$WeftDom.shell(rendering$1);
-    let rest$1 = chunks(Html$WeftDom.rest(rendering$1));
+    let rest$1 = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering$1));
     match$2[1]("outer");
     await tick();
     await tick();
@@ -508,7 +486,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       })
     }), param => "d2", undefined);
     await Html$WeftDom.shell(rendering);
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("waiting");
     return t.expect((await rest).map(withoutRuntime)).toEqual([`<script>$weftFail(0,"d2","failed after waiting")</script>`]);
   });
@@ -519,7 +497,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       })
     }), param => {}, undefined);
     t.expect(await rejection(() => Html$WeftDom.shell(rendering))).toEqual("shell");
-    return t.expect(await chunks(Html$WeftDom.rest(rendering))).toEqual([]);
+    return t.expect(await DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering))).toEqual([]);
   });
   Vitest.testAsync("stops when aborted: nothing more is written", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let match = deferred();
@@ -531,7 +509,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       })
     }), undefined, Primitive_option.some(controller.signal));
     await Html$WeftDom.shell(rendering);
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     controller.abort();
     match[1]("too late");
     return t.expect(await rest).toEqual([]);
@@ -546,7 +524,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
         })
       })
     }), undefined, undefined);
-    let all = chunks(stream);
+    let all = DomSupport$WeftDom.chunks(stream);
     await tick();
     match[1]("done");
     return t.expect((await all).map(withoutRuntime)).toEqual([
@@ -555,25 +533,6 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
     ]);
   });
 });
-
-let page = (markup => {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  container.innerHTML = markup;
-  return container;
-});
-
-let arrive = (markup => {
-  const holder = document.createElement("div");
-  holder.innerHTML = markup.replace(/<script>[^<]*<\/script>/g, "");
-  for (const node of [...holder.childNodes]) document.body.appendChild(node);
-});
-
-let run = (markup => {
-  for (const [, code] of markup.matchAll(/<script>([^<]*)<\/script>/g)) (0, eval)(code);
-});
-
-let markup = (container => container.innerHTML);
 
 let setRetry = ((container, index, retry) => {
   const markers = [...container.childNodes].filter(node => node.nodeType === 8 && node.data[0] === "$");
@@ -596,19 +555,19 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
         "after"
       ]
     }), undefined, undefined);
-    let container = page(await Html$WeftDom.shell(rendering));
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let retried = {
       contents: false
     };
     setRetry(container, 0, () => {
       retried.contents = true;
     });
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("done");
     let segment = (await rest).join("");
-    arrive(segment);
-    run(segment);
-    t.expect(markup(container)).toBe("<!--$--><em>done</em><!--/$-->after");
+    DomSupport$WeftDom.arrive(segment);
+    DomSupport$WeftDom.run(segment);
+    t.expect(DomSupport$WeftDom.markup(container)).toBe("<!--$--><em>done</em><!--/$-->after");
     return t.expect(retried.contents).toBe(true);
   });
   Vitest.testAsync("swaps segments in whatever order they come, in a table too", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -645,16 +604,16 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
         ]
       })
     }), undefined, undefined);
-    let container = page(await Html$WeftDom.shell(rendering));
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match$1[1]("two");
     await tick();
     match[1]("one");
     (await rest).forEach(segment => {
-      arrive(segment);
-      run(segment);
+      DomSupport$WeftDom.arrive(segment);
+      DomSupport$WeftDom.run(segment);
     });
-    return t.expect(markup(container)).toBe("<table><tbody><!--$--><tr><td>one</td></tr><!--/$--><!--$--><tr><td>two</td></tr><!--/$--></tbody></table>");
+    return t.expect(DomSupport$WeftDom.markup(container)).toBe("<table><tbody><!--$--><tr><td>one</td></tr><!--/$--><!--$--><tr><td>two</td></tr><!--/$--></tbody></table>");
   });
   Vitest.testAsync("marks a boundary failed, keeping its fallback, and tells hydration", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let match = deferred();
@@ -665,77 +624,21 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
         promise: match[0]
       })
     }), param => "d3", undefined);
-    let container = page(await Html$WeftDom.shell(rendering));
+    let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let retried = {
       contents: false
     };
     setRetry(container, 0, () => {
       retried.contents = true;
     });
-    let rest = chunks(Html$WeftDom.rest(rendering));
+    let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("broke");
     let script = (await rest).join("");
-    run(script);
-    t.expect(markup(container)).toBe(`<!--$!--><template data-digest="d3" data-message="broke"></template>fallback<!--/$-->`);
+    DomSupport$WeftDom.run(script);
+    t.expect(DomSupport$WeftDom.markup(container)).toBe(`<!--$!--><template data-digest="d3" data-message="broke"></template>fallback<!--/$-->`);
     return t.expect(retried.contents).toBe(true);
   });
 });
-
-let structure = (container => {
-  const walk = (node) => {
-    // An empty text node can't be in HTML; hydration makes it.
-    if (node.nodeType === 3) return node.data === "" ? "" : "T(" + node.data + ")";
-    if (node.nodeType !== 1 || node.localName === "template") return "";
-    // A textarea's text is its value (compared below), which a client render sets as a property.
-    const children = node.localName === "textarea" ? [] : [...node.childNodes];
-    const attributes = [...node.attributes]
-      .filter((a) => !["value", "checked", "selected"].includes(a.name))
-      // A style compared as the browser parsed it, however it was written.
-      .map((a) => a.name + "=" + (a.name === "style" ? node.style.cssText : a.value))
-      .sort();
-    const properties = [];
-    if ("value" in node && ["input", "textarea", "select"].includes(node.localName))
-      properties.push("value:" + node.value);
-    if (node.localName === "input") properties.push("checked:" + node.checked);
-    return node.localName + "[" + attributes.concat(properties).join(",") + "](" +
-      children.map(walk).join("") + ")";
-  };
-  return [...container.childNodes].map(walk).join("");
-});
-
-function clientRender(element) {
-  let container = document.createElement("div");
-  let root = Client$WeftDom.createRoot(container);
-  Client$WeftDom.act(() => Client$WeftDom.render(root, element));
-  return container;
-}
-
-function make(seed) {
-  return {
-    contents: seed
-  };
-}
-
-function next(state) {
-  let product = state.contents * 48271.0;
-  state.contents = product - 2147483647.0 * Math.floor(product / 2147483647.0);
-  return state.contents;
-}
-
-function intBelow(state, bound) {
-  return Primitive_int.mod_(next(state) | 0, bound);
-}
-
-function pick(state, items) {
-  return items[intBelow(state, items.length)];
-}
-
-let Random = {
-  make: make,
-  next: next,
-  intBelow: intBelow,
-  pick: pick
-};
 
 function Html_test$Echo(props) {
   let match = Hooks$WeftCore.useState(() => "echo");
@@ -759,15 +662,15 @@ let texts = [
 ];
 
 function randomTree(random, depth) {
-  let match = intBelow(random, depth <= 0 ? 3 : 9);
+  let match = DomSupport$WeftDom.Random.intBelow(random, depth <= 0 ? 3 : 9);
   switch (match) {
     case 0 :
     case 1 :
-      return pick(random, texts);
+      return DomSupport$WeftDom.Random.pick(random, texts);
     case 2 :
       return Jsx$WeftDom.Elements.jsx("input", {
-        value: pick(random, texts),
-        checked: intBelow(random, 2) === 0
+        value: DomSupport$WeftDom.Random.pick(random, texts),
+        checked: DomSupport$WeftDom.Random.intBelow(random, 2) === 0
       });
     case 3 :
       return Jsx$WeftDom.jsx(Html_test$Echo, {
@@ -779,7 +682,7 @@ function randomTree(random, depth) {
       });
     case 5 :
       return Jsx$WeftDom.Elements.jsx("textarea", {
-        value: pick(random, [
+        value: DomSupport$WeftDom.Random.pick(random, [
           "",
           "x",
           "\nnewline first",
@@ -787,9 +690,9 @@ function randomTree(random, depth) {
         ])
       });
     case 6 :
-      return themeProvider(pick(random, texts), Jsx$WeftDom.jsx(Html_test$Themed, {}));
+      return themeProvider(DomSupport$WeftDom.Random.pick(random, texts), Jsx$WeftDom.jsx(Html_test$Themed, {}));
     default:
-      let tag = pick(random, [
+      let tag = DomSupport$WeftDom.Random.pick(random, [
         "div",
         "span",
         "b",
@@ -797,12 +700,12 @@ function randomTree(random, depth) {
         "section"
       ]);
       let children = randomChildren(random, depth - 1 | 0);
-      let props_id = intBelow(random, 2) === 0 ? pick(random, texts) : undefined;
-      let props_className = intBelow(random, 2) === 0 ? "c" : undefined;
-      let props_style = intBelow(random, 3) === 0 ? ({
+      let props_id = DomSupport$WeftDom.Random.intBelow(random, 2) === 0 ? DomSupport$WeftDom.Random.pick(random, texts) : undefined;
+      let props_className = DomSupport$WeftDom.Random.intBelow(random, 2) === 0 ? "c" : undefined;
+      let props_style = DomSupport$WeftDom.Random.intBelow(random, 3) === 0 ? ({
           backgroundColor: "red"
         }) : undefined;
-      let props_hidden = intBelow(random, 3) === 0 ? intBelow(random, 2) === 0 : undefined;
+      let props_hidden = DomSupport$WeftDom.Random.intBelow(random, 3) === 0 ? DomSupport$WeftDom.Random.intBelow(random, 2) === 0 : undefined;
       let props_children = Primitive_option.some(children);
       let props = {
         id: props_id,
@@ -816,27 +719,25 @@ function randomTree(random, depth) {
 }
 
 function randomChildren(random, depth) {
-  let children = Stdlib_Array.fromInitializer(intBelow(random, 4), param => randomTree(random, depth));
+  let children = Stdlib_Array.fromInitializer(DomSupport$WeftDom.Random.intBelow(random, 4), param => randomTree(random, depth));
   JsxCore$WeftCore.markStaticList(children);
   return children;
 }
 
 Vitest.describe("the HTML, parsed", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("is the DOM a client render of the same tree makes, for random trees", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
   for (let seed = 1; seed <= 150; ++seed) {
-    let random = {
-      contents: seed
-    };
+    let random = DomSupport$WeftDom.Random.make(seed);
     let tree = Jsx$WeftDom.Elements.jsx("div", {
       children: randomChildren(random, 4)
     });
-    let fromHtml = page(await Html$WeftDom.renderToString(tree, undefined));
-    let fromClient = clientRender(tree);
+    let fromHtml = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(tree, undefined));
+    let fromClient = DomSupport$WeftDom.clientRender(tree);
     t.expect([
       seed,
-      structure(fromHtml)
+      DomSupport$WeftDom.structure(fromHtml)
     ]).toEqual([
       seed,
-      structure(fromClient)
+      DomSupport$WeftDom.structure(fromClient)
     ]);
   }
 }));
@@ -856,16 +757,8 @@ export {
   theme,
   Themed,
   themeProvider,
-  chunks,
   withoutRuntime,
-  page,
-  arrive,
-  run,
-  markup,
   setRetry,
-  structure,
-  clientRender,
-  Random,
   Echo,
   texts,
   randomTree,

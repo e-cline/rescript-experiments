@@ -36,10 +36,10 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 to 7.3 are done (§0, §2, §3, §4 and §6 say where they went their own way); 7.4 is next.
-The decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7
-and 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
-review before the next.
+Phases 7.0 to 7.4 are done (§0, §2, §3, §4, §6 and §7 say where they went their own way); 7.5 is
+next. The decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups
+7.7 and 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with
+a review before the next.
 
 ## What was verified before writing this
 
@@ -536,6 +536,13 @@ node dropped, a tag changed, a text changed, an extra node), recovering with war
 `Bootstrap.start` calls `hydrateRoot` when `#root` has `data-weft-html`, and `createRoot` otherwise
 (the shell failed, or the route opted out). `Navigation.show`'s first render is the hydrating one.
 
+**As built (phase 7.4).** A boundary's anchor is recognized as the `<template>` straight after its
+start marker (so an app's own `<template>` isn't skipped). The attribute check compares only what
+the props would write (an extension's extra attributes aren't warned about), `style` by its parsed
+properties. `value` and `checked` aren't touched by hydration at all, so the user's input is kept;
+the next update that sets them puts the prop's value back, as for any controlled input. The test
+helpers both test files use are in `weft_dom/tests/DomSupport.res`.
+
 **Events before hydration.** Weft attaches a listener to each element, so until an element has
 hydrated, its handlers aren't there: a click on it does nothing (a link still navigates, as a plain
 link; a form submits as an HTML form would, to its `action`, or by default to the page itself).
@@ -800,7 +807,7 @@ host fiber. Done.
 
 **Phase 7.4 -- Hydration in the DOM.** `DomHost`'s hydration operations,
 `WeftDom.Client.hydrateRoot`, the swap runtime's retry, the attribute warnings; the jsdom round
-trips and the DOM fuzz test.
+trips and the DOM fuzz test. Done.
 
 **Phase 7.5 -- Pages.** `Page`'s HTML (the server-side `Decoder`, the tee, the shell, rows,
 segments, the failed-shell fallback, `~html`), `Navigation.makeForServer`, `Bootstrap` hydrating,

@@ -4,7 +4,7 @@ import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as DomHost$WeftDom from "./DomHost.res.js";
 import * as Reconciler$WeftCore from "@e-cline/weft_core/src/shared/Reconciler.res.js";
 
-let Renderer = Reconciler$WeftCore.Make({
+let Renderer = Reconciler$WeftCore.MakeHydratable({
   instanceToNode: DomHost$WeftDom.instanceToNode,
   textToNode: DomHost$WeftDom.textToNode,
   getPublicInstance: DomHost$WeftDom.getPublicInstance,
@@ -26,7 +26,25 @@ let Renderer = Reconciler$WeftCore.Make({
   insertInContainerBefore: DomHost$WeftDom.insertInContainerBefore,
   removeChildFromContainer: DomHost$WeftDom.removeChildFromContainer,
   prepareForCommit: DomHost$WeftDom.prepareForCommit,
-  resetAfterCommit: DomHost$WeftDom.resetAfterCommit
+  resetAfterCommit: DomHost$WeftDom.resetAfterCommit,
+  firstHydratableChildOfContainer: DomHost$WeftDom.firstHydratableChildOfContainer,
+  firstHydratableChild: DomHost$WeftDom.firstHydratableChild,
+  nextHydratableSibling: DomHost$WeftDom.nextHydratableSibling,
+  asInstance: DomHost$WeftDom.asInstance,
+  asTextInstance: DomHost$WeftDom.asTextInstance,
+  asSuspenseInstance: DomHost$WeftDom.asSuspenseInstance,
+  keepsOwnContent: DomHost$WeftDom.keepsOwnContent,
+  hydrateInstance: DomHost$WeftDom.hydrateInstance,
+  textMatches: DomHost$WeftDom.textMatches,
+  suspenseState: DomHost$WeftDom.suspenseState,
+  firstHydratableInSuspense: DomHost$WeftDom.firstHydratableInSuspense,
+  nextHydratableAfterSuspense: DomHost$WeftDom.nextHydratableAfterSuspense,
+  suspenseInstanceToNode: DomHost$WeftDom.suspenseInstanceToNode,
+  onSuspenseReady: DomHost$WeftDom.onSuspenseReady,
+  clearSuspense: DomHost$WeftDom.clearSuspense,
+  removeHydratable: DomHost$WeftDom.removeHydratable,
+  clearContainer: DomHost$WeftDom.clearContainer,
+  describeHydratable: DomHost$WeftDom.describeHydratable
 });
 
 DomHost$WeftDom.runEvent.contents = f => Renderer.flushSync(f);
@@ -34,6 +52,10 @@ DomHost$WeftDom.runEvent.contents = f => Renderer.flushSync(f);
 function createRoot(container) {
   container.textContent = "";
   return Renderer.createRoot(container);
+}
+
+function hydrateRoot(container, element) {
+  return Renderer.hydrateRoot(container, element);
 }
 
 function act(f) {
@@ -59,6 +81,7 @@ let flushSync = Renderer.flushSync;
 
 export {
   createRoot,
+  hydrateRoot,
   render,
   unmount,
   flushSync,

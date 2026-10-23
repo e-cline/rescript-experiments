@@ -1,4 +1,4 @@
-module Renderer = WeftCore.Reconciler.Make(DomHost)
+module Renderer = WeftCore.Reconciler.MakeHydratable(DomHost)
 
 DomHost.runEvent := (f => Renderer.flushSync(f))
 
@@ -8,6 +8,8 @@ let createRoot = (container: Dom.element) => {
   Dom.setTextContent(container, "")
   Renderer.createRoot(container)
 }
+
+let hydrateRoot = (container: Dom.element, element) => Renderer.hydrateRoot(container, element)
 
 let render = Renderer.render
 let flushSync = Renderer.flushSync

@@ -241,3 +241,202 @@ let resetAfterCommit = container => {
   }
   focused := Nullable.null
 }
+
+// Hydrating: rendering over the server's HTML (`Client.hydrateRoot`), adopting its nodes.
+
+/** A node of the server's content, or a boundary's start marker. */
+type hydratable = Dom.node
+/** A `Suspense` boundary's start marker (a comment: `$`, `$?` or `$!`). */
+type suspenseInstance = Dom.node
+
+@get external nodeType: Dom.node => int = "nodeType"
+@get external firstChild: Dom.node => Nullable.t<Dom.node> = "firstChild"
+@get external nextSibling: Dom.node => Nullable.t<Dom.node> = "nextSibling"
+@get external previousSibling: Dom.node => Nullable.t<Dom.node> = "previousSibling"
+@get external parentNode: Dom.node => Nullable.t<Dom.element> = "parentNode"
+@get external nodeData: Dom.node => string = "data"
+@get external localName: Dom.node => string = "localName"
+@get external nodeId: Dom.node => string = "id"
+@set external setRetry: (Dom.node, unit => unit) => unit = "$weftRetry"
+@send external getPropertyValue: (Dom.style, string) => string = "getPropertyValue"
+
+external nodeToElement: Dom.node => Dom.element = "%identity"
+external nodeToText: Dom.node => Dom.text = "%identity"
+
+let elementNode = 1
+let textNode = 3
+let commentNode = 8
+
+let isStartMarker = node =>
+  nodeType(node) == commentNode &&
+    switch nodeData(node) {
+    | "$" | "$?" | "$!" => true
+    | _ => false
+    }
+let isEndMarker = node => nodeType(node) == commentNode && nodeData(node) == "/$"
+
+/**
+A boundary's anchor: the `<template>` straight after its start marker (`id="wb:N"` while it's
+pending, with the digest when it failed), which only the page's runtime uses.
+*/
+let isAnchor = node =>
+  nodeType(node) == elementNode &&
+  localName(node) == "template" &&
+  previousSibling(node)->Nullable.toOption->Option.mapOr(false, isStartMarker)
+
+/** The first hydratable node from `node` on: `None` at the end, or at a boundary's end marker. */
+let rec scan = (node: Nullable.t<Dom.node>) =>
+  switch node->Nullable.toOption {
+  | None => None
+  | Some(node) if isEndMarker(node) => None
+  | Some(node) if isStartMarker(node) => Some(node)
+  // A comment that only keeps two texts apart, or a boundary's anchor.
+  | Some(node) if nodeType(node) == commentNode || isAnchor(node) => scan(nextSibling(node))
+  | Some(node) if nodeType(node) == elementNode || nodeType(node) == textNode => Some(node)
+  | Some(node) => scan(nextSibling(node))
+  }
+
+let firstHydratableChildOfContainer = (container: container) =>
+  scan(firstChild(Dom.elementToNode(container)))
+let firstHydratableChild = (instance: instance) => scan(firstChild(Dom.elementToNode(instance)))
+let nextHydratableSibling = (node: hydratable) => scan(nextSibling(node))
+
+let asInstance = (node: hydratable, ~tag) =>
+  nodeType(node) == elementNode && localName(node) == String.toLowerCase(tag)
+    ? Some(nodeToElement(node))
+    : None
+let asTextInstance = (node: hydratable) =>
+  nodeType(node) == textNode ? Some(nodeToText(node)) : None
+let asSuspenseInstance = (node: hydratable) => isStartMarker(node) ? Some(node) : None
+
+/** A `textarea`'s text is its value, which the client sets as a property. */
+let keepsOwnContent = (~tag) => tag == "textarea"
+
+let describeHydratable = (node: hydratable) =>
+  if nodeType(node) == textNode {
+    `the text "${nodeData(node)}"`
+  } else if nodeType(node) == commentNode {
+    "a <Suspense> boundary's markers"
+  } else {
+    let id = nodeId(node)
+    `<${localName(node)}${id == "" ? "" : ` id="${id}"`}>`
+  }
+
+/** The attributes a hydrated element has that its props wouldn't give it (development only). */
+let attributeDifferences = (element: Dom.element, props: props) => {
+  let differences = []
+  propsToDict(props)->Dict.forEachWithKey((value, name) =>
+    switch name {
+    | "children" | "ref" | "key" | "value" | "checked" => ()
+    | name if isEventProp(name) => ()
+    | "style" =>
+      let style = unknownToStyle(value)->Nullable.toOption->Option.getOr(Dict.make())
+      style->Dict.forEachWithKey((expected, key) => {
+        let actual = Dom.style(element)->getPropertyValue(DomProps.cssName(key))
+        if actual != expected {
+          differences->Array.push(`style ${DomProps.cssName(key)}: "${actual}", not "${expected}"`)
+        }
+      })
+    | name =>
+      let attribute = DomProps.attributeName(name)
+      let actual = Dom.getAttribute(element, attribute)->Nullable.toOption
+      if actual != DomProps.attributeValue(value) {
+        let show = value => value->Option.mapOr("none", value => `"${value}"`)
+        differences->Array.push(
+          `${attribute}: ${show(actual)}, not ${show(DomProps.attributeValue(value))}`,
+        )
+      }
+    }
+  )
+  differences
+}
+
+let hydrateInstance = (element: Dom.element, ~tag as _, ~props) => {
+  if Common.Env.isDev {
+    switch attributeDifferences(element, props) {
+    | [] => ()
+    | differences =>
+      Console.error(
+        `WeftDom: the server's <${Dom.tagName(
+            element,
+          )->String.toLowerCase}> has other attributes than the client's (${differences->Array.join(
+            "; ",
+          )}); they're left as the server wrote them`,
+      )
+    }
+  }
+  // Handlers, which the HTML can't carry. `value` and `checked` are left as they are: the user may
+  // have typed or ticked since the HTML arrived, and that's kept.
+  propsToDict(props)->Dict.forEachWithKey((value, name) =>
+    if isEventProp(name) {
+      setHandler(element, eventName(name), unknownToHandler(value))
+    }
+  )
+  storeProps(element, props)
+}
+
+@get external textData: Dom.text => string = "data"
+let textMatches = (text: textInstance, ~text as expected) => textData(text) == expected
+
+let suspenseState = (marker: suspenseInstance): WeftCore.HostConfig.suspenseState =>
+  switch nodeData(marker) {
+  | "$" => Complete
+  | "$?" => Pending
+  | _ => Failed
+  }
+
+/** A boundary's end marker. */
+let endOf = (marker: suspenseInstance) => {
+  let node = ref(nextSibling(marker))
+  let depth = ref(0)
+  let found = ref(None)
+  while Option.isNone(found.contents) && Option.isSome(Nullable.toOption(node.contents)) {
+    let current = Nullable.getUnsafe(node.contents)
+    if isStartMarker(current) {
+      depth := depth.contents + 1
+    } else if isEndMarker(current) {
+      if depth.contents == 0 {
+        found := Some(current)
+      } else {
+        depth := depth.contents - 1
+      }
+    }
+    node := nextSibling(current)
+  }
+  found.contents
+}
+
+let firstHydratableInSuspense = (marker: suspenseInstance) => scan(nextSibling(marker))
+let nextHydratableAfterSuspense = (marker: suspenseInstance) =>
+  switch endOf(marker) {
+  | Some(end_) => scan(nextSibling(end_))
+  | None => None
+  }
+let suspenseInstanceToNode = (marker: suspenseInstance): node => marker
+
+/** The page's runtime calls the marker's `$weftRetry` once it has swapped the content in. */
+let onSuspenseReady = (marker: suspenseInstance, retry) =>
+  nodeData(marker) == "$?" ? setRetry(marker, retry) : retry()
+
+let removeNode = (node: Dom.node) =>
+  parentNode(node)->Nullable.toOption->Option.forEach(parent => Dom.removeChild(parent, node))
+
+let clearSuspense = (marker: suspenseInstance) => {
+  let end_ = endOf(marker)
+  let node = ref(Some(marker))
+  let finished = ref(false)
+  while !finished.contents {
+    switch node.contents {
+    | Some(current) =>
+      let next = nextSibling(current)->Nullable.toOption
+      finished := Some(current) == end_
+      removeNode(current)
+      node := next
+    | None => finished := true
+    }
+  }
+}
+
+let removeHydratable = removeNode
+
+let clearContainer = (container: container) => Dom.setTextContent(container, "")

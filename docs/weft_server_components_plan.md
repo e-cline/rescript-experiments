@@ -110,6 +110,8 @@ whoever picks this up:
 - **A page streams for as long as its gates are closed**, so the harness's `settle` can't wait for
   responses to end: tests `waitFor` what they expect, and `settle` waits for quiet.
 - **Vite+'s formatter wraps TypeScript at 80 columns** (ReScript and Markdown at 100).
+- **When breaking code on purpose to see a test catch it, check the build succeeded**: a change that
+  doesn't compile leaves the last compiled `.res.js` in place, and the tests pass against that.
 - **Don't find things in compiled output by the names ReScript gives imports**: a module of another
   package is imported as `Rpc$WeftServer`, not `WeftServer__Rpc`, and a small function of another
   module can be inlined. What the plugin reads, the PPX writes as a directive

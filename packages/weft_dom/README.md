@@ -79,7 +79,7 @@ with the `'use weft server'` directive, so the Vite plugin refuses it to an app'
 
 | Module     | Where   | What it is                                                                |
 | ---------- | ------- | ------------------------------------------------------------------------- |
-| `Client`   | browser | Roots: `createRoot`, `render`, `flushSync`, `act`.                        |
+| `Client`   | browser | Roots: `createRoot`, `hydrateRoot`, `render`, `flushSync`, `act`.         |
 | `DomHost`  | browser | The reconciler's host for the DOM (internal to `Client`).                 |
 | `DomProps` | both    | The props host elements take, and how each is applied.                    |
 | `Dom`      | both    | DOM bindings (only touching the DOM when called).                         |
@@ -111,6 +111,22 @@ shell. A development build warns about nesting the HTML parser would repair.
 The package's tests check, besides each rule, that the HTML parses (in jsdom) into exactly the DOM a
 client render of the same tree makes, over random trees, and run the swap runtime against the
 segments.
+
+## Hydrating
+
+`Client.hydrateRoot(container, element)` renders `element` over the HTML `Html` wrote into
+`container`, adopting its nodes: each element's handlers are attached and its props stored, and
+nothing that matches is created. What the user typed into an input, or ticked, before then is kept.
+A `Suspense` boundary still pending when hydration reaches it stays as the server's HTML until the
+page's runtime swaps its content in (it calls the marker's `$weftRetry`), then hydrates. Where the
+HTML and `element` disagree, the nearest boundary (or the root) is rendered on the client, a text
+that differs is patched, and attributes that differ are warned about (in development) and left.
+
+The tests hydrate the renderer's own HTML in jsdom: the same node objects before and after, handlers
+working, typed values kept, boundaries hydrating when swapped in (or already swapped in), failed
+boundaries rendered on the client, and mismatches recovered from; and a fuzz test streams random
+trees' HTML in pieces, hydrates at a random point, and checks the DOM ends up as a client render's,
+made only of elements the HTML put there.
 
 ## Error codes
 

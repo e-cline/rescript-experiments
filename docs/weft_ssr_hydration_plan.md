@@ -36,9 +36,9 @@ browser:    HTML paints as it streams ──► bootstrap: rows → elements →
 
 ## Status
 
-Phases 7.0 to 7.2 are done (§0, §2, §3 and §4 say where they went their own way); 7.3 is next. The
-decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7 and
-7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
+Phases 7.0 to 7.3 are done (§0, §2, §3, §4 and §6 say where they went their own way); 7.4 is next.
+The decisions are settled (Decisions, at the end). The phases (7.0 to 7.6, then the follow-ups 7.7
+and 7.8) go on the same branch as phases 0 to 6, a commit or a few each, each ending green, with a
 review before the next.
 
 ## What was verified before writing this
@@ -490,6 +490,31 @@ found. Nodes left over after a parent's last child are removed, with the same wa
 `current` is the adopted node) synchronously, passive effects later. An entrypoint that reads the
 DOM in an effect sees the server's nodes, which are now its own.
 
+**As built (phase 7.3).** The host operations came out a little different from the sketch above:
+`keepsOwnContent(~tag)` (a `textarea`'s text isn't claimed or removed), `textMatches` (a text that
+differs is patched at commit), `suspenseInstanceToNode` (a dehydrated boundary's start marker, which
+an insertion before the boundary goes before), `clearContainer` and `describeHydratable`.
+`Reconciler.MakeHydratable` (and `MakeHydratableWithScheduler`) give `hydrateRoot`; `Make` is the
+same reconciler over a host whose hydration operations are never called, so error 16 wasn't needed.
+Where the work happens: `BeginWork` doesn't know the host, so claiming is done in the reconciler's
+`performUnitOfWork`, just before a fiber begins, and the cursor moves on when it completes (a stack
+of what each fiber claimed). Fibers in a hydrating region lose the `placement` flags their
+reconciliation gave them (their nodes are already in place); only what's new gets one (an empty
+text, a boundary rendered on the client). Removals, text patches, clearing a boundary or the root,
+and registering a pending boundary's retry are all recorded during the render and done at commit, so
+a render thrown away leaves the host untouched. An error while hydrating is handled like a mismatch
+(the nearest boundary being hydrated, or the root, rendered on the client, where the error happens
+again for an `ErrorBoundary` to catch), rather than by the `ErrorBoundary` discarding hydration
+below it: simpler, and the same in the end. A dehydrated boundary's server content is removed with
+it if it's deleted, and something inserted before it goes before its start marker. Not handled: a
+dehydrated boundary inside content a `Suspense` boundary hides behind its fallback isn't hidden with
+it.
+
+The tests (`weft_core/tests/Hydration_test.res`) run over `TestRenderer`'s nodes: each case above,
+and a fuzz test where random trees hydrate over markup made from them into exactly what a direct
+render makes (no node created but empty texts), and still do with the markup broken at random (a
+node dropped, a tag changed, a text changed, an extra node), recovering with warnings.
+
 ### 7. Hydration in the DOM
 
 `DomHost` implements `HostConfig.Hydratable`:
@@ -771,7 +796,7 @@ swap runtime, with their tests. Done.
 while hydrating; mismatches and recovery; `TestRenderer`'s hydration and `fromMarkup`; the unit
 tests and the fuzz test. It walks the same levels as 7.2's renderer (§11's rule, for `useId` later).
 The largest phase, and the riskiest: the work loop's mount path gains a second way through every
-host fiber.
+host fiber. Done.
 
 **Phase 7.4 -- Hydration in the DOM.** `DomHost`'s hydration operations,
 `WeftDom.Client.hydrateRoot`, the swap runtime's retry, the attribute warnings; the jsdom round

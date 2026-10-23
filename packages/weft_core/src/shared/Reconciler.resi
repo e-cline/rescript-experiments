@@ -61,6 +61,42 @@ module type S = {
   let flushAllWork: unit => unit
 }
 
+/**
+A renderer that can also hydrate: render over content that's already there (the server's HTML),
+adopting its nodes rather than creating new ones.
+
+`hydrateRoot(container, element)` is a root whose first render hydrates the container's content,
+in a transition (what suspends outside every `Suspense` boundary waits, with the server's content
+on screen), and that's an ordinary root after. While hydrating:
+
+- each host element claims the next node if it's an instance of the same tag, each text a text
+  node, each `Suspense` boundary its markers; nodes nothing claimed are removed at commit;
+- a text that differs is patched, with a warning in development;
+- a boundary whose content hadn't arrived when hydration reached it (the server still streaming it)
+  is left as the server rendered it, dehydrated, and hydrated once it has (`onSuspenseReady`); one
+  whose content suspends while hydrating is left the same way, and tried again when the promise
+  settles; one that failed on the server is rendered on the client;
+- a mismatch (a node missing, or another tag), or an error, gives up on the nearest boundary being
+  hydrated: its server content is removed, and it's rendered on the client from scratch (where an
+  error happens again, for an error boundary to catch). With no boundary above, the whole root is.
+- a dehydrated boundary that gets new props before it has hydrated is rendered on the client.
+*/
+module type Hydratable = {
+  include S
+  let hydrateRoot: (container, Element.t) => root
+}
+
+/** Raised while hydrating where the client's tree and the server's content disagree. */
+exception HydrationMismatch(string)
+
+/** The hydrating reconciler for `Host`, scheduling concurrent work with `Sched`. */
+module MakeHydratableWithScheduler: (Host: HostConfig.Hydratable, Sched: Scheduler.S) =>
+(Hydratable with type container = Host.container)
+
+/** `MakeHydratableWithScheduler(Host, Scheduler.Default)`. */
+module MakeHydratable: (Host: HostConfig.Hydratable) =>
+(Hydratable with type container = Host.container)
+
 /** The reconciler for `Host`, scheduling concurrent work with `Sched`. */
 module MakeWithScheduler: (Host: HostConfig.S, Sched: Scheduler.S) =>
 (S with type container = Host.container)

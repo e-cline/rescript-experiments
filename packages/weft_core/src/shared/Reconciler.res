@@ -20,8 +20,16 @@ let maxNestedRenders = 50
 @get
 external refOf: unknown => Nullable.t<Ref.t<unknown>> = "ref"
 
-module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
-  S with type container = Host.container
+module type Hydratable = {
+  include S
+  let hydrateRoot: (container, Element.t) => root
+}
+
+/** Raised while hydrating, where the client's tree and the server's content disagree. */
+exception HydrationMismatch(string)
+
+module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Scheduler.S): (
+  Hydratable with type container = Host.container
 ) => {
   open Fiber
 
@@ -100,6 +108,12 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
             addFlag(workInProgress, Flags.ref)
           }
         }
+      | None if hasFlag(workInProgress.flags, Flags.hydrated) =>
+        // The server's node, already in place with its children: what it needs is attached.
+        Host.hydrateInstance(toInstance(workInProgress.stateNode), ~tag, ~props=newProps)
+        if !Nullable.isNullable(refOf(workInProgress.memoizedProps)) {
+          addFlag(workInProgress, Flags.ref)
+        }
       | None =>
         let instance = Host.createInstance(~tag, ~props=newProps, ~container=containerOf(root))
         appendAllChildren(instance, workInProgress.child)
@@ -116,6 +130,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
         if toString(current.memoizedProps) !== text {
           addFlag(workInProgress, Flags.update)
         }
+      | None if hasFlag(workInProgress.flags, Flags.hydrated) => ()
       | None =>
         workInProgress.stateNode = Unsafe.toUnknown(
           Host.createTextInstance(text, ~container=containerOf(root)),
@@ -179,6 +194,284 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   /** The fiber being begun or completed: where an exception came from. */
   let currentFiber: ref<option<Fiber.t>> = ref(None)
 
+  // Hydration: rendering over the server's content, adopting its nodes. While a root's first render
+  // (`hydrateRoot`), or a dehydrated boundary's retry, is hydrating, a cursor walks the content: each
+  // host fiber mounting claims the cursor's node, and moves it into that node's children; when the
+  // fiber completes, whatever of its children wasn't claimed is removed, and the cursor moves on to
+  // its next sibling. Nothing is changed during the render: removals, patches and boundaries'
+  // clearing are recorded, and done at commit.
+
+  /** What hydrating a fiber left for its completion to do. */
+  type entry =
+    /** A claimed host node: what's left of its children goes, and the cursor moves past it. */
+    | HostEntry({node: Host.hydratable, keepsContent: bool})
+    /** A complete boundary being hydrated in place: likewise, within its markers. */
+    | BoundaryEntry(Host.suspenseInstance)
+    /** A dehydrated boundary hydrating on its own (a retry): hydration ends when it completes. */
+    | RegionEntry(Host.suspenseInstance)
+    /** Part of the tree that isn't hydrated (a portal, a boundary rendered on the client). */
+    | PausedEntry({resumeAt: option<Host.hydratable>})
+
+  type hydration = {
+    mutable active: bool,
+    mutable cursor: option<Host.hydratable>,
+    /** Each fiber whose completion has hydration work to do, innermost last. */
+    stack: array<(Fiber.t, entry)>,
+    /** What to do to the host at commit: removals, text patches, boundaries cleared. */
+    effects: array<unit => unit>,
+  }
+
+  let hydration = {active: false, cursor: None, stack: [], effects: []}
+
+  /** Roots whose first render hydrates, until it commits. */
+  let hydratingRoots: Set.t<FiberRoot.t> = Set.make()
+  /** Roots whose hydration failed outside every boundary: their container is emptied at commit. */
+  let clearedRoots: Set.t<FiberRoot.t> = Set.make()
+  /** Boundaries hydration gave up on in this render (a mismatch, an error): rendered on the client. */
+  let clientRendered: Map.t<Fiber.t, Host.suspenseInstance> = Map.make()
+  /** Boundaries whose content suspended while hydrating: left dehydrated in this render. */
+  let leftDehydrated: Map.t<Fiber.t, Host.suspenseInstance> = Map.make()
+
+  type dehydratedState = {dehydrated: Host.suspenseInstance}
+  external dehydratedToUnknown: dehydratedState => unknown = "%identity"
+  @get external dehydratedOf: unknown => Nullable.t<Host.suspenseInstance> = "dehydrated"
+
+  /** A `Suspense` fiber still showing the server's content, unhydrated: its markers. */
+  let dehydratedInstance = (fiber: Fiber.t) =>
+    fiber.tag == SuspenseComponent && !Unsafe.isNothing(fiber.memoizedState)
+      ? dehydratedOf(fiber.memoizedState)->Nullable.toOption
+      : None
+
+  let clearArray = array => array->Array.splice(~start=0, ~remove=Array.length(array), ~insert=[])
+
+  let resetHydration = (root: option<FiberRoot.t>) => {
+    clearArray(hydration.stack)
+    clearArray(hydration.effects)
+    clientRendered->Map.clear
+    leftDehydrated->Map.clear
+    switch root {
+    | Some(root) if hydratingRoots->Set.has(root) =>
+      hydration.active = true
+      hydration.cursor = Host.firstHydratableChildOfContainer(containerOf(root))
+    | _ =>
+      hydration.active = false
+      hydration.cursor = None
+    }
+  }
+
+  let warnHydration = message =>
+    if Common.Env.isDev {
+      Console.error(`WeftCore: the server's HTML doesn't match the client's render: ${message}`)
+    }
+
+  let describeCursor = () => hydration.cursor->Option.mapOr("nothing", Host.describeHydratable)
+
+  /** Records the removal of `first` and every hydratable node after it, at commit. */
+  let removeRest = (first: option<Host.hydratable>) => {
+    let extra = []
+    let node = ref(first)
+    while Option.isSome(node.contents) {
+      let current = Option.getUnsafe(node.contents)
+      extra->Array.push(current)
+      node := Host.nextHydratableSibling(current)
+    }
+    if Array.length(extra) > 0 {
+      warnHydration(
+        `the server rendered ${extra
+          ->Array.map(Host.describeHydratable)
+          ->Array.join(", ")} where the client renders nothing`,
+      )
+      hydration.effects->Array.push(() => extra->Array.forEach(Host.removeHydratable))
+    }
+  }
+
+  /** Stops hydrating below `fiber` (rendered on the client), resuming at `resumeAt` once it completes. */
+  let pauseHydration = (fiber: Fiber.t, ~resumeAt) => {
+    hydration.stack->Array.push((fiber, PausedEntry({resumeAt: resumeAt})))
+    hydration.active = false
+  }
+
+  /** Renders a boundary on the client: its server content goes, and it's placed afresh. */
+  let renderBoundaryOnClient = (fiber: Fiber.t, instance) => {
+    hydration.effects->Array.push(() => Host.clearSuspense(instance))
+    fiber.memoizedState = Unsafe.nothing
+    if hydration.active {
+      pauseHydration(fiber, ~resumeAt=Host.nextHydratableAfterSuspense(instance))
+      addFlag(fiber, Flags.placement)
+    }
+  }
+
+  /** Leaves a boundary showing the server's content, to hydrate once `retry` is called. */
+  let dehydrate = (fiber: Fiber.t, instance, ~onReady) => {
+    fiber.memoizedState = dehydratedToUnknown({dehydrated: instance})
+    fiber.child = None
+    if onReady {
+      let retry = () => FiberRoot.scheduleUpdate(fiber, Lanes.defaultLane)
+      hydration.effects->Array.push(() => Host.onSuspenseReady(instance, retry))
+    }
+    hydration.cursor = Host.nextHydratableAfterSuspense(instance)
+  }
+
+  type beginning = Begin | Skip
+
+  /** What hydration does as `unit` begins: claim its node, or decide it isn't rendered yet. */
+  let beginHydration = (unit: Fiber.t): beginning =>
+    if !hydration.active {
+      switch (unit.alternate, dehydratedInstance(unit)) {
+      // A dehydrated boundary rendering again: its content has arrived, it failed, or it got
+      // new props first.
+      | (Some(current), Some(instance)) =>
+        switch (
+          clientRendered->Map.get(unit),
+          leftDehydrated->Map.has(unit),
+          Host.suspenseState(instance),
+        ) {
+        | (Some(_), _, _) =>
+          renderBoundaryOnClient(unit, instance)
+          Begin
+        | (None, true, _) => Skip
+        | (None, false, Complete) if current.memoizedProps === unit.pendingProps =>
+          unit.memoizedState = Unsafe.nothing
+          hydration.active = true
+          hydration.cursor = Host.firstHydratableInSuspense(instance)
+          hydration.stack->Array.push((unit, RegionEntry(instance)))
+          Begin
+        | (None, false, Pending) if current.memoizedProps === unit.pendingProps => Skip
+        | _ =>
+          renderBoundaryOnClient(unit, instance)
+          Begin
+        }
+      | _ => Begin
+      }
+    } else if Option.isSome(unit.alternate) {
+      Begin
+    } else {
+      switch unit.tag {
+      | HostComponent =>
+        let tag = toString(unit.elementType)
+        switch hydration.cursor {
+        | Some(node) =>
+          switch Host.asInstance(node, ~tag) {
+          | Some(instance) =>
+            unit.stateNode = Unsafe.toUnknown(instance)
+            addFlag(unit, Flags.hydrated)
+            let keepsContent = Host.keepsOwnContent(~tag)
+            hydration.stack->Array.push((unit, HostEntry({node, keepsContent})))
+            hydration.cursor = keepsContent ? None : Host.firstHydratableChild(instance)
+            Begin
+          | None => throw(HydrationMismatch(`expected <${tag}>, found ${describeCursor()}`))
+          }
+        | None => throw(HydrationMismatch(`expected <${tag}>, found ${describeCursor()}`))
+        }
+      | HostText =>
+        let text = toString(unit.pendingProps)
+        if text == "" {
+          // The HTML can't have an empty text node: this one is made, and placed, as on a mount.
+          addFlag(unit, Flags.placement)
+        } else {
+          switch hydration.cursor->Option.flatMap(node =>
+            Host.asTextInstance(node)->Option.map(instance => (node, instance))
+          ) {
+          | Some((node, instance)) =>
+            unit.stateNode = Unsafe.toUnknown(instance)
+            addFlag(unit, Flags.hydrated)
+            if !Host.textMatches(instance, ~text) {
+              warnHydration(`the text ${describeCursor()} is "${text}" on the client`)
+              hydration.effects->Array.push(() =>
+                Host.commitTextUpdate(instance, ~oldText="", ~newText=text)
+              )
+            }
+            hydration.cursor = Host.nextHydratableSibling(node)
+          | None =>
+            throw(HydrationMismatch(`expected the text "${text}", found ${describeCursor()}`))
+          }
+        }
+        Begin
+      | SuspenseComponent =>
+        switch (clientRendered->Map.get(unit), leftDehydrated->Map.get(unit)) {
+        | (Some(instance), _) =>
+          renderBoundaryOnClient(unit, instance)
+          Begin
+        | (None, Some(instance)) =>
+          dehydrate(unit, instance, ~onReady=false)
+          Skip
+        | (None, None) =>
+          switch hydration.cursor->Option.flatMap(Host.asSuspenseInstance) {
+          | Some(instance) =>
+            switch Host.suspenseState(instance) {
+            | Complete =>
+              hydration.stack->Array.push((unit, BoundaryEntry(instance)))
+              hydration.cursor = Host.firstHydratableInSuspense(instance)
+              Begin
+            | Pending =>
+              dehydrate(unit, instance, ~onReady=true)
+              Skip
+            | Failed =>
+              renderBoundaryOnClient(unit, instance)
+              Begin
+            }
+          | None =>
+            throw(HydrationMismatch(`expected a <Suspense> boundary, found ${describeCursor()}`))
+          }
+        }
+      | HostPortal =>
+        // Its children go in its own container, which has no server content.
+        pauseHydration(unit, ~resumeAt=hydration.cursor)
+        Begin
+      | _ => Begin
+      }
+    }
+
+  /** Hydration's part of `fiber`'s completion. */
+  let completeHydration = (fiber: Fiber.t) => {
+    switch hydration.stack->Array.at(-1) {
+    | Some((entryFiber, entry)) if entryFiber === fiber =>
+      hydration.stack->Array.pop->ignore
+      switch entry {
+      | HostEntry({node, keepsContent}) =>
+        if !keepsContent {
+          removeRest(hydration.cursor)
+        }
+        hydration.cursor = Host.nextHydratableSibling(node)
+      | BoundaryEntry(instance) =>
+        removeRest(hydration.cursor)
+        hydration.cursor = Host.nextHydratableAfterSuspense(instance)
+      | RegionEntry(_) =>
+        removeRest(hydration.cursor)
+        hydration.active = false
+        hydration.cursor = None
+      | PausedEntry({resumeAt}) =>
+        hydration.active = true
+        hydration.cursor = resumeAt
+      }
+    | _ => ()
+    }
+    if fiber.tag == HostRoot && hydration.active {
+      removeRest(hydration.cursor)
+      hydration.active = false
+      hydration.cursor = None
+    }
+  }
+
+  /**
+  The boundary being hydrated nearest above `thrower` (in place, or a dehydrated one's retry), and
+  where its entry is in the stack.
+  */
+  let hydratingBoundary = (thrower: Fiber.t) => {
+    let found = ref(None)
+    let index = ref(Array.length(hydration.stack) - 1)
+    while Option.isNone(found.contents) && index.contents >= 0 {
+      switch hydration.stack->Array.getUnsafe(index.contents) {
+      | (fiber, BoundaryEntry(instance) | RegionEntry(instance))
+        if ContextImpl.isWithin(thrower, fiber) =>
+        found := Some((fiber, instance, index.contents))
+      | _ => ()
+      }
+      index := index.contents - 1
+    }
+    found.contents
+  }
+
   let completeUnitOfWork = (root: FiberRoot.t, unit: Fiber.t) => {
     let completed = ref(unit)
     let climbing = ref(true)
@@ -186,6 +479,7 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
       let fiber = completed.contents
       currentFiber := Some(fiber)
       completeWork(root, fiber.alternate, fiber)
+      completeHydration(fiber)
       bubbleProperties(fiber)
       switch (fiber.sibling, fiber.parent) {
       | (Some(sibling), _) =>
@@ -201,7 +495,18 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
 
   let performUnitOfWork = (root: FiberRoot.t, unit: Fiber.t, renderLanes: Lanes.t) => {
     currentFiber := Some(unit)
-    let next = BeginWork.beginWork(unit.alternate, unit, renderLanes)
+    let next = switch beginHydration(unit) {
+    | Skip => None
+    | Begin =>
+      HookImpl.hydrating := hydration.active
+      let next = BeginWork.beginWork(unit.alternate, unit, renderLanes)
+      HookImpl.hydrating := false
+      if hydration.active {
+        // Its children's nodes are the server's, already in place: nothing to insert.
+        forEachChild(unit, child => removeFlag(child, Flags.placement))
+      }
+      next
+    }
     unit.memoizedProps = unit.pendingProps
     switch next {
     | Some(child) => workInProgress := Some(child)
@@ -220,10 +525,12 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     workInProgressRootFiber := None
     workInProgressLanes := Lanes.none
     HookImpl.clearStoreReads()
+    resetHydration(None)
   }
 
   let prepareFreshStack = (root: FiberRoot.t, lanes: Lanes.t) => {
     resetWorkInProgress()
+    resetHydration(Some(root))
     let rootFiber = Fiber.createWorkInProgress(root.current, root.current.pendingProps)
     workInProgressRoot := Some(root)
     workInProgressRootFiber := Some(rootFiber)
@@ -276,7 +583,64 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   let suspendedOn: ref<option<promise<unknown>>> = ref(None)
 
   /**
-  For an exception from rendering `currentFiber`. A suspension goes to the nearest `Suspense`
+  For an exception from rendering `thrower` while hydrating. A suspension in a boundary being
+  hydrated leaves that boundary as the server rendered it (dehydrated), to try again when the
+  promise settles: the server's content stays, never the client's fallback over it. A mismatch, or
+  any other error, gives up on hydrating that boundary: it's rendered on the client from scratch
+  (where an error happens again, for an error boundary to catch). With no boundary being hydrated
+  above, a suspension waits as in any transition (hydration renders in one), and anything else
+  renders the whole root on the client.
+  */
+  let handleHydrationError = (thrower: Fiber.t, error: exn): option<option<exn>> =>
+    switch hydratingBoundary(thrower) {
+    | Some((boundary, instance, index)) =>
+      hydration.stack->Array.splice(
+        ~start=index,
+        ~remove=Array.length(hydration.stack) - index,
+        ~insert=[],
+      )
+      ContextImpl.unwindTo(boundary)
+      removeFlag(boundary, Flags.childDeletion)
+      boundary.deletions = None
+      boundary.child = boundary.alternate->Option.flatMap(current => current.child)
+      switch error {
+      | SuspenseImpl.Suspended(promise) =>
+        leftDehydrated->Map.set(boundary, instance)
+        SuspenseImpl.retryWhenSettled(boundary, promise)
+      | HydrationMismatch(message) =>
+        warnHydration(`${message}. The boundary is rendered on the client instead.`)
+        clientRendered->Map.set(boundary, instance)
+      | _ => clientRendered->Map.set(boundary, instance)
+      }
+
+      // The boundary begins again, and goes the way just decided (which sets the cursor). A retry's
+      // boundary is outside the region it was hydrating.
+      hydration.active = Option.isNone(boundary.alternate)
+      hydration.cursor = None
+      workInProgress := Some(boundary)
+      Some(None)
+    | None =>
+      switch error {
+      | SuspenseImpl.Suspended(_) => None
+      | _ =>
+        switch workInProgressRoot.contents {
+        | Some(root) =>
+          switch error {
+          | HydrationMismatch(message) =>
+            warnHydration(`${message}. The page is rendered on the client instead.`)
+          | _ => ()
+          }
+          hydratingRoots->Set.delete(root)->ignore
+          clearedRoots->Set.add(root)
+          prepareFreshStack(root, workInProgressLanes.contents)
+          Some(None)
+        | None => None
+        }
+      }
+    }
+
+  /**
+  For an exception from rendering `thrower`. A suspension goes to the nearest `Suspense`
   boundary, which renders its fallback now and its children again once the promise settles; but in
   a transition, if that boundary is showing its children (or there's no boundary), the whole render
   is abandoned instead, so the screen keeps its previous state until the promise settles. An error
@@ -284,32 +648,39 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   fibers in between are dropped, with the context values they provided. Returns the exception to
   rethrow, if no boundary took it.
   */
+  let handleOrdinaryError = (thrower: Fiber.t, error: exn): option<exn> =>
+    switch error {
+    | SuspenseImpl.Suspended(promise) =>
+      let boundary = SuspenseImpl.find(thrower)
+      let keepScreen =
+        !Lanes.isBlocking(workInProgressLanes.contents) &&
+        switch boundary {
+        | Some(boundary) => SuspenseImpl.isShowingChildren(boundary.alternate)
+        | None => true
+        }
+      switch boundary {
+      | _ if keepScreen =>
+        suspendedOn := Some(promise)
+        workInProgress := None
+        None
+      | Some(boundary) =>
+        SuspenseImpl.retryWhenSettled(boundary, promise)
+        renderAgainWithFallback(boundary)
+        None
+      | None => catchError(thrower, noSuspenseBoundary())
+      }
+    | _ => catchError(thrower, error)
+    }
+
   let handleRenderError = (error: exn): option<exn> =>
     switch currentFiber.contents {
     | None => Some(error)
-    | Some(thrower) =>
-      switch error {
-      | SuspenseImpl.Suspended(promise) =>
-        let boundary = SuspenseImpl.find(thrower)
-        let keepScreen =
-          !Lanes.isBlocking(workInProgressLanes.contents) &&
-          switch boundary {
-          | Some(boundary) => SuspenseImpl.isShowingChildren(boundary.alternate)
-          | None => true
-          }
-        switch boundary {
-        | _ if keepScreen =>
-          suspendedOn := Some(promise)
-          workInProgress := None
-          None
-        | Some(boundary) =>
-          SuspenseImpl.retryWhenSettled(boundary, promise)
-          renderAgainWithFallback(boundary)
-          None
-        | None => catchError(thrower, noSuspenseBoundary())
-        }
-      | _ => catchError(thrower, error)
+    | Some(thrower) if hydration.active =>
+      switch handleHydrationError(thrower, error) {
+      | Some(outcome) => outcome
+      | None => handleOrdinaryError(thrower, error)
       }
+    | Some(thrower) => handleOrdinaryError(thrower, error)
     }
 
   type renderOutcome =
@@ -415,6 +786,12 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
           // A moving subtree isn't in position yet, and a portal's nodes are somewhere else.
           if hasFlag(node.contents.flags, Flags.placement) || node.contents.tag == HostPortal {
             descending := false
+          } else if Option.isSome(dehydratedInstance(node.contents)) {
+            // A dehydrated boundary's server content is in position: what goes before it goes
+            // before its start marker.
+            result := dehydratedInstance(node.contents)->Option.map(Host.suspenseInstanceToNode)
+            descending := false
+            searching := false
           } else {
             switch node.contents.child {
             | Some(child) => node := child
@@ -491,6 +868,9 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
           ~remove=Some(node => Host.removeChildFromContainer(container, node)),
         )
       )
+    | SuspenseComponent if Option.isSome(dehydratedInstance(fiber)) =>
+      // No fibers below: its content is still the server's, between its markers.
+      dehydratedInstance(fiber)->Option.forEach(Host.clearSuspense)
     | HostRoot
     | Fragment
     | ContextProvider
@@ -678,6 +1058,15 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
   let commitRoot = (root: FiberRoot.t, finished: Fiber.t, lanes: Lanes.t) => {
     let container = containerOf(root)
     Host.prepareForCommit(container)
+
+    // What hydrating found to remove or patch, before anything is inserted.
+    if clearedRoots->Set.delete(root) {
+      Host.clearContainer(container)
+    }
+    let effects = hydration.effects->Array.copy
+    clearArray(hydration.effects)
+    effects->Array.forEach(effect => effect())
+    hydratingRoots->Set.delete(root)->ignore
     commitMutationEffects(finished)
     Host.resetAfterCommit(container)
     root.current = finished
@@ -941,6 +1330,17 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     root
   }
 
+  let hydrateRoot = (container: container, element: Element.t): root => {
+    let root = createRoot(container)
+    hydratingRoots->Set.add(root)
+    root.pendingElement = element
+    root.hasPendingElement = true
+    // In a transition: what suspends outside every boundary waits, with the server's content on
+    // screen.
+    FiberRoot.scheduleUpdate(root.current, Lanes.transition)
+    root
+  }
+
   let render = (root: root, element: Element.t) => {
     if root.isUnmounted {
       Errors.fail(
@@ -968,4 +1368,38 @@ module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
     }
 }
 
+/** A host that can't hydrate, as one that never has anything to hydrate. */
+module NoHydration = (Host: HostConfig.S) => {
+  include Host
+  type hydratable
+  type suspenseInstance
+  let firstHydratableChildOfContainer = (_: container) => None
+  let firstHydratableChild = (_: instance) => None
+  let nextHydratableSibling = (_: hydratable) => None
+  let asInstance = (_: hydratable, ~tag as _) => None
+  let asTextInstance = (_: hydratable) => None
+  let asSuspenseInstance = (_: hydratable) => None
+  let keepsOwnContent = (~tag as _) => false
+  let hydrateInstance = (_: instance, ~tag as _, ~props as _) => ()
+  let textMatches = (_: textInstance, ~text as _) => true
+  let suspenseState = (_: suspenseInstance): HostConfig.suspenseState => Complete
+  let firstHydratableInSuspense = (_: suspenseInstance) => None
+  let nextHydratableAfterSuspense = (_: suspenseInstance) => None
+  external suspenseInstanceToNode: suspenseInstance => node = "%identity"
+  let onSuspenseReady = (_: suspenseInstance, _) => ()
+  let clearSuspense = (_: suspenseInstance) => ()
+  let removeHydratable = (_: hydratable) => ()
+  let clearContainer = (_: container) => ()
+  let describeHydratable = (_: hydratable) => ""
+}
+
+module MakeWithScheduler = (Host: HostConfig.S, Sched: Scheduler.S): (
+  S with type container = Host.container
+) => MakeHydratableWithScheduler(NoHydration(Host), Sched)
+
 module Make = (Host: HostConfig.S) => MakeWithScheduler(Host, Scheduler.Default)
+
+module MakeHydratable = (Host: HostConfig.Hydratable) => MakeHydratableWithScheduler(
+  Host,
+  Scheduler.Default,
+)

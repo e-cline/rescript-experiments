@@ -42,6 +42,10 @@ let onServer = {
   contents: false
 };
 
+let hydrating = {
+  contents: false
+};
+
 function renderingFiber() {
   let fiber = state.fiber;
   if (fiber !== undefined) {
@@ -641,6 +645,7 @@ export {
   reset,
   firstHook,
   onServer,
+  hydrating,
   renderingFiber,
   checkCanSuspend,
   renderOnServer,

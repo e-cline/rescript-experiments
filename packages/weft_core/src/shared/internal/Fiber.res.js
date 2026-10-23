@@ -36,6 +36,7 @@ let Flags = {
   ref: 128,
   didCapture: 256,
   visibility: 512,
+  hydrated: 1024,
   union: union,
   mutationMask: mutationMask,
   layoutMask: layoutMask,

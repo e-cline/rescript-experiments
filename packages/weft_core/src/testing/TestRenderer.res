@@ -1,4 +1,6 @@
 let textTag = "#text"
+/** A comment: a `Suspense` boundary's marker, or what keeps two texts apart, in hydrated content. */
+let commentTag = "#comment"
 
 type rec node = {
   uid: int,
@@ -59,6 +61,7 @@ let insertInto = (children: array<node>, child: node, ~before: node) => {
 }
 
 type hostNode = node
+type hydratableNode = node
 
 external toPublic: node => TestJsx.node = "%identity"
 external fromPublic: TestJsx.node => node = "%identity"
@@ -187,9 +190,134 @@ module Host = {
 
   let prepareForCommit = (_: container) => ()
   let resetAfterCommit = (_: container) => ()
+
+  // Hydrating: rendering over nodes parsed from markup (`hydrate`).
+
+  /** A node among its siblings (a parent's children, or the container's). */
+  type hydratable = {siblings: array<hydratableNode>, node: hydratableNode}
+  /** A boundary's start marker, among its siblings. */
+  type suspenseInstance = hydratable
+
+  let isStartMarker = (node: node) =>
+    node.tag == commentTag && (node.text == "$" || node.text == "$?" || node.text == "$!")
+  let isEndMarker = (node: node) => node.tag == commentTag && node.text == "/$"
+
+  /** The first hydratable node from `index` on: `None` at the end, or at a boundary's end marker. */
+  let rec scan = (siblings: array<node>, index) =>
+    switch siblings->Array.get(index) {
+    | None => None
+    | Some(node) if isEndMarker(node) => None
+    // A comment that only keeps two texts apart.
+    | Some(node) if node.tag == commentTag && !isStartMarker(node) => scan(siblings, index + 1)
+    | Some(node) => Some({siblings, node})
+    }
+
+  let firstHydratableChildOfContainer = (container: container) => scan(container.rootChildren, 0)
+  let firstHydratableChild = (instance: instance) => scan(instance.children, 0)
+  let nextHydratableSibling = (hydratable: hydratable) =>
+    scan(hydratable.siblings, hydratable.siblings->Array.indexOf(hydratable.node) + 1)
+
+  let asInstance = (hydratable: hydratable, ~tag) =>
+    hydratable.node.tag == tag ? Some(hydratable.node) : None
+  let asTextInstance = (hydratable: hydratable) =>
+    hydratable.node.tag == textTag ? Some(hydratable.node) : None
+  let asSuspenseInstance = (hydratable: hydratable) =>
+    isStartMarker(hydratable.node) ? Some(hydratable) : None
+
+  let keepsOwnContent = (~tag) => tag == "textarea"
+
+  let describeNode = (node: node) =>
+    if node.tag == textTag {
+      `the text "${node.text}"`
+    } else if node.tag == commentTag {
+      "a <Suspense> boundary's markers"
+    } else {
+      `<${describe(node)}>`
+    }
+
+  let describeHydratable = (hydratable: hydratable) => describeNode(hydratable.node)
+
+  let shown = props => visibleProps(props)->Array.map(((name, value)) => (name, stringify(value)))
+
+  let hydrateInstance = (instance: instance, ~tag as _, ~props) => {
+    if Common.Env.isDev && shown(props) != shown(instance.props) {
+      Console.error(
+        `TestRenderer: the server's ${describeNode(instance)} has other props than the client's`,
+      )
+    }
+    instance.props = props
+    record(instance.owner, `hydrate ${describe(instance)}`)
+  }
+
+  let textMatches = (instance: textInstance, ~text) => instance.text == text
+
+  let suspenseState = (instance: suspenseInstance): HostConfig.suspenseState =>
+    switch instance.node.text {
+    | "$" => Complete
+    | "$?" => Pending
+    | _ => Failed
+    }
+
+  /** Where the boundary's end marker is, among its siblings. */
+  let endOf = (instance: suspenseInstance) => {
+    let index = ref(instance.siblings->Array.indexOf(instance.node) + 1)
+    let depth = ref(0)
+    let found = ref(None)
+    while Option.isNone(found.contents) && index.contents < Array.length(instance.siblings) {
+      let node = instance.siblings->Array.getUnsafe(index.contents)
+      if isStartMarker(node) {
+        depth := depth.contents + 1
+      } else if isEndMarker(node) {
+        if depth.contents == 0 {
+          found := Some(index.contents)
+        } else {
+          depth := depth.contents - 1
+        }
+      }
+      index := index.contents + 1
+    }
+    switch found.contents {
+    | Some(index) => index
+    | None => JsError.throwWithMessage("TestRenderer: a boundary's start marker has no end marker")
+    }
+  }
+
+  let firstHydratableInSuspense = (instance: suspenseInstance) =>
+    scan(instance.siblings, instance.siblings->Array.indexOf(instance.node) + 1)
+  let nextHydratableAfterSuspense = (instance: suspenseInstance) =>
+    scan(instance.siblings, endOf(instance) + 1)
+  let suspenseInstanceToNode = (instance: suspenseInstance) => instance.node
+
+  /** The retries waiting on pending boundaries' markers. */
+  let retries: Map.t<node, unit => unit> = Map.make()
+
+  let onSuspenseReady = (instance: suspenseInstance, retry) =>
+    instance.node.text == "$?" ? retries->Map.set(instance.node, retry) : retry()
+
+  let clearSuspense = (instance: suspenseInstance) => {
+    let start = instance.siblings->Array.indexOf(instance.node)
+    let removed =
+      instance.siblings->Array.splice(~start, ~remove=endOf(instance) - start + 1, ~insert=[])
+    ignore(removed)
+    record(instance.node.owner, "clear a boundary's server content")
+  }
+
+  let removeHydratable = (hydratable: hydratable) => {
+    removeFrom(hydratable.siblings, hydratable.node)
+    record(hydratable.node.owner, `remove ${describe(hydratable.node)}`)
+  }
+
+  let clearContainer = (container: container) => {
+    container.rootChildren->Array.splice(
+      ~start=0,
+      ~remove=Array.length(container.rootChildren),
+      ~insert=[],
+    )
+    record(container.log, `clear ${container.name}`)
+  }
 }
 
-module Renderer = Reconciler.MakeWithScheduler(Host, TestScheduler)
+module Renderer = Reconciler.MakeHydratableWithScheduler(Host, TestScheduler)
 
 type t = {container: container, root: Renderer.root, targets: array<container>}
 
@@ -232,7 +360,7 @@ let flushSync = Renderer.flushSync
 let unmount = renderer => act(() => Renderer.unmount(renderer.root))
 
 let rec nodeToString = (node: node) =>
-  if node.hidden {
+  if node.hidden || node.tag == commentTag {
     ""
   } else if node.tag == textTag {
     node.text
@@ -299,3 +427,127 @@ let tag = node => fromPublic(node).tag
 let props = node => fromPublic(node).props
 let text = node => fromPublic(node).text
 let children = node => fromPublic(node).children->Array.map(toPublic)
+
+// Hydrating
+
+/** An opening tag's `name="value"` attributes. */
+let attributesOf: string => array<(string, string)> = %raw(`opening =>
+  [...opening.matchAll(/ ([a-zA-Z0-9_-]+)="([^"]*)"/g)].map(([, name, value]) => [name, value])`)
+
+/** Markup in `toString`'s format (with `<!--...-->` comments for markers), parsed into nodes. */
+let parseMarkup = (markup: string, ~log: log): array<node> => {
+  let at = ref(0)
+  let length = String.length(markup)
+  let make = (~tag, ~props, ~text) => {
+    let uid = log.nextUid
+    log.nextUid = uid + 1
+    {uid, tag, props, text, children: [], hidden: false, owner: log}
+  }
+  let rest = () => markup->String.slice(~start=at.contents)
+  let rec nodes = (~closing: option<string>) => {
+    let found = []
+    let finished = ref(false)
+    while !finished.contents && at.contents < length {
+      if rest()->String.startsWith("<!--") {
+        let close = markup->String.indexOfFrom("-->", at.contents)
+        found->Array.push(
+          make(
+            ~tag=commentTag,
+            ~props={},
+            ~text=markup->String.slice(~start=at.contents + 4, ~end=close),
+          ),
+        )
+        at := close + 3
+      } else if rest()->String.startsWith("</") {
+        let close = markup->String.indexOfFrom(">", at.contents)
+        let tag = markup->String.slice(~start=at.contents + 2, ~end=close)
+        if Some(tag) != closing {
+          JsError.throwWithMessage(`TestRenderer: </${tag}> closes nothing in the markup`)
+        }
+        at := close + 1
+        finished := true
+      } else if rest()->String.startsWith("<") {
+        let close = markup->String.indexOfFrom(">", at.contents)
+        let opening = markup->String.slice(~start=at.contents + 1, ~end=close)
+        at := close + 1
+        let tag = opening->String.split(" ")->Array.getUnsafe(0)
+        let props = Dict.fromArray(attributesOf(opening))
+        let node = make(~tag, ~props=Unsafe.fromUnknown(Unsafe.toUnknown(props)), ~text="")
+        node.children = nodes(~closing=Some(tag))
+        found->Array.push(node)
+      } else {
+        let next = markup->String.indexOfFrom("<", at.contents)
+        let stop = next == -1 ? length : next
+        found->Array.push(
+          make(~tag=textTag, ~props={}, ~text=markup->String.slice(~start=at.contents, ~end=stop)),
+        )
+        at := stop
+      }
+    }
+    found
+  }
+  nodes(~closing=None)
+}
+
+let hydrate = (markup, element) => {
+  let log = {ops: [], nextUid: 0}
+  let container = {name: "root", rootChildren: parseMarkup(markup, ~log), log}
+  let root = ref(None)
+  act(() => root := Some(Renderer.hydrateRoot(container, element)))
+  {container, root: Option.getUnsafe(root.contents), targets: []}
+}
+
+let rec markupOf = (node: node) =>
+  if node.tag == textTag {
+    node.text
+  } else if node.tag == commentTag {
+    `<!--${node.text}-->`
+  } else {
+    let attributes =
+      visibleProps(node.props)
+      ->Array.map(((name, value)) => ` ${name}="${stringify(value)}"`)
+      ->Array.join("")
+    `<${node.tag}${attributes}>${node.children->Array.map(markupOf)->Array.join("")}</${node.tag}>`
+  }
+
+let toMarkup = renderer => renderer.container.rootChildren->Array.map(markupOf)->Array.join("")
+
+/** The first pending boundary's start marker (`<!--$?-->`), among its siblings. */
+let firstPending = (renderer): option<(array<node>, int)> => {
+  let rec find = (nodes: array<node>) =>
+    nodes->Array.reduceWithIndex(None, (found, node, index) =>
+      switch found {
+      | Some(_) => found
+      | None =>
+        node.tag == commentTag && node.text == "$?" ? Some((nodes, index)) : find(node.children)
+      }
+    )
+  find(renderer.container.rootChildren)
+}
+
+let pendingMarker = renderer =>
+  switch firstPending(renderer) {
+  | Some(found) => found
+  | None => JsError.throwWithMessage("TestRenderer: no boundary is pending")
+  }
+
+let resolveBoundary = (renderer, markup) => {
+  let (siblings, start) = pendingMarker(renderer)
+  let marker = siblings->Array.getUnsafe(start)
+  let end_ = Host.endOf({siblings, node: marker})
+  // The server's segment arriving: the fallback goes, and the content takes its place.
+  siblings->Array.splice(
+    ~start=start + 1,
+    ~remove=end_ - start - 1,
+    ~insert=parseMarkup(markup, ~log=renderer.container.log),
+  )
+  marker.text = "$"
+  act(() => Host.retries->Map.get(marker)->Option.forEach(retry => retry()))
+}
+
+let failBoundary = renderer => {
+  let (siblings, start) = pendingMarker(renderer)
+  let marker = siblings->Array.getUnsafe(start)
+  marker.text = "$!"
+  act(() => Host.retries->Map.get(marker)->Option.forEach(retry => retry()))
+}

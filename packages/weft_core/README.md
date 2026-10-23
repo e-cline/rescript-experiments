@@ -264,6 +264,13 @@ runs effects before returning. To observe timing, `scheduleRender` and `flushSyn
 running `useEffect`s, and transitions wait on `TestScheduler`: `flushTask` runs one time slice,
 `flushAll` the rest, and a component can call `TestScheduler.advanceTime` to take time to render.
 
+`TestRenderer.hydrate(markup, element)` hydrates instead: `markup` is in `toString`'s format, with
+comments for what a server's HTML has besides (`<!--$-->`/`<!--$?-->`/`<!--$!-->` and `<!--/$-->`
+around a `Suspense` boundary, `<!-- -->` between two texts), and `ops` then shows hydration's own
+work (`hydrate div#a` for a node adopted, `remove ...` for one nothing claimed). `resolveBoundary`
+and `failBoundary` play a pending boundary's content arriving from the server, or failing there;
+`toMarkup` shows the nodes markers and all.
+
 ## Writing a renderer
 
 A renderer implements `HostConfig.S` (create instances and text, append, insert and remove children,
@@ -274,6 +281,13 @@ module Renderer = WeftCore.Reconciler.Make(MyHost)
 let root = Renderer.createRoot(container)
 Renderer.flushSync(() => Renderer.render(root, element))
 ```
+
+A host that can also hydrate (render over content already there, a server's HTML) implements
+`HostConfig.Hydratable` too, and gets `hydrateRoot(container, element)` from
+`Reconciler.MakeHydratable`. Its extra operations walk the existing content (the first and next
+hydratable node, a node as an instance of a tag, a boundary's markers), adopt what's claimed
+(`hydrateInstance`), and, at commit, remove what wasn't. `DomHost` (in `weft_dom`) and
+`TestRenderer` both are.
 
 It also provides a JSX module: `include WeftCore.JsxCore` plus an `Elements` submodule whose `props`
 record is the renderer's host props, built on `JsxCore.hostJsx` (and `JsxCore.hostJsxs` for

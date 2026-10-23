@@ -67,6 +67,9 @@ let useSyncExternalStore = (~subscribe, ~getSnapshot, ~getServerSnapshot=?) => {
           : "",
       )
     }
+  } else if HookImpl.hydrating.contents && Option.isSome(getServerSnapshot) {
+    // What the server's HTML was rendered with; an effect below catches up with the store.
+    Option.getUnsafe(getServerSnapshot)()
   } else {
     getSnapshot()
   }

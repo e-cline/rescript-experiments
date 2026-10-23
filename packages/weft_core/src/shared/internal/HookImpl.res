@@ -78,6 +78,9 @@ let firstHook = (fiber: Fiber.t): option<hook> =>
 /** Whether a server renderer is calling a component (`ServerRender.run`). */
 let onServer = ref(false)
 
+/** Whether the reconciler is hydrating the component it's rendering (`useSyncExternalStore` reads its server snapshot then). */
+let hydrating = ref(false)
+
 let renderingFiber = (): Fiber.t =>
   switch state.fiber {
   | Some(fiber) => fiber

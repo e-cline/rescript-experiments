@@ -77,6 +77,8 @@ module Flags = {
   let didCapture = 256
   /** An offscreen fiber whose children go from hidden to visible, or back. */
   let visibility = 512
+  /** A host fiber that claimed a node of server-rendered content, rather than creating one. */
+  let hydrated = 1024
 
   let union = flags => flags->Array.reduce(none, Int.bitwiseOr)
   let mutationMask = union([placement, update, childDeletion, layout, ref, visibility])

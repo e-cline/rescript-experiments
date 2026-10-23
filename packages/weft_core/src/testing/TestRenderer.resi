@@ -91,3 +91,26 @@ let tag: instance => string
 let props: instance => TestJsx.Elements.props
 let text: instance => string
 let children: instance => array<instance>
+
+// Hydrating
+
+/**
+A renderer whose root hydrates `markup` (in `toString`'s format, with `<!--$-->`, `<!--$?-->`,
+`<!--$!-->` and `<!--/$-->` comments for boundaries' markers, and `<!-- -->` between texts) with
+`element`, as `hydrateRoot` would over a server's HTML; returns once it's done. Hydration's own
+operations are logged too: `hydrate div#a` (a node claimed), `remove ...` (one nothing claimed),
+`clear a boundary's server content`, `clear root`.
+*/
+let hydrate: (string, Element.t) => t
+
+/** What's rendered, comments (markers) included: the parsed content, as hydration left it. */
+let toMarkup: t => string
+
+/**
+The first pending boundary's content arriving from the server, as `markup`: it replaces the
+fallback, the marker says complete, and hydration is told (as the page's runtime would).
+*/
+let resolveBoundary: (t, string) => unit
+
+/** The first pending boundary failing on the server: the marker says so, and hydration is told. */
+let failBoundary: t => unit

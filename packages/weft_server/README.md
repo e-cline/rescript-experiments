@@ -63,6 +63,11 @@ navigation->WeftServer.Navigation.refresh              // fetch this page's agai
 Both resolve once the new page is on screen (its transition has committed), so what awaits them
 (clearing a pending state, say) runs when the old page has gone.
 
+A route can answer a payload request with a redirect (to a sign-in page, say), as it would a page
+load: the browser's `fetch` follows it, and the page lands where it led. `Navigation.url` is that
+URL, `navigate` pushes it onto the history (not the one asked for), and a `refresh` or going back
+that was redirected replaces the history's entry with it.
+
 A link's `onClick` should use `followLink`, which navigates in place only for a plain click on a
 link to this origin, and leaves the rest to the browser (one opening a new tab or window, a
 `download`, a `target`, a link to a part of the page):

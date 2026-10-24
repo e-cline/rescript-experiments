@@ -31,8 +31,14 @@ Loads an entrypoint's file: given its id (`<package>/<path>`, the part of an ent
 */
 type loadModule = string => promise<unknown>
 
-/** Fetches the payload for a URL, as a stream. */
-type fetch = (string, ~signal: signal) => promise<stream>
+/**
+A fetched payload: its `stream`, and the `url` it came from, if that isn't the one asked for (the
+server redirected the request, and the fetch followed it there).
+*/
+type fetched = {stream: stream, url?: string}
+
+/** Fetches the payload for a URL. */
+type fetch = (string, ~signal: signal) => promise<fetched>
 
 type t
 
@@ -65,7 +71,8 @@ let fetchElement: (t, string, ~signal: signal=?) => promise<Weft.Element.t>
 
 /**
 `fetch` for the browser: the global `fetch`, asking for the bare payload
-(`Accept: text/x-weft-payload`), failing on a status other than 2xx.
+(`Accept: text/x-weft-payload`), failing on a status other than 2xx. It follows redirects, as the
+browser's `fetch` does, and reports where one led as `url` (its path and query, on this origin).
 */
 let webFetch: fetch
 
@@ -78,6 +85,8 @@ module Latest: {
   type client = t
   type t
   let make: unit => t
-  /** `Some(element)` if this is still the latest fetch once it's done; `None` if another replaced it. */
-  let fetchElement: (t, client, string) => promise<option<Weft.Element.t>>
+  /** A fetch's element, and the URL it came from: the one asked for, or where a redirect led. */
+  type fetched = {element: Weft.Element.t, url: string}
+  /** `Some` of what it fetched if this is still the latest fetch once done; `None` if not. */
+  let fetchElement: (t, client, string) => promise<option<fetched>>
 }

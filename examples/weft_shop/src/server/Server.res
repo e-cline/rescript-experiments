@@ -120,9 +120,11 @@ let routes = [
     list{"cart", "summary"},
     page(~title="Cart", (_, request) => <Pages.CartSummaryPart request />),
   ),
-  Route.get(
-    list{"checkout"},
-    page(~title="Checkout", (_, request) => <Pages.CheckoutPage request />),
+  // With nothing in the cart, back to it.
+  Route.get(list{"checkout"}, async ctx =>
+    Session.cart(Session.get(ctx)).lines == []
+      ? Respond.redirect("/cart")
+      : await page(~title="Checkout", (_, request) => <Pages.CheckoutPage request />)(ctx)
   ),
   Route.get(list{"orders", ":id"}, async ctx =>
     switch Db.findOrder(param(ctx, "id")) {
@@ -131,16 +133,13 @@ let routes = [
     | None => notFound(ctx)
     }
   ),
-  // Signed out, the sign-in form, in place (not a redirect: a navigation following one would show
-  // the sign-in page at this URL, since `Navigation` records the URL it asked for).
-  Route.get(
-    list{"account"},
-    page(~title="Account", (ctx, request) =>
-      switch Session.get(ctx).user {
-      | Some(name) => <Pages.AccountPage name request />
-      | None => <Pages.SignInPage next="/account" request />
-      }
-    ),
+  // Signed out, a redirect to sign in, and back here after (a navigation lands where it leads).
+  Route.get(list{"account"}, async ctx =>
+    switch Session.get(ctx).user {
+    | Some(name) =>
+      await page(~title="Account", (_, request) => <Pages.AccountPage name request />)(ctx)
+    | None => Respond.redirect("/signin?next=/account")
+    }
   ),
   Route.get(
     list{"signin"},

@@ -198,6 +198,56 @@ test('the sign-in dialog takes focus, closes on Escape, and signing in personali
   );
 });
 
+test('a link to a page that redirects lands at the URL the redirect leads to, in place', async ({
+  page,
+  request,
+}) => {
+  await releaseAll(request);
+  const where = () => {
+    const url = new URL(page.url());
+    return url.pathname + url.search;
+  };
+  await page.goto('/');
+  await hydrated(page, '#sign-in');
+  await page.locator('#sign-in').click();
+  await page.locator('#signin-dialog .signin-name').fill('Ada');
+  await page.keyboard.press('Enter');
+  await hydrated(page, '#account-link');
+  // Signed out behind the page's back: its account link now redirects to sign in.
+  await page.context().clearCookies();
+  // Gone if the page loads again: the link should navigate in place.
+  await page.evaluate(() => {
+    (window as {stayed?: boolean}).stayed = true;
+  });
+  await page.locator('#account-link').click();
+  await expect(page.locator('#signin-page')).toBeVisible();
+  expect(where()).toBe('/signin?next=/account');
+  // The history's entry is the one it led to: back is the page before, forward that one again.
+  await page.goBack();
+  await expect(page.locator('#signin-page')).toHaveCount(0);
+  expect(where()).toBe('/');
+  await page.goForward();
+  await expect(page.locator('#signin-page')).toBeVisible();
+  expect(where()).toBe('/signin?next=/account');
+  // Signing in there goes on to the account.
+  await hydrated(page, '#signin-page .signin-name');
+  await page.locator('#signin-page .signin-name').fill('Grace');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#account-title')).toHaveText("Grace's account");
+  expect(where()).toBe('/account');
+  // With nothing in the cart, checking out redirects back to it.
+  await page.locator('#cart-button').click();
+  await page.locator('#drawer-cart-link').click();
+  await hydrated(page, '#checkout-link');
+  await page.locator('#checkout-link').click();
+  await expect(page.locator('#cart-empty')).toBeVisible();
+  await expect(page.locator('#checkout-title')).toHaveCount(0);
+  expect(where()).toBe('/cart');
+  expect(await page.evaluate(() => (window as {stayed?: boolean}).stayed)).toBe(
+    true,
+  );
+});
+
 test('the currency picked changes every price at once, and is the session’s for the next page load', async ({
   page,
   request,

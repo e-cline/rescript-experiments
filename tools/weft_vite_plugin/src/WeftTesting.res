@@ -24,6 +24,7 @@ let start = (~root, ~mode=Source, ~buildDir=?) =>
 @send external cookies: app => dict<string> = "cookies"
 @send external clearCookies: app => unit = "clearCookies"
 @get external pageRequests: page => array<string> = "requests"
+@get external url: page => string = "url"
 
 type delivery = Immediate | Manual | EveryBytes(int)
 
@@ -38,7 +39,7 @@ let toJs = delivery =>
 
 type startClient = {
   loadModule: WeftServer.Decoder.loadModule,
-  fetch: (string, WeftServer.Decoder.signal) => promise<WeftServer.Decoder.stream>,
+  fetch: (string, WeftServer.Decoder.signal) => promise<WeftServer.Decoder.fetched>,
   container: WeftDom.Dom.element,
   url: string,
   signal: WeftServer.Rpc.signal,

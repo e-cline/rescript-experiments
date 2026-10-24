@@ -54,6 +54,8 @@ async function start(loadModule, fetch, container, url, onRefresh, signal, param
   };
   let navigation = Navigation$WeftServer.make(client, element => Stdlib_Option.forEach(root.contents, root => Client$WeftDom.render(root, element)), Stdlib_Option.getOr(url, location.pathname + location.search), url => {
     history.pushState(null, "", url);
+  }, url => {
+    history.replaceState(null, "", url);
   }, (url, push) => {
     if (push) {
       location.assign(url);

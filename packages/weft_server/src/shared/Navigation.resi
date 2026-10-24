@@ -32,7 +32,10 @@ type t
 /**
 A page, fetching with `client` and showing elements with `render` (a root's `render`). `url` is
 the URL of what's on screen; `onNavigate` is called with the new one when `navigate` has rendered
-it (the browser's pushes it onto the history).
+it (the browser's pushes it onto the history). If the server redirected the fetch, the new URL is
+where it was redirected to (as `client`'s `fetch` reports it), not the one asked for; a `load` or
+`refresh` that was redirected calls `onRedirect` with it instead (the browser's replaces the
+current history entry with it).
 
 `onFailed` is what happens instead when `navigate` or `load` can't show a URL (its payload couldn't
 be fetched, or its root failed): the browser's loads the page the ordinary way, adding it to the
@@ -44,6 +47,7 @@ let make: (
   ~render: Weft.Element.t => unit,
   ~url: string,
   ~onNavigate: string => unit=?,
+  ~onRedirect: string => unit=?,
   ~onFailed: (string, ~push: bool) => unit=?,
 ) => t
 
@@ -65,7 +69,8 @@ let wrap: (t, Weft.Element.t) => Weft.Element.t
 let show: (t, Weft.Element.t) => unit
 
 /**
-Fetches `url`'s payload, starts rendering it in a transition, and calls `onNavigate`. Resolves once
+Fetches `url`'s payload, starts rendering it in a transition, and calls `onNavigate` (with where
+a redirect led, if the server redirected it). Resolves once
 the new page is on screen (the transition has committed: a page still waiting on what it needs
 before it can show takes as long as that takes), or as soon as a newer fetch or page replaces it.
 If the payload can't be fetched or its root failed, the screen is left as it was, and `onFailed` is
@@ -73,7 +78,10 @@ called (or, without it, the promise rejects).
 */
 let navigate: (t, string) => promise<unit>
 
-/** `navigate` without `onNavigate` (for going back or forward: the URL has changed already). */
+/**
+`navigate` without `onNavigate` (for going back or forward: the URL has changed already), calling
+`onRedirect` instead if the server redirected it.
+*/
 let load: (t, string) => promise<unit>
 
 /**
@@ -106,7 +114,7 @@ let navigation = WeftServer.Navigation.useNavigation()
 */
 let followLink: (t, WeftDom.Dom.event, ~href: string) => promise<unit>
 
-/** The URL of what's on screen. */
+/** The URL of what's on screen (where a redirect led, if the server redirected its fetch). */
 let url: t => string
 
 /** The client the page fetches and decodes with. */

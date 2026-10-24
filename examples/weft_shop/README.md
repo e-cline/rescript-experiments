@@ -44,11 +44,13 @@ data the server decides on for each request, and each part of them streams in by
 - **Sessions and auth** ([`src/server/Session.res`](src/server/Session.res)): an `sid` cookie that
   `@e-cline/servy` middleware sets on the first response without one, naming what the server keeps
   for the shopper; signing in (a name, no password: a demo) from a dialog rendered into `<body>` (a
-  portal) that takes the focus (`autoFocus`), or from the account page; RPC handlers finding the
-  session from the HTTP request, even on a visitor's first request.
-- **Checkout**: a three-step form (a reducer, labels linked by `useId`), the address checked as the
-  RPC will check it before moving on, and the order refused, saying which item, if someone else
-  bought the last of it first. The order's page refreshes itself until it's delivered.
+  portal) that takes the focus (`autoFocus`), or from the sign-in page the account page redirects a
+  signed-out shopper to (a navigation lands at the URL a redirect leads to); RPC handlers finding
+  the session from the HTTP request, even on a visitor's first request.
+- **Checkout**: a three-step form (a reducer, labels linked by `useId`; an empty cart is redirected
+  back to the cart), the address checked as the RPC will check it before moving on, and the order
+  refused, saying which item, if someone else bought the last of it first. The order's page
+  refreshes itself until it's delivered.
 - **RPCs** ([`src/shared/Api.res`](src/shared/Api.res), handled in
   [`src/server/ApiServer.res`](src/server/ApiServer.res)): eleven, with object, variant, option and
   custom codecs, `prepare` steps that send nothing for an empty promo code or name, `check`s on both
@@ -104,16 +106,18 @@ opens them in the order it's about:
   changed at once, the totals following by themselves; promo codes (an empty one never sent, unknown
   and expired ones refused); checking out, the address checked on the client, the order placed, and
   its page refreshing itself until it's delivered; an item that ran out first; the session's cookie,
-  even for an RPC that's a visitor's first request; signing in for the account page, and out; names
-  refused on both sides.
+  even for an RPC that's a visitor's first request; the account page redirecting to sign in, and
+  back after, and out again; an empty cart's checkout redirecting to the cart; names refused on both
+  sides.
 
 [`e2e/`](e2e) checks, in Chromium against the build, what only a browser can, served twice:
 
 - [`shop.e2e.ts`](e2e/shop.e2e.ts), with the latency gated (`WEFT_SHOP_TEST_ROUTES=1` adds routes
   that open the gates): the home page streaming; blocks arriving while a chunk is held back,
   hydrated once it's loaded, not rendered twice; a whole purchase, filter to order; the sign-in
-  dialog's focus and Escape; the currency kept across a reload; the back and forward buttons through
-  filtered pages; a failed block retried; and the pages readable with JavaScript off.
+  dialog's focus and Escape; links to pages that redirect, landing at the redirect's URL; the
+  currency kept across a reload; the back and forward buttons through filtered pages; a failed block
+  retried; and the pages readable with JavaScript off.
 - [`random.e2e.ts`](e2e/random.e2e.ts), with seeded random latency and failures, as `vp run start`
   serves it: every page streaming in completely, once, and hydrating; navigating quickly through
   pages still streaming; and a purchase, retrying whatever fails.

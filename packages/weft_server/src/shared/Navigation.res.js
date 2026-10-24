@@ -14,13 +14,15 @@ let context = Context$Weft.make(undefined);
 
 let provider = Context$Weft.provider(context);
 
-function make(client, render, url, onNavigateOpt, onFailed) {
+function make(client, render, url, onNavigateOpt, onRedirectOpt, onFailed) {
   let onNavigate = onNavigateOpt !== undefined ? onNavigateOpt : param => {};
+  let onRedirect = onRedirectOpt !== undefined ? onRedirectOpt : param => {};
   return {
     client: client,
     render: render,
     url: url,
     onNavigate: onNavigate,
+    onRedirect: onRedirect,
     onFailed: onFailed,
     latest: Decoder$WeftServer.Latest.make(),
     onServer: false,
@@ -34,6 +36,7 @@ function makeForServer(client, url) {
     render: param => {},
     url: url,
     onNavigate: param => {},
+    onRedirect: param => {},
     onFailed: undefined,
     latest: Decoder$WeftServer.Latest.make(),
     onServer: true,
@@ -89,9 +92,9 @@ function showInTransition(navigation, element) {
 }
 
 async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
-  let element;
+  let val;
   try {
-    element = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
+    val = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
   } catch (error) {
     let onFailed = navigation.onFailed;
     if (onFailed !== undefined) {
@@ -102,15 +105,18 @@ async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
     }
     throw error;
   }
-  if (element === undefined) {
+  if (val === undefined) {
     return;
   }
-  navigation.url = url;
-  let shown = showInTransition(navigation, Primitive_option.valFromOption(element));
+  let shown = val.url;
+  navigation.url = shown;
+  let committed = showInTransition(navigation, val.element);
   if (push) {
-    navigation.onNavigate(url);
+    navigation.onNavigate(shown);
+  } else if (shown !== url) {
+    navigation.onRedirect(shown);
   }
-  return await shown;
+  return await committed;
 }
 
 function fetchAndShow(navigation, url, push, canFallBack) {
@@ -208,21 +214,21 @@ function useRefetchable(src, children) {
   currentChildren.current = children;
   let refetchOnClient = async url => {
     setFetching(param => true);
-    let fetched;
+    let val;
     try {
-      fetched = await Decoder$WeftServer.Latest.fetchElement(latest, navigation.client, Stdlib_Option.getOr(url, src));
+      val = await Decoder$WeftServer.Latest.fetchElement(latest, navigation.client, Stdlib_Option.getOr(url, src));
     } catch (error) {
       setFetching(param => false);
       throw error;
     }
-    if (fetched === undefined) {
+    if (val === undefined) {
       return;
     }
-    let fetched$1 = Primitive_option.valFromOption(fetched);
+    let fetched = val.element;
     return startTransition(() => {
       setFetching(param => false);
       setRefetched(param => ({
-        fetched: fetched$1,
+        fetched: fetched,
         over: currentChildren.current
       }));
     });

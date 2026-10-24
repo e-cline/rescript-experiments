@@ -38,6 +38,8 @@ let rows = target => {
 @val @scope("location") external search: string = "search"
 @val @scope("history")
 external pushState: (Nullable.t<unknown>, string, string) => unit = "pushState"
+@val @scope("history")
+external replaceState: (Nullable.t<unknown>, string, string) => unit = "replaceState"
 @val @scope("location") external assign: string => unit = "assign"
 @val @scope("location") external replace: string => unit = "replace"
 @val external addEventListener: (string, unit => unit) => unit = "addEventListener"
@@ -66,6 +68,8 @@ let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ~s
     ~render=element => root.contents->Option.forEach(root => root->WeftDom.Client.render(element)),
     ~url=url->Option.getOr(pathname ++ search),
     ~onNavigate=url => pushState(Nullable.null, "", url),
+    // Going back to a URL (or refreshing one) the server now redirects: the entry is where it led.
+    ~onRedirect=url => replaceState(Nullable.null, "", url),
     // A page that can't be shown in place (its payload couldn't be fetched, or it failed) is
     // loaded the ordinary way, for the server's own answer.
     ~onFailed=(url, ~push) => push ? assign(url) : replace(url),

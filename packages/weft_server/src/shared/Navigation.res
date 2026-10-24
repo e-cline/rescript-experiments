@@ -5,6 +5,8 @@ type t = {
   render: Element.t => unit,
   mutable url: string,
   onNavigate: string => unit,
+  /** Called with where a `load` or `refresh` was redirected to. */
+  onRedirect: string => unit,
   /** What to do instead when `navigate` or `load` can't show a URL's payload, if anything. */
   onFailed: option<(string, ~push: bool) => unit>,
   latest: Decoder.Latest.t,
@@ -20,11 +22,12 @@ type t = {
 let context: Weft.Context.t<option<t>> = Weft.Context.make(None)
 let provider = Weft.Context.provider(context)
 
-let make = (client, ~render, ~url, ~onNavigate=_ => (), ~onFailed=?) => {
+let make = (client, ~render, ~url, ~onNavigate=_ => (), ~onRedirect=_ => (), ~onFailed=?) => {
   client,
   render,
   url,
   onNavigate,
+  onRedirect,
   onFailed,
   latest: Decoder.Latest.make(),
   onServer: false,
@@ -36,6 +39,7 @@ let makeForServer = (client, ~url) => {
   render: _ => (),
   url,
   onNavigate: _ => (),
+  onRedirect: _ => (),
   onFailed: None,
   latest: Decoder.Latest.make(),
   onServer: true,
@@ -94,13 +98,16 @@ let showInTransition = (navigation, element) =>
 
 let fetchAndShowOnClient = async (navigation, url, ~push, ~canFallBack) =>
   switch await navigation.latest->Decoder.Latest.fetchElement(navigation.client, url) {
-  | Some(element) =>
-    navigation.url = url
-    let shown = showInTransition(navigation, element)
+  // `shown` is where the payload came from: `url`, or where the server redirected it.
+  | Some({element, url: shown}) =>
+    navigation.url = shown
+    let committed = showInTransition(navigation, element)
     if push {
-      navigation.onNavigate(url)
+      navigation.onNavigate(shown)
+    } else if shown != url {
+      navigation.onRedirect(shown)
     }
-    await shown
+    await committed
   | None => ()
   | exception error =>
     switch navigation.onFailed {
@@ -213,7 +220,7 @@ let useRefetchable = (~src, children) => {
   let refetchOnClient = async (~url=?) => {
     setFetching(_ => true)
     switch await latest->Decoder.Latest.fetchElement(navigation.client, url->Option.getOr(src)) {
-    | Some(fetched) =>
+    | Some({element: fetched}) =>
       // In a transition, so what's on screen stays until what replaces it is ready.
       startTransition(() => {
         setFetching(_ => false)

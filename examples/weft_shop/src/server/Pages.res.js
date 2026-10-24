@@ -665,21 +665,10 @@ function Pages$CheckoutPage(props) {
         id: "checkout-title",
         children: Ui$WeftShop.text("Checkout")
       }),
-      Primitive_object.equal(cart.lines, []) ? Jsx$WeftDom.Elements.jsxs("div", {
-          id: "checkout-empty",
-          children: [
-            Jsx$WeftDom.Elements.jsx("p", {
-              children: Ui$WeftShop.text("There's nothing to check out.")
-            }),
-            Jsx$WeftDom.jsx(Link$WeftShop.make, {
-              href: "/",
-              children: Ui$WeftShop.text("Keep shopping")
-            })
-          ]
-        }) : Jsx$WeftDom.jsx(CheckoutForm$WeftShop.make, {
-          total: cart.subtotal - cart.discount | 0,
-          count: cart.count
-        })
+      Jsx$WeftDom.jsx(CheckoutForm$WeftShop.make, {
+        total: cart.subtotal - cart.discount | 0,
+        count: cart.count
+      })
     ]
   });
 }

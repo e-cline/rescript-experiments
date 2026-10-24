@@ -184,9 +184,15 @@ let routes = [
   Route$Servy.get({
     hd: "checkout",
     tl: /* [] */0
-  }, page("Checkout", (param, request) => Jsx$WeftDom.jsx(Pages$WeftShop.CheckoutPage.make, {
-    request: request
-  }))),
+  }, async ctx => {
+    if (Primitive_object.equal(Session$WeftShop.cart(Session$WeftShop.get(ctx)).lines, [])) {
+      return Respond$Servy.redirect(undefined, undefined, "/cart");
+    } else {
+      return await page("Checkout", (param, request) => Jsx$WeftDom.jsx(Pages$WeftShop.CheckoutPage.make, {
+        request: request
+      }))(ctx);
+    }
+  }),
   Route$Servy.get({
     hd: "orders",
     tl: {
@@ -207,20 +213,17 @@ let routes = [
   Route$Servy.get({
     hd: "account",
     tl: /* [] */0
-  }, page("Account", (ctx, request) => {
+  }, async ctx => {
     let name = Session$WeftShop.get(ctx).user;
     if (name !== undefined) {
-      return Jsx$WeftDom.jsx(Pages$WeftShop.AccountPage.make, {
+      return await page("Account", (param, request) => Jsx$WeftDom.jsx(Pages$WeftShop.AccountPage.make, {
         name: name,
         request: request
-      });
+      }))(ctx);
     } else {
-      return Jsx$WeftDom.jsx(Pages$WeftShop.SignInPage.make, {
-        next: "/account",
-        request: request
-      });
+      return Respond$Servy.redirect(undefined, undefined, "/signin?next=/account");
     }
-  })),
+  }),
   Route$Servy.get({
     hd: "signin",
     tl: /* [] */0

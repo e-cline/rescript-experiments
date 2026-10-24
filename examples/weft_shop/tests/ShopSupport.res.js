@@ -12,6 +12,7 @@ import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Store$WeftShop from "../src/client/Store.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigation.res.js";
 
 let packageRoot = Nodepath.dirname(Nodepath.dirname(Nodeurl.fileURLToPath(import.meta.url)));
 
@@ -271,6 +272,14 @@ async function abandonedSoon(app, page, waiter) {
   return await look(100);
 }
 
+async function urlOf(page) {
+  return Navigation$WeftServer.url(await WeftTesting.navigation(page));
+}
+
+function addressBar() {
+  return location.pathname + location.search;
+}
+
 function text(page, selector) {
   return Stdlib_Option.getOr(WeftTesting.textOf(page, selector), "");
 }
@@ -399,6 +408,8 @@ export {
   waiterFor,
   nextWaiter,
   abandonedSoon,
+  urlOf,
+  addressBar,
   text,
   has,
   count,

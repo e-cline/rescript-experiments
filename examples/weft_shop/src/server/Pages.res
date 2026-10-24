@@ -368,12 +368,8 @@ module CheckoutPage = {
     let cart = Session.cart(request.session)
     <Shell request>
       <h1 id="checkout-title"> {text("Checkout")} </h1>
-      {cart.lines == []
-        ? <div id="checkout-empty">
-            <p> {text("There's nothing to check out.")} </p>
-            <Link href="/"> {text("Keep shopping")} </Link>
-          </div>
-        : <CheckoutForm total={cart.subtotal - cart.discount} count=cart.count />}
+      // An empty cart is redirected to the cart (`Server`), so there's something to check out.
+      <CheckoutForm total={cart.subtotal - cart.discount} count=cart.count />
     </Shell>
   }
 }

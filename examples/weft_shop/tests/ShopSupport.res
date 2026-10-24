@@ -177,6 +177,14 @@ let abandonedSoon = async (app, page, waiter) => {
 
 // The page
 
+/** The URL of what the page shows, by its navigation (where a redirect led, if one did). */
+let urlOf = async page => (await page->WeftTesting.navigation)->WeftServer.Navigation.url
+
+@val @scope("location") external pathname: string = "pathname"
+@val @scope("location") external search: string = "search"
+/** What the address bar shows: the history's URL, which navigating pushes (its path and query). */
+let addressBar = () => pathname ++ search
+
 let text = (page, selector) => page->WeftTesting.textOf(selector)->Option.getOr("")
 let has = WeftTesting.has
 /** How many elements in the document match `selector`. */

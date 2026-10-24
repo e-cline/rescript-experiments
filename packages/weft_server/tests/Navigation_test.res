@@ -27,7 +27,7 @@ let andSettle = async promise => {
 }
 
 /** A page on `renderer`, its client fetching from `fetch`, started at `url` (rendered at once). */
-let start = async (~fetch, ~route, ~url, ~onNavigate=?, ~onFailed=?) => {
+let start = async (~fetch, ~route, ~url, ~onNavigate=?, ~onRedirect=?, ~onFailed=?) => {
   let renderer = TestRenderer.create()
   let client = Decoder.make(~loadModule=Testing.loadModule(makeModules()), ~fetch)
   let navigation = Navigation.make(
@@ -35,6 +35,7 @@ let start = async (~fetch, ~route, ~url, ~onNavigate=?, ~onFailed=?) => {
     ~render=element => TestRenderer.scheduleRender(renderer, element),
     ~url,
     ~onNavigate?,
+    ~onRedirect?,
     ~onFailed?,
   )
   let element = await roundTrip(~client, route(url))
@@ -147,6 +148,42 @@ describe("navigating", () => {
     t->expect(shows(renderer)->String.includes("A, renamed"))->Expect.toBe(true)
     t->expect(navigated)->Expect.toEqual([])
     t->expect(served->Array.map(request => request.url))->Expect.toEqual(["/a"])
+  })
+
+  testAsync("a redirected fetch lands where the redirect led, and stays there", async t => {
+    reset()
+    let (serverFetch, served) = serve(route)
+    // The server answers `/old` with a redirect to `/b`, which the fetch follows (as the browser's
+    // does), reporting where it ended up.
+    let fetch = (url, ~signal) =>
+      url == "/old"
+        ? serverFetch("/b", ~signal)->Promise.thenResolve(fetched => {...fetched, url: "/b"})
+        : serverFetch(url, ~signal)
+    let navigated = []
+    let redirected = []
+    let (renderer, navigation) = await start(
+      ~fetch,
+      ~route,
+      ~url="/a",
+      ~onNavigate=url => navigated->Array.push(url),
+      ~onRedirect=url => redirected->Array.push(url),
+    )
+    await navigation->Navigation.navigate("/old")->andSettle
+    t->expect(textIn(renderer, "title"))->Expect.toEqual(Some("b"))
+    t->expect(navigation->Navigation.url)->Expect.toBe("/b")
+    t->expect(navigated)->Expect.toEqual(["/b"])
+    t->expect(redirected)->Expect.toEqual([])
+    // Refreshing fetches the page it's on, not the one first asked for.
+    titles->Dict.set("b", "B, renamed")
+    await navigation->Navigation.refresh->andSettle
+    t->expect(textIn(renderer, "title"))->Expect.toEqual(Some("B, renamed"))
+    t->expect(served->Array.map(request => request.url))->Expect.toEqual(["/b", "/b"])
+    // Going back to a URL that redirects: nothing is pushed, but where it led is reported.
+    await navigation->Navigation.load("/a")->andSettle
+    await navigation->Navigation.load("/old")->andSettle
+    t->expect(navigation->Navigation.url)->Expect.toBe("/b")
+    t->expect(navigated)->Expect.toEqual(["/b"])
+    t->expect(redirected)->Expect.toEqual(["/b"])
   })
 
   testAsync(

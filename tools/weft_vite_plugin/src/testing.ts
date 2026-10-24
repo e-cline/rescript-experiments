@@ -64,6 +64,26 @@ const workerFile = new URL(
   import.meta.url,
 );
 
+/**
+ * The origin the harness's requests are made to: the app's, as far as the client knows. In a DOM,
+ * the document's, so the client's own URLs (where a redirect led, say) are on it.
+ */
+const documentOrigin = (globalThis as {location?: {origin: string}}).location
+  ?.origin;
+const appOrigin =
+  documentOrigin === undefined || documentOrigin === 'null'
+    ? 'http://localhost'
+    : documentOrigin;
+
+/** The statuses a `fetch` follows to the response's `Location`. */
+const redirectStatuses = new Set([301, 302, 303, 307, 308]);
+
+/** A URL on the app's origin as the client writes it: its path and query. */
+function pathOf(url: string): string {
+  const parsed = new URL(url, appOrigin);
+  return parsed.pathname + parsed.search;
+}
+
 /** The id of an entrypoint file, and the URL of its built chunk. */
 export type BuiltEntrypoint = {id: string; file: string};
 
@@ -305,40 +325,100 @@ export class App {
 
   /**
    * A `fetch` to the server, through the worker: the request's method, URL, headers and body go
-   * over, and the response's body comes back as the delivery mode allows.
+   * over, and the response's body comes back as the delivery mode allows. Redirects to the app's
+   * own origin are followed as a browser's `fetch` follows them (unless the request's `redirect`
+   * says otherwise), up to 20 of them, and the response says where it ended up (`url`,
+   * `redirected`). A redirect anywhere else fails, as the harness only reaches the app.
    */
   readonly fetch = async (
     input: string | URL | Request,
     init?: RequestInit,
   ): Promise<Response> => {
-    const request = new Request(
-      new URL(
-        String(input instanceof Request ? input.url : input),
-        'http://localhost',
-      ),
+    const first = new Request(
+      new URL(String(input instanceof Request ? input.url : input), appOrigin),
       input instanceof Request ? input : init,
     );
+    let method = first.method;
+    let url = first.url;
+    const headers = new Headers(first.headers);
     let body =
-      request.body === null
-        ? null
-        : new Uint8Array(await request.arrayBuffer());
+      first.body === null ? null : new Uint8Array(await first.arrayBuffer());
+    for (let redirects = 0; ; redirects++) {
+      const response = await this.send(
+        method,
+        url,
+        headers,
+        body,
+        first.signal,
+      );
+      const location = response.headers.get('location');
+      if (
+        !redirectStatuses.has(response.status) ||
+        location === null ||
+        first.redirect === 'manual'
+      ) {
+        Object.defineProperty(response, 'url', {value: url});
+        Object.defineProperty(response, 'redirected', {value: redirects > 0});
+        return response;
+      }
+      await response.body?.cancel();
+      const target = new URL(location, url);
+      if (first.redirect === 'error') {
+        throw new TypeError(`[weft] fetching ${url} was redirected`);
+      }
+      if (target.origin !== appOrigin) {
+        throw new TypeError(
+          `[weft] fetching ${url} was redirected to ${target.href}, which the harness can't reach`,
+        );
+      }
+      if (redirects === 20) {
+        throw new TypeError(`[weft] fetching ${first.url}: too many redirects`);
+      }
+      // As the browser does: a 303 (or a POST's 301 or 302) is followed with a GET, and no body.
+      if (
+        (response.status === 303 && method !== 'HEAD') ||
+        ([301, 302].includes(response.status) && method === 'POST')
+      ) {
+        method = 'GET';
+        body = null;
+        for (const name of [
+          'content-type',
+          'content-length',
+          'content-encoding',
+          'content-language',
+          'content-location',
+        ]) {
+          headers.delete(name);
+        }
+      }
+      url = target.href;
+    }
+  };
+
+  /** One request to the server, through the worker, and its response (redirects not followed). */
+  private async send(
+    method: string,
+    url: string,
+    requestHeaders: Headers,
+    requestBody: Uint8Array | null,
+    signal: AbortSignal,
+  ): Promise<Response> {
+    let body = requestBody;
     const rewrite = this.rewrite;
     if (
       body !== null &&
       rewrite !== undefined &&
-      new URL(request.url).pathname.includes(rewrite.matching)
+      new URL(url).pathname.includes(rewrite.matching)
     ) {
       body = new TextEncoder().encode(
         rewrite.change(new TextDecoder().decode(body)),
       );
     }
     const id = this.nextId++;
-    this.requests.push(
-      new URL(request.url).pathname + new URL(request.url).search,
-    );
+    this.requests.push(pathOf(url));
     this.exchanges.set(id, {
       id,
-      url: request.url,
+      url,
       queued: [],
       ended: false,
       closed: false,
@@ -346,7 +426,7 @@ export class App {
     const response = new Promise<Response>((resolve, reject) => {
       this.responses.set(id, {resolve, reject});
     });
-    request.signal.addEventListener('abort', () => {
+    signal.addEventListener('abort', () => {
       const exchange = this.exchanges.get(id);
       if (exchange !== undefined && !exchange.closed) {
         exchange.closed = true;
@@ -360,24 +440,17 @@ export class App {
       this.responses.get(id)?.reject(new DOMException('aborted', 'AbortError'));
       this.responses.delete(id);
     });
-    const headers = [...request.headers];
+    const headers = [...requestHeaders];
     // The browser's cookies for the app, unless the request brought its own.
-    if (this.jar.size > 0 && !request.headers.has('cookie')) {
+    if (this.jar.size > 0 && !requestHeaders.has('cookie')) {
       headers.push([
         'cookie',
         [...this.jar].map(([name, value]) => `${name}=${value}`).join('; '),
       ]);
     }
-    this.post({
-      type: 'request',
-      id,
-      method: request.method,
-      url: request.url,
-      headers,
-      body,
-    });
+    this.post({type: 'request', id, method, url, headers, body});
     return response;
-  };
+  }
 
   /** Hands over the oldest chunk not yet delivered (in `manual` delivery). Whether there was one. */
   deliver(): boolean {
@@ -723,10 +796,11 @@ export type ClientSide = {
   /** `WeftServer.Bootstrap.start`, resolving with the page's `Navigation.t`. */
   start: (options: {
     loadModule: (id: string) => Promise<unknown>;
+    /** `Decoder.fetch`: the payload, and where it came from if a redirect led elsewhere. */
     fetch: (
       url: string,
       signal: AbortSignal,
-    ) => Promise<ReadableStream<Uint8Array>>;
+    ) => Promise<{stream: ReadableStream<Uint8Array>; url?: string}>;
     container: Element;
     url: string;
     /** Aborted when the page closes: the bootstrap stops it (unmounts its root). */
@@ -798,6 +872,11 @@ export class Page {
   htmlNodes: Node[] = [];
   /** The HTML with the rows taken out, once it has all arrived. */
   readonly shell: Promise<string>;
+  /**
+   * The page's URL (its path and query): the one it was opened at, or, once its HTML has come,
+   * where the server redirected that to.
+   */
+  url: string;
   /** Each entrypoint's renders, by id (`source` mode). */
   readonly renders = new Map<string, number>();
   /** The entrypoint files loaded, in order (`source` mode). */
@@ -826,10 +905,12 @@ export class Page {
     act: (f: () => void) => void,
     start: (page: Page) => Promise<unknown>,
     html: Promise<Response>,
+    url: string,
     firstRequest: number,
     bootstrap: boolean,
   ) {
     this.app = app;
+    this.url = url;
     this.container = container;
     this.act = act;
     this.firstRequest = firstRequest;
@@ -840,9 +921,10 @@ export class Page {
     });
     // A page that fails to start fails the test through `started`, not as an unhandled rejection.
     this.started.catch(() => {});
-    this.shell = html.then((response) =>
-      readPage(response.body!, (piece) => this.apply(piece)),
-    );
+    this.shell = html.then((response) => {
+      this.url = pathOf(response.url);
+      return readPage(response.body!, (piece) => this.apply(piece));
+    });
     this.shell.catch(() => {});
   }
 
@@ -1130,7 +1212,10 @@ export function openPage(app: App, options: OpenOptions): Page {
         `[weft] fetching ${url} failed with status ${response.status}`,
       );
     }
-    return response.body!;
+    return {
+      stream: response.body!,
+      url: response.redirected ? pathOf(response.url) : undefined,
+    };
   };
   const opened = (start: (page: Page) => Promise<unknown>) => {
     const page = new Page(
@@ -1139,6 +1224,7 @@ export function openPage(app: App, options: OpenOptions): Page {
       options.client.act,
       start,
       html,
+      options.url,
       firstRequest,
       options.bootstrap ?? true,
     );
@@ -1152,7 +1238,7 @@ export function openPage(app: App, options: OpenOptions): Page {
         loadModule: page.loader(options.client.loadModule),
         fetch: payloadFetch,
         container,
-        url: options.url,
+        url: page.url,
         signal: page.closing.signal,
       }),
     );
@@ -1174,7 +1260,9 @@ export function openPage(app: App, options: OpenOptions): Page {
     fetch: typeof fetch;
   };
   window.history.replaceState(null, '', options.url);
-  return opened(async () => {
+  return opened(async (page) => {
+    // The bootstrap reads the page's URL from the location: where a redirect led, if one did.
+    window.history.replaceState(null, '', page.url);
     const bootstrap = builtBootstrap(app.buildDir);
     await import(/* @vite-ignore */ bootstrap);
     return undefined;

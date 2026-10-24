@@ -418,7 +418,7 @@ describe("refetching, in order", () => {
       let page = pages->Dict.getUnsafe(url)
       let pipe = Testing.pipe(Render.toStream(page(), ~signal), ~delivery=Manual)
       pipes->Dict.set(url, pipe)
-      Promise.resolve(Testing.stream(pipe))
+      Promise.resolve({Decoder.stream: Testing.stream(pipe)})
     }
     (Decoder.make(~loadModule=Testing.loadModule(makeModules()), ~fetch), pipes)
   }
@@ -451,7 +451,9 @@ describe("refetching, in order", () => {
     await settle()
     pipes->Dict.getUnsafe("/new")->Testing.deliverAll
     let newElement = await new
-    t->expect(newElement->Option.map(renderDirectly))->Expect.toEqual(Some("<p>new</p>"))
+    t
+    ->expect(newElement->Option.map(fetched => renderDirectly(fetched.element)))
+    ->Expect.toEqual(Some("<p>new</p>"))
     // The older one comes to nothing, and its server render stopped: nothing is called again.
     t->expect(await old)->Expect.toEqual(None)
     data.resolve("too late")
@@ -466,8 +468,12 @@ describe("refetching, in order", () => {
     let two = second->Decoder.Latest.fetchElement(client, "/two")
     await settle()
     pipes->Dict.valuesToArray->Array.forEach(Testing.deliverAll)
-    t->expect((await one)->Option.map(renderDirectly))->Expect.toEqual(Some("one"))
-    t->expect((await two)->Option.map(renderDirectly))->Expect.toEqual(Some("two"))
+    t
+    ->expect((await one)->Option.map(fetched => renderDirectly(fetched.element)))
+    ->Expect.toEqual(Some("one"))
+    t
+    ->expect((await two)->Option.map(fetched => renderDirectly(fetched.element)))
+    ->Expect.toEqual(Some("two"))
   })
 })
 

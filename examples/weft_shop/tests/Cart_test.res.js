@@ -102,7 +102,7 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
     t.expect(ShopSupport$WeftShop.text(page, "#toasts")).toBe("Not enough left of p1-9.×");
     return t.expect((await ShopSupport$WeftShop.session(app())).count).toBe(5);
   });
-  Vitest.testAsync("empties, line by line, and there's then nothing to check out", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  Vitest.testAsync("empties, line by line, and there's then nothing to check out: checkout redirects to the cart", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCart([
       [
         "p1-9",
@@ -118,8 +118,18 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
     WeftTesting.click(page, "#less-p19-one");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#cart-empty"));
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#cart-button") === "Cart (0)");
+    let before = WeftTesting.pageRequests(page).length;
     WeftTesting.click(page, "#checkout-link");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#checkout-empty"));
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).length === (before + 2 | 0));
+    await WeftTesting.settle(page);
+    t.expect(WeftTesting.pageRequests(page).slice(before)).toEqual([
+      "/checkout",
+      "/cart"
+    ]);
+    t.expect(ShopSupport$WeftShop.has(page, "#cart-empty")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "#checkout-title")).toBe(false);
+    t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/cart");
+    t.expect(ShopSupport$WeftShop.addressBar()).toBe("/cart");
     return t.expect((await ShopSupport$WeftShop.session(app())).count).toBe(0);
   });
   Vitest.testAsync("takes promo codes: an empty one isn't sent, unknown and expired ones are refused, a good one is applied", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -345,28 +355,36 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
     t.expect((await ShopSupport$WeftShop.session(app())).currency).toBe("GBP");
     return t.expect(await ShopSupport$WeftShop.sessionCount(app())).toBe(2);
   });
-  Vitest.testAsync("asks a signed-out visitor to sign in for their account, then shows it, at the same URL", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  Vitest.testAsync("redirects a signed-out visitor to sign in for their account, then back to it, and out again", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/account");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#signin-page"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     t.expect(ShopSupport$WeftShop.text(page, "#signin-title")).toBe("Sign in");
+    t.expect(WeftTesting.url(page)).toBe("/signin?next=/account");
+    t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/signin?next=/account");
     WeftTesting.input(page, "#signin-page .signin-name", "Grace");
     ShopSupport$WeftShop.submitAnywhere("#signin-page .signin-form");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#account-title"));
     t.expect(ShopSupport$WeftShop.text(page, "#account-title")).toBe("Grace's account");
     t.expect(ShopSupport$WeftShop.text(page, "#account-menu")).toBe("Hi, GraceSign out");
     t.expect(ShopSupport$WeftShop.has(page, "#no-orders")).toBe(true);
+    t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/account");
+    t.expect(ShopSupport$WeftShop.addressBar()).toBe("/account");
     WeftTesting.click(page, "#sign-out");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#sign-in"));
     t.expect(ShopSupport$WeftShop.has(page, "#signin-page")).toBe(true);
     t.expect((await ShopSupport$WeftShop.session(app())).user).toBe("");
+    t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/signin?next=/account");
+    t.expect(ShopSupport$WeftShop.addressBar()).toBe("/signin?next=/account");
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/account",
+      "/signin?next=/account",
       "/_weft/rpc/auth.signIn",
       "/account",
       "/_weft/rpc/auth.signOut",
-      "/account"
+      "/account",
+      "/signin?next=/account"
     ]);
   });
   Vitest.testAsync("refuses an empty name without asking the server, and a long one on both sides", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {

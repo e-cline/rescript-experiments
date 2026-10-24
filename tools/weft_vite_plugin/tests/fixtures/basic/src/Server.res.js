@@ -7,6 +7,15 @@ import * as Likes$FixtureBasic from "./Likes.res.js";
 import * as Notes$FixtureBasic from "./Notes.res.js";
 import Assets from "virtual:weft/assets";
 
+function redirect(status, location) {
+  return new Response("", {
+    status: status,
+    headers: {
+      location: location
+    }
+  });
+}
+
 async function handle(request) {
   let path = new URL(request.url).pathname;
   switch (path) {
@@ -28,10 +37,28 @@ async function handle(request) {
           "set-cookie": "flavour=oat; Path=/; HttpOnly"
         }
       });
+    case "/echo" :
+      return Response.json({
+        method: request.method,
+        body: await request.text(),
+        contentType: request.headers.get("content-type")
+      });
     case "/env" :
       return Response.json({
         isDev: Env$Common.isDev
       });
+    case "/moved" :
+      return redirect(302, "/notes/moved");
+    case "/moved/away" :
+      return redirect(302, "https://elsewhere.example/");
+    case "/moved/kept" :
+      return redirect(307, "/echo");
+    case "/moved/loop" :
+      return redirect(302, "/moved/loop");
+    case "/moved/seen" :
+      return redirect(303, "/echo");
+    case "/moved/twice" :
+      return redirect(301, "/moved");
     default:
       let match = request.headers.get("accept");
       if (!(match == null) && match === "text/x-weft-payload") {
@@ -53,6 +80,7 @@ async function handle(request) {
 let $$default = handle;
 
 export {
+  redirect,
   handle,
   $$default as default,
 }

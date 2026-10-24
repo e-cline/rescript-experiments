@@ -17,6 +17,27 @@ import * as Values$WeftServer from "./internal/Values.res.js";
 import * as Payload$WeftServer from "./Payload.res.js";
 import * as Primitive_exceptions from "@rescript/runtime/lib/es6/Primitive_exceptions.js";
 
+function onThisOrigin(url) {
+  let match = globalThis.location;
+  if (match == null) {
+    return url;
+  }
+  let href = match.href;
+  let val;
+  let val$1;
+  try {
+    val = new URL(url, href);
+    val$1 = new URL(href, href);
+  } catch (exn) {
+    return url;
+  }
+  if (val.origin === val$1.origin) {
+    return val.pathname + val.search;
+  } else {
+    return url;
+  }
+}
+
 async function webFetch(url, signal) {
   let response = await fetch(url, {
     headers: {
@@ -27,7 +48,10 @@ async function webFetch(url, signal) {
   if (!response.ok) {
     Errors$WeftServer.fail(14, Env$Common.isDev ? `WeftServer: fetching ` + url + ` failed with status ` + response.status.toString() : "");
   }
-  return response.body;
+  return {
+    stream: response.body,
+    url: response.redirected ? onThisOrigin(response.url) : undefined
+  };
 }
 
 function make(loadModule, fetchOpt) {
@@ -392,10 +416,18 @@ function fromStream(client, stream, signal) {
   return valueFromStream(client, stream, signal).then(value => value);
 }
 
-async function fetchElement(client, url, signal) {
+async function fetchPage(client, url, signal) {
   let signal$1 = signal !== undefined ? Primitive_option.valFromOption(signal) : new AbortController().signal;
-  let stream = await client.fetch(url, signal$1);
-  return await fromStream(client, stream, Primitive_option.some(signal$1));
+  let fetched = await client.fetch(url, signal$1);
+  let element = await fromStream(client, fetched.stream, Primitive_option.some(signal$1));
+  return [
+    element,
+    Stdlib_Option.getOr(fetched.url, url)
+  ];
+}
+
+async function fetchElement(client, url, signal) {
+  return (await fetchPage(client, url, signal))[0];
 }
 
 function make$1() {
@@ -413,9 +445,9 @@ async function fetchElement$1(latest, client, url) {
   });
   let controller = new AbortController();
   latest.controller = Primitive_option.some(controller);
-  let element;
+  let val;
   try {
-    element = await fetchElement(client, url, Primitive_option.some(controller.signal));
+    val = await fetchPage(client, url, Primitive_option.some(controller.signal));
   } catch (error) {
     if (mine !== latest.latest) {
       return;
@@ -423,7 +455,10 @@ async function fetchElement$1(latest, client, url) {
     throw error;
   }
   if (mine === latest.latest) {
-    return Primitive_option.some(element);
+    return {
+      element: val[0],
+      url: val[1]
+    };
   }
 }
 

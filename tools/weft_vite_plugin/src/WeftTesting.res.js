@@ -177,6 +177,10 @@ function pageRequests(prim) {
   return prim.requests;
 }
 
+function url(prim) {
+  return prim.url;
+}
+
 function shell(prim) {
   return prim.shell;
 }
@@ -236,6 +240,7 @@ export {
   hydrated,
   warnings,
   pageRequests,
+  url,
   navigation,
   shell,
   deliver,

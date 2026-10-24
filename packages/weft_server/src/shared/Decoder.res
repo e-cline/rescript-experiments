@@ -4,11 +4,29 @@ module Deferred = Weft.Deferred
 type stream = Streams.t
 type signal = Streams.Signal.t
 type loadModule = string => promise<unknown>
-type fetch = (string, ~signal: signal) => promise<stream>
+type fetched = {stream: stream, url?: string}
+type fetch = (string, ~signal: signal) => promise<fetched>
 
-type response = {ok: bool, status: int, body: Streams.t}
+type response = {ok: bool, status: int, body: Streams.t, url: string, redirected: bool}
 type fetchInit = {headers: dict<string>, signal: signal}
 @val external globalFetch: (string, fetchInit) => promise<response> = "fetch"
+
+type location = {href: string}
+@val external location: Nullable.t<location> = "globalThis.location"
+type parsedUrl = {origin: string, pathname: string, search: string}
+@new external parseUrl: (string, string) => parsedUrl = "URL"
+
+/** `url` as the page's own URLs are written (its path and query), if it's on the page's origin. */
+let onThisOrigin = url =>
+  switch location->Nullable.toOption {
+  | Some({href}) =>
+    switch (parseUrl(url, href), parseUrl(href, href)) {
+    | (target, current) if target.origin == current.origin => target.pathname ++ target.search
+    | _ => url
+    | exception _ => url
+    }
+  | None => url
+  }
 
 let webFetch = async (url, ~signal) => {
   let response = await globalFetch(url, {headers: dict{"Accept": Payload.contentType}, signal})
@@ -20,7 +38,8 @@ let webFetch = async (url, ~signal) => {
         : "",
     )
   }
-  response.body
+  // The browser followed a redirect: the payload is the page it was sent to.
+  {stream: response.body, url: ?(response.redirected ? Some(onThisOrigin(response.url)) : None)}
 }
 
 type t = {
@@ -363,18 +382,26 @@ let fromStream = (client, stream, ~signal=?) =>
     fromUnknown(value)
   )
 
-let fetchElement = async (client, url, ~signal=?) => {
+/** The element `url`'s payload decodes to, and the URL it came from (where a redirect led). */
+let fetchPage = async (client, url, ~signal=?) => {
   let signal = switch signal {
   | Some(signal) => signal
   | None => Streams.Controller.make()->Streams.Controller.signal
   }
-  let stream = await client.fetch(url, ~signal)
-  await fromStream(client, stream, ~signal)
+  let fetched = await client.fetch(url, ~signal)
+  let element = await fromStream(client, fetched.stream, ~signal)
+  (element, fetched.url->Option.getOr(url))
+}
+
+let fetchElement = async (client, url, ~signal=?) => {
+  let (element, _) = await fetchPage(client, url, ~signal?)
+  element
 }
 
 module Latest = {
   type client = t
   type t = {mutable latest: int, mutable controller: option<Streams.Controller.t>}
+  type fetched = {element: Element.t, url: string}
 
   let make = () => {latest: 0, controller: None}
 
@@ -385,8 +412,8 @@ module Latest = {
     let controller = Streams.Controller.make()
     latest.controller = Some(controller)
     let isLatest = () => mine == latest.latest
-    switch await fetchElement(client, url, ~signal=Streams.Controller.signal(controller)) {
-    | element => isLatest() ? Some(element) : None
+    switch await fetchPage(client, url, ~signal=Streams.Controller.signal(controller)) {
+    | (element, url) => isLatest() ? Some({element, url}) : None
     | exception error => isLatest() ? throw(error) : None
     }
   }

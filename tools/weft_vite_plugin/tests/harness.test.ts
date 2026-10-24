@@ -70,6 +70,73 @@ describe('the harness, in source mode', () => {
     expect(await echo()).toBe(null);
   });
 
+  test('follows redirects on the app, as a browser does, saying where it ended up', async () => {
+    const page = await app.fetch('/moved/twice');
+    expect(page.status).toBe(200);
+    expect(page.redirected).toBe(true);
+    expect(page.url).toBe('http://localhost/notes/moved');
+    expect(await page.text()).toContain('Notes at /notes/moved');
+    // A payload request too, keeping its headers.
+    const payload = await app.fetch('/moved', {
+      headers: {Accept: 'text/x-weft-payload'},
+    });
+    expect(payload.url).toBe('http://localhost/notes/moved');
+    expect(await payload.text()).toBe('0:J"Notes at /notes/moved (20)"\n');
+    expect(app.requests).toEqual([
+      '/moved/twice',
+      '/moved',
+      '/notes/moved',
+      '/moved',
+      '/notes/moved',
+    ]);
+    // One that wasn't redirected says where it came from, and that it wasn't.
+    const direct = await app.fetch('/notes/1');
+    expect([direct.url, direct.redirected]).toEqual([
+      'http://localhost/notes/1',
+      false,
+    ]);
+  });
+
+  test("follows a 303 with a GET, and a 307 with the request's method and body", async () => {
+    const post = (url: string) =>
+      app.fetch(url, {
+        method: 'POST',
+        headers: {'content-type': 'text/plain'},
+        body: 'hello',
+      });
+    expect(await (await post('/moved/seen')).json()).toEqual({
+      method: 'GET',
+      body: '',
+      contentType: null,
+    });
+    expect(await (await post('/moved/kept')).json()).toEqual({
+      method: 'POST',
+      body: 'hello',
+      contentType: 'text/plain',
+    });
+  });
+
+  test("doesn't follow a redirect it's told not to, off the app, or round in circles", async () => {
+    const manual = await app.fetch('/moved', {redirect: 'manual'});
+    expect([manual.status, manual.headers.get('location')]).toEqual([
+      302,
+      '/notes/moved',
+    ]);
+    await expect(app.fetch('/moved', {redirect: 'error'})).rejects.toThrow(
+      'was redirected',
+    );
+    await expect(app.fetch('/moved/away')).rejects.toThrow(
+      "https://elsewhere.example/, which the harness can't reach",
+    );
+    await expect(app.fetch('/moved/loop')).rejects.toThrow(
+      'too many redirects',
+    );
+    expect(app.requests.filter((url) => url === '/moved/loop')).toHaveLength(
+      21,
+    );
+    expect(app.open).toBe(0);
+  });
+
   test('runs the server with the development conditions', async () => {
     expect(await (await app.fetch('/env')).json()).toEqual({isDev: true});
   });

@@ -78,17 +78,32 @@ describe("the cart", () => {
     t->expect((await app()->session).count)->Expect.toBe(5)
   })
 
-  testAsync("empties, line by line, and there's then nothing to check out", async t => {
-    let page = await openCart([("p1-9", 1), ("p19-one", 1)])
-    page->WeftTesting.click("#remove-p1-9")
-    await page->WeftTesting.waitFor(() => !has(page, "#line-p1-9"))
-    page->WeftTesting.click("#less-p19-one")
-    await page->WeftTesting.waitFor(() => has(page, "#cart-empty"))
-    await page->WeftTesting.waitFor(() => text(page, "#cart-button") == "Cart (0)")
-    page->WeftTesting.click("#checkout-link")
-    await page->WeftTesting.waitFor(() => has(page, "#checkout-empty"))
-    t->expect((await app()->session).count)->Expect.toBe(0)
-  })
+  testAsync(
+    "empties, line by line, and there's then nothing to check out: checkout redirects to the cart",
+    async t => {
+      let page = await openCart([("p1-9", 1), ("p19-one", 1)])
+      page->WeftTesting.click("#remove-p1-9")
+      await page->WeftTesting.waitFor(() => !has(page, "#line-p1-9"))
+      page->WeftTesting.click("#less-p19-one")
+      await page->WeftTesting.waitFor(() => has(page, "#cart-empty"))
+      await page->WeftTesting.waitFor(() => text(page, "#cart-button") == "Cart (0)")
+      let before = page->WeftTesting.pageRequests->Array.length
+      page->WeftTesting.click("#checkout-link")
+      await page->WeftTesting.waitFor(
+        () => page->WeftTesting.pageRequests->Array.length == before + 2,
+      )
+      await page->WeftTesting.settle
+      t
+      ->expect(page->WeftTesting.pageRequests->Array.slice(~start=before))
+      ->Expect.toEqual(["/checkout", "/cart"])
+      // The cart, at its own URL: in the navigation, and in the address bar.
+      t->expect(has(page, "#cart-empty"))->Expect.toBe(true)
+      t->expect(has(page, "#checkout-title"))->Expect.toBe(false)
+      t->expect(await urlOf(page))->Expect.toBe("/cart")
+      t->expect(addressBar())->Expect.toBe("/cart")
+      t->expect((await app()->session).count)->Expect.toBe(0)
+    },
+  )
 
   testAsync(
     "takes promo codes: an empty one isn't sent, unknown and expired ones are refused, a good one is applied",
@@ -253,32 +268,41 @@ describe("the session", () => {
   })
 
   testAsync(
-    "asks a signed-out visitor to sign in for their account, then shows it, at the same URL",
+    "redirects a signed-out visitor to sign in for their account, then back to it, and out again",
     async t => {
       await app()->releaseAll
       let page = app()->open_("/account")
       await page->WeftTesting.waitFor(() => has(page, "#signin-page"))
       await hydratedAsServed(page)
       t->expect(text(page, "#signin-title"))->Expect.toBe("Sign in")
+      // The page is where the redirect led, as the browser's location would be.
+      t->expect(page->WeftTesting.url)->Expect.toBe("/signin?next=/account")
+      t->expect(await urlOf(page))->Expect.toBe("/signin?next=/account")
       page->WeftTesting.input("#signin-page .signin-name", "Grace")
       submitAnywhere("#signin-page .signin-form")
       await page->WeftTesting.waitFor(() => has(page, "#account-title"))
       t->expect(text(page, "#account-title"))->Expect.toBe("Grace's account")
       t->expect(text(page, "#account-menu"))->Expect.toBe("Hi, GraceSign out")
       t->expect(has(page, "#no-orders"))->Expect.toBe(true)
-      // Signing out, from the header.
+      t->expect(await urlOf(page))->Expect.toBe("/account")
+      t->expect(addressBar())->Expect.toBe("/account")
+      // Signing out, from the header: the refresh is redirected, and the history's entry with it.
       page->WeftTesting.click("#sign-out")
       await page->WeftTesting.waitFor(() => has(page, "#sign-in"))
       t->expect(has(page, "#signin-page"))->Expect.toBe(true)
       t->expect((await app()->session).user)->Expect.toBe("")
+      t->expect(await urlOf(page))->Expect.toBe("/signin?next=/account")
+      t->expect(addressBar())->Expect.toBe("/signin?next=/account")
       t
       ->expect(page->WeftTesting.pageRequests)
       ->Expect.toEqual([
         "/account",
+        "/signin?next=/account",
         "/_weft/rpc/auth.signIn",
         "/account",
         "/_weft/rpc/auth.signOut",
         "/account",
+        "/signin?next=/account",
       ])
     },
   )

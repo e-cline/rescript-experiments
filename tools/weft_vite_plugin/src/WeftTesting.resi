@@ -115,6 +115,12 @@ let warnings: page => array<string>
 /** The requests made since the page opened (its own first), by path (with the query), in order. */
 let pageRequests: page => array<string>
 
+/**
+The URL the page opened at (its path and query), or, once its HTML has come, where the server
+redirected that to. (`Navigation.url` of its `navigation` says where it has got to since.)
+*/
+let url: page => string
+
 /** The page's navigation (`Source` mode), once the bootstrap has started on its first payload. */
 let navigation: page => promise<WeftServer.Navigation.t>
 

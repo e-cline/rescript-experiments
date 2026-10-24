@@ -22,6 +22,7 @@
     "@e-cline/http_server_example",
     "@e-cline/weft_split_example",
     "@e-cline/weft_notes_example",
+    "@e-cline/weft_shop_example",
     "@e-cline/weft_vite_plugin",
     "@e-cline/weft_vite_plugin_fixture_basic",
     "@e-cline/weft_vite_plugin_fixture_client_imports_server",

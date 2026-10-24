@@ -47,6 +47,15 @@ let rewriteBodies: (app, string, string => string) => unit
 
 let stopRewriting: app => unit
 
+/**
+The cookies the client has, by name: what the server's `Set-Cookie` headers set (and haven't
+expired), sent with every request after, as a browser sends its cookies for the app's origin.
+*/
+let cookies: app => dict<string>
+
+/** Forgets every cookie: the next request is a new visitor's. */
+let clearCookies: app => unit
+
 /** How the server's responses reach the client. */
 type delivery =
   /** As they're sent. */
@@ -81,6 +90,13 @@ let open_: (
 
 /** Starts the bootstrap of a page opened with `~bootstrap=false`: now, or once the shell is in. */
 let startBootstrap: page => unit
+
+/**
+Closes the page (`Source` mode), as leaving it would: its root is unmounted, so its effects are
+cleaned up (their intervals and subscriptions with them), and it stops following the history.
+Opening another page closes the one before, so a page left open by one test can't act in the next.
+*/
+let closePage: page => unit
 
 /**
 Waits until the bootstrap has hydrated the page (or rendered it, if there was no HTML): it has

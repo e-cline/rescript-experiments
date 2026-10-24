@@ -375,7 +375,15 @@ function MakeHydratableWithScheduler(Host) {
           return "Begin";
         }
         if (match$7 === undefined) {
-          return "Begin";
+          if (leftDehydrated.has(unit)) {
+            unit.memoizedState = {
+              dehydrated: leftDehydrated.get(unit)
+            };
+            unit.child = undefined;
+            return "Skip";
+          } else {
+            return "Begin";
+          }
         }
         let instance$5 = Primitive_option.valFromOption(match$7);
         let retrying = Lanes$Weft.intersects(unit.lanes, workInProgressLanes.contents);
@@ -1715,7 +1723,15 @@ function MakeWithScheduler(Host) {
           return "Begin";
         }
         if (match$7 === undefined) {
-          return "Begin";
+          if (leftDehydrated.has(unit)) {
+            unit.memoizedState = {
+              dehydrated: leftDehydrated.get(unit)
+            };
+            unit.child = undefined;
+            return "Skip";
+          } else {
+            return "Begin";
+          }
         }
         let instance$5 = Primitive_option.valFromOption(match$7);
         let retrying = Lanes$Weft.intersects(unit.lanes, workInProgressLanes.contents);
@@ -3056,7 +3072,15 @@ function Make(Host) {
         return "Begin";
       }
       if (match$7 === undefined) {
-        return "Begin";
+        if (leftDehydrated.has(unit)) {
+          unit.memoizedState = {
+            dehydrated: leftDehydrated.get(unit)
+          };
+          unit.child = undefined;
+          return "Skip";
+        } else {
+          return "Begin";
+        }
       }
       let instance$5 = Primitive_option.valFromOption(match$7);
       let retrying = Lanes$Weft.intersects(unit.lanes, workInProgressLanes.contents);
@@ -4356,7 +4380,15 @@ function MakeHydratable(Host) {
         return "Begin";
       }
       if (match$7 === undefined) {
-        return "Begin";
+        if (leftDehydrated.has(unit)) {
+          unit.memoizedState = {
+            dehydrated: leftDehydrated.get(unit)
+          };
+          unit.child = undefined;
+          return "Skip";
+        } else {
+          return "Begin";
+        }
       }
       let instance$5 = Primitive_option.valFromOption(match$7);
       let retrying = Lanes$Weft.intersects(unit.lanes, workInProgressLanes.contents);

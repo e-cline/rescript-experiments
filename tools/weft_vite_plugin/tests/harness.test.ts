@@ -48,6 +48,28 @@ describe('the harness, in source mode', () => {
     ).toEqual(['fetch', 'Response']);
   });
 
+  test('keeps the cookies the server sets, sends them with later requests, and forgets expired ones', async () => {
+    const echo = async () =>
+      (
+        (await (await app.fetch('/cookies/echo')).json()) as {
+          cookie: string | null;
+        }
+      ).cookie;
+    expect(await echo()).toBe(null);
+    await app.fetch('/cookies/set');
+    expect(app.cookies()).toEqual({flavour: 'oat'});
+    expect(await echo()).toBe('flavour=oat');
+    // A request that brings its own cookies sends those.
+    const own = await app.fetch('/cookies/echo', {headers: {cookie: 'mine=1'}});
+    expect(((await own.json()) as {cookie: string}).cookie).toBe('mine=1');
+    await app.fetch('/cookies/expire');
+    expect(app.cookies()).toEqual({});
+    expect(await echo()).toBe(null);
+    await app.fetch('/cookies/set');
+    app.clearCookies();
+    expect(await echo()).toBe(null);
+  });
+
   test('runs the server with the development conditions', async () => {
     expect(await (await app.fetch('/env')).json()).toEqual({isDev: true});
   });

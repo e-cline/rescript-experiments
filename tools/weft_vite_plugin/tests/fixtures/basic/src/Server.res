@@ -1,7 +1,7 @@
 /***
 The server entry: a fetch handler (the default export), answering a page with HTML that loads the
 client's scripts from `virtual:weft/assets`, a payload request with a payload-shaped body, and
-`/env` and `/assets.json` with what the tests check.
+`/env`, `/assets.json` and `/cookies/...` with what the tests check.
 */
 
 type assets = {
@@ -18,6 +18,11 @@ let handle = async (request: Fetch.request) => {
   switch path {
   | "/env" => Fetch.json({"isDev": Common.Env.isDev})
   | "/assets.json" => Fetch.json(assets)
+  | "/cookies/set" =>
+    Fetch.makeResponse("", {headers: dict{"set-cookie": "flavour=oat; Path=/; HttpOnly"}})
+  | "/cookies/expire" =>
+    Fetch.makeResponse("", {headers: dict{"set-cookie": "flavour=; Path=/; Max-Age=0"}})
+  | "/cookies/echo" => Fetch.json({"cookie": request->Fetch.headers->Fetch.header("cookie")})
   | _ =>
     switch request->Fetch.headers->Fetch.header("accept")->Nullable.toOption {
     | Some("text/x-weft-payload") =>

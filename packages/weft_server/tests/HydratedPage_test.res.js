@@ -116,7 +116,7 @@ Vitest.describe("a server-rendered page", undefined, undefined, undefined, undef
       Stdlib_JsError.throwWithMessage("the page ended early");
     }
     let fromServer = allElements();
-    await Bootstrap$WeftServer.start(assets.loadModule, undefined, Primitive_option.some(rootOf()), "/", undefined, undefined);
+    await Bootstrap$WeftServer.start(assets.loadModule, undefined, Primitive_option.some(rootOf()), "/", undefined, undefined, undefined);
     await settle();
     t.expect(sameElements(fromServer, allElements())).toBe(true);
     t.expect(clicked("#outer button")).toBe("outer: 1");
@@ -151,6 +151,32 @@ Vitest.describe("a server-rendered page", undefined, undefined, undefined, undef
     await settle();
     loaded();
     return t.expect(clicked("#root button")).toBe("early: 1");
+  });
+  Vitest.testAsync("stops when its signal is aborted: its root unmounted, the history no longer followed", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let assets = PageSupport$WeftServer.assets();
+    let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(Jsx$WeftDom.Elements.jsx("main", {
+      children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
+        label: "stopped"
+      })
+    }), assets, undefined, undefined, undefined, undefined, undefined, undefined));
+    apply(html.slice(html.indexOf("<body>") + "<body>".length | 0));
+    let controller = new AbortController();
+    let fetched = [];
+    await Bootstrap$WeftServer.start(assets.loadModule, (url, param) => {
+      fetched.push(url);
+      return new Promise((param, param$1) => {});
+    }, Primitive_option.some(rootOf()), "/", undefined, Primitive_option.some(controller.signal), undefined);
+    await settle();
+    t.expect(clicked("#root button")).toBe("stopped: 1");
+    Client$WeftDom.act(() => {
+      controller.abort();
+    });
+    t.expect(rootOf().innerHTML).toBe("");
+    let popState = (() => window.dispatchEvent(new PopStateEvent("popstate")));
+    popState();
+    await settle();
+    return t.expect(fetched).toEqual([]);
   });
 });
 

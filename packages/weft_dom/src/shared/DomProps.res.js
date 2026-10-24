@@ -19,6 +19,8 @@ function eventName(prop) {
 
 function attributeName(prop) {
   switch (prop) {
+    case "autoComplete" :
+      return "autocomplete";
     case "autoFocus" :
       return "autofocus";
     case "className" :
@@ -27,6 +29,10 @@ function attributeName(prop) {
       return "colspan";
     case "htmlFor" :
       return "for";
+    case "inputMode" :
+      return "inputmode";
+    case "maxLength" :
+      return "maxlength";
     case "readOnly" :
       return "readonly";
     case "tabIndex" :

@@ -65,10 +65,11 @@ let wrap: (t, Weft.Element.t) => Weft.Element.t
 let show: (t, Weft.Element.t) => unit
 
 /**
-Fetches `url`'s payload and renders it in a transition, then calls `onNavigate`. Resolves once
-it's been rendered, or straight away if a newer fetch replaced it. If the payload can't be fetched
-or its root failed, the screen is left as it was, and `onFailed` is called (or, without it, the
-promise rejects).
+Fetches `url`'s payload, starts rendering it in a transition, and calls `onNavigate`. Resolves once
+the new page is on screen (the transition has committed: a page still waiting on what it needs
+before it can show takes as long as that takes), or as soon as a newer fetch or page replaces it.
+If the payload can't be fetched or its root failed, the screen is left as it was, and `onFailed` is
+called (or, without it, the promise rejects).
 */
 let navigate: (t, string) => promise<unit>
 
@@ -76,8 +77,9 @@ let navigate: (t, string) => promise<unit>
 let load: (t, string) => promise<unit>
 
 /**
-Fetches what's on screen again. If that fails, it rejects, even with `onFailed`: the page's state
-(what's been typed, say) stays, rather than being thrown away by a page load.
+Fetches what's on screen again, and resolves once it's rendered, as `navigate` does. If that fails,
+it rejects, even with `onFailed`: the page's state (what's been typed, say) stays, rather than being
+thrown away by a page load.
 */
 let refresh: t => promise<unit>
 

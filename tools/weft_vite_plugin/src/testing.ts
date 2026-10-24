@@ -91,6 +91,11 @@ export class App {
   delivery: Delivery = {type: 'immediate'};
   /** Every request made, by URL, in order. */
   readonly requests: string[] = [];
+  /**
+   * The cookies the server has set, by name, as a browser keeps them for the app's origin: sent
+   * with every request after, until they expire or `clearCookies`.
+   */
+  private readonly jar = new Map<string, string>();
   /** How `rewriteBodies` changes the bodies of requests to paths containing `matching`. */
   private rewrite:
     | {matching: string; change: (body: string) => string}
@@ -131,6 +136,39 @@ export class App {
     this.rewrite = undefined;
   }
 
+  /** The cookies the client has, by name (what the server's `Set-Cookie` headers left). */
+  cookies(): Record<string, string> {
+    return Object.fromEntries(this.jar);
+  }
+
+  /** Forgets every cookie, as a new visitor (or a cleared browser) would. */
+  clearCookies() {
+    this.jar.clear();
+  }
+
+  /** Keeps (or, for one that has expired, forgets) the cookie a `Set-Cookie` header sets. */
+  private keepCookie(header: string) {
+    const [pair = '', ...attributes] = header.split(';');
+    const equals = pair.indexOf('=');
+    if (equals <= 0) return;
+    const name = pair.slice(0, equals).trim();
+    const value = pair.slice(equals + 1).trim();
+    const expired = attributes.some((attribute) => {
+      const [key = '', setting = ''] = attribute
+        .split('=')
+        .map((part) => part.trim());
+      return (
+        (key.toLowerCase() === 'max-age' && Number(setting) <= 0) ||
+        (key.toLowerCase() === 'expires' && Date.parse(setting) <= Date.now())
+      );
+    });
+    if (expired) {
+      this.jar.delete(name);
+    } else {
+      this.jar.set(name, value);
+    }
+  }
+
   /** Calls `listener` whenever a chunk arrives, is delivered, or a response ends. */
   onChange(listener: () => void): () => void {
     this.listeners.add(listener);
@@ -146,6 +184,9 @@ export class App {
         const exchange = this.exchanges.get(message.id);
         const waiting = this.responses.get(message.id);
         this.responses.delete(message.id);
+        for (const [name, value] of message.headers) {
+          if (name.toLowerCase() === 'set-cookie') this.keepCookie(value);
+        }
         if (exchange === undefined || waiting === undefined) break;
         const body = new ReadableStream<Uint8Array>({
           start: (controller) => {
@@ -319,12 +360,20 @@ export class App {
       this.responses.get(id)?.reject(new DOMException('aborted', 'AbortError'));
       this.responses.delete(id);
     });
+    const headers = [...request.headers];
+    // The browser's cookies for the app, unless the request brought its own.
+    if (this.jar.size > 0 && !request.headers.has('cookie')) {
+      headers.push([
+        'cookie',
+        [...this.jar].map(([name, value]) => `${name}=${value}`).join('; '),
+      ]);
+    }
     this.post({
       type: 'request',
       id,
       method: request.method,
       url: request.url,
-      headers: [...request.headers],
+      headers,
       body,
     });
     return response;
@@ -680,6 +729,8 @@ export type ClientSide = {
     ) => Promise<ReadableStream<Uint8Array>>;
     container: Element;
     url: string;
+    /** Aborted when the page closes: the bootstrap stops it (unmounts its root). */
+    signal: AbortSignal;
   }) => Promise<unknown>;
   /** `WeftDom.Client.act`: runs `f`, then renders and runs effects. */
   act: (f: () => void) => void;
@@ -766,6 +817,8 @@ export class Page {
   private wantsBootstrap: boolean;
   private bootstrapped = false;
   private resolveStarted!: (started: Promise<unknown>) => void;
+  /** Aborted by `close`. */
+  readonly closing = new AbortController();
 
   constructor(
     app: App,
@@ -836,6 +889,17 @@ export class Page {
     if (!this.wantsBootstrap || !this.rootArrived || this.bootstrapped) return;
     this.bootstrapped = true;
     this.resolveStarted(this.start(this));
+  }
+
+  /**
+   * Closes the page, as leaving it would: its root is unmounted (its effects cleaned up, so its
+   * intervals and subscriptions stop) and it stops following the history. Opening another page
+   * closes the one before.
+   */
+  close() {
+    if (this.closing.signal.aborted) return;
+    this.act(() => this.closing.abort());
+    if (openedLast === this) openedLast = undefined;
   }
 
   /** Runs the bootstrap (on a page opened without it), now or once `#root` arrives. */
@@ -1031,6 +1095,9 @@ export class Page {
 
 let builtBootstrapImported = false;
 
+/** The page opened last, which opening another closes. */
+let openedLast: Page | undefined;
+
 /**
  * Opens `url` in `container`: requests its HTML through the server and applies it as the browser's
  * parser would, as it arrives (the shell into the container, then each inline script and segment, in
@@ -1041,6 +1108,7 @@ let builtBootstrapImported = false;
  * id, so one page is open in a document at a time.
  */
 export function openPage(app: App, options: OpenOptions): Page {
+  openedLast?.close();
   app.delivery = options.delivery ?? {type: 'immediate'};
   const self = globalThis as {__weft?: unknown};
   delete self.__weft;
@@ -1075,6 +1143,7 @@ export function openPage(app: App, options: OpenOptions): Page {
       options.bootstrap ?? true,
     );
     collecting = page.warnings;
+    openedLast = page;
     return page;
   };
   if (app.mode === 'source') {
@@ -1084,6 +1153,7 @@ export function openPage(app: App, options: OpenOptions): Page {
         fetch: payloadFetch,
         container,
         url: options.url,
+        signal: page.closing.signal,
       }),
     );
   }

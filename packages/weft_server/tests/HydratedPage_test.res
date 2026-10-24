@@ -145,4 +145,43 @@ describe("a server-rendered page", () => {
     loaded()
     t->expect(clicked("#root button"))->Expect.toBe("early: 1")
   })
+
+  testAsync(
+    "stops when its signal is aborted: its root unmounted, the history no longer followed",
+    async t => {
+      reset()
+      let assets = assets()
+      let html = await Testing.readAll(
+        Page.toStream(
+          <main>
+            <Counter label="stopped" />
+          </main>,
+          ~assets,
+        ),
+      )
+      apply(html->String.slice(~start=html->String.indexOf("<body>") + String.length("<body>")))
+      let controller = Streams.Controller.make()
+      let fetched = []
+      let _ = await Bootstrap.start(
+        ~loadModule=assets.loadModule->Option.getUnsafe,
+        ~fetch=(url, ~signal as _) => {
+          fetched->Array.push(url)
+          Promise.make((_, _) => ())
+        },
+        ~container=rootOf(),
+        ~url="/",
+        ~signal=controller->Streams.Controller.signal,
+        (),
+      )
+      await settle()
+      t->expect(clicked("#root button"))->Expect.toBe("stopped: 1")
+      WeftDom.Client.act(() => controller->Streams.Controller.abort)
+      t->expect(WeftDom.Dom.innerHTML(rootOf()))->Expect.toBe("")
+      // Going back or forward is another page's business now.
+      let popState: unit => unit = %raw(`() => window.dispatchEvent(new PopStateEvent("popstate"))`)
+      popState()
+      await settle()
+      t->expect(fetched)->Expect.toEqual([])
+    },
+  )
 })

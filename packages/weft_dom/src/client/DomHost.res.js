@@ -164,9 +164,17 @@ function appendInitialChild(prim0, prim1) {
   prim0.appendChild(prim1);
 }
 
+let autoFocused = {
+  contents: null
+};
+
 function finalizeInitialChildren(element, param, props) {
   Stdlib_Dict.forEachWithKey(props, (next, name) => setProp(element, name, undefined, next));
   element.$$resFiberProps = props;
+  if (Primitive_object.equal(props.autoFocus, true)) {
+    autoFocused.contents = element;
+    return;
+  }
 }
 
 function prepareUpdate(param, param$1, oldProps, newProps) {
@@ -323,6 +331,11 @@ function resetAfterCommit(container) {
     element.focus();
   }
   focused.contents = null;
+  let element$1 = autoFocused.contents;
+  if (!(element$1 == null) && element$1.isConnected) {
+    element$1.focus();
+  }
+  autoFocused.contents = null;
   scheduleReplay();
 }
 
@@ -444,10 +457,14 @@ function attributeDifferences(element, props) {
         }
         if (name === "style") {
           let style = Stdlib_Option.getOr((value == null) ? undefined : Primitive_option.some(value), {});
-          return Stdlib_Dict.forEachWithKey(style, (expected, key) => {
-            let actual = element.style.getPropertyValue(DomProps$WeftDom.cssName(key));
+          let scratch = element.ownerDocument.createElement("div").style;
+          return Stdlib_Dict.forEachWithKey(style, (value, key) => {
+            let name = DomProps$WeftDom.cssName(key);
+            scratch.setProperty(name, value);
+            let expected = scratch.getPropertyValue(name);
+            let actual = element.style.getPropertyValue(name);
             if (actual !== expected) {
-              differences.push(`style ` + DomProps$WeftDom.cssName(key) + `: "` + actual + `", not "` + expected + `"`);
+              differences.push(`style ` + name + `: "` + actual + `", not "` + expected + `"`);
               return;
             }
           });
@@ -600,6 +617,7 @@ export {
   createInstance,
   createTextInstance,
   appendInitialChild,
+  autoFocused,
   finalizeInitialChildren,
   prepareUpdate,
   commitUpdate,

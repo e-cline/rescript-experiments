@@ -58,6 +58,9 @@ switch WeftDom.Dom.document->WeftDom.Dom.body->WeftDom.Dom.querySelector("#app")
   keystroke.
 - Everything else is an attribute: `className` is `class`, `htmlFor` is `for`, `type_` is `type`,
   `ariaLabel` is `aria-label`, and `true`/`false` add or remove a boolean attribute.
+- `autoFocus` is the attribute too, which the browser only acts on for elements there as the page
+  loads (the server's HTML): an element rendered later with `autoFocus` (a dialog's field) is
+  focused once the commit has put it in the page.
 - `ref` receives the element.
 
 ## Behaviour

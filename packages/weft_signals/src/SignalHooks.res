@@ -24,7 +24,8 @@ let subscribe = (signal: Signal.t<'value, 'diff>, onChange: unit => unit) => {
 let useSignal = (signal: Signal.t<'value, 'diff>): 'value => {
   let subscribe = Hooks.useCallback1(onChange => subscribe(signal, onChange), [signal])
   let getSnapshot = Hooks.useCallback1(() => Signal.peek(signal), [signal])
-  Hooks.useSyncExternalStore(~subscribe, ~getSnapshot)
+  // On the server (an entrypoint rendered to HTML), the signal's value there: what the HTML shows.
+  Hooks.useSyncExternalStore(~subscribe, ~getSnapshot, ~getServerSnapshot=getSnapshot)
 }
 
 let useAtom = (atom: Atom.t<'value, 'diff>) => {

@@ -346,6 +346,30 @@ describe("hydrating the server's HTML", () => {
   })
 
   testAsync(
+    "compares styles as the browser reads them, so the same style written another way isn't a difference",
+    async t => {
+      let style = Dict.fromArray([("color", "#ff0000"), ("margin-top", "0px")])
+      // What the server wrote for the same props, which the browser keeps in its own form.
+      let html = await Html.render(<p style> {string("x")} </p>)->Html.shell
+      let container = page(html)
+      let (_, warnings) = await logging(
+        async () => hydrate(container, <p style> {string("x")} </p>),
+      )
+      t->expect(warnings)->Expect.toEqual([])
+      // A style that does differ still warns, in the browser's form.
+      let container = page(`<p style="color: blue">x</p>`)
+      let (_, warnings) = await logging(
+        async () => hydrate(container, <p style> {string("x")} </p>),
+      )
+      t
+      ->expect(warnings)
+      ->Expect.toEqual([
+        `WeftDom: the server's <p> has other attributes than the client's (style color: "blue", not "rgb(255, 0, 0)"; style margin-top: "", not "0px"); they're left as the server wrote them`,
+      ])
+    },
+  )
+
+  testAsync(
     "renders the boundary that doesn't match on the client, and keeps the rest",
     async t => {
       let element =

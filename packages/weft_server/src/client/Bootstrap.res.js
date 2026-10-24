@@ -39,7 +39,7 @@ function rows(target) {
   });
 }
 
-async function start(loadModule, fetch, container, url, onRefresh, param) {
+async function start(loadModule, fetch, container, url, onRefresh, signal, param) {
   let client = Decoder$WeftServer.make(loadModule, fetch);
   let container$1;
   if (container !== undefined) {
@@ -61,8 +61,18 @@ async function start(loadModule, fetch, container, url, onRefresh, param) {
       location.replace(url);
     }
   });
-  addEventListener("popstate", () => {
+  let onPopState = () => {
     Navigation$WeftServer.load(navigation, location.pathname + location.search);
+  };
+  addEventListener("popstate", onPopState);
+  Stdlib_Option.forEach(signal, signal => {
+    signal.addEventListener("abort", () => {
+      removeEventListener("popstate", onPopState);
+      Stdlib_Option.forEach(root.contents, Client$WeftDom.unmount);
+      root.contents = undefined;
+    }, {
+      once: true
+    });
   });
   Stdlib_Option.forEach(onRefresh, onRefresh => onRefresh(() => {
     Navigation$WeftServer.refresh(navigation);
@@ -71,7 +81,10 @@ async function start(loadModule, fetch, container, url, onRefresh, param) {
     root.contents = Primitive_option.some(Client$WeftDom.createRoot(container$1));
   }
   let element = await Decoder$WeftServer.fromStream(client, rows(self), undefined);
-  if (hydrating) {
+  let stopped = Stdlib_Option.mapOr(signal, false, prim => prim.aborted);
+  if (stopped) {
+    
+  } else if (hydrating) {
     root.contents = Primitive_option.some(Client$WeftDom.hydrateRoot(undefined, container$1, Navigation$WeftServer.wrap(navigation, element)));
   } else {
     Navigation$WeftServer.show(navigation, element);
@@ -85,7 +98,7 @@ function main(loadModule, onRefresh) {
     return;
   }
   let begin = container => {
-    start(loadModule, undefined, Primitive_option.some(container), undefined, onRefresh, undefined);
+    start(loadModule, undefined, Primitive_option.some(container), undefined, onRefresh, undefined, undefined);
   };
   let container = Primitive_option.fromNullable(document.getElementById("root"));
   if (container !== undefined) {

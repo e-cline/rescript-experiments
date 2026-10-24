@@ -17,6 +17,15 @@ let textIn = (renderer, id) =>
     node->TestRenderer.children->Array.map(TestRenderer.text)->Array.join("")
   )
 
+/**
+Waits for `promise` (a `navigate`'s, say, which resolves once its page has committed) while the
+test's scheduler renders what's pending.
+*/
+let andSettle = async promise => {
+  await settle()
+  await promise
+}
+
 /** A page on `renderer`, its client fetching from `fetch`, started at `url` (rendered at once). */
 let start = async (~fetch, ~route, ~url, ~onNavigate=?, ~onFailed=?) => {
   let renderer = TestRenderer.create()
@@ -86,8 +95,7 @@ describe("navigating", () => {
       )
       bump("outside")
       let titleNode = uid(renderer, "title")
-      await navigation->Navigation.navigate("/b")
-      await settle()
+      await navigation->Navigation.navigate("/b")->andSettle
       t->expect(textIn(renderer, "title"))->Expect.toEqual(Some("b"))
       t->expect(shows(renderer)->String.includes("outside:1"))->Expect.toBe(true)
       t->expect(uid(renderer, "title"))->Expect.toEqual(titleNode)
@@ -96,6 +104,33 @@ describe("navigating", () => {
       t->expect(served->Array.map(request => request.url))->Expect.toEqual(["/b"])
     },
   )
+
+  testAsync("resolves once the new page is on screen, not when it starts rendering", async t => {
+    reset()
+    // A page reading a promise the server sends later, outside every boundary: it can't show
+    // until that has come.
+    let gate = Deferred.make()
+    let route = url =>
+      switch url {
+      | "/reading" =>
+        <section id="reading-page">
+          <Reader id="read" promise={gate.promise->Promise.thenResolve(() => "read")} />
+        </section>
+      | _ => route(url)
+      }
+    let (fetch, _) = serve(route)
+    let (renderer, navigation) = await start(~fetch, ~route, ~url="/a")
+    let navigated = ref(false)
+    let navigating =
+      navigation->Navigation.navigate("/reading")->Promise.thenResolve(() => navigated := true)
+    await settle()
+    // Rendering, but not on screen: the old page is, and the navigation hasn't resolved.
+    t->expect(textIn(renderer, "title"))->Expect.toEqual(Some("a"))
+    t->expect(navigated.contents)->Expect.toBe(false)
+    gate.resolve()
+    await navigating->andSettle
+    t->expect(textIn(renderer, "read"))->Expect.toEqual(Some("read"))
+  })
 
   testAsync("refresh fetches the current page again, without recording a URL", async t => {
     reset()
@@ -108,8 +143,7 @@ describe("navigating", () => {
       ~onNavigate=url => navigated->Array.push(url),
     )
     titles->Dict.set("a", "A, renamed")
-    await navigation->Navigation.refresh
-    await settle()
+    await navigation->Navigation.refresh->andSettle
     t->expect(shows(renderer)->String.includes("A, renamed"))->Expect.toBe(true)
     t->expect(navigated)->Expect.toEqual([])
     t->expect(served->Array.map(request => request.url))->Expect.toEqual(["/a"])
@@ -124,8 +158,7 @@ describe("navigating", () => {
       let slow = navigation->Navigation.navigate("/slow")
       await settle()
       let fast = navigation->Navigation.navigate("/fast")
-      await fast
-      await settle()
+      await fast->andSettle
       served->Array.forEach(request => Testing.deliverAll(request.pipe))
       await slow
       await settle()
@@ -154,8 +187,7 @@ describe("navigating", () => {
         }
       let (fetch, served) = serve(~delivery=url => url == "/next" ? Manual : Immediate, route)
       let (renderer, navigation) = await start(~fetch, ~route, ~url="/a")
-      await navigation->Navigation.navigate("/streaming")
-      await settle()
+      await navigation->Navigation.navigate("/streaming")->andSettle
       t->expect(shows(renderer)->String.includes(`id="loading"`))->Expect.toBe(true)
       // The next navigation cancels the streaming page's payload while it's still on screen.
       let next = navigation->Navigation.navigate("/next")
@@ -164,8 +196,7 @@ describe("navigating", () => {
       t->expect(shows(renderer)->String.includes(`id="loading"`))->Expect.toBe(true)
       gate.resolve()
       served->Array.forEach(request => Testing.deliverAll(request.pipe))
-      await next
-      await settle()
+      await next->andSettle
       t->expect(shows(renderer)->String.includes(`id="title">next`))->Expect.toBe(true)
       t->expect(shows(renderer)->String.includes("late"))->Expect.toBe(false)
     },
@@ -367,8 +398,7 @@ describe("part of a page, refetched (useRefetchable)", () => {
       await settle()
       t->expect(shows(renderer)->String.includes("refetched"))->Expect.toBe(true)
       comments->Dict.set("a", "refreshed")
-      await navigation->Navigation.refresh
-      await settle()
+      await navigation->Navigation.refresh->andSettle
       t->expect(shows(renderer)->String.includes("refreshed"))->Expect.toBe(true)
       comments->Dict.set("a", "refetched again")
       await refetch("/comments/a")

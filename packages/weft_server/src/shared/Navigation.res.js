@@ -23,7 +23,8 @@ function make(client, render, url, onNavigateOpt, onFailed) {
     onNavigate: onNavigate,
     onFailed: onFailed,
     latest: Decoder$WeftServer.Latest.make(),
-    onServer: false
+    onServer: false,
+    rendering: undefined
   };
 }
 
@@ -35,7 +36,8 @@ function makeForServer(client, url) {
     onNavigate: param => {},
     onFailed: undefined,
     latest: Decoder$WeftServer.Latest.make(),
-    onServer: true
+    onServer: true,
+    rendering: undefined
   };
 }
 
@@ -45,15 +47,45 @@ function checkOnClient(navigation) {
   }
 }
 
-function wrap(navigation, element) {
+function root(param) {
+  let onCommit = param.onCommit;
+  Hooks$Weft.useLayoutEffect1(() => {
+    Stdlib_Option.forEach(onCommit, onCommit => onCommit());
+  }, [onCommit]);
   return JsxCore$Weft.jsx(provider, {
-    value: navigation,
-    children: element
+    value: param.navigation,
+    children: param.element
   });
+}
+
+function wrapWith(navigation, element, onCommit) {
+  return JsxCore$Weft.jsx(root, {
+    navigation: navigation,
+    element: element,
+    onCommit: onCommit
+  });
+}
+
+function wrap(navigation, element) {
+  return wrapWith(navigation, element, undefined);
 }
 
 function show(navigation, element) {
   navigation.render(wrap(navigation, element));
+}
+
+function showInTransition(navigation, element) {
+  return new Promise((resolve, param) => {
+    Stdlib_Option.forEach(navigation.rendering, replaced => replaced());
+    let onCommit = () => {
+      if (navigation.rendering === onCommit) {
+        navigation.rendering = undefined;
+      }
+      resolve();
+    };
+    navigation.rendering = onCommit;
+    Transition$Weft.start(() => navigation.render(wrapWith(navigation, element, onCommit)));
+  });
 }
 
 async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
@@ -73,12 +105,12 @@ async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
   if (element === undefined) {
     return;
   }
-  let element$1 = Primitive_option.valFromOption(element);
   navigation.url = url;
-  Transition$Weft.start(() => show(navigation, element$1));
+  let shown = showInTransition(navigation, Primitive_option.valFromOption(element));
   if (push) {
-    return navigation.onNavigate(url);
+    navigation.onNavigate(url);
   }
+  return await shown;
 }
 
 function fetchAndShow(navigation, url, push, canFallBack) {

@@ -21,6 +21,11 @@ function textIn(renderer, id) {
   return Stdlib_Option.map(TestRenderer$Weft.findById(renderer, id), node => TestRenderer$Weft.children(node).map(TestRenderer$Weft.text).join(""));
 }
 
+async function andSettle(promise) {
+  await Support$WeftServer.settle();
+  return await promise;
+}
+
 async function start(fetch, route, url, onNavigate, onFailed) {
   let renderer = TestRenderer$Weft.create();
   let client = Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch);
@@ -119,14 +124,45 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let renderer = match$1[0];
     Support$WeftServer.bump("outside");
     let titleNode = uid(renderer, "title");
-    await Navigation$WeftServer.navigate(navigation, "/b");
-    await Support$WeftServer.settle();
+    await andSettle(Navigation$WeftServer.navigate(navigation, "/b"));
     t.expect(textIn(renderer, "title")).toEqual("b");
     t.expect(TestRenderer$Weft.toString(renderer).includes("outside:1")).toBe(true);
     t.expect(uid(renderer, "title")).toEqual(titleNode);
     t.expect(navigated).toEqual(["/b"]);
     t.expect(Navigation$WeftServer.url(navigation)).toBe("/b");
     return t.expect(match[1].map(request => request.url)).toEqual(["/b"]);
+  });
+  Vitest.testAsync("resolves once the new page is on screen, not when it starts rendering", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    reset();
+    let gate = Deferred$Weft.make();
+    let route$1 = url => {
+      if (url === "/reading") {
+        return TestJsx$Weft.Elements.jsx("section", {
+          id: "reading-page",
+          children: TestJsx$Weft.jsx(Support$WeftServer.Reader.make, {
+            id: "read",
+            promise: gate.promise.then(() => "read")
+          })
+        });
+      } else {
+        return route(url);
+      }
+    };
+    let match = Support$WeftServer.serve(undefined, route$1);
+    let match$1 = await start(match[0], route$1, "/a", undefined, undefined);
+    let renderer = match$1[0];
+    let navigated = {
+      contents: false
+    };
+    let navigating = Navigation$WeftServer.navigate(match$1[1], "/reading").then(() => {
+      navigated.contents = true;
+    });
+    await Support$WeftServer.settle();
+    t.expect(textIn(renderer, "title")).toEqual("a");
+    t.expect(navigated.contents).toBe(false);
+    gate.resolve();
+    await andSettle(navigating);
+    return t.expect(textIn(renderer, "read")).toEqual("read");
   });
   Vitest.testAsync("refresh fetches the current page again, without recording a URL", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     reset();
@@ -136,8 +172,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
       navigated.push(url);
     }, undefined);
     titles["a"] = "A, renamed";
-    await Navigation$WeftServer.refresh(match$1[1]);
-    await Support$WeftServer.settle();
+    await andSettle(Navigation$WeftServer.refresh(match$1[1]));
     t.expect(TestRenderer$Weft.toString(match$1[0]).includes("A, renamed")).toBe(true);
     t.expect(navigated).toEqual([]);
     return t.expect(match[1].map(request => request.url)).toEqual(["/a"]);
@@ -157,8 +192,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let slow = Navigation$WeftServer.navigate(navigation, "/slow");
     await Support$WeftServer.settle();
     let fast = Navigation$WeftServer.navigate(navigation, "/fast");
-    await fast;
-    await Support$WeftServer.settle();
+    await andSettle(fast);
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
     await slow;
     await Support$WeftServer.settle();
@@ -199,8 +233,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     let match$1 = await start(match[0], route$1, "/a", undefined, undefined);
     let navigation = match$1[1];
     let renderer = match$1[0];
-    await Navigation$WeftServer.navigate(navigation, "/streaming");
-    await Support$WeftServer.settle();
+    await andSettle(Navigation$WeftServer.navigate(navigation, "/streaming"));
     t.expect(TestRenderer$Weft.toString(renderer).includes(`id="loading"`)).toBe(true);
     let next = Navigation$WeftServer.navigate(navigation, "/next");
     await Support$WeftServer.settle();
@@ -208,8 +241,7 @@ Vitest.describe("navigating", undefined, undefined, undefined, undefined, undefi
     t.expect(TestRenderer$Weft.toString(renderer).includes(`id="loading"`)).toBe(true);
     gate.resolve();
     served.forEach(request => Testing$WeftServer.deliverAll(request.pipe));
-    await next;
-    await Support$WeftServer.settle();
+    await andSettle(next);
     t.expect(TestRenderer$Weft.toString(renderer).includes(`id="title">next`)).toBe(true);
     return t.expect(TestRenderer$Weft.toString(renderer).includes("late")).toBe(false);
   });
@@ -457,8 +489,7 @@ Vitest.describe("part of a page, refetched (useRefetchable)", undefined, undefin
     await Support$WeftServer.settle();
     t.expect(TestRenderer$Weft.toString(renderer).includes("refetched")).toBe(true);
     comments["a"] = "refreshed";
-    await Navigation$WeftServer.refresh(match$1[1]);
-    await Support$WeftServer.settle();
+    await andSettle(Navigation$WeftServer.refresh(match$1[1]));
     t.expect(TestRenderer$Weft.toString(renderer).includes("refreshed")).toBe(true);
     comments["a"] = "refetched again";
     await Support$WeftServer.refetchers["/comments/a"](undefined);
@@ -595,6 +626,7 @@ export {
   shows,
   uid,
   textIn,
+  andSettle,
   start,
   titles,
   comments,

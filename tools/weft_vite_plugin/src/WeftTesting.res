@@ -21,6 +21,8 @@ let start = (~root, ~mode=Source, ~buildDir=?) =>
 @get external requests: app => array<string> = "requests"
 @send external rewriteBodies: (app, string, string => string) => unit = "rewriteBodies"
 @send external stopRewriting: app => unit = "stopRewriting"
+@send external cookies: app => dict<string> = "cookies"
+@send external clearCookies: app => unit = "clearCookies"
 @get external pageRequests: page => array<string> = "requests"
 
 type delivery = Immediate | Manual | EveryBytes(int)
@@ -39,6 +41,7 @@ type startClient = {
   fetch: (string, WeftServer.Decoder.signal) => promise<WeftServer.Decoder.stream>,
   container: WeftDom.Dom.element,
   url: string,
+  signal: WeftServer.Rpc.signal,
 }
 
 type clientSide = {
@@ -64,12 +67,13 @@ external loadModule: WeftServer.Decoder.loadModule = "loadModule"
 
 let client = {
   loadModule: id => loadModule(id),
-  start: ({loadModule, fetch, container, url}) =>
+  start: ({loadModule, fetch, container, url, signal}) =>
     WeftServer.Bootstrap.start(
       ~loadModule,
       ~fetch=(url, ~signal) => fetch(url, signal),
       ~container,
       ~url,
+      ~signal,
       (),
     ),
   act: WeftDom.Client.act,
@@ -79,6 +83,7 @@ let open_ = (app, ~container, ~delivery=Immediate, ~bootstrap=true, url) =>
   openPage(app, {url, container, delivery: toJs(delivery), client, bootstrap})
 
 @send external startBootstrap: page => unit = "startBootstrap"
+@send external closePage: page => unit = "close"
 @send external hydratedJs: (page, Nullable.t<int>) => promise<unit> = "hydrated"
 let hydrated = (page, ~timeout=?) => hydratedJs(page, Nullable.fromOption(timeout))
 @get external warnings: page => array<string> = "warnings"

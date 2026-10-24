@@ -46,7 +46,7 @@ function client_loadModule(id) {
 
 function client_start(param) {
   let fetch = param.fetch;
-  return Bootstrap$WeftServer.start(param.loadModule, (url, signal) => fetch(url, signal), Primitive_option.some(param.container), param.url, undefined, undefined);
+  return Bootstrap$WeftServer.start(param.loadModule, (url, signal) => fetch(url, signal), Primitive_option.some(param.container), param.url, undefined, Primitive_option.some(param.signal), undefined);
 }
 
 let client = {
@@ -153,8 +153,20 @@ function stopRewriting(prim) {
   prim.stopRewriting();
 }
 
+function cookies(prim) {
+  return prim.cookies();
+}
+
+function clearCookies(prim) {
+  prim.clearCookies();
+}
+
 function startBootstrap(prim) {
   prim.startBootstrap();
+}
+
+function closePage(prim) {
+  prim.close();
 }
 
 function warnings(prim) {
@@ -216,8 +228,11 @@ export {
   requests,
   rewriteBodies,
   stopRewriting,
+  cookies,
+  clearCookies,
   open_,
   startBootstrap,
+  closePage,
   hydrated,
   warnings,
   pageRequests,

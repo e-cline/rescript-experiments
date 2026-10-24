@@ -78,11 +78,12 @@ describe("host elements and props", () => {
       await html(
         <div id="a" className="b c" title="t" hidden=true tabIndex=2>
           <label htmlFor="x"> {string("L")} </label>
-          <button disabled=false> {string("B")} </button>
+          <button disabled=false ariaExpanded="false"> {string("B")} </button>
+          <input autoComplete="email" inputMode="email" maxLength=40 required=true />
         </div>,
       ),
     )
-    ->Expect.toBe(`<div id="a" class="b c" title="t" hidden="" tabindex="2"><label for="x">L</label><button>B</button></div>`)
+    ->Expect.toBe(`<div id="a" class="b c" title="t" hidden="" tabindex="2"><label for="x">L</label><button aria-expanded="false">B</button><input required="" autocomplete="email" inputmode="email" maxlength="40"></div>`)
   })
 
   testAsync("leaves out event handlers and refs", async t => {

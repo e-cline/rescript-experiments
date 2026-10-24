@@ -12,6 +12,22 @@ async function handle(request) {
   switch (path) {
     case "/assets.json" :
       return Response.json(Assets);
+    case "/cookies/echo" :
+      return Response.json({
+        cookie: request.headers.get("cookie")
+      });
+    case "/cookies/expire" :
+      return new Response("", {
+        headers: {
+          "set-cookie": "flavour=; Path=/; Max-Age=0"
+        }
+      });
+    case "/cookies/set" :
+      return new Response("", {
+        headers: {
+          "set-cookie": "flavour=oat; Path=/; HttpOnly"
+        }
+      });
     case "/env" :
       return Response.json({
         isDev: Env$Common.isDev

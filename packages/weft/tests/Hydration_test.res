@@ -467,6 +467,43 @@ describe("hydrating boundaries", () => {
   )
 
   testAsync(
+    "keeps a pending boundary's content when hydrating it suspends once it arrives, and hydrates it later",
+    async t => {
+      // An entrypoint's chunk still loading when the boundary's content streams in, say.
+      let data = deferred()
+      let element =
+        <div>
+          <Suspense fallback={<i> {text("loading")} </i>}>
+            <Reads promise=data.promise id="r" />
+          </Suspense>
+          <p> {text("after")} </p>
+        </div>
+      let (renderer, warnings) = logging(
+        () => {
+          let renderer = TestRenderer.hydrate(
+            `<div><!--$?--><i>loading</i><!--/$--><p>after</p></div>`,
+            element,
+          )
+          TestRenderer.resolveBoundary(renderer, `<b id="r">ready</b>`)
+          renderer
+        },
+      )
+      // The server's content, as it arrived: not the client's fallback, nor a copy after it.
+      t
+      ->expect(TestRenderer.toMarkup(renderer))
+      ->Expect.toBe(`<div><!--$--><b id="r">ready</b><!--/$--><p>after</p></div>`)
+      data.resolve("ready")
+      await settle()
+      t
+      ->expect(TestRenderer.toMarkup(renderer))
+      ->Expect.toBe(`<div><!--$--><b id="r">ready</b><!--/$--><p>after</p></div>`)
+      t->expect(created(renderer))->Expect.toEqual([])
+      t->expect(TestRenderer.ops(renderer)->Array.includes("hydrate b#r"))->Expect.toBe(true)
+      t->expect(warnings)->Expect.toEqual([])
+    },
+  )
+
+  testAsync(
     "keeps a boundary waiting to hydrate as the server rendered it while something beside it updates",
     async t => {
       let data = deferred()

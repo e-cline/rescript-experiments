@@ -183,8 +183,8 @@ catalogs:
       specifier: ^12.3.1
       version: 12.3.1
     '@rescript/webapi':
-      specifier: 0.1.0-experimental-0781ac8
-      version: 0.1.0-experimental-0781ac8
+      specifier: 0.1.0-pre-alpha-4542085
+      version: 0.1.0-pre-alpha-4542085
     '@types/node':
       specifier: ^26.6.5
       version: 26.6.5
@@ -357,14 +357,14 @@ importers:
         version: 12.3.1
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
     devDependencies:
       rescript:
         specifier: 'catalog:'
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
       vite-plus:
         specifier: 'catalog:'
         version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
@@ -383,7 +383,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   examples/react_app:
     dependencies:
@@ -491,7 +491,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
@@ -518,7 +518,7 @@ importers:
         version: 12.3.1
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
     devDependencies:
       '@e-cline/ppx_weft':
         specifier: workspace:*
@@ -540,7 +540,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
@@ -573,7 +573,7 @@ importers:
         version: 12.3.1
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
     devDependencies:
       '@e-cline/ppx_weft':
         specifier: workspace:*
@@ -595,7 +595,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
@@ -622,7 +622,7 @@ importers:
         version: 12.3.1
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
     devDependencies:
       '@e-cline/ppx_weft':
         specifier: workspace:*
@@ -641,7 +641,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
         version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
@@ -663,7 +663,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/priority_queue:
     dependencies:
@@ -679,7 +679,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/servy:
     dependencies:
@@ -688,7 +688,7 @@ importers:
         version: 2.1.5(hono@4.13.13)
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
       hono:
         specifier: 'catalog:'
         version: 4.13.13
@@ -701,7 +701,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/signal_maps:
     dependencies:
@@ -720,7 +720,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/signal_maps/benchmarks:
     dependencies:
@@ -766,7 +766,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/signals/benchmarks:
     dependencies:
@@ -806,7 +806,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/trees/benchmarks:
     dependencies:
@@ -856,7 +856,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/weft/benchmarks:
     dependencies:
@@ -924,7 +924,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/weft_server:
     dependencies:
@@ -939,7 +939,7 @@ importers:
         version: link:../weft_dom
       '@rescript/webapi':
         specifier: 'catalog:'
-        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+        version: 0.1.0-pre-alpha-4542085(rescript@12.3.1)
     devDependencies:
       '@e-cline/ppx_weft':
         specifier: workspace:*
@@ -952,7 +952,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/weft_signals:
     dependencies:
@@ -974,7 +974,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   tools/benchmarking:
     dependencies:
@@ -1027,7 +1027,7 @@ importers:
         version: 12.3.1
       rescript-vitest:
         specifier: 'catalog:'
-        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
 
   tools/weft_vite_plugin:
     dependencies:
@@ -1820,8 +1820,8 @@ packages:
   '@rescript/runtime@12.3.1':
     resolution: {integrity: sha512-yTM0iTl6owyA37UEtPAZR0A3G1kFffJWb+UE6+rcG/N2kxYQnuSlNDfVvsry7l8O+o/ME6QE7Zt7efjCDGM3xg==}
 
-  '@rescript/webapi@0.1.0-experimental-0781ac8':
-    resolution: {integrity: sha512-QLp2IT8SSZWBSenB+J0mdsT0wgS6znxWtHJ1V7971jDpYqGjyvW7fKk1NEPjz5LBE6+GTda8NBBqq3R+VYWOhA==}
+  '@rescript/webapi@0.1.0-pre-alpha-4542085':
+    resolution: {integrity: sha512-QCTpIYyXldeF88vh0vAN9alhB0NEhCk+20MDdP1KYMS1IpiWO+1HG/u1PGGA92EgupsX71ZMG1c/WcaT8wzAQQ==}
     peerDependencies:
       rescript: '>=12.0.0 <13'
 
@@ -2004,11 +2004,8 @@ packages:
     resolution: {integrity: sha512-v0xaezt+DKEmKfaxg133ldzADrwLGd7Ze1MfQQTYfvs8OqZIwbxyxaYURivwV7sWy5fqn3rH5uOrSp07bp44Ow==}
     peerDependencies:
       msw: ^2.4.9
-      vite: ^6.0.0 || ^7.0.0 || ^8.0.0
     peerDependenciesMeta:
       msw:
-        optional: true
-      vite:
         optional: true
 
   '@vitest/mocker@5.0.5':
@@ -3368,7 +3365,7 @@ snapshots:
 
   '@rescript/runtime@12.3.1': {}
 
-  '@rescript/webapi@0.1.0-experimental-0781ac8(rescript@12.3.1)':
+  '@rescript/webapi@0.1.0-pre-alpha-4542085(rescript@12.3.1)':
     dependencies:
       rescript: 12.3.1
 
@@ -3624,13 +3621,34 @@ snapshots:
       chai: 6.3.0
       tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.10(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.10(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
-    optionalDependencies:
       vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+    transitivePeerDependencies:
+      - '@arethetypeswrong/core'
+      - '@types/node'
+      - '@typescript/native-preview'
+      - '@vitejs/devtools'
+      - '@volar/typescript'
+      - '@vue/language-core'
+      - esbuild
+      - jiti
+      - less
+      - publint
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - typescript
+      - unplugin-unused
+      - unrun
+      - vue-tsc
+      - yaml
 
   '@vitest/mocker@5.0.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)':
     dependencies:
@@ -4247,24 +4265,44 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  rescript-vitest@3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1):
+  rescript-vitest@3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(rescript@12.3.1)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       rescript: 12.3.1
       vite: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
-      vitest: 4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)
+      vitest: 4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
     transitivePeerDependencies:
+      - '@arethetypeswrong/core'
       - '@edge-runtime/vm'
       - '@opentelemetry/api'
       - '@types/node'
+      - '@typescript/native-preview'
+      - '@vitejs/devtools'
       - '@vitest/browser-playwright'
       - '@vitest/browser-preview'
       - '@vitest/browser-webdriverio'
       - '@vitest/coverage-istanbul'
       - '@vitest/coverage-v8'
       - '@vitest/ui'
+      - '@volar/typescript'
+      - '@vue/language-core'
+      - esbuild
       - happy-dom
+      - jiti
       - jsdom
+      - less
       - msw
+      - publint
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - typescript
+      - unplugin-unused
+      - unrun
+      - vue-tsc
+      - yaml
 
   rescript-webapi@0.10.0: {}
 
@@ -4516,10 +4554,10 @@ snapshots:
       - vue-tsc
       - yaml
 
-  vitest@4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3):
+  vitest@4.1.10(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.10(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -4544,7 +4582,27 @@ snapshots:
       '@vitest/ui': 5.0.5(vitest@5.0.5)
       jsdom: 30.1.3
     transitivePeerDependencies:
+      - '@arethetypeswrong/core'
+      - '@typescript/native-preview'
+      - '@vitejs/devtools'
+      - '@volar/typescript'
+      - '@vue/language-core'
+      - esbuild
+      - jiti
+      - less
       - msw
+      - publint
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - typescript
+      - unplugin-unused
+      - unrun
+      - vue-tsc
+      - yaml
 
   vitest@5.0.5(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(terser@5.50.0)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:

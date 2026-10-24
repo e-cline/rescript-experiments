@@ -237,7 +237,7 @@ let serve = (~delivery=_ => Testing.Immediate, route: string => Weft.Element.t) 
   let fetch = (url, ~signal) => {
     let pipe = Testing.pipe(Render.toStream(route(url), ~signal), ~delivery=delivery(url))
     served->Array.push({url, pipe})
-    Promise.resolve(Testing.stream(pipe))
+    Promise.resolve({Decoder.stream: Testing.stream(pipe)})
   }
   (fetch, served)
 }

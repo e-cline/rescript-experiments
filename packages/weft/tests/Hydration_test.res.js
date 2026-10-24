@@ -442,6 +442,38 @@ Vitest.describe("hydrating boundaries", undefined, undefined, undefined, undefin
     t.expect(created(renderer)).toEqual([]);
     return t.expect(TestRenderer$Weft.ops(renderer).includes("hydrate b#r")).toBe(true);
   });
+  Vitest.testAsync("keeps a pending boundary's content when hydrating it suspends once it arrives, and hydrates it later", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let data = deferred();
+    let element = TestJsx$Weft.Elements.jsxs("div", {
+      children: [
+        TestJsx$Weft.jsx(Suspense$Weft.make, {
+          fallback: TestJsx$Weft.Elements.jsx("i", {
+            children: "loading"
+          }),
+          children: TestJsx$Weft.jsx(Hydration_test$Reads, {
+            promise: data.promise,
+            id: "r"
+          })
+        }),
+        TestJsx$Weft.Elements.jsx("p", {
+          children: "after"
+        })
+      ]
+    });
+    let match = logging(() => {
+      let renderer = TestRenderer$Weft.hydrate(`<div><!--$?--><i>loading</i><!--/$--><p>after</p></div>`, element);
+      TestRenderer$Weft.resolveBoundary(renderer, `<b id="r">ready</b>`);
+      return renderer;
+    });
+    let renderer = match[0];
+    t.expect(TestRenderer$Weft.toMarkup(renderer)).toBe(`<div><!--$--><b id="r">ready</b><!--/$--><p>after</p></div>`);
+    data.resolve("ready");
+    await settle();
+    t.expect(TestRenderer$Weft.toMarkup(renderer)).toBe(`<div><!--$--><b id="r">ready</b><!--/$--><p>after</p></div>`);
+    t.expect(created(renderer)).toEqual([]);
+    t.expect(TestRenderer$Weft.ops(renderer).includes("hydrate b#r")).toBe(true);
+    return t.expect(match[1]).toEqual([]);
+  });
   Vitest.testAsync("keeps a boundary waiting to hydrate as the server rendered it while something beside it updates", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let data = deferred();
     let element = TestJsx$Weft.Elements.jsxs("div", {

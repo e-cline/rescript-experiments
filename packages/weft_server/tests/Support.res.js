@@ -349,7 +349,9 @@ function serve(deliveryOpt, route) {
       url: url,
       pipe: pipe
     });
-    return Promise.resolve(Testing$WeftServer.stream(pipe));
+    return Promise.resolve({
+      stream: Testing$WeftServer.stream(pipe)
+    });
   };
   return [
     fetch,

@@ -323,6 +323,16 @@ module MakeHydratableWithScheduler = (Host: HostConfig.Hydratable, Sched: Schedu
       | (Some(_), Some(instance), _) =>
         renderBoundaryOnClient(unit, instance)
         Begin
+      // A dehydrated boundary whose content suspended as its retry hydrated it (an entrypoint's
+      // chunk still loading, say): dehydrated again, keeping the server's content, until what it
+      // waits on settles. (Its retry began, so it no longer looks dehydrated: rendering it now would
+      // render its content on the client, beside the server's.)
+      | (Some(_), None, None) if leftDehydrated->Map.has(unit) =>
+        unit.memoizedState = dehydratedToUnknown({
+          dehydrated: leftDehydrated->Map.get(unit)->Option.getUnsafe,
+        })
+        unit.child = None
+        Skip
       // A dehydrated boundary rendering again: its content has arrived, it failed, or it got
       // new props first.
       | (Some(current), None, Some(instance)) =>

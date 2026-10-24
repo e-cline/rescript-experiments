@@ -8,8 +8,8 @@ WARNING: None of this is intended for real production use.
 
 Weft is the UI framework in here: `weft` (components, hooks and a fiber reconciler), `weft_dom` (the
 DOM renderer) and `weft_signals` (hooks for reading `signals`), plus the `weft_app` example. Server
-components for it are under way: `weft_server` and `weft_vite_plugin`, with the `weft_notes` and
-`weft_split` examples.
+components for it are under way: `weft_server` and `weft_vite_plugin`, with the `weft_notes`,
+`weft_split` and `weft_shop` examples.
 
 ## Packages
 

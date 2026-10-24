@@ -177,3 +177,34 @@ describe("useSignal and useComputed", () => {
     ->Expect.toBe(`<i id="r1">2</i><i id="r2">2</i><i id="r3">2</i>`)
   })
 })
+
+describe("on the server", () => {
+  test(
+    "an entrypoint rendered to HTML shows the signals' values, and hydrates to follow them",
+    t => {
+      let count = Atom.make(3)
+      let parity = Signals.Computed.make(() => mod(Atom.get(count), 2) == 0 ? "even" : "odd")
+      module Counter = {
+        @weft.component
+        let make = () => {
+          let (value, update) = SignalHooks.useAtom(count)
+          let label = SignalHooks.useSignal(parity)
+          let doubled = SignalHooks.useComputed0(() => Atom.get(count) * 2)
+          <button id="count" onClick={() => update(n => n + 1)}>
+            {TestJsx.string(`${Int.toString(value)} ${label} ${Int.toString(doubled)}`)}
+          </button>
+        }
+      }
+      // What a server renderer does with an entrypoint: call it, outside any tree.
+      let element = Weft.ServerRender.renderComponent(Counter.make, {}, {contexts: []})
+      let html = TestRenderer.create()
+      TestRenderer.render(html, element)
+      t->expect(textOf(html))->Expect.toBe(`<button id="count">3 odd 6</button>`)
+      // The browser, hydrating that HTML, then following the atom.
+      let renderer = TestRenderer.hydrate(textOf(html), <Counter />)
+      t->expect(textOf(renderer))->Expect.toBe(`<button id="count">3 odd 6</button>`)
+      TestRenderer.click(renderer, "count")
+      t->expect(textOf(renderer))->Expect.toBe(`<button id="count">4 even 8</button>`)
+    },
+  )
+})

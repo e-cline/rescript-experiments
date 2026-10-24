@@ -162,11 +162,21 @@ let createTextInstance = (text, ~container) =>
 
 let appendInitialChild = Dom.appendChild
 
-let finalizeInitialChildren = (element, ~tag as _, ~props) => {
+/**
+A new element with `autoFocus`, to focus once the commit has put it in the page: the attribute alone
+only focuses an element that's there as the page loads, as the browser parses it (the server's
+HTML), not one rendered later.
+*/
+let autoFocused: ref<Nullable.t<Dom.element>> = ref(Nullable.null)
+
+let finalizeInitialChildren = (element, ~tag as _, ~props: props) => {
   propsToDict(props)->Dict.forEachWithKey((next, name) =>
     setProp(element, name, ~previous=nothing, ~next)
   )
   storeProps(element, props)
+  if props.autoFocus == Some(true) {
+    autoFocused := Nullable.make(element)
+  }
 }
 
 let prepareUpdate = (_: Dom.element, ~tag as _, ~oldProps, ~newProps) => {
@@ -333,6 +343,12 @@ let resetAfterCommit = container => {
   | _ => ()
   }
   focused := Nullable.null
+  // A render thrown away before committing leaves one that's never attached: it isn't focused.
+  switch Nullable.toOption(autoFocused.contents) {
+  | Some(element) if Dom.isConnected(element) => Dom.focus(element)
+  | _ => ()
+  }
+  autoFocused := Nullable.null
   scheduleReplay()
 }
 
@@ -425,10 +441,17 @@ let attributeDifferences = (element: Dom.element, props: props) => {
     | name if isEventProp(name) => ()
     | "style" =>
       let style = unknownToStyle(value)->Nullable.toOption->Option.getOr(Dict.make())
-      style->Dict.forEachWithKey((expected, key) => {
-        let actual = Dom.style(element)->getPropertyValue(DomProps.cssName(key))
+      // The browser reads a style back in its own form (`hsl(...)` as `rgb(...)`, `-0%` as `0%`):
+      // the client's value is set on an element of its own and read back the same way, so the same
+      // style written another way isn't a difference.
+      let scratch = Dom.style(element->Dom.ownerDocument->Dom.createElement("div"))
+      style->Dict.forEachWithKey((value, key) => {
+        let name = DomProps.cssName(key)
+        Dom.setStyleProperty(scratch, name, value)
+        let expected = scratch->getPropertyValue(name)
+        let actual = Dom.style(element)->getPropertyValue(name)
         if actual != expected {
-          differences->Array.push(`style ${DomProps.cssName(key)}: "${actual}", not "${expected}"`)
+          differences->Array.push(`style ${name}: "${actual}", not "${expected}"`)
         }
       })
     | name =>

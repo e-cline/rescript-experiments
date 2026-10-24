@@ -70,8 +70,9 @@ pnpm run build
 pnpm run test
 ```
 
-Run the browser tests (a few, in [`examples/weft_notes/e2e`](examples/weft_notes/e2e), against the
-built app), which need Playwright's Chromium installed once:
+Run the browser tests (in [`examples/weft_notes/e2e`](examples/weft_notes/e2e) and
+[`examples/weft_shop/e2e`](examples/weft_shop/e2e), against the built apps), which need Playwright's
+Chromium installed once:
 
 ```bash
 pnpm --filter @e-cline/weft_notes_example exec playwright install chromium

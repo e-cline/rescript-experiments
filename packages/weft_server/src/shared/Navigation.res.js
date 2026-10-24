@@ -14,16 +14,19 @@ let context = Context$Weft.make(undefined);
 
 let provider = Context$Weft.provider(context);
 
-function make(client, render, url, onNavigateOpt, onFailed) {
+function make(client, render, url, onNavigateOpt, onRedirectOpt, onFailed) {
   let onNavigate = onNavigateOpt !== undefined ? onNavigateOpt : param => {};
+  let onRedirect = onRedirectOpt !== undefined ? onRedirectOpt : param => {};
   return {
     client: client,
     render: render,
     url: url,
     onNavigate: onNavigate,
+    onRedirect: onRedirect,
     onFailed: onFailed,
     latest: Decoder$WeftServer.Latest.make(),
-    onServer: false
+    onServer: false,
+    rendering: undefined
   };
 }
 
@@ -33,9 +36,11 @@ function makeForServer(client, url) {
     render: param => {},
     url: url,
     onNavigate: param => {},
+    onRedirect: param => {},
     onFailed: undefined,
     latest: Decoder$WeftServer.Latest.make(),
-    onServer: true
+    onServer: true,
+    rendering: undefined
   };
 }
 
@@ -45,21 +50,51 @@ function checkOnClient(navigation) {
   }
 }
 
-function wrap(navigation, element) {
+function root(param) {
+  let onCommit = param.onCommit;
+  Hooks$Weft.useLayoutEffect1(() => {
+    Stdlib_Option.forEach(onCommit, onCommit => onCommit());
+  }, [onCommit]);
   return JsxCore$Weft.jsx(provider, {
-    value: navigation,
-    children: element
+    value: param.navigation,
+    children: param.element
   });
+}
+
+function wrapWith(navigation, element, onCommit) {
+  return JsxCore$Weft.jsx(root, {
+    navigation: navigation,
+    element: element,
+    onCommit: onCommit
+  });
+}
+
+function wrap(navigation, element) {
+  return wrapWith(navigation, element, undefined);
 }
 
 function show(navigation, element) {
   navigation.render(wrap(navigation, element));
 }
 
+function showInTransition(navigation, element) {
+  return new Promise((resolve, param) => {
+    Stdlib_Option.forEach(navigation.rendering, replaced => replaced());
+    let onCommit = () => {
+      if (navigation.rendering === onCommit) {
+        navigation.rendering = undefined;
+      }
+      resolve();
+    };
+    navigation.rendering = onCommit;
+    Transition$Weft.start(() => navigation.render(wrapWith(navigation, element, onCommit)));
+  });
+}
+
 async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
-  let element;
+  let val;
   try {
-    element = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
+    val = await Decoder$WeftServer.Latest.fetchElement(navigation.latest, navigation.client, url);
   } catch (error) {
     let onFailed = navigation.onFailed;
     if (onFailed !== undefined) {
@@ -70,15 +105,18 @@ async function fetchAndShowOnClient(navigation, url, push, canFallBack) {
     }
     throw error;
   }
-  if (element === undefined) {
+  if (val === undefined) {
     return;
   }
-  let element$1 = Primitive_option.valFromOption(element);
-  navigation.url = url;
-  Transition$Weft.start(() => show(navigation, element$1));
+  let shown = val.url;
+  navigation.url = shown;
+  let committed = showInTransition(navigation, val.element);
   if (push) {
-    return navigation.onNavigate(url);
+    navigation.onNavigate(shown);
+  } else if (shown !== url) {
+    navigation.onRedirect(shown);
   }
+  return await committed;
 }
 
 function fetchAndShow(navigation, url, push, canFallBack) {
@@ -176,21 +214,21 @@ function useRefetchable(src, children) {
   currentChildren.current = children;
   let refetchOnClient = async url => {
     setFetching(param => true);
-    let fetched;
+    let val;
     try {
-      fetched = await Decoder$WeftServer.Latest.fetchElement(latest, navigation.client, Stdlib_Option.getOr(url, src));
+      val = await Decoder$WeftServer.Latest.fetchElement(latest, navigation.client, Stdlib_Option.getOr(url, src));
     } catch (error) {
       setFetching(param => false);
       throw error;
     }
-    if (fetched === undefined) {
+    if (val === undefined) {
       return;
     }
-    let fetched$1 = Primitive_option.valFromOption(fetched);
+    let fetched = val.element;
     return startTransition(() => {
       setFetching(param => false);
       setRefetched(param => ({
-        fetched: fetched$1,
+        fetched: fetched,
         over: currentChildren.current
       }));
     });

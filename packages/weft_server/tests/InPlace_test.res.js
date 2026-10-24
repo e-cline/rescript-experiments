@@ -436,7 +436,9 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
       let page = pages[url];
       let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(page(), undefined, Primitive_option.some(signal)), "Manual", undefined);
       pipes[url] = pipe;
-      return Promise.resolve(Testing$WeftServer.stream(pipe));
+      return Promise.resolve({
+        stream: Testing$WeftServer.stream(pipe)
+      });
     };
     return [
       Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch),
@@ -473,7 +475,7 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
     await Support$WeftServer.settle();
     Testing$WeftServer.deliverAll(match[1]["/new"]);
     let newElement = await $$new;
-    t.expect(Stdlib_Option.map(newElement, Support$WeftServer.renderDirectly)).toEqual("<p>new</p>");
+    t.expect(Stdlib_Option.map(newElement, fetched => Support$WeftServer.renderDirectly(fetched.element))).toEqual("<p>new</p>");
     t.expect(await old).toEqual(undefined);
     data.resolve("too late");
     await Support$WeftServer.settle();
@@ -491,8 +493,8 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
     let two = Decoder$WeftServer.Latest.fetchElement(second, client, "/two");
     await Support$WeftServer.settle();
     Object.values(match[1]).forEach(Testing$WeftServer.deliverAll);
-    t.expect(Stdlib_Option.map(await one, Support$WeftServer.renderDirectly)).toEqual("one");
-    return t.expect(Stdlib_Option.map(await two, Support$WeftServer.renderDirectly)).toEqual("two");
+    t.expect(Stdlib_Option.map(await one, fetched => Support$WeftServer.renderDirectly(fetched.element))).toEqual("one");
+    return t.expect(Stdlib_Option.map(await two, fetched => Support$WeftServer.renderDirectly(fetched.element))).toEqual("two");
   });
 });
 

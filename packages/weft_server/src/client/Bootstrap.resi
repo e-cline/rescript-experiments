@@ -18,6 +18,10 @@ Starts the page: decodes the rows on `self` into `container` (by default `#root`
 server's HTML there if the page has it (`data-weft-html` on the container), as the client
 `loadModule` and `fetch` (by default `Decoder.webFetch`) make. `url` is the page's (by default the
 location's path and query). Resolves with the page, once its first payload has rendered.
+
+Aborting `signal` stops the page: its root is unmounted (effects cleaned up, intervals and
+subscriptions with them) and it no longer follows the history. A browser has no need of it (leaving
+the page stops it); a test that opens one page after another in the same document does.
 */
 let start: (
   ~loadModule: Decoder.loadModule,
@@ -25,6 +29,7 @@ let start: (
   ~container: WeftDom.Dom.element=?,
   ~url: string=?,
   ~onRefresh: (unit => unit) => unit=?,
+  ~signal: Streams.Signal.t=?,
   unit,
 ) => promise<Navigation.t>
 

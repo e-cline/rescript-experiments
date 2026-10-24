@@ -38,16 +38,19 @@ let rows = target => {
 @val @scope("location") external search: string = "search"
 @val @scope("history")
 external pushState: (Nullable.t<unknown>, string, string) => unit = "pushState"
+@val @scope("history")
+external replaceState: (Nullable.t<unknown>, string, string) => unit = "replaceState"
 @val @scope("location") external assign: string => unit = "assign"
 @val @scope("location") external replace: string => unit = "replace"
 @val external addEventListener: (string, unit => unit) => unit = "addEventListener"
+@val external removeEventListener: (string, unit => unit) => unit = "removeEventListener"
 @val external document: WeftDom.Dom.document = "document"
 @send
 external getElementById: (WeftDom.Dom.document, string) => Nullable.t<WeftDom.Dom.element> =
   "getElementById"
 @send external getAttribute: (WeftDom.Dom.element, string) => Nullable.t<string> = "getAttribute"
 
-let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ()) => {
+let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ~signal=?, ()) => {
   let client = Decoder.make(~loadModule, ~fetch?)
   let container = switch container {
   | Some(container) => container
@@ -65,18 +68,30 @@ let start = async (~loadModule, ~fetch=?, ~container=?, ~url=?, ~onRefresh=?, ()
     ~render=element => root.contents->Option.forEach(root => root->WeftDom.Client.render(element)),
     ~url=url->Option.getOr(pathname ++ search),
     ~onNavigate=url => pushState(Nullable.null, "", url),
+    // Going back to a URL (or refreshing one) the server now redirects: the entry is where it led.
+    ~onRedirect=url => replaceState(Nullable.null, "", url),
     // A page that can't be shown in place (its payload couldn't be fetched, or it failed) is
     // loaded the ordinary way, for the server's own answer.
     ~onFailed=(url, ~push) => push ? assign(url) : replace(url),
   )
-  addEventListener("popstate", () => navigation->Navigation.load(pathname ++ search)->ignore)
+  let onPopState = () => navigation->Navigation.load(pathname ++ search)->ignore
+  addEventListener("popstate", onPopState)
+  // Stopping the page: nothing of it runs any more (its effects cleaned up, its handlers gone).
+  signal->Option.forEach(signal => signal->Streams.Signal.onAbort(() => {
+      removeEventListener("popstate", onPopState)
+      root.contents->Option.forEach(WeftDom.Client.unmount)
+      root := None
+    }, {once: true}))
   onRefresh->Option.forEach(onRefresh => onRefresh(() => navigation->Navigation.refresh->ignore))
   if !hydrating {
     // At once, as before: the container is emptied while the payload is still coming.
     root := Some(WeftDom.Client.createRoot(container))
   }
   let element = await client->Decoder.fromStream(rows(self))
-  if hydrating {
+  let stopped = signal->Option.mapOr(false, Streams.Signal.aborted)
+  if stopped {
+    ()
+  } else if hydrating {
     // The same tree the server's HTML was rendered from: the page's context around the payload.
     root := Some(WeftDom.Client.hydrateRoot(container, Navigation.wrap(navigation, element)))
   } else {

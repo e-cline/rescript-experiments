@@ -420,6 +420,34 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
     t.expect(find(container, "p").getAttribute("title")).toEqual("server");
     return t.expect(match[1]).toEqual([`WeftDom: the server's <p> has other attributes than the client's (title: "server", not "client"); they're left as the server wrote them`]);
   });
+  Vitest.testAsync("compares styles as the browser reads them, so the same style written another way isn't a difference", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let style = Object.fromEntries([
+      [
+        "color",
+        "#ff0000"
+      ],
+      [
+        "margin-top",
+        "0px"
+      ]
+    ]);
+    let html = await Html$WeftDom.shell(Html$WeftDom.render(Jsx$WeftDom.Elements.jsx("p", {
+      style: style,
+      children: "x"
+    }), undefined, undefined, undefined));
+    let container = DomSupport$WeftDom.page(html);
+    let match = await logging(async () => hydrate(container, Jsx$WeftDom.Elements.jsx("p", {
+      style: style,
+      children: "x"
+    })));
+    t.expect(match[1]).toEqual([]);
+    let container$1 = DomSupport$WeftDom.page(`<p style="color: blue">x</p>`);
+    let match$1 = await logging(async () => hydrate(container$1, Jsx$WeftDom.Elements.jsx("p", {
+      style: style,
+      children: "x"
+    })));
+    return t.expect(match$1[1]).toEqual([`WeftDom: the server's <p> has other attributes than the client's (style color: "blue", not "rgb(255, 0, 0)"; style margin-top: "", not "0px"); they're left as the server wrote them`]);
+  });
   Vitest.testAsync("renders the boundary that doesn't match on the client, and keeps the rest", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let element = Jsx$WeftDom.Elements.jsxs("div", {
       children: [

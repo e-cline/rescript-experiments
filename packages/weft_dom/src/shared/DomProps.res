@@ -30,6 +30,14 @@ type props = {
   @as("aria-checked") ariaChecked?: string,
   @as("aria-describedby") ariaDescribedby?: string,
   @as("aria-labelledby") ariaLabelledby?: string,
+  @as("aria-expanded") ariaExpanded?: string,
+  @as("aria-selected") ariaSelected?: string,
+  @as("aria-controls") ariaControls?: string,
+  @as("aria-current") ariaCurrent?: string,
+  @as("aria-hidden") ariaHidden?: string,
+  @as("aria-live") ariaLive?: string,
+  @as("aria-modal") ariaModal?: string,
+  @as("aria-busy") ariaBusy?: string,
   @as("data-testid") dataTestId?: string,
   // Links and media
   href?: string,
@@ -48,6 +56,10 @@ type props = {
   placeholder?: string,
   readOnly?: bool,
   autoFocus?: bool,
+  required?: bool,
+  autoComplete?: string,
+  inputMode?: string,
+  maxLength?: int,
   htmlFor?: string,
   min?: string,
   max?: string,
@@ -106,6 +118,9 @@ let attributeName = (prop: string) =>
   | "readOnly" => "readonly"
   | "autoFocus" => "autofocus"
   | "colSpan" => "colspan"
+  | "autoComplete" => "autocomplete"
+  | "inputMode" => "inputmode"
+  | "maxLength" => "maxlength"
   | name => name
   }
 

@@ -375,10 +375,11 @@ describe("More DOM cases", () => {
     t->expect(clicks.contents)->Expect.toBe(1)
   })
 
-  test("renamed attributes: autoFocus, readOnly, tabIndex, colSpan", t => {
+  test("renamed attributes: autoFocus, readOnly, tabIndex, colSpan, and the form hints", t => {
     let (container, _) = mount(
       <div>
         <input id="i" autoFocus=true readOnly=true tabIndex=3 />
+        <input id="hints" autoComplete="email" inputMode="email" maxLength=40 required=true />
         <table>
           <tbody>
             <tr>
@@ -399,6 +400,44 @@ describe("More DOM cases", () => {
     t
     ->expect(Dom.getAttribute(find(container, "#cell"), "colspan"))
     ->Expect.toEqual(Nullable.make("2"))
+    let hints = find(container, "#hints")
+    t
+    ->expect(
+      ["autocomplete", "inputmode", "maxlength", "required"]->Array.map(
+        name => Dom.getAttribute(hints, name)->Nullable.toOption,
+      ),
+    )
+    ->Expect.toEqual([Some("email"), Some("email"), Some("40"), Some("")])
+  })
+
+  test("autoFocus focuses an element rendered after the page loaded, once it's in the page", t => {
+    let (container, root) = mount(
+      <div>
+        <button id="other" />
+      </div>,
+    )
+    let other = find(container, "#other")
+    Dom.focus(other)
+    rerender(
+      root,
+      <div>
+        <button id="other" />
+        <input id="dialog-input" autoFocus=true />
+      </div>,
+    )
+    t
+    ->expect(Dom.activeElement(Dom.document) == Nullable.make(find(container, "#dialog-input")))
+    ->Expect.toBe(true)
+    // Only when it's new: rendering it again leaves the focus where it is.
+    Dom.focus(other)
+    rerender(
+      root,
+      <div>
+        <button id="other" />
+        <input id="dialog-input" autoFocus=true placeholder="again" />
+      </div>,
+    )
+    t->expect(Dom.activeElement(Dom.document) == Nullable.make(other))->Expect.toBe(true)
   })
 
   test("removing the value prop empties the input", t => {

@@ -1,0 +1,31 @@
+{
+  "name": "@e-cline/weft_shop_example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A storefront built with Weft: server-driven, streamed home and catalog pages, a cart, checkout and accounts, and a test bed for how Weft's features work together.",
+  "type": "module",
+  "dependencies": {
+    "@e-cline/servy": "workspace:*",
+    "@e-cline/signals": "workspace:*",
+    "@e-cline/weft": "workspace:*",
+    "@e-cline/weft_dom": "workspace:*",
+    "@e-cline/weft_server": "workspace:*",
+    "@e-cline/weft_signals": "workspace:*",
+    "@rescript/runtime": "catalog:",
+    "@rescript/webapi": "catalog:"
+  },
+  "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
+    "@e-cline/weft_vite_plugin": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "jsdom": "catalog:",
+    "rescript": "catalog:",
+    "rescript-vitest": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

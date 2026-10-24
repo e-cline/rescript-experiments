@@ -6,6 +6,7 @@ import * as TestJsx$Weft from "@e-cline/weft/src/testing/TestJsx.res.js";
 import * as Batch$Signals from "@e-cline/signals/src/Batch.res.js";
 import * as Transition$Weft from "@e-cline/weft/src/shared/Transition.res.js";
 import * as Computed$Signals from "@e-cline/signals/src/Computed.res.js";
+import * as ServerRender$Weft from "@e-cline/weft/src/shared/ServerRender.res.js";
 import * as TestRenderer$Weft from "@e-cline/weft/src/testing/TestRenderer.res.js";
 import * as TestScheduler$Weft from "@e-cline/weft/src/testing/TestScheduler.res.js";
 import * as SignalHooks$WeftSignals from "../src/SignalHooks.res.js";
@@ -200,6 +201,38 @@ Vitest.describe("useSignal and useComputed", undefined, undefined, undefined, un
     t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<i id="r1">2</i><i id="r2">2</i><i id="r3">2</i>`);
   });
 });
+
+Vitest.describe("on the server", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.test("an entrypoint rendered to HTML shows the signals' values, and hydrates to follow them", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+  let count = Atom$Signals.make(undefined, undefined, 3);
+  let parity = Computed$Signals.make(undefined, undefined, () => {
+    if (Atom$Signals.get(count) % 2 === 0) {
+      return "even";
+    } else {
+      return "odd";
+    }
+  });
+  let SignalHooks_test = props => {
+    let match = SignalHooks$WeftSignals.useAtom(count);
+    let update = match[1];
+    let label = SignalHooks$WeftSignals.useSignal(parity);
+    let doubled = SignalHooks$WeftSignals.useComputed0(undefined, () => (Atom$Signals.get(count) << 1));
+    return TestJsx$Weft.Elements.jsx("button", {
+      id: "count",
+      onClick: () => update(n => n + 1 | 0),
+      children: match[0].toString() + ` ` + label + ` ` + doubled.toString()
+    });
+  };
+  let element = ServerRender$Weft.renderComponent(SignalHooks_test, {}, {
+    contexts: []
+  });
+  let html = TestRenderer$Weft.create();
+  TestRenderer$Weft.render(html, element);
+  t.expect(TestRenderer$Weft.toString(html)).toBe(`<button id="count">3 odd 6</button>`);
+  let renderer = TestRenderer$Weft.hydrate(TestRenderer$Weft.toString(html), TestJsx$Weft.jsx(SignalHooks_test, {}));
+  t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<button id="count">3 odd 6</button>`);
+  TestRenderer$Weft.click(renderer, "count");
+  t.expect(TestRenderer$Weft.toString(renderer)).toBe(`<button id="count">4 even 8</button>`);
+}));
 
 let Atom;
 

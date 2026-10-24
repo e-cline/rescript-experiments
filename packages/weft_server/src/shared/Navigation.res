@@ -5,24 +5,33 @@ type t = {
   render: Element.t => unit,
   mutable url: string,
   onNavigate: string => unit,
+  /** Called with where a `load` or `refresh` was redirected to. */
+  onRedirect: string => unit,
   /** What to do instead when `navigate` or `load` can't show a URL's payload, if anything. */
   onFailed: option<(string, ~push: bool) => unit>,
   latest: Decoder.Latest.t,
   /** The server's page, which an HTML render reads: it can't fetch anything. */
   onServer: bool,
+  /**
+  What resolves the promise of the `navigate`, `load` or `refresh` whose page is rendering: when it
+  commits, or when a newer one replaces it.
+  */
+  mutable rendering: option<unit => unit>,
 }
 
 let context: Weft.Context.t<option<t>> = Weft.Context.make(None)
 let provider = Weft.Context.provider(context)
 
-let make = (client, ~render, ~url, ~onNavigate=_ => (), ~onFailed=?) => {
+let make = (client, ~render, ~url, ~onNavigate=_ => (), ~onRedirect=_ => (), ~onFailed=?) => {
   client,
   render,
   url,
   onNavigate,
+  onRedirect,
   onFailed,
   latest: Decoder.Latest.make(),
   onServer: false,
+  rendering: None,
 }
 
 let makeForServer = (client, ~url) => {
@@ -30,9 +39,11 @@ let makeForServer = (client, ~url) => {
   render: _ => (),
   url,
   onNavigate: _ => (),
+  onRedirect: _ => (),
   onFailed: None,
   latest: Decoder.Latest.make(),
   onServer: true,
+  rendering: None,
 }
 
 let checkOnClient = navigation =>
@@ -45,19 +56,58 @@ let checkOnClient = navigation =>
     )
   }
 
-let wrap = (navigation, element) =>
+type rootProps = {
+  navigation: t,
+  element: Element.t,
+  /** Called once this page has committed. */
+  onCommit: option<unit => unit>,
+}
+
+/** The page's root: its context, and what tells a `navigate` its page is on screen. */
+let root = ({navigation, element, onCommit}: rootProps) => {
+  Weft.Hooks.useLayoutEffect1(() => {
+    onCommit->Option.forEach(onCommit => onCommit())
+    None
+  }, [onCommit])
   Weft.JsxCore.jsx(provider, {value: Some(navigation), children: element})
+}
+
+let wrapWith = (navigation, element, ~onCommit) =>
+  Weft.JsxCore.jsx(root, {navigation, element, onCommit})
+
+let wrap = (navigation, element) => wrapWith(navigation, element, ~onCommit=None)
 
 let show = (navigation, element) => navigation.render(wrap(navigation, element))
 
+/** Renders `element` in a transition; resolves once it has committed, or a newer page replaced it. */
+let showInTransition = (navigation, element) =>
+  Promise.make((resolve, _) => {
+    // The page rendering before this one won't commit now: its caller is told it was replaced.
+    navigation.rendering->Option.forEach(replaced => replaced())
+    let rec onCommit = () => {
+      if navigation.rendering === Some(onCommit) {
+        navigation.rendering = None
+      }
+      resolve()
+    }
+    navigation.rendering = Some(onCommit)
+    Weft.Transition.start(() =>
+      navigation.render(wrapWith(navigation, element, ~onCommit=Some(onCommit)))
+    )
+  })
+
 let fetchAndShowOnClient = async (navigation, url, ~push, ~canFallBack) =>
   switch await navigation.latest->Decoder.Latest.fetchElement(navigation.client, url) {
-  | Some(element) =>
-    navigation.url = url
-    Weft.Transition.start(() => show(navigation, element))
+  // `shown` is where the payload came from: `url`, or where the server redirected it.
+  | Some({element, url: shown}) =>
+    navigation.url = shown
+    let committed = showInTransition(navigation, element)
     if push {
-      navigation.onNavigate(url)
+      navigation.onNavigate(shown)
+    } else if shown != url {
+      navigation.onRedirect(shown)
     }
+    await committed
   | None => ()
   | exception error =>
     switch navigation.onFailed {
@@ -170,7 +220,7 @@ let useRefetchable = (~src, children) => {
   let refetchOnClient = async (~url=?) => {
     setFetching(_ => true)
     switch await latest->Decoder.Latest.fetchElement(navigation.client, url->Option.getOr(src)) {
-    | Some(fetched) =>
+    | Some({element: fetched}) =>
       // In a transition, so what's on screen stays until what replaces it is ready.
       startTransition(() => {
         setFetching(_ => false)

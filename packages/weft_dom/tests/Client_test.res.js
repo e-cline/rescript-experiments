@@ -11,6 +11,7 @@ import * as Client$WeftDom from "../src/client/Client.res.js";
 import * as Portal$WeftDom from "../src/shared/Portal.res.js";
 import * as Stdlib_Nullable from "@rescript/runtime/lib/es6/Stdlib_Nullable.js";
 import * as Transition$Weft from "@e-cline/weft/src/shared/Transition.res.js";
+import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
 function makeContainer() {
@@ -514,7 +515,7 @@ Vitest.describe("More DOM cases", undefined, undefined, undefined, undefined, un
     }));
     t.expect(clicks.contents).toBe(1);
   });
-  Vitest.test("renamed attributes: autoFocus, readOnly, tabIndex, colSpan", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+  Vitest.test("renamed attributes: autoFocus, readOnly, tabIndex, colSpan, and the form hints", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let match = mount(Jsx$WeftDom.Elements.jsxs("div", {
       children: [
         Jsx$WeftDom.Elements.jsx("input", {
@@ -522,6 +523,13 @@ Vitest.describe("More DOM cases", undefined, undefined, undefined, undefined, un
           tabIndex: 3,
           readOnly: true,
           autoFocus: true
+        }),
+        Jsx$WeftDom.Elements.jsx("input", {
+          id: "hints",
+          required: true,
+          autoComplete: "email",
+          inputMode: "email",
+          maxLength: 40
         }),
         Jsx$WeftDom.Elements.jsx("table", {
           children: Jsx$WeftDom.Elements.jsx("tbody", {
@@ -547,6 +555,57 @@ Vitest.describe("More DOM cases", undefined, undefined, undefined, undefined, un
       "3"
     ]);
     t.expect(find(container, "#cell").getAttribute("colspan")).toEqual("2");
+    let hints = find(container, "#hints");
+    t.expect([
+      "autocomplete",
+      "inputmode",
+      "maxlength",
+      "required"
+    ].map(name => Primitive_option.fromNullable(hints.getAttribute(name)))).toEqual([
+      "email",
+      "email",
+      "40",
+      ""
+    ]);
+  });
+  Vitest.test("autoFocus focuses an element rendered after the page loaded, once it's in the page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let match = mount(Jsx$WeftDom.Elements.jsx("div", {
+      children: Jsx$WeftDom.Elements.jsx("button", {
+        id: "other"
+      })
+    }));
+    let root = match[1];
+    let container = match[0];
+    let other = find(container, "#other");
+    other.focus();
+    let element = Jsx$WeftDom.Elements.jsxs("div", {
+      children: [
+        Jsx$WeftDom.Elements.jsx("button", {
+          id: "other"
+        }),
+        Jsx$WeftDom.Elements.jsx("input", {
+          id: "dialog-input",
+          autoFocus: true
+        })
+      ]
+    });
+    Client$WeftDom.act(() => Client$WeftDom.render(root, element));
+    t.expect(Primitive_object.equal(document.activeElement, find(container, "#dialog-input"))).toBe(true);
+    other.focus();
+    let element$1 = Jsx$WeftDom.Elements.jsxs("div", {
+      children: [
+        Jsx$WeftDom.Elements.jsx("button", {
+          id: "other"
+        }),
+        Jsx$WeftDom.Elements.jsx("input", {
+          id: "dialog-input",
+          placeholder: "again",
+          autoFocus: true
+        })
+      ]
+    });
+    Client$WeftDom.act(() => Client$WeftDom.render(root, element$1));
+    t.expect(Primitive_object.equal(document.activeElement, other)).toBe(true);
   });
   Vitest.test("removing the value prop empties the input", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let match = mount(Jsx$WeftDom.Elements.jsx("input", {

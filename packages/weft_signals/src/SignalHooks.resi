@@ -22,6 +22,11 @@ together with everything else updated in the same task. A render only reads the 
 They're built on `Weft.Hooks.useSyncExternalStore`: a signal that changes while a transition is
 paused partway can't commit with some components showing its old value and some its new one.
 
+On the server (`Weft.ServerRender.renderComponent`, which renders entrypoints to HTML), each hook
+gives the signal's value there and subscribes to nothing; the client's first render, hydrating that
+HTML, reads its own. A signal that differs between the two (one only the browser writes, say) makes
+a mismatch, as any external store's would: give it the same initial value on both sides.
+
 Read signals with these hooks, not `Signal.get` in a component's body: a component only renders
 again for the signals a hook subscribed to.
 

@@ -129,11 +129,18 @@ Vitest.describe("host elements and props", undefined, undefined, undefined, unde
         children: "L"
       }),
       Jsx$WeftDom.Elements.jsx("button", {
+        "aria-expanded": "false",
         disabled: false,
         children: "B"
+      }),
+      Jsx$WeftDom.Elements.jsx("input", {
+        required: true,
+        autoComplete: "email",
+        inputMode: "email",
+        maxLength: 40
       })
     ]
-  }), undefined, undefined)).toBe(`<div id="a" class="b c" title="t" hidden="" tabindex="2"><label for="x">L</label><button>B</button></div>`));
+  }), undefined, undefined)).toBe(`<div id="a" class="b c" title="t" hidden="" tabindex="2"><label for="x">L</label><button aria-expanded="false">B</button><input required="" autocomplete="email" inputmode="email" maxlength="40"></div>`));
   Vitest.testAsync("leaves out event handlers and refs", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let ref = {
       current: null

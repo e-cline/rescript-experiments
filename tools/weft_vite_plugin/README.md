@@ -131,11 +131,22 @@ await page->WeftTesting.navigate("/notes/2")
   `~bootstrap=false` (then `startBootstrap`) opens a page as if the bootstrap's chunk hadn't loaded.
   `rewriteBodies` changes requests on their way to the server, to play a client older or newer than
   it (an RPC's request with other fields), or a forged one.
+- **Cookies** are kept as a browser keeps them for the app's origin: what the server's `Set-Cookie`
+  headers set is sent with every request after, until it expires; `cookies` reads them, and
+  `clearCookies` makes the next request a new visitor's.
+- **Redirects** on the app's origin are followed as a browser's `fetch` follows them (a 303 with a
+  `GET`, at most 20), and the response says where it ended up (`url`, `redirected`): a page opened
+  at a URL that redirects is at the URL it led to (`url`), as is a navigation. One to another origin
+  fails, since the harness only reaches the app.
+- **One page is open at a time**: opening another closes it (`closePage` does too), unmounting its
+  root, so its effects are cleaned up (their intervals and subscriptions with them) and it stops
+  following the history, as leaving a page in a browser would.
 - **`Build` mode** runs the build: the worker imports `dist/server/index.js`, and the page is the
   built client's own bootstrap and chunks. A file can open one page that way (the build's modules
   are shared), and moves on by following links.
 
-[`examples/weft_notes`](../../examples/weft_notes) is tested this way, and
+[`examples/weft_notes`](../../examples/weft_notes) and
+[`examples/weft_shop`](../../examples/weft_shop) are tested this way, and
 [`examples/weft_split`](../../examples/weft_split) in both modes.
 
 ## Testing the plugin

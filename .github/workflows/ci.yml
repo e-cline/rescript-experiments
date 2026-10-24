@@ -53,8 +53,9 @@ jobs:
       - run: vp run test
 
   e2e:
-    # The browser tests (examples/weft_notes/e2e): a few, against the built app in Chromium, on one
-    # Node version. Everything a browser isn't needed for is tested in the job above.
+    # The browser tests (examples/weft_notes/e2e and examples/weft_shop/e2e), against the built apps
+    # in Chromium, on one Node version. Everything a browser isn't needed for is tested in the job
+    # above.
     name: Browser tests
     runs-on: ubuntu-latest
     steps:
@@ -80,3 +81,4 @@ jobs:
           pnpm --filter @e-cline/weft_notes_example exec playwright install
           --with-deps chromium
       - run: vp run --filter @e-cline/weft_notes_example e2e
+      - run: vp run --filter @e-cline/weft_shop_example e2e

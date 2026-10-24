@@ -7,7 +7,8 @@ rendered as HTML on the server, then hydrated. It's phases 3, 5 and 6 of
 [the server components plan](../../docs/weft_server_components_plan.md), and the pages' HTML is
 [its own plan](../../docs/weft_ssr_hydration_plan.md).
 [The Vite plugin](../../tools/weft_vite_plugin) bundles an app using it, and
-[`examples/weft_notes`](../../examples/weft_notes) is one.
+[`examples/weft_notes`](../../examples/weft_notes) and
+[`examples/weft_shop`](../../examples/weft_shop) are two.
 
 ## Installing
 
@@ -58,6 +59,14 @@ let navigation = WeftServer.Navigation.useNavigation()
 navigation->WeftServer.Navigation.navigate("/notes/2") // fetch the payload, render it in place
 navigation->WeftServer.Navigation.refresh              // fetch this page's again
 ```
+
+Both resolve once the new page is on screen (its transition has committed), so what awaits them
+(clearing a pending state, say) runs when the old page has gone.
+
+A route can answer a payload request with a redirect (to a sign-in page, say), as it would a page
+load: the browser's `fetch` follows it, and the page lands where it led. `Navigation.url` is that
+URL, `navigate` pushes it onto the history (not the one asked for), and a `refresh` or going back
+that was redirected replaces the history's entry with it.
 
 A link's `onClick` should use `followLink`, which navigates in place only for a plain click on a
 link to this origin, and leaves the rest to the browser (one opening a new tab or window, a

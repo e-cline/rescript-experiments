@@ -826,10 +826,11 @@ since `weft_server` doesn't depend on servy). In order, it:
    `{"kind": "error", "error": e}` (a 200; `Invalid` is `{"kind": "invalid", "message": m}`, a 400),
    encoded by `Render` (`Render.valueToStream`, decoded by `Decoder.valueFromStream`: a response can
    be or contain elements, rendered server components included, and promises that stream in later
-   rows), with `cache-control: no-store`. (As built, `kind` rather than an `ok` field: an `ok` of
-   `undefined`, a `unit` response, would be left out of the JSON.) A handler that throws gives a 500
-   whose root row is an `X` row, through the router's `onError` (a digest, and the message in
-   development only).
+   rows), with `cache-control: private, no-cache` (`Payload.cacheControl`: not `no-store`, which
+   leaves Chromium's DevTools without a body to show for a streamed response). (As built, `kind`
+   rather than an `ok` field: an `ok` of `undefined`, a `unit` response, would be left out of the
+   JSON.) A handler that throws gives a 500 whose root row is an `X` row, through the router's
+   `onError` (a digest, and the message in development only).
 
 Every RPC is a public endpoint: anyone can call any ID the router lists, whether the UI does or not,
 with any body. Authentication and authorization are the handler's (or a servy middleware's around

@@ -136,7 +136,7 @@ describe("the router", () => {
     t->expect(contentType(response))->Expect.toEqual(Some(Payload.contentType))
     t
     ->expect(response->headersOf->getHeader("cache-control")->Nullable.toOption)
-    ->Expect.toEqual(Some("no-store"))
+    ->Expect.toEqual(Some(Payload.cacheControl))
     t->expect(await rowsOf(response))->Expect.toEqual([`0:J{"kind":"ok","value":"saved hi"}`])
     t->expect(calls)->Expect.toEqual([{noteId: "1", text: "hi"}])
   })

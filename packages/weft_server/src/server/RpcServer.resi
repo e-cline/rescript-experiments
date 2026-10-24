@@ -65,7 +65,7 @@ The response to `request`, a call of the RPC `id`. In order:
 4. a body that isn't JSON, or that the codec can't read, is `Invalid` (a 400), and nothing else
    runs;
 5. `check` saying no is `Rejected`, and the handler isn't called;
-6. otherwise the handler's result is the answer, as a payload, with `cache-control: no-store`. A
+6. otherwise the handler's result is the answer, as a payload, with `Payload.cacheControl`. A
    handler that throws is a 500 (`Failed`), with the digest `onError` gave it and, in development
    only, its message.
 */

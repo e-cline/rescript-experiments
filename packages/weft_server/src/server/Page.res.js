@@ -308,17 +308,19 @@ function respond(request, element, assets, html, title, head, onError) {
   let signal = request.signal;
   let match = wantsPayload(Primitive_option.fromNull(request.headers.get("accept"))) ? [
       Payload$WeftServer.contentType,
+      Payload$WeftServer.cacheControl,
       Render$WeftServer.toStream(element, onError, Primitive_option.some(signal))
     ] : [
       "text/html; charset=utf-8",
+      "no-store",
       toStream(element, assets, pathOf(request), html, title, head, onError, Primitive_option.some(signal))
     ];
-  return new Response(match[1], {
+  return new Response(match[2], {
     status: 200,
     headers: {
       "content-type": match[0],
       vary: "Accept",
-      "cache-control": "no-store"
+      "cache-control": match[1]
     }
   });
 }

@@ -157,3 +157,5 @@ let asElement = items =>
   }
 
 let contentType = "text/x-weft-payload"
+
+let cacheControl = "private, no-cache"

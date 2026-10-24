@@ -271,11 +271,14 @@ let pathOf = (request: Request.t) =>
 
 let respond = (request: Request.t, element, ~assets, ~html=?, ~title=?, ~head=?, ~onError=?) => {
   let signal = toSignal(request.signal)
-  let (contentType, body) = if wantsPayload(request.headers->Headers.get("accept")->Null.toOption) {
-    (Payload.contentType, Render.toStream(element, ~onError?, ~signal))
+  let (contentType, cacheControl, body) = if (
+    wantsPayload(request.headers->Headers.get("accept")->Null.toOption)
+  ) {
+    (Payload.contentType, Payload.cacheControl, Render.toStream(element, ~onError?, ~signal))
   } else {
     (
       "text/html; charset=utf-8",
+      "no-store",
       toStream(element, ~assets, ~url=pathOf(request), ~html?, ~title?, ~head?, ~onError?, ~signal),
     )
   }
@@ -284,7 +287,7 @@ let respond = (request: Request.t, element, ~assets, ~html=?, ~title=?, ~head=?,
     ~init={
       status: 200,
       headers: HeadersInit.fromDict(
-        dict{"content-type": contentType, "vary": "Accept", "cache-control": "no-store"},
+        dict{"content-type": contentType, "vary": "Accept", "cache-control": cacheControl},
       ),
     },
   )

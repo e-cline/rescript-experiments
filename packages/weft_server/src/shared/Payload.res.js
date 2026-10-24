@@ -267,6 +267,8 @@ let fragmentType = "$F";
 
 let contentType = "text/x-weft-payload";
 
+let cacheControl = "private, no-cache";
+
 export {
   rowToString,
   Parser,
@@ -284,5 +286,6 @@ export {
   element,
   asElement,
   contentType,
+  cacheControl,
 }
 /* Env-Common Not a pure module */

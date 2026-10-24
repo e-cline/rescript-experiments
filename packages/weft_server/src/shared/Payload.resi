@@ -88,3 +88,10 @@ let asElement: array<JSON.t> => option<(JSON.t, Nullable.t<string>, JSON.t)>
 
 /** The content type a bare payload is sent with. */
 let contentType: string
+
+/**
+The `cache-control` a payload is sent with: stored by no shared cache, and never reused without the
+server's say-so. Not `no-store`: Chromium keeps no body for a streamed `no-store` response, so
+DevTools can't show it (it's "(canceled)", with no response to inspect).
+*/
+let cacheControl: string

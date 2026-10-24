@@ -93,7 +93,7 @@ let payloadResponse = (status, body) =>
     ~init={
       status,
       headers: HeadersInit.fromDict(
-        dict{"content-type": Payload.contentType, "cache-control": "no-store"},
+        dict{"content-type": Payload.contentType, "cache-control": Payload.cacheControl},
       ),
     },
   )

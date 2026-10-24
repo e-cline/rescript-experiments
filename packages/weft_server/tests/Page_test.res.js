@@ -152,6 +152,7 @@ Vitest.describe("Page.respond", undefined, undefined, undefined, undefined, unde
     let header = (response, name) => Primitive_option.fromNull(response.headers.get(name));
     t.expect(header(payloadResponse, "content-type")).toEqual(Payload$WeftServer.contentType);
     t.expect(header(payloadResponse, "vary")).toEqual("Accept");
+    t.expect(header(payloadResponse, "cache-control")).toEqual(Payload$WeftServer.cacheControl);
     t.expect(await payloadResponse.text()).toBe(await Testing$WeftServer.readAll(Render$WeftServer.toStream(element, undefined, undefined)));
     let page = Page$WeftServer.respond(new Request("http://localhost/x", {
       headers: {
@@ -159,6 +160,7 @@ Vitest.describe("Page.respond", undefined, undefined, undefined, undefined, unde
       }
     }), element, assets, undefined, undefined, undefined, undefined);
     t.expect(header(page, "content-type")).toEqual("text/html; charset=utf-8");
+    t.expect(header(page, "cache-control")).toEqual("no-store");
     return t.expect((await page.text()).includes(`<div id="root"></div>`)).toBe(true);
   });
 });

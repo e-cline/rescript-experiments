@@ -146,6 +146,7 @@ describe("Page.respond", () => {
     let header = (response, name) => response->responseHeaders->Headers.get(name)->Null.toOption
     t->expect(header(payloadResponse, "content-type"))->Expect.toEqual(Some(Payload.contentType))
     t->expect(header(payloadResponse, "vary"))->Expect.toEqual(Some("Accept"))
+    t->expect(header(payloadResponse, "cache-control"))->Expect.toEqual(Some(Payload.cacheControl))
     t
     ->expect(await payloadResponse->responseText)
     ->Expect.toBe(await Testing.readAll(Render.toStream(element)))
@@ -155,6 +156,7 @@ describe("Page.respond", () => {
       ~assets,
     )
     t->expect(header(page, "content-type"))->Expect.toEqual(Some("text/html; charset=utf-8"))
+    t->expect(header(page, "cache-control"))->Expect.toEqual(Some("no-store"))
     t
     ->expect((await page->responseText)->String.includes(`<div id="root"></div>`))
     ->Expect.toBe(true)

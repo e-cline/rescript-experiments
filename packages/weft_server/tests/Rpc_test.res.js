@@ -179,7 +179,7 @@ Vitest.describe("the router", undefined, undefined, undefined, undefined, undefi
     let response = await post(undefined, undefined, undefined, `{"noteId": "1", "text": "hi"}`);
     t.expect(response.status).toBe(200);
     t.expect(contentType(response)).toEqual(Payload$WeftServer.contentType);
-    t.expect(Primitive_option.fromNullable(response.headers.get("cache-control"))).toEqual("no-store");
+    t.expect(Primitive_option.fromNullable(response.headers.get("cache-control"))).toEqual(Payload$WeftServer.cacheControl);
     t.expect(await rowsOf(response)).toEqual([`0:J{"kind":"ok","value":"saved hi"}`]);
     return t.expect(calls).toEqual([{
         noteId: "1",

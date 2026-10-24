@@ -108,7 +108,7 @@ function payloadResponse(status, body) {
     status: status,
     headers: {
       "content-type": Payload$WeftServer.contentType,
-      "cache-control": "no-store"
+      "cache-control": Payload$WeftServer.cacheControl
     }
   });
 }

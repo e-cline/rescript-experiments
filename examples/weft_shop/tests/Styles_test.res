@@ -81,4 +81,36 @@ describe("the store's styles", () => {
     await page->WeftTesting.waitFor(() => has(page, "[data-id=cart-title]"))
     t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
   })
+
+  testAsync(
+    "bring the sheets of what an RPC renders: \"Load more\" shows its cards once their sheets load",
+    async t => {
+      await app()->releaseAll
+      // Dearest first: the first page has nothing on sale, the second has two.
+      let page = app()->open_("/c/shoes?sort=price-desc")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=load-more]"))
+      await hydratedAsServed(page)
+      t->expect(has(page, "[data-id^=sale-]"))->Expect.toBe(false)
+      let head = headSheets(await page->WeftTesting.shell)
+      t->expect(head->hasSheet("server/SaleBadge"))->Expect.toBe(false)
+      t->expect(page->WeftTesting.stylesheets->hasSheet("server/SaleBadge"))->Expect.toBe(false)
+      page->WeftTesting.holdStylesheets(~matching=sheetOf("server/SaleBadge"))
+      page->WeftTesting.click("[data-id=load-more]")
+      await page->WeftTesting.waitFor(
+        () =>
+          page->WeftTesting.stylesheets->hasSheet("server/SaleBadge") ||
+            has(page, "[data-id=card-p6]"),
+      )
+      await page->WeftTesting.settle
+      // The answer is in, but for its badges' sheet: the grid stays as it was.
+      t->expect(text(page, "[data-id=load-more]"))->Expect.toBe("Loading…")
+      t->expect(has(page, "[data-id=card-p6]"))->Expect.toBe(false)
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+      page->WeftTesting.releaseStylesheets
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=sale-p6]"))
+      t->expect(text(page, "[data-id=sale-p6]"))->Expect.toBe("20% off")
+      t->expect(has(page, "[data-id=sale-p3]"))->Expect.toBe(true)
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+    },
+  )
 })

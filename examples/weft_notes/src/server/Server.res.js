@@ -76,7 +76,7 @@ let noteRoutes = [
         tl: /* [] */0
       }
     }
-  }, async ctx => await RpcServer$WeftServer.respond(ApiServer$WeftNotes.router, ctx.request, RequestContext$Servy.paramOrThrow(ctx, "id")))
+  }, async ctx => await RpcServer$WeftServer.respond(ApiServer$WeftNotes.router, ctx.request, RequestContext$Servy.paramOrThrow(ctx, "id"), Assets))
 ];
 
 let testRoutes = [

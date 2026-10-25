@@ -156,7 +156,7 @@ let routes = [
   ),
   // The RPCs (`Api`'s, answered by `ApiServer`'s handlers).
   Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
-    await ApiServer.router->WeftServer.RpcServer.respond(ctx.request, ~id=param(ctx, "id"))
+    await ApiServer.router->WeftServer.RpcServer.respond(ctx.request, ~id=param(ctx, "id"), ~assets)
   ),
 ]
 

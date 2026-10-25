@@ -59,6 +59,12 @@ type assets = {
 }
 
 /**
+The app's stylesheets in `assets`, as `Render` takes them (its `styles`): `None` if the app has
+none.
+*/
+let stylesOf: assets => option<Render.styles>
+
+/**
 The HTML page for `element`, streamed as it renders. `url` (the request's path and query, `"/"` by
 default) is what the server-side page says it is; `html=false` leaves the HTML out. `title` and
 `head` (raw HTML, for anything else the head needs) go in the head. `onError` sees every error, once:

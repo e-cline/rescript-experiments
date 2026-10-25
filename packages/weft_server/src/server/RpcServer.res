@@ -199,7 +199,7 @@ let readBody = async (request, ~limit) =>
     }
   }
 
-let respond = async (router, request: Request.t, ~id) =>
+let respond = async (router, request: Request.t, ~id, ~assets=?) =>
   switch router.handlers->Map.get(id) {
   | None => refuse(404, `There's no RPC ${id}.`)
   | Some(handler) =>
@@ -232,6 +232,7 @@ let respond = async (router, request: Request.t, ~id) =>
                 toUnknown(root),
                 ~onError=router.onError,
                 ~signal=toSignal(request.signal),
+                ~styles=?assets->Option.flatMap(Page.stylesOf),
               ),
             )
           | exception error => payloadResponse(500, failure(router, error))

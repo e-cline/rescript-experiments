@@ -1,0 +1,26 @@
+{
+  "name": "@e-cline/weft_ui_gallery_example",
+  "sources": [
+    {"dir": "src", "subdirs": true},
+    {"dir": "tests", "subdirs": true, "type": "dev"}
+  ],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".res.js",
+  "namespace": "WeftUiGallery",
+  "dev-dependencies": ["rescript-vitest", "@e-cline/weft_vite_plugin"],
+  "dependencies": [
+    "@e-cline/servy",
+    "@e-cline/weft",
+    "@e-cline/weft_css",
+    "@e-cline/weft_dom",
+    "@e-cline/weft_server",
+    "@e-cline/weft_ui",
+    "@rescript/webapi"
+  ],
+  "ppx-flags": ["@e-cline/ppx_weft/ppx"]
+}

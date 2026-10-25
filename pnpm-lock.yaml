@@ -319,6 +319,9 @@ importers:
       '@e-cline/weft_ui':
         specifier: workspace:*
         version: link:packages/weft_ui
+      '@e-cline/weft_ui_gallery_example':
+        specifier: workspace:*
+        version: link:examples/weft_ui_gallery
       '@e-cline/weft_vite_plugin':
         specifier: workspace:*
         version: link:tools/weft_vite_plugin
@@ -641,6 +644,58 @@ importers:
       '@e-cline/weft_server':
         specifier: workspace:*
         version: link:../../packages/weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      '@rescript/webapi':
+        specifier: 'catalog:'
+        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
+      '@e-cline/weft_vite_plugin':
+        specifier: workspace:*
+        version: link:../../tools/weft_vite_plugin
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  examples/weft_ui_gallery:
+    dependencies:
+      '@e-cline/servy':
+        specifier: workspace:*
+        version: link:../../packages/servy
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../packages/weft_css
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../packages/weft_server
+      '@e-cline/weft_ui':
+        specifier: workspace:*
+        version: link:../../packages/weft_ui
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1

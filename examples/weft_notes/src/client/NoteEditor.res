@@ -4,6 +4,15 @@ given as `children`: saving sends the draft (the `notes.saveTitle` RPC), then re
 `useRefetchable`), while the draft (and the input, its focus and its selection) stays as it is.
 */
 
+open WeftCss
+
+module Styles = {
+  /** The saved title on a line of its own, then the draft and its button. */
+  let editor = Css.class({display: Flex, flexWrap: Wrap, gap: Px(8), alignItems: Center})
+  let saved = Css.class({flexBasis: Pct(100.)})
+  let input = Css.class({flex: "1 1 16rem"})
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~title: string, ~children: Weft.Element.t) => {
   let (draft, setDraft) = Weft.Hooks.useState(() => title)
@@ -24,10 +33,11 @@ let make = (~noteId: string, ~title: string, ~children: Weft.Element.t) => {
       }
     )()->ignore
   }
-  <form id="editor" onSubmit=save>
-    {saved.element}
+  <form id="editor" className=Styles.editor onSubmit=save>
+    <div className=Styles.saved> {saved.element} </div>
     <input
       id="title-input"
+      className=Styles.input
       ariaLabel="Title"
       value=draft
       onInput={event => setDraft(_ => WeftDom.Dom.Event.targetValue(event))}
@@ -36,7 +46,8 @@ let make = (~noteId: string, ~title: string, ~children: Weft.Element.t) => {
       {WeftDom.Jsx.string(saved.isPending ? "Saving…" : "Save")}
     </button>
     {switch error {
-    | Some(message) => <p id="title-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+    | Some(message) =>
+      <p id="title-error" className=Theme.error role="alert"> {WeftDom.Jsx.string(message)} </p>
     | None => WeftDom.Jsx.null
     }}
   </form>

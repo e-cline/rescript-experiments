@@ -54,8 +54,24 @@ let visuallyHidden = Css.class({
   clip: "rect(0 0 0 0)",
 })
 
-/** A product's picture (a card's, the gallery's): a gradient, four by three. */
-let picture = Css.class({aspectRatio: "4 / 3", borderRadius: Px(8)})
+/** A picture's hue, and its gradient's angle: each picture sets its own (`pictureVars`). */
+let hue = Css.var("30")
+let angle = Css.var("135deg")
+
+/** A picture's gradient, in its hue (`pictureVars`): for the classes of pictures and thumbnails. */
+let gradient = () =>
+  Css.style({
+    background: `linear-gradient(${value(angle)}, hsl(${value(hue)} 45% 70%), hsl(calc(${value(
+        hue,
+      )} + 30) 35% 40%))`,
+  })
+
+/** A product's picture (a card's, the gallery's): its gradient, four by three. */
+let picture = Css.class({...gradient(), aspectRatio: "4 / 3", borderRadius: Px(8)})
+
+/** A picture's `style`: its product's hue, and the view's angle (the first's, by default). */
+let pictureVars = (~hue as productHue, ~view=0) =>
+  Css.vars([(hue, Int.toString(productHue)), (angle, `${Int.toString(135 + view * 40)}deg`)])
 
 /** Something still loading. */
 let placeholder = Css.class({

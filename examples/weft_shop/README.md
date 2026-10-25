@@ -61,7 +61,8 @@ data the server decides on for each request, and each part of them streams in by
   page is sent the stylesheets of what it renders: the shell's linked in its head, a block's with it
   as it streams in (its swap waiting for them), a page navigated to with its payload (shown once
   they've loaded). Server components' styles (the frame, the blocks, the pages) never reach the
-  client as code, only as CSS.
+  client as code, only as CSS. What changes at run time (a product's hue, a carousel's page) is a
+  CSS variable its class uses, set with `Css.vars`.
 - **The rest**: an offline banner (`useSyncExternalStore` with a server snapshot), a countdown that
   renders the server's time first so hydration matches, and toasts.
 

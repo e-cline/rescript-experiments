@@ -4,6 +4,7 @@ import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
+import * as SheetId$WeftCss from "@e-cline/weft_css/src/shared/SheetId.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as NotesSupport$WeftNotes from "./NotesSupport.res.js";
 
@@ -532,6 +533,52 @@ Vitest.describe("the server's data changing", undefined, undefined, undefined, u
   return await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "#like") === "10 likes (you liked this)");
 }));
 
+function sheetOf(file) {
+  return SheetId$WeftCss.ofFileId(`@e-cline/weft_notes_example/src/` + file + `.res`);
+}
+
+function headSheets(html) {
+  return html.slice(0, html.indexOf("</head>")).split(`<link rel="stylesheet" href="`).slice(1).map(rest => rest.slice(0, rest.indexOf(`"`)));
+}
+
+function hasSheet(hrefs, file) {
+  return hrefs.some(href => href.includes(sheetOf(file)));
+}
+
+Vitest.describe("the styles (weft_css)", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  Vitest.testAsync("are sent by what each page renders: the list's in its head, a note's when it's opened", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#notes"));
+    let head = headSheets(await WeftTesting.shell(page));
+    t.expect(hasSheet(head, "shared/Theme")).toBe(true);
+    t.expect(hasSheet(head, "server/Pages")).toBe(true);
+    t.expect(hasSheet(head, "client/CommentForm")).toBe(false);
+    t.expect(hasSheet(head, "client/LikeButton")).toBe(false);
+    t.expect(WeftTesting.unstyled(page)).toEqual([]);
+    await openGates(undefined);
+    await WeftTesting.navigate(page, "/notes/1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-form"));
+    t.expect(hasSheet(WeftTesting.stylesheets(page), "client/CommentForm")).toBe(true);
+    return t.expect(WeftTesting.unstyled(page)).toEqual([]);
+  });
+  Vitest.testAsync("show nothing unstyled while a note streams in, part by part", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/notes/1");
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#title"));
+    t.expect(WeftTesting.unstyled(page)).toEqual([]);
+    for (let i = 0; i <= 2; ++i) {
+      await NotesSupport$WeftNotes.release(app(), [
+          "related:1",
+          "body:1",
+          "comments:1"
+        ][i]);
+      await WeftTesting.settle(page);
+      t.expect(WeftTesting.unstyled(page)).toEqual([]);
+    }
+    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "#comment-list"));
+    return t.expect(WeftTesting.unstyled(page)).toEqual([]);
+  });
+});
+
 export {
   app,
   note1Fallbacks,
@@ -539,5 +586,8 @@ export {
   openNote,
   likeButton,
   commentForm,
+  sheetOf,
+  headSheets,
+  hasSheet,
 }
 /* app Not a pure module */

@@ -65,16 +65,6 @@ let text = WeftDom.Jsx.string
 let wishlist = (request: request) =>
   request.session.user->Option.mapOr(Set.make(), name => Db.user(name).wishlist)
 
-let picture = (summary: summary) =>
-  Dict.fromArray([
-    (
-      "background",
-      `linear-gradient(135deg, hsl(${Int.toString(summary.hue)} 45% 70%), hsl(${Int.toString(
-          summary.hue + 30,
-        )} 35% 40%))`,
-    ),
-  ])
-
 module StockBadge = {
   /** How many are left, from the (slow) inventory service. */
   @weft.component({kind: Server})
@@ -98,7 +88,9 @@ module ProductCard = {
   let make = (~summary: summary, ~saved: bool, ~signal) =>
     <article className={Css.cx(["card", Styles.card])} id={`card-${summary.id}`}>
       <Link className={Css.cx(["card-link", Styles.cardLink])} href={`/p/${summary.slug}`}>
-        <div className={Css.cx(["picture", Theme.picture])} style={picture(summary)} />
+        <div
+          className={Css.cx(["picture", Theme.picture])} style={Theme.pictureVars(~hue=summary.hue)}
+        />
         <h3 className={Css.cx(["card-name", Styles.cardName])}> {text(summary.name)} </h3>
       </Link>
       <div className={Css.cx(["card-meta", Styles.cardMeta])}>

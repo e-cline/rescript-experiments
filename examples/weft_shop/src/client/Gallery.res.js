@@ -16,13 +16,6 @@ let views = [
   "Detail"
 ];
 
-function picture(hue, index) {
-  return Object.fromEntries([[
-      "background",
-      `linear-gradient(` + (135 + (index * 40 | 0) | 0).toString() + `deg, hsl(` + hue.toString() + ` 45% 70%), hsl(` + (hue + 30 | 0).toString() + ` 35% 40%))`
-    ]]);
-}
-
 let main = Css$WeftCss.Internal.class_("Gallery-Styles-main_w4du9ev", undefined, () => ({
   display: "flex",
   padding: {
@@ -48,26 +41,28 @@ let thumbnails = Css$WeftCss.Internal.class_("Gallery-Styles-thumbnails_w4du9ev"
   }
 }));
 
-let thumbnail = Css$WeftCss.Internal.class_("Gallery-Styles-thumbnail_w4du9ev", undefined, () => ({
-  width: {
-    TAG: "Px",
-    _0: 56
-  },
-  height: {
-    TAG: "Px",
-    _0: 42
-  },
-  borderRadius: {
-    TAG: "Px",
-    _0: 6
-  },
-  selectors: [[
+let thumbnail = Css$WeftCss.Internal.class_("Gallery-Styles-thumbnail_w4du9ev", undefined, () => {
+  let newrecord = {...Theme$WeftShop.gradient()};
+  newrecord.selectors = [[
       "&[aria-pressed=\"true\"]",
       {
         outline: `2px solid ` + Theme$WeftShop.value(Theme$WeftShop.ink)
       }
-    ]]
-}));
+    ]];
+  newrecord.borderRadius = {
+    TAG: "Px",
+    _0: 6
+  };
+  newrecord.height = {
+    TAG: "Px",
+    _0: 42
+  };
+  newrecord.width = {
+    TAG: "Px",
+    _0: 56
+  };
+  return newrecord;
+});
 
 let Styles = {
   main: main,
@@ -104,7 +99,7 @@ function Gallery(props) {
           Theme$WeftShop.picture,
           main
         ]),
-        style: picture(hue, selected),
+        style: Theme$WeftShop.pictureVars(hue, selected),
         children: Jsx$WeftDom.Elements.jsx("span", {
           id: "view-label",
           children: views[selected]
@@ -121,7 +116,7 @@ function Gallery(props) {
             "thumbnail",
             thumbnail
           ]),
-          style: picture(hue, index),
+          style: Theme$WeftShop.pictureVars(hue, index),
           "aria-label": view,
           "aria-pressed": index === selected ? "true" : "false",
           onClick: param => setSelected(param => index)
@@ -137,7 +132,6 @@ let make = Gallery;
 
 export {
   views,
-  picture,
   Styles,
   make,
 }

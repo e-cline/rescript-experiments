@@ -598,3 +598,52 @@ describe("the server's data changing", () => {
     },
   )
 })
+
+let sheetOf = file => WeftCss.SheetId.ofFileId(`@e-cline/weft_notes_example/src/${file}.res`)
+
+/** The stylesheets a page's HTML links in its head. */
+let headSheets = html =>
+  html
+  ->String.slice(~start=0, ~end=html->String.indexOf("</head>"))
+  ->String.split(`<link rel="stylesheet" href="`)
+  ->Array.slice(~start=1)
+  ->Array.map(rest => rest->String.slice(~start=0, ~end=rest->String.indexOf(`"`)))
+
+let hasSheet = (hrefs, file) => hrefs->Array.some(href => href->String.includes(sheetOf(file)))
+
+describe("the styles (weft_css)", () => {
+  testAsync(
+    "are sent by what each page renders: the list's in its head, a note's when it's opened",
+    async t => {
+      let page = app()->open_("/")
+      await page->WeftTesting.waitFor(() => has(page, "#notes"))
+      let head = headSheets(await page->WeftTesting.shell)
+      // The list's: the theme, the pages (server-only), the link and the date.
+      t->expect(head->hasSheet("shared/Theme"))->Expect.toBe(true)
+      t->expect(head->hasSheet("server/Pages"))->Expect.toBe(true)
+      // Not what the list doesn't render: a note's comment form, its like button.
+      t->expect(head->hasSheet("client/CommentForm"))->Expect.toBe(false)
+      t->expect(head->hasSheet("client/LikeButton"))->Expect.toBe(false)
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+      // Opening a note brings its sheets, loaded by the client.
+      await openGates()
+      await page->WeftTesting.navigate("/notes/1")
+      await page->WeftTesting.waitFor(() => has(page, "#comment-form"))
+      t->expect(page->WeftTesting.stylesheets->hasSheet("client/CommentForm"))->Expect.toBe(true)
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+    },
+  )
+
+  testAsync("show nothing unstyled while a note streams in, part by part", async t => {
+    let page = app()->open_("/notes/1")
+    await page->WeftTesting.waitFor(() => has(page, "#title"))
+    t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+    for i in 0 to 2 {
+      await app()->release(["related:1", "body:1", "comments:1"]->Array.getUnsafe(i))
+      await page->WeftTesting.settle
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+    }
+    await page->WeftTesting.waitFor(() => has(page, "#comment-list"))
+    t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+  })
+})

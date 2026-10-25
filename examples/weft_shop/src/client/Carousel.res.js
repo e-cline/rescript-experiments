@@ -8,6 +8,8 @@ import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 
+let offset = Css$WeftCss.Internal.var_("--Carousel-Styles-offset_w28oj8l", () => "0%");
+
 let head = Css$WeftCss.Internal.class_("Carousel-Styles-head_w28oj8l", undefined, () => ({
   display: "flex",
   alignItems: "center",
@@ -39,6 +41,7 @@ let track = Css$WeftCss.Internal.class_("Carousel-Styles-track_w28oj8l", undefin
   },
   gridAutoFlow: "column",
   gridAutoColumns: "calc(25% - 12px)",
+  transform: `translateX(` + Theme$WeftShop.value(offset) + `)`,
   transition: "transform .3s",
   media: [Css$WeftCss.media("(max-width: 720px)", {
       gridAutoColumns: "calc(50% - 8px)"
@@ -46,6 +49,7 @@ let track = Css$WeftCss.Internal.class_("Carousel-Styles-track_w28oj8l", undefin
 }));
 
 let Styles = {
+  offset: offset,
   head: head,
   controls: controls,
   window: window,
@@ -112,9 +116,9 @@ function Carousel(props) {
             "carousel-track",
             track
           ]),
-          style: Object.fromEntries([[
-              "transform",
-              `translateX(-` + (page * 100 | 0).toString() + `%)`
+          style: Css$WeftCss.vars([[
+              offset,
+              `-` + (page * 100 | 0).toString() + `%`
             ]]),
           children: props.children
         })
@@ -134,4 +138,4 @@ export {
   Styles,
   make,
 }
-/* head Not a pure module */
+/* offset Not a pure module */

@@ -5,6 +5,8 @@ let pageSize = 4
 open WeftCss
 
 module Styles = {
+  /** How far the track is moved: a page (100%) for each page before the one shown. */
+  let offset = Css.var("0%")
   let head = Css.class({display: Flex, justifyContent: SpaceBetween, alignItems: Center})
   let controls = Css.class({display: Flex, gap: Px(8), alignItems: Center, color: Var(Theme.muted)})
   let window = Css.class({overflow: Hidden})
@@ -13,6 +15,7 @@ module Styles = {
     gridAutoFlow: "column",
     gridAutoColumns: "calc(25% - 12px)",
     gap: Px(16),
+    transform: `translateX(${Theme.value(offset)})`,
     transition: "transform .3s",
     media: [Css.media(~query="(max-width: 720px)", {gridAutoColumns: "calc(50% - 8px)"})],
   })
@@ -59,7 +62,7 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
     <div className={Css.cx(["carousel-window", Styles.window])}>
       <div
         className={Css.cx(["carousel-track", Styles.track])}
-        style={Dict.fromArray([("transform", `translateX(-${Int.toString(page * 100)}%)`)])}
+        style={Css.vars([(Styles.offset, `-${Int.toString(page * 100)}%`)])}
       >
         children
       </div>

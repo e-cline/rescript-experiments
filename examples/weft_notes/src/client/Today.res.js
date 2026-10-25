@@ -3,10 +3,12 @@
 
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Theme$WeftNotes from "../shared/Theme.res.js";
 
 function Today(props) {
   return Jsx$WeftDom.Elements.jsx("span", {
     id: "today",
+    className: Theme$WeftNotes.secondary,
     children: new Date(Date.now()).toISOString().slice(0, 10)
   });
 }

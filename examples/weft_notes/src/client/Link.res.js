@@ -10,6 +10,7 @@ function Link(props) {
   let navigation = Navigation$WeftServer.useNavigation();
   return Jsx$WeftDom.Elements.jsx("a", {
     id: props.id,
+    className: props.className,
     href: href,
     onClick: event => {
       Navigation$WeftServer.followLink(navigation, event, href);

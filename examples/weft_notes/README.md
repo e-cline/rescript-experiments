@@ -27,6 +27,10 @@ things only a browser can show, in Chromium.
   links that `navigate` in place.
 - `Today`, an entrypoint showing the date by the clock where it renders: the server's in the HTML,
   then the browser's (a mismatch, if they disagree, that hydration patches).
+- Styles with [`weft_css`](../../packages/weft_css): the colours, as CSS variables, the page's own
+  rules and shared looks in [`src/shared/Theme.res`](src/shared/Theme.res), and each component's
+  beside it. Each page is sent the stylesheets of what it renders (the list's in its head, a note's
+  comment form's when it's opened); the pages' styles, server-only, reach the client only as CSS.
 
 Every page is rendered on the server first, and hydrated in the browser.
 
@@ -73,7 +77,9 @@ server in a worker thread (with the database's controls,
   `rewriteBodies`), one the server can't read (an older client's request) shown as such, and liking;
 - reloading the comments after another user's changes (new ones inserted, edited ones updated in
   place), while their gate is held (the old ones stay, pending), and twice (the first never lands);
-- the server's like count arriving with a refresh while the button keeps its own state.
+- the server's like count arriving with a refresh while the button keeps its own state;
+- the styles: each page's head linking only what it renders, a note's sheets loaded when it's
+  navigated to, and nothing shown without its CSS as a note streams in.
 
 [`e2e/notes.e2e.ts`](e2e/notes.e2e.ts) checks, in Chromium against the build, what only a browser
 can: the HTML streaming, a chunk loaded once a page needs it and only once, focus and selection

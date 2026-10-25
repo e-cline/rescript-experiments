@@ -243,13 +243,6 @@ function wishlist(request) {
   return Stdlib_Option.mapOr(request.session.user, new Set(), name => Db$WeftShop.user(name).wishlist);
 }
 
-function picture(summary) {
-  return Object.fromEntries([[
-      "background",
-      `linear-gradient(135deg, hsl(` + summary.hue.toString() + ` 45% 70%), hsl(` + (summary.hue + 30 | 0).toString() + ` 35% 40%))`
-    ]]);
-}
-
 function Ui$StockBadge(props) {
   let signal = props.signal;
   let id = props.id;
@@ -291,7 +284,7 @@ function Ui$ProductCard(props) {
               "picture",
               Theme$WeftShop.picture
             ]),
-            style: picture(summary)
+            style: Theme$WeftShop.pictureVars(summary.hue, undefined)
           }),
           Jsx$WeftDom.Elements.jsx("h3", {
             className: Css$WeftCss.cx([
@@ -457,7 +450,6 @@ export {
   stockClass,
   text,
   wishlist,
-  picture,
   StockBadge,
   ProductCard,
   cards,

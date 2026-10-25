@@ -93,13 +93,39 @@ let visuallyHidden = Css$WeftCss.Internal.class_("Theme-visuallyHidden_wir2wei",
   }
 }));
 
-let picture = Css$WeftCss.Internal.class_("Theme-picture_wir2wei", undefined, () => ({
-  aspectRatio: "4 / 3",
-  borderRadius: {
+let hue = Css$WeftCss.Internal.var_("--Theme-hue_wir2wei", () => "30");
+
+let angle = Css$WeftCss.Internal.var_("--Theme-angle_wir2wei", () => "135deg");
+
+function gradient() {
+  return {
+    background: `linear-gradient(` + value(angle) + `, hsl(` + value(hue) + ` 45% 70%), hsl(calc(` + value(hue) + ` + 30) 35% 40%))`
+  };
+}
+
+let picture = Css$WeftCss.Internal.class_("Theme-picture_wir2wei", undefined, () => {
+  let newrecord = {...gradient()};
+  newrecord.borderRadius = {
     TAG: "Px",
     _0: 8
-  }
-}));
+  };
+  newrecord.aspectRatio = "4 / 3";
+  return newrecord;
+});
+
+function pictureVars(productHue, viewOpt) {
+  let view = viewOpt !== undefined ? viewOpt : 0;
+  return Css$WeftCss.vars([
+    [
+      hue,
+      productHue.toString()
+    ],
+    [
+      angle,
+      (135 + (view * 40 | 0) | 0).toString() + `deg`
+    ]
+  ]);
+}
 
 let placeholder = Css$WeftCss.Internal.class_("Theme-placeholder_wir2wei", undefined, () => ({
   padding: {
@@ -167,7 +193,11 @@ export {
   value,
   hairline,
   visuallyHidden,
+  hue,
+  angle,
+  gradient,
   picture,
+  pictureVars,
   placeholder,
   cta,
   stale,

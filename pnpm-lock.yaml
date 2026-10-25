@@ -519,6 +519,9 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../packages/weft_css
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../packages/weft_dom

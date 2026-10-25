@@ -2,22 +2,13 @@
 
 let views = ["Front", "Side", "Back", "Detail"]
 
-let picture = (~hue, ~index) =>
-  Dict.fromArray([
-    (
-      "background",
-      `linear-gradient(${Int.toString(135 + index * 40)}deg, hsl(${Int.toString(
-          hue,
-        )} 45% 70%), hsl(${Int.toString(hue + 30)} 35% 40%))`,
-    ),
-  ])
-
 open WeftCss
 
 module Styles = {
   let main = Css.class({display: Flex, alignItems: End, padding: Px(10), color: Named("white")})
   let thumbnails = Css.class({display: Flex, gap: Px(8), marginTop: Px(8)})
   let thumbnail = Css.class({
+    ...Theme.gradient(),
     width: Px(56),
     height: Px(42),
     borderRadius: Px(6),
@@ -45,7 +36,7 @@ let make = (~name: string, ~hue: int) => {
     <div
       id="main-picture"
       className={Css.cx(["picture", Theme.picture, Styles.main])}
-      style={picture(~hue, ~index=selected)}
+      style={Theme.pictureVars(~hue, ~view=selected)}
     >
       <span id="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
     </div>
@@ -58,7 +49,7 @@ let make = (~name: string, ~hue: int) => {
           className={Css.cx(["thumbnail", Styles.thumbnail])}
           ariaLabel=view
           ariaPressed={index == selected ? "true" : "false"}
-          style={picture(~hue, ~index)}
+          style={Theme.pictureVars(~hue, ~view=index)}
           onClick={_ => setSelected(_ => index)}
         />
       )

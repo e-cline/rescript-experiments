@@ -8,12 +8,63 @@ Every query is given the request's `signal`, so one that's still waiting when th
 stops.
 */
 
+open WeftCss
+
+module Styles = {
+  let app = Css.class({maxWidth: Px(720), margin: Pair(Zero, Auto), padding: Pair(Px(24), Px(16))})
+  let nav = Css.class({
+    display: Flex,
+    justifyContent: SpaceBetween,
+    alignItems: Baseline,
+    paddingBottom: Px(12),
+    marginBottom: Px(24),
+    borderBottom: Theme.hairline(),
+  })
+  let homeLink = Css.class({fontWeight: 600, textDecoration: None})
+  let title = Css.class({marginBottom: Px(16)})
+  let noteLink = Css.class({
+    fontWeight: 500,
+    textDecoration: None,
+    hover: Css.style({textDecoration: Underline}),
+  })
+  let header = Css.class({marginBottom: Px(16)})
+  let savedAt = Css.class({display: Block, marginTop: Px(4)})
+  let body = Css.class({margin: Pair(Px(16), Zero), lineHeight: 1.7, whiteSpace: PreLine})
+  let section = Css.class({
+    marginTop: Px(32),
+    paddingTop: Px(16),
+    borderTop: Theme.hairline(),
+    display: Grid,
+    gap: Px(12),
+  })
+  /** The related notes: a row of chips. */
+  let related = Css.class({
+    display: Flex,
+    flexWrap: Wrap,
+    gap: Px(8),
+    listStyle: None,
+    padding: Zero,
+    margin: Pair(Px(24), Zero),
+  })
+  let chip = Css.class({
+    display: InlineBlock,
+    padding: Pair(Px(2), Px(10)),
+    border: Theme.hairline(),
+    borderRadius: Px(999),
+    textDecoration: None,
+    fontSize: Rem(0.875),
+    hover: Css.style({borderColor: Var(Theme.accent)}),
+  })
+}
+
 module Layout = {
   @weft.component({kind: Server})
   let make = (~children) =>
-    <div id="app">
-      <nav>
-        <Link id="home-link" href="/"> {WeftDom.Jsx.string("All notes")} </Link>
+    <div id="app" className=Styles.app>
+      <nav className=Styles.nav>
+        <Link id="home-link" className=Styles.homeLink href="/">
+          {WeftDom.Jsx.string("All notes")}
+        </Link>
         <Today />
       </nav>
       children
@@ -24,12 +75,12 @@ module NoteList = {
   @weft.component({kind: Server})
   let make = () =>
     <Layout>
-      <h1 id="list-title"> {WeftDom.Jsx.string("Notes")} </h1>
-      <ul id="notes">
+      <h1 id="list-title" className=Styles.title> {WeftDom.Jsx.string("Notes")} </h1>
+      <ul id="notes" className=Theme.list>
         {Db.all()
         ->Array.map(note =>
           <li key=note.id>
-            <Link id={`note-link-${note.id}`} href={`/notes/${note.id}`}>
+            <Link id={`note-link-${note.id}`} className=Styles.noteLink href={`/notes/${note.id}`}>
               {WeftDom.Jsx.string(note.title)}
             </Link>
           </li>
@@ -47,9 +98,11 @@ module NoteTitle = {
     | Some(note) =>
       <>
         <h1 id="title"> {WeftDom.Jsx.string(note.title)} </h1>
-        <span id="saved-at"> {WeftDom.Jsx.string(`Saved: ${note.savedAt}`)} </span>
+        <span id="saved-at" className={Css.cx([Styles.savedAt, Theme.secondary])}>
+          {WeftDom.Jsx.string(`Saved: ${note.savedAt}`)}
+        </span>
       </>
-    | None => <p id="not-found"> {WeftDom.Jsx.string("No such note")} </p>
+    | None => <p id="not-found" className=Theme.error> {WeftDom.Jsx.string("No such note")} </p>
     }
 }
 
@@ -57,7 +110,7 @@ module NoteHeader = {
   /** The title, and the editor around it. */
   @weft.component({kind: Server})
   let make = (~id) =>
-    <header id="note-header">
+    <header id="note-header" className=Styles.header>
       <NoteEditor noteId=id title={Db.find(id)->Option.mapOr("", note => note.title)}>
         <NoteTitle id />
       </NoteEditor>
@@ -77,7 +130,7 @@ module NoteBody = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let body = await Db.body(id, ~signal)
-    <article id="note-body"> {WeftDom.Jsx.string(body)} </article>
+    <article id="note-body" className=Styles.body> {WeftDom.Jsx.string(body)} </article>
   }
 }
 
@@ -91,11 +144,11 @@ module Related = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let notes = await Db.related(id, ~signal)
-    <ul id="related">
+    <ul id="related" className=Styles.related>
       {notes
       ->Array.map(note =>
         <li key=note.id>
-          <Link id={`related-${note.id}`} href={`/notes/${note.id}`}>
+          <Link id={`related-${note.id}`} className=Styles.chip href={`/notes/${note.id}`}>
             {WeftDom.Jsx.string(note.title)}
           </Link>
         </li>
@@ -111,7 +164,7 @@ module Broken = {
   let make = () => JsError.throwWithMessage("the recommendations service is down")
 }
 
-let loading = (id, text) => <p id> {WeftDom.Jsx.string(text)} </p>
+let loading = (id, text) => <p id className=Theme.loading> {WeftDom.Jsx.string(text)} </p>
 
 module NotePage = {
   @weft.component({kind: Server})
@@ -124,7 +177,7 @@ module NotePage = {
       <Weft.Suspense fallback={loading("body-loading", "Loading the note…")}>
         <NoteBody id signal />
       </Weft.Suspense>
-      <section id="comments-section">
+      <section id="comments-section" className=Styles.section>
         <h2> {WeftDom.Jsx.string("Comments")} </h2>
         <CommentsPanel noteId=id>
           <Comments id signal />

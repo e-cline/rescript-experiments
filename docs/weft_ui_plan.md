@@ -26,9 +26,10 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phase 0 is done: every spike passed, and its
-findings are under "Phase 0: what the spikes found" (after Phases), with the design below already
-corrected by them. Phase 1 is next.
+Reviewed. The questions are settled (Decisions). Phases 0 and 1 are done, on the branch
+`claude/weft-base-ui-components-c99930`. Phase 0's findings are under "Phase 0: what the spikes
+found", and phase 1's notes under "Phase 1: as built", both after Phases. The design below is
+already corrected by them. Phase 2 (forms) is next.
 
 ## What was checked before writing this
 
@@ -602,6 +603,47 @@ removed; their sources are in the session's scratchpad, not committed.
    - Its chunk was preloaded in the head, and its sheets were sent as `C` rows.
    - The server-rendered panels showed it before hydration, and it hydrated and switched tabs in all
      three browsers.
+
+### Phase 1: as built
+
+A commit each:
+
+- **`weft_dom`** (f0ca262): the props, events and bindings in §7, with a test rendering every new
+  prop on the server and the client and comparing the DOMs.
+  - `open` is a keyword, so the prop is `open_`, as `type_` is.
+  - `dataHighlighted` is a boolean attribute; the other data attributes are strings.
+- **`weft_css`** (f699843): `:where(:root)`, and the properties in §7. It also gained `captionSide`,
+  `resize`, `transformOrigin`, `counterReset` and `counterIncrement`. Steps number themselves with a
+  counter of their own, since `counter(list-item)` doesn't count an item that isn't
+  `display: list-item`. `ppx_weft`'s tests pinned the old `:root` (2e04fb4).
+- **`weft_ui`** (58499f8): `Tokens`, and the static components.
+  - **The shared variant types are in `Variants`**, not `Types`: `weft_shop` has a `Types` of its
+    own, which `open WeftUi` would shadow. For the same reason (`Link`, later `Tabs`), the README
+    suggests `module Ui = WeftUi` over `open WeftUi`.
+  - **Reduced motion is in the tokens.** The duration tokens are zero under
+    `prefers-reduced-motion: reduce`, and the spinner's turn is slower. That media rule, on
+    `:where(:root)` in the tokens' sheet, is the library's only global.
+  - **A busy submit button stops its form's submit** with a click handler. So a busy `#submit`
+    button can't be rendered by a server component, where host elements can't have handlers. Busy
+    buttons are a client thing anyway.
+  - **The tests:**
+    - Server-safety: every static component is rendered by `weft_server`'s `Render`, which fails on
+      any hook (a component with state is the control). `weft_server` is only a dev dependency.
+    - Layers: every compiled source file is imported while recording, as the plugin's extraction
+      does, and the test checks that no rule is in `weft.components` itself and that the only global
+      is the tokens' root. Dropping one class's `~layer` fails it.
+    - Behaviour: ARIA and behaviour in jsdom, 20 tests.
+- **`weft_ui_gallery`** (b73f764): pages for layout, text, surfaces, data, and actions and status,
+  as server components. The sidebar is a navigating entrypoint wearing `Link.className()`, and a
+  busy-button demo is an entrypoint.
+  - **Its harness test (8)** opens every page: each renders, hydrates as served, and has nothing
+    unstyled. It also checks that the sidebar navigates in place and that the demo button goes busy,
+    then done.
+  - **Checked by eye** in Chromium screenshots. That found two things to fix: row headers in a
+    table's body inherited the column headers' bottom alignment and muted colour, and a divided list
+    drew a line under its last item.
+  - **Code samples** beside the examples are phase 7's.
+- The whole workspace's tests pass, and `pnpm check` is clean.
 
 ## Decisions
 

@@ -325,6 +325,9 @@ importers:
       '@e-cline/weft_vite_plugin_fixture_client_imports_server':
         specifier: workspace:*
         version: link:tools/weft_vite_plugin/tests/fixtures/client_imports_server
+      '@e-cline/weft_vite_plugin_fixture_styled':
+        specifier: workspace:*
+        version: link:tools/weft_vite_plugin/tests/fixtures/styled
       '@e-cline/weft_vite_plugin_fixture_widgets':
         specifier: workspace:*
         version: link:tools/weft_vite_plugin/tests/fixtures/widgets
@@ -476,6 +479,9 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../packages/weft_css
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../packages/weft_dom
@@ -486,6 +492,9 @@ importers:
       '@e-cline/ppx_weft':
         specifier: workspace:*
         version: link:../../tools/ppx/weft
+      '@e-cline/weft_vite_plugin':
+        specifier: workspace:*
+        version: link:../../tools/weft_vite_plugin
       jsdom:
         specifier: 'catalog:'
         version: 30.1.3
@@ -1089,6 +1098,9 @@ importers:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../../../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_css
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../../../../packages/weft_dom
@@ -1128,11 +1140,36 @@ importers:
         specifier: 'catalog:'
         version: 12.3.1
 
+  tools/weft_vite_plugin/tests/fixtures/styled:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_css
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_dom
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../../../ppx/weft
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+
   tools/weft_vite_plugin/tests/fixtures/widgets:
     dependencies:
       '@e-cline/weft':
         specifier: workspace:*
         version: link:../../../../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../../../../packages/weft_css
       '@e-cline/weft_dom':
         specifier: workspace:*
         version: link:../../../../../packages/weft_dom

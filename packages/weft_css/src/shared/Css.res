@@ -327,15 +327,16 @@ module Internal = {
     | Var({name: string, initial: unit => string})
     | Keyframes({name: string, layer: option<string>, define: unit => array<frame>})
 
-  // On `globalThis`, so every copy of this module (a bundle's, the extraction runner's) records into
-  // the one that's recording.
-  @val external globalThis: dict<Nullable.t<array<registration>>> = "globalThis"
-  let key = "__weftCssRecording"
+  // In this copy of the module only: the extraction imports `Extract`, and the style files, through
+  // a module runner of its own, so what other copies run (a dev server's, rendering a request at
+  // the same moment) isn't recorded.
+  // (A flag and an array, not an option: this module's keyword types shadow `None`.)
+  let recording = ref(false)
+  let registrations: ref<array<registration>> = ref([])
 
   let add = registration =>
-    switch globalThis->Dict.getUnsafe(key)->Nullable.toOption {
-    | Some(recording) => recording->Array.push(registration)
-    | None => ()
+    if recording.contents {
+      registrations.contents->Array.push(registration)
     }
 
   let class_ = (name, ~layer=?, define) => {
@@ -355,11 +356,15 @@ module Internal = {
     name
   }
 
-  let record = () => globalThis->Dict.set(key, Nullable.make([]))
+  let record = () => {
+    recording := true
+    registrations := []
+  }
 
   let recorded = () => {
-    let recording = globalThis->Dict.getUnsafe(key)->Nullable.toOption->Option.getOr([])
-    globalThis->Dict.set(key, Nullable.null)
-    recording
+    let recorded = registrations.contents
+    recording := false
+    registrations := []
+    recorded
   }
 }

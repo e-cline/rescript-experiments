@@ -2,12 +2,14 @@
 
 import * as Memo$Weft from "@e-cline/weft/src/shared/Memo.res.js";
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
+import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Context$Weft from "@e-cline/weft/src/shared/Context.res.js";
 import * as Stdlib_Nullable from "@rescript/runtime/lib/es6/Stdlib_Nullable.js";
 import * as Transition$Weft from "@e-cline/weft/src/shared/Transition.res.js";
 import * as Todo$WeftAppExample from "./Todo.res.js";
+import * as Styles$WeftAppExample from "./Styles.res.js";
 
 let context = Context$Weft.make("All");
 
@@ -46,6 +48,7 @@ function App$NewTodo(props) {
     onSubmit: submit,
     children: Jsx$WeftDom.Elements.jsx("input", {
       id: "new-todo",
+      className: Styles$WeftAppExample.newTodo,
       "aria-label": "New todo",
       value: title,
       placeholder: "What needs doing?",
@@ -65,7 +68,10 @@ let make$1 = Memo$Weft.memo(props => {
   let id = todo.id.toString();
   return Jsx$WeftDom.Elements.jsxs("li", {
     id: `todo-` + id,
-    className: todo.done ? "done" : "",
+    className: Css$WeftCss.cx([
+      Styles$WeftAppExample.item,
+      todo.done ? Styles$WeftAppExample.done : ""
+    ]),
     children: [
       Jsx$WeftDom.Elements.jsx("input", {
         id: `toggle-` + id,
@@ -101,6 +107,7 @@ function App$TodoList(props) {
   let filter = Hooks$Weft.useContext(context);
   return Jsx$WeftDom.Elements.jsx("ul", {
     id: "todo-list",
+    className: Styles$WeftAppExample.list,
     children: Todo$WeftAppExample.visible(props.todos, filter).map(todo => Jsx$WeftDom.jsxKeyed(make$1, {
       todo: todo,
       dispatch: dispatch
@@ -116,6 +123,7 @@ function App$Filters(props) {
   let setFilter = props.setFilter;
   let filter = props.filter;
   return Jsx$WeftDom.Elements.jsx("nav", {
+    className: Styles$WeftAppExample.filters,
     children: [
       "All",
       "Active",
@@ -171,6 +179,7 @@ function App(props) {
         })
       }),
       Jsx$WeftDom.Elements.jsxs("footer", {
+        className: Styles$WeftAppExample.footer,
         children: [
           Jsx$WeftDom.Elements.jsx("span", {
             id: "remaining",

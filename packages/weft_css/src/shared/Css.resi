@@ -434,7 +434,10 @@ module Internal: {
   let var_: (string, unit => string) => var
   let keyframes_: (string, ~layer: string=?, unit => array<frame>) => keyframes
 
-  /** Starts recording registrations (`Extract.collect`); a second call starts over. */
+  /**
+  Starts recording registrations (`Extract.start`), in this copy of the module: the files must
+  import the same one. A second call starts over.
+  */
   let record: unit => unit
 
   /** Stops recording, and gives what was recorded. */

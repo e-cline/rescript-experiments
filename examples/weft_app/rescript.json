@@ -13,6 +13,6 @@
   "suffix": ".res.js",
   "namespace": "WeftAppExample",
   "dev-dependencies": ["rescript-vitest"],
-  "dependencies": ["@e-cline/weft", "@e-cline/weft_dom"],
+  "dependencies": ["@e-cline/weft", "@e-cline/weft_css", "@e-cline/weft_dom"],
   "ppx-flags": ["@e-cline/ppx_weft/ppx"]
 }

@@ -9,8 +9,10 @@ A todo app written with [`@e-cline/weft`](../../packages/weft) and its DOM rende
   renders only that one;
 - the new-todo input controlled by `useState`, and focused on mount through a `ref` and an effect.
 
-The source is [`src/App.res`](src/App.res) (components) and [`src/Todo.res`](src/Todo.res) (state).
-The root `res` task compiles them to `.res.js`, which `index.html` loads like any other module.
+The source is [`src/App.res`](src/App.res) (components), [`src/Todo.res`](src/Todo.res) (state) and
+[`src/Styles.res`](src/Styles.res) (styles, with [`weft_css`](../../packages/weft_css): the plugin's
+`weftCss()`, in `vite.config.ts`, extracts them into the bundle's CSS). The root `res` task compiles
+them to `.res.js`, which `index.html` loads like any other module.
 
 Run it:
 

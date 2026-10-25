@@ -11,6 +11,7 @@ import {
   type ViteDevServer,
 } from 'vite';
 
+import {cssPlugin} from './internal/cssPlugin.js';
 import {findDirectives, stripDirectives} from './internal/directives.js';
 import {
   entrypoints,
@@ -74,7 +75,8 @@ function displayId(root: string, id: string): string {
 /**
  * Weft's server components: an `rsc` environment the server entry runs in, the client's, with every
  * entrypoint file a chunk of its own, the boundary between the two enforced, a dev server that
- * answers requests with the server entry, and a build of both.
+ * answers requests with the server entry, and a build of both. And `weft_css`'s styles, as
+ * `weftCss()` has them, except that the client's modules don't import their sheets.
  */
 export function weft(options: Options): Plugin[] {
   let config: ResolvedConfig;
@@ -388,7 +390,8 @@ export function weft(options: Options): Plugin[] {
           const after = now?.kind;
           if (
             before !== after ||
-            (was?.rpcs ?? []).join() !== (now?.rpcs ?? []).join()
+            (was?.rpcs ?? []).join() !== (now?.rpcs ?? []).join() ||
+            was?.sheet !== now?.sheet
           ) {
             // Fails (an error in the terminal) if an RPC ID is now declared twice.
             rescan();
@@ -432,7 +435,20 @@ export function weft(options: Options): Plugin[] {
     },
   };
 
-  return [main];
+  // First, so its transform sees `'use weft css'` before `main`'s blanks every directive.
+  return [
+    cssPlugin({importSheets: false, scanned: () => scanned, rescan}),
+    main,
+  ];
+}
+
+/**
+ * `weft_css`'s styles, for an app without a server (`weft()` includes them): each file with styles
+ * has its sheet extracted (by running the file in Node), its definitions stripped from what's
+ * bundled, and its sheet imported by the module, so Vite loads it with the module's chunk.
+ */
+export function weftCss(): Plugin {
+  return cssPlugin({importSheets: true});
 }
 
 export default weft;

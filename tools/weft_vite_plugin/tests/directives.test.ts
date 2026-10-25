@@ -13,6 +13,7 @@ describe('findDirectives', () => {
     ).toEqual({
       kind: 'server',
       rpcs: [],
+      css: false,
       directives: [{kind: 'server', start: 0, end: 17}],
     });
     expect(findDirectives("'use weft entrypoint'\nlet x = 1;\n")?.kind).toBe(
@@ -26,6 +27,7 @@ describe('findDirectives', () => {
     ).toEqual({
       kind: 'shared',
       rpcs: ['notes.save', 'a.b_2'],
+      css: false,
       directives: [
         {kind: 'rpc', rpc: 'notes.save', start: 0, end: 25},
         {kind: 'rpc', rpc: 'a.b_2', start: 26, end: 46},
@@ -34,6 +36,17 @@ describe('findDirectives', () => {
     const both = findDirectives("'use weft entrypoint'\n'use weft rpc a.b'\n")!;
     expect(both.kind).toBe('entrypoint');
     expect(both.rpcs).toEqual(['a.b']);
+  });
+
+  test("finds 'use weft css', alone (a shared file) or beside another", () => {
+    expect(findDirectives("'use weft css'\nx\n")).toEqual({
+      kind: 'shared',
+      rpcs: [],
+      css: true,
+      directives: [{kind: 'css', start: 0, end: 14}],
+    });
+    const both = findDirectives("'use weft server'\n'use weft css'\n")!;
+    expect([both.kind, both.css]).toEqual(['server', true]);
   });
 
   test("ignores an RPC directive whose ID isn't one", () => {
@@ -110,11 +123,24 @@ describe('on what ppx_weft wrote', () => {
     'basic/src/Likes.res.js': 'entrypoint',
     'basic/src/Notes.res.js': 'server',
     'basic/src/Panels.res.js': 'entrypoint',
+    'basic/src/Theme.res.js': 'shared',
     'basic/src/nested/Deep.res.js': 'entrypoint',
     'basic/tests/Fake.res.js': 'entrypoint',
     'client_imports_server/src/Db.res.js': 'server',
+    'styled/src/Card.res.js': 'shared',
+    'styled/src/Later.res.js': 'shared',
+    'styled/src/Theme.res.js': 'shared',
     'widgets/src/Widget.res.js': 'entrypoint',
   };
+
+  const styled = new Set([
+    'basic/src/Notes.res.js',
+    'basic/src/Theme.res.js',
+    'styled/src/Card.res.js',
+    'styled/src/Later.res.js',
+    'styled/src/Theme.res.js',
+    'widgets/src/Widget.res.js',
+  ]);
 
   const rpcs: Record<string, string[]> = {
     'basic/src/Api.res.js': ['basic.save', 'basic.remove'],
@@ -126,6 +152,7 @@ describe('on what ppx_weft wrote', () => {
     const found = findDirectives(code);
     expect(found?.kind).toBe(expected[file]);
     expect(found?.rpcs ?? []).toEqual(rpcs[file] ?? []);
+    expect(found?.css ?? false).toBe(styled.has(file));
     if (found !== undefined) {
       // Stripped, it's ordinary ReScript output, with nothing else moved.
       const stripped = stripDirectives(code, found)!;

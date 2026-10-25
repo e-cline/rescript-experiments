@@ -51,6 +51,36 @@ import {serve} from '@e-cline/weft_vite_plugin/node';
 await serve({dir: 'dist', port: 3000});
 ```
 
+## Styles (`weft_css`)
+
+The plugin extracts [`weft_css`](../../packages/weft_css)'s styles too (phase 2 of
+[the CSS plan](../../docs/weft_css_plan.md)): `weft()` does it for an app with a server, and
+`weftCss()` is the same for an app without one:
+
+```ts
+import {weftCss} from '@e-cline/weft_vite_plugin';
+
+export default defineConfig({plugins: [weftCss()]});
+```
+
+- **Finding them**: the scan collects the files `ppx_weft` marked `'use weft css'` (the app's and
+  its ReScript dependencies'), and checks each style's name ends in the file's sheet id.
+- **Extracting them**: each style file is imported, with what it imports, in a module runner of the
+  plugin's own (an environment, `weft_css`, in a Vite server it starts), while `WeftCss.Extract`
+  records what the files' top levels register; that gives one sheet per file. A file whose top level
+  needs the browser can't have styles (the error says so, and which file): keep them out of an app's
+  entry module. A build extracts everything at its start, so a definition that throws fails it
+  there; a dev server extracts on the first request for a sheet, and a file again when ReScript
+  rewrites it.
+- **Stripping them**: in every environment, each style call is replaced by its name and each global
+  by `void 0`, in place (no source map needed), so neither the definitions nor `weft_css`'s value
+  layer is bundled.
+- **Serving them**: a sheet is the CSS module `virtual:weft/css/<sheet id>.css`, resolved to a path
+  under `node_modules/.weft-css` (nothing is written there), so Vite's CSS pipeline processes it.
+  With `weftCss()`, each style file imports its own sheet in the client, so the sheet loads with the
+  module's chunk. With `weft()` nothing imports them yet: sending each page the sheets it uses is
+  the plan's next phases.
+
 ## Virtual modules
 
 | Module                           | Where  | What it is                                                                                                                                                                                                           |

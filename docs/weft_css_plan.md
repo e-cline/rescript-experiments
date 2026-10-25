@@ -57,7 +57,8 @@ loaded.
 Reviewed: the recommended decisions are taken (Decisions). Phase 0's spikes are done, and the design
 below is corrected by what they found ("Phase 0: what the spikes found", after Phases), in Chromium,
 Firefox and WebKit. Phase 1 is done (`packages/weft_css`, and the PPX's rewrite), with notes on what
-it settled under "As built (phase 1)", after §2. Phase 2 is next.
+it settled under "As built (phase 1)", after §2. Phase 2 is done too (the plugin's extraction,
+`weftCss()` and `weft_app` on it), under "As built (phase 2)", after §3. Phase 3 is next.
 
 ## What was checked before writing this
 
@@ -349,6 +350,42 @@ its content: a `\0`-prefixed virtual id breaks Vite's CSS plugin, which imports 
   style file in its client module graph (in a build, from the chunks' module ids; in development,
   from the client environment's module graph, or the scan's own import graph of compiled files);
 - `styles`: the bootstrap's own sheets, as now.
+
+**As built (phase 2).** In `tools/weft_vite_plugin/src/internal/`: `css.ts` (sheet modules,
+stripping, the `Extractor`), `cssPlugin.ts` (the plugin `weft()` includes and `weftCss()` is), and
+the scan's sheet ids (`scan.ts`).
+
+- **Recording is per copy of `weft_css`, not on `globalThis`.** The runner shares the process with a
+  dev server's `rsc` environment, which may render a request (and so run style files' top levels)
+  while an extraction is recording. The runner has its own copy of `weft_css` (`noExternal`), the
+  plugin calls `Extract` through it, and only that runner's files reach it. (Inside `Css`, the
+  recording is a flag and an array: the keyword types' `None` shadows `option`'s.)
+- **The runner is a Vite server of the plugin's own** (no config file, no watcher), whose `weft_css`
+  environment is runnable, in builds as in development. A build extracts every style file at
+  `buildStart` (once, for both environments) and closes it; a dev server extracts on the first
+  request for a sheet and keeps it, and when ReScript rewrites a style file, drops that file from
+  the runner (`evaluatedModules.invalidateModule`) and imports it again, which records only it (its
+  imports have run already). An app with no style files never starts it, so it needn't have
+  `weft_css`.
+- **An extraction error names the file imported, which may not be the one that threw** (a file the
+  style file imports): the message says "importing it (or a file it imports) threw".
+- **Sheets resolve to one path however they're asked for**: `virtual:weft/css/<id>.css`, the path,
+  and the dev server's URL for it (`/node_modules/.weft-css/<id>.css`), so a sheet is one module,
+  and a dev edit invalidates the one the page has.
+- **Stripping** replaces a style call with its name and a global with `void 0`, blanking the rest of
+  the call in place, through Vite's `parseAst`. The CSS plugin runs before `weft()`'s own, and
+  blanks only `'use weft css'`, leaving the others for it.
+- **`weftCss()`'s files import their sheets** (`import "virtual:weft/css/<id>.css"`, on the line the
+  directive was), in client environments only. `weft()`'s import nothing yet: the manifest of
+  sheets, and the pages linking them, are phase 3.
+- **Tests**: `css.test.ts` (resolving, stripping in place), the scan's (sheet ids, a name with
+  another id, two files with one), `weftCss.test.ts` (on the new `styled` fixture: a build, its
+  sheets with the entry's and a lazy chunk's CSS, no definitions or serializer in the JavaScript, a
+  definition that throws, a file needing the browser, a missing PPX; a dev server serving a stripped
+  file and its sheet, and extracting a rewritten file again), and the `basic` build's (no definition
+  in either bundle).
+- **`weft_app`** moved its inline `<style>` into `src/Styles.res`: the build's CSS is 0.58 kB, and
+  its JavaScript has the class names and nothing of `weft_css` but `cx`.
 
 ### 4. Which CSS a payload needs
 

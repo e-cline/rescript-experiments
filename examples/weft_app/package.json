@@ -6,11 +6,13 @@
   "type": "module",
   "dependencies": {
     "@e-cline/weft": "workspace:*",
+    "@e-cline/weft_css": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
     "@rescript/runtime": "catalog:"
   },
   "devDependencies": {
     "@e-cline/ppx_weft": "workspace:*",
+    "@e-cline/weft_vite_plugin": "workspace:*",
     "jsdom": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:",

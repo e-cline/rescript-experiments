@@ -1,0 +1,17 @@
+{
+  "name": "@e-cline/weft_vite_plugin_fixture_styled",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A fixture app for weft_vite_plugin's weftCss() tests: a client-only app with weft_css styles, one of them in a lazily loaded module.",
+  "type": "module",
+  "dependencies": {
+    "@e-cline/weft": "workspace:*",
+    "@e-cline/weft_css": "workspace:*",
+    "@e-cline/weft_dom": "workspace:*",
+    "@rescript/runtime": "catalog:"
+  },
+  "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
+    "rescript": "catalog:"
+  }
+}

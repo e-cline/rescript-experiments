@@ -119,6 +119,25 @@ describe('a build of the basic fixture', () => {
     }
   });
 
+  test("has no style's definition in either build, only its name", () => {
+    const server = join(root, 'dist/server');
+    for (const [dir, file] of [
+      ...filesUnder(clientDir).map((file) => [clientDir, file] as const),
+      ...filesUnder(server).map((file) => [server, file] as const),
+    ]) {
+      const code = readFileSync(join(dir, file), 'utf8');
+      expect(code, file).not.toContain('DEFINITION_SENTINEL_THEME');
+      expect(code, file).not.toContain('DEFINITION_SENTINEL_NOTES');
+      expect(code, file).not.toContain('Internal.class_');
+    }
+    // The entrypoint's chunk (or one it imports) has the class it uses.
+    expect(
+      filesUnder(clientDir).some((file) =>
+        readFileSync(join(clientDir, file), 'utf8').includes('"Theme-badge_w'),
+      ),
+    ).toBe(true);
+  });
+
   test('keeps the export names the client walks to, `$$Error` included', () => {
     const panels = chunkOf('src/Panels.res.js');
     expect(panels).toMatch(/\$\$Error/);

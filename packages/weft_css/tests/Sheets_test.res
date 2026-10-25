@@ -75,6 +75,13 @@ describe("Sheets", () => {
     },
   )
 
+  test("counts the page's link that has failed already as loaded", t => {
+    // As the server writes it: one that failed has no sheet, and fires nothing again.
+    let failed = addLink("/failed.css", false)
+    Obj.magic(failed)["weftSettled"] = 1
+    t->expect(WeftCss.Sheets.isLoaded("/failed.css"))->Expect.toBe(true)
+  })
+
   test("keeps what's loaded on globalThis.__weftCss, for the page's inline runtime", t => {
     let _ = addLink("/shared.css", true)
     let _ = WeftCss.Sheets.load("/shared.css")

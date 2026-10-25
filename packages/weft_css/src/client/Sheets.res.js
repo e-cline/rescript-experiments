@@ -19,7 +19,7 @@ function linkOf(document, href) {
 
 function watch(link) {
   let state = {
-    loaded: !(link.sheet == null),
+    loaded: !(link.sheet == null) || !(link.weftSettled == null),
     promise: Promise.resolve()
   };
   if (!state.loaded) {

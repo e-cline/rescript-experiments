@@ -215,12 +215,12 @@ Vitest.describe("Page, with styles", undefined, undefined, undefined, undefined,
     await Testing$WeftServer.tick();
   }
   let shell = Testing$WeftServer.written(pipe);
-  t.expect(shell).toContain(`<link rel="stylesheet" href="/cycle.css"><link rel="stylesheet" href="/base.css"><link rel="stylesheet" href="/a.css"></head><body><div id="root" data-weft-html="">`);
+  t.expect(shell).toContain(`<link rel="stylesheet" href="/cycle.css" onload="this.weftSettled=1" onerror="this.weftSettled=1"><link rel="stylesheet" href="/base.css" onload="this.weftSettled=1" onerror="this.weftSettled=1"><link rel="stylesheet" href="/a.css" onload="this.weftSettled=1" onerror="this.weftSettled=1"></head><body><div id="root" data-weft-html="">`);
   match.resolve();
   await Testing$WeftServer.finished(pipe);
   let page = Testing$WeftServer.written(pipe);
   t.expect(page).toContain(`C{\\"id\\":\\"wdddddd\\"`);
-  t.expect(page.includes(`<link rel="stylesheet" href="/d.css">`)).toBe(false);
+  t.expect(page.includes(`<link rel="stylesheet" href="/d.css"`)).toBe(false);
   let preload = page.indexOf(`<link rel="preload" as="style" href="/d.css">`);
   let swap = page.indexOf(`$weftSwap(0,["/d.css"])`);
   return t.expect([
@@ -230,6 +230,17 @@ Vitest.describe("Page, with styles", undefined, undefined, undefined, undefined,
     true,
     true
   ]);
+}));
+
+Vitest.describe("Page, with styles, without HTML", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("links nothing in its head, and sends the sheets in its rows", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  let pipe = Testing$WeftServer.pipe(Page$WeftServer.toStream(TestJsx$Weft.Elements.jsx("div", {
+    className: "A-x_waaaaaa"
+  }), pageAssets(), undefined, false, undefined, undefined, undefined, undefined), undefined, undefined);
+  await Testing$WeftServer.finished(pipe);
+  let page = Testing$WeftServer.written(pipe);
+  t.expect(page.includes(`rel="stylesheet"`)).toBe(false);
+  t.expect(page).toContain(`C{\\"id\\":\\"waaaaaa\\",\\"href\\":\\"/a.css\\"}`);
+  return t.expect(page).toContain(`J[\\"$C\\",[1,2,3],`);
 }));
 
 function make() {

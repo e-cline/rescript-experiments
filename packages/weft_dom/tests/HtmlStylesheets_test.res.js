@@ -45,6 +45,37 @@ let Waits = {
   make: HtmlStylesheets_test$Waits
 };
 
+function HtmlStylesheets_test$Inner(props) {
+  return Jsx$WeftDom.Elements.jsx("b", {
+    children: Hooks$Weft.use(props.promise)
+  });
+}
+
+let Inner = {
+  make: HtmlStylesheets_test$Inner
+};
+
+function HtmlStylesheets_test$Outer(props) {
+  return Jsx$WeftDom.Elements.jsxs("em", {
+    className: "W-x_waaaaaa",
+    children: [
+      Hooks$Weft.use(props.promise),
+      Jsx$WeftDom.jsx(Suspense$Weft.make, {
+        fallback: Jsx$WeftDom.Elements.jsx("i", {
+          children: "inner loading"
+        }),
+        children: Jsx$WeftDom.jsx(HtmlStylesheets_test$Inner, {
+          promise: props.inner
+        })
+      })
+    ]
+  });
+}
+
+let Outer = {
+  make: HtmlStylesheets_test$Outer
+};
+
 let linkFor = (href =>
   [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.getAttribute("href") === href) ?? null);
 
@@ -59,6 +90,17 @@ let addLoadedLink = (href => {
   document.head.append(link);
 });
 
+let addFailedLink = (href => {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.setAttribute("href", href);
+  // A link that failed, as the server's are once they have: no sheet, and \`weftSettled\` (its
+  // \`onerror\`, which jsdom doesn't run).
+  link.weftSettled = 1;
+  document.head.append(link);
+  return link;
+});
+
 let reset = (() => {
   document.head.innerHTML = "";
   document.body.innerHTML = "";
@@ -66,6 +108,51 @@ let reset = (() => {
 });
 
 let state = (href => globalThis.__weftCss?.[href] ?? null);
+
+async function pageWithNested(failOpt) {
+  let fail = failOpt !== undefined ? failOpt : false;
+  let match = deferred();
+  let settleInner = {
+    contents: () => {}
+  };
+  let innerPromise = new Promise((resolve, reject) => {
+    settleInner.contents = () => {
+      if (fail) {
+        return reject({
+          RE_EXN_ID: "Failure",
+          _1: "inner failed"
+        });
+      } else {
+        return resolve("inner done");
+      }
+    };
+  });
+  let rendering = Html$WeftDom.render(Jsx$WeftDom.jsx(Suspense$Weft.make, {
+    fallback: Jsx$WeftDom.Elements.jsx("i", {
+      children: "outer loading"
+    }),
+    children: Jsx$WeftDom.jsx(HtmlStylesheets_test$Outer, {
+      promise: match[0],
+      inner: innerPromise
+    })
+  }), param => {}, undefined, undefined, markup => {
+    if (markup.includes("_waaaaaa")) {
+      return ["/a.css"];
+    } else {
+      return [];
+    }
+  });
+  let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
+  let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
+  match[1]("outer done");
+  await tick();
+  await tick();
+  settleInner.contents();
+  return [
+    container,
+    await rest
+  ];
+}
 
 async function pageWithSegment() {
   let match = deferred();
@@ -136,6 +223,43 @@ Vitest.describe("a segment that needs stylesheets", undefined, undefined, undefi
     t.expect(Stdlib_Option.map(Primitive_option.fromNullable(state("/a.css")), state => state.loaded)).toEqual(true);
     return t.expect(Sheets$WeftCss.isLoaded("/a.css")).toBe(true);
   });
+  Vitest.testAsync("doesn't wait for the page's link that has failed already", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    addFailedLink("/a.css");
+    addLoadedLink("/base.css");
+    let match = await pageWithSegment();
+    let segment = match[1];
+    DomSupport$WeftDom.arrive(segment);
+    DomSupport$WeftDom.run(segment);
+    return t.expect(DomSupport$WeftDom.markup(match[0])).toContain(">done</em>");
+  });
+  Vitest.testAsync("swaps in a boundary inside one still waiting for its sheets, once that one is in", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let match = await pageWithNested(undefined);
+    let segments = match[1];
+    let container = match[0];
+    t.expect(segments.length).toBe(2);
+    segments.forEach(segment => {
+      DomSupport$WeftDom.arrive(segment);
+      DomSupport$WeftDom.run(segment);
+    });
+    await tick();
+    t.expect(DomSupport$WeftDom.markup(container)).toContain("outer loading");
+    fire(linkFor("/a.css"), "load");
+    await tick();
+    t.expect(DomSupport$WeftDom.markup(container)).toContain("outer done");
+    t.expect(DomSupport$WeftDom.markup(container)).toContain("<b>inner done</b>");
+    return t.expect(DomSupport$WeftDom.markup(container).includes("inner loading")).toBe(false);
+  });
+  Vitest.testAsync("fails a boundary inside one still waiting for its sheets, once that one is in", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let match = await pageWithNested(true);
+    match[1].forEach(segment => {
+      DomSupport$WeftDom.arrive(segment);
+      DomSupport$WeftDom.run(segment);
+    });
+    await tick();
+    fire(linkFor("/a.css"), "load");
+    await tick();
+    return t.expect(DomSupport$WeftDom.markup(match[0])).toContain("<!--$!-->");
+  });
   Vitest.testAsync("waits for a sheet the client is loading, through the shared state", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let loading = Sheets$WeftCss.load("/a.css");
     addLoadedLink("/base.css");
@@ -158,11 +282,15 @@ export {
   deferred,
   tick,
   Waits,
+  Inner,
+  Outer,
   linkFor,
   fire,
   addLoadedLink,
+  addFailedLink,
   reset,
   state,
+  pageWithNested,
   pageWithSegment,
 }
 /*  Not a pure module */

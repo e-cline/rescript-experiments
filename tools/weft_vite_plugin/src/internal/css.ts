@@ -226,6 +226,47 @@ export class Extractor {
     return result;
   }
 
+  /** Drops the copy of `file` the runner has (its code, and its module), so it runs again. */
+  #drop(environment: RunnableDevEnvironment, file: string) {
+    for (const node of environment.moduleGraph.getModulesByFile(file) ?? []) {
+      environment.moduleGraph.invalidateModule(node);
+    }
+    for (const node of environment.runner.evaluatedModules.getModulesByFile(
+      file,
+    ) ?? []) {
+      environment.runner.evaluatedModules.invalidateModule(node);
+    }
+  }
+
+  /**
+   * The files that import `file` (at any depth) among those an extraction has run, so a style file
+   * whose definitions use what `file` exports is among them. Drops the runner's copies of them all,
+   * and of `file`, so the next extraction runs its new code.
+   */
+  importersOf(file: string): Promise<string[]> {
+    return this.#serially(async () => {
+      if (this.#server === undefined) return [];
+      const environment = await this.#environment();
+      const modules = environment.runner.evaluatedModules;
+      const found = new Set<string>();
+      const visit = (from: string) => {
+        for (const node of modules.getModulesByFile(from) ?? []) {
+          for (const importer of node.importers) {
+            const next = modules.getModuleById(importer)?.file;
+            if (next === undefined || next === file || found.has(next)) {
+              continue;
+            }
+            found.add(next);
+            visit(next);
+          }
+        }
+      };
+      visit(file);
+      for (const each of [file, ...found]) this.#drop(environment, each);
+      return [...found];
+    });
+  }
+
   /**
    * Imports `files` (dropping any copy the runner has already run, so their top levels run again),
    * and gives the sheets recorded, which replace the ones of the same ids. A file whose import
@@ -234,17 +275,7 @@ export class Extractor {
   extract(files: CompiledFile[]): Promise<Sheet[]> {
     return this.#serially(async () => {
       const environment = await this.#environment();
-      for (const {file} of files) {
-        for (const node of environment.moduleGraph.getModulesByFile(file) ??
-          []) {
-          environment.moduleGraph.invalidateModule(node);
-        }
-        for (const node of environment.runner.evaluatedModules.getModulesByFile(
-          file,
-        ) ?? []) {
-          environment.runner.evaluatedModules.invalidateModule(node);
-        }
-      }
+      for (const {file} of files) this.#drop(environment, file);
       const extract = (await environment.runner.import(
         extractModule,
       )) as ExtractModule;

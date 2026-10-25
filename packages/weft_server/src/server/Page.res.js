@@ -54,7 +54,7 @@ function stylesheetPreload(row) {
 }
 
 function sheetLinks(rows) {
-  return Stdlib_Array.filterMap(rows, row => Stdlib_Option.map(hrefOf(row), href => `<link rel="stylesheet" href="` + escape(href) + `">`)).join("");
+  return Stdlib_Array.filterMap(rows, row => Stdlib_Option.map(hrefOf(row), href => `<link rel="stylesheet" href="` + escape(href) + `" onload="this.weftSettled=1" onerror="this.weftSettled=1">`)).join("");
 }
 
 function root(shell) {

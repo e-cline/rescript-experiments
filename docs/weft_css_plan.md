@@ -622,6 +622,16 @@ little:
   ones shared); `weft_server`'s (the page's preload and swap; in jsdom, a boundary swapped in and
   hydrated once its sheet loads, from one link); the plugin's `stylesheets.test.ts` (head sheets as
   pieces, applied loaded; others loaded, held, released; `unstyled`).
+- **Found in a later audit, and fixed**:
+  - _A boundary inside one waiting for its sheets_: sections no longer swap in the order they
+    arrive, so the inner one's swap could run while its placeholder was still in the outer one's
+    `<template>`, and it was dropped (the inner fallback stayed). A swap or failure whose boundary
+    isn't in the document yet now waits in `$weftLate`, run again after the next swap.
+  - _A head link that had failed already_: a link counted as loaded only if it had its `sheet` or
+    fired `load` or `error` later, so one that had failed before anyone asked was waited for
+    forever. The head's sheet links now set `weftSettled` when they load or fail (`onload`,
+    `onerror`), which `$weftCss` and `WeftCss.Sheets` read.
+  - Tests for both, which fail without the fixes, in `HtmlStylesheets_test` and `Sheets_test`.
 
 ### 7. Development
 
@@ -664,6 +674,17 @@ little:
   `weft()`'s dev server (a definition edit sends `weft:css` alone, with the `lib/` copy changing
   too, and the new CSS is served; a style added reloads); `weftCss()`'s (a definition edit is Vite's
   CSS update of the sheet; a code change reloads).
+- **Found in a later audit, and fixed**:
+  - _A style file's definitions using another file's values_ (`Theme.hairline()`, or a module with
+    no styles): editing that file changed nothing, as only style files were extracted again, and the
+    runner kept its copy of the other file. Now a change to any compiled file drops the runner's
+    copies of it and of every file importing it, at any depth, and extracts the style files among
+    them again. Each sheet whose CSS changed gets its `weft:css` event, even with a reload or
+    refetch (a refetch's rows name sheets the page has loaded already).
+  - _A first extraction that failed_ (a definition that throws) was kept, so nothing was served
+    until the server restarted. In development a failed extraction is now tried again the next time.
+  - Dev tests for both (the `basic` fixture's `Theme` takes its variable's value from `Colors`),
+    which fail without the fixes.
 
 ### 8. Client-only apps
 

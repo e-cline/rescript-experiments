@@ -1,7 +1,8 @@
 /***
 Stylesheets in the browser: each loaded once per document, by URL, as a `<link rel="stylesheet">`
 in the head. A link already in the document (the server's, in the first page's head) is adopted,
-not added again, and one that loaded before anyone asked is known to have (its `sheet` is set).
+not added again, and one that loaded before anyone asked is known to have (its `sheet` is set, or
+it has `weftSettled`, which `WeftServer.Page`'s links set when they load or fail).
 
 ```rescript
 await WeftCss.Sheets.load("/assets/wk3f9a2-1c2d.css")

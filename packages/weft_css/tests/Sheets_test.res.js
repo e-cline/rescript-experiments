@@ -75,6 +75,11 @@ Vitest.describe("Sheets", undefined, undefined, undefined, undefined, undefined,
     fire(pending, "load");
     return t.expect(await settled(loading)).toBe(true);
   });
+  Vitest.test("counts the page's link that has failed already as loaded", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let failed = addLink("/failed.css", false);
+    failed.weftSettled = 1;
+    t.expect(Sheets$WeftCss.isLoaded("/failed.css")).toBe(true);
+  });
   Vitest.test("keeps what's loaded on globalThis.__weftCss, for the page's inline runtime", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     addLink("/shared.css", true);
     Sheets$WeftCss.load("/shared.css");

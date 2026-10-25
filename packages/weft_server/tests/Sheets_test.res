@@ -180,19 +180,33 @@ describe("Page, with styles", () => {
     let shell = Testing.written(pipe)
     t
     ->expect(shell)
-    ->Expect.String.toContain(`<link rel="stylesheet" href="/cycle.css"><link rel="stylesheet" href="/base.css"><link rel="stylesheet" href="/a.css"></head><body><div id="root" data-weft-html="">`)
+    ->Expect.String.toContain(`<link rel="stylesheet" href="/cycle.css" onload="this.weftSettled=1" onerror="this.weftSettled=1"><link rel="stylesheet" href="/base.css" onload="this.weftSettled=1" onerror="this.weftSettled=1"><link rel="stylesheet" href="/a.css" onload="this.weftSettled=1" onerror="this.weftSettled=1"></head><body><div id="root" data-weft-html="">`)
     resolve()
     await Testing.finished(pipe)
     let page = Testing.written(pipe)
     // The boundary's sheet isn't the shell's: preloaded as soon as its row is written, after the
     // shell, and named in its segment's swap, which waits for it.
     t->expect(page)->Expect.String.toContain(`C{\\"id\\":\\"wdddddd\\"`)
-    t->expect(page->String.includes(`<link rel="stylesheet" href="/d.css">`))->Expect.toBe(false)
+    t->expect(page->String.includes(`<link rel="stylesheet" href="/d.css"`))->Expect.toBe(false)
     let preload = page->String.indexOf(`<link rel="preload" as="style" href="/d.css">`)
     let swap = page->String.indexOf(`$weftSwap(0,["/d.css"])`)
     t
     ->expect((preload > page->String.indexOf("</head>"), swap > preload))
     ->Expect.toEqual((true, true))
+  })
+})
+
+describe("Page, with styles, without HTML", () => {
+  testAsync("links nothing in its head, and sends the sheets in its rows", async t => {
+    let pipe = Testing.pipe(
+      Page.toStream(<div className="A-x_waaaaaa" />, ~assets=pageAssets(), ~html=false),
+    )
+    await Testing.finished(pipe)
+    let page = Testing.written(pipe)
+    // The client loads them, before it renders the root: nothing in the head to block on.
+    t->expect(page->String.includes(`rel="stylesheet"`))->Expect.toBe(false)
+    t->expect(page)->Expect.String.toContain(`C{\\"id\\":\\"waaaaaa\\",\\"href\\":\\"/a.css\\"}`)
+    t->expect(page)->Expect.String.toContain(`J[\\"$C\\",[1,2,3],`)
   })
 })
 

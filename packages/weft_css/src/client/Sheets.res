@@ -10,6 +10,7 @@ type sheet
 @send external setAttribute: (element, string, string) => unit = "setAttribute"
 @send external appendChild: (element, element) => unit = "appendChild"
 @get external sheet: element => Nullable.t<sheet> = "sheet"
+@get external settled: element => Nullable.t<int> = "weftSettled"
 @send
 external addEventListener: (element, string, unit => unit, {"once": bool}) => unit =
   "addEventListener"
@@ -36,9 +37,16 @@ let linkOf = (document, href) =>
   ->arrayFrom
   ->Array.find(link => link->getAttribute("href")->Nullable.toOption == Some(href))
 
-/** The state of `link`'s sheet: loaded if its `sheet` is set, or once it fires `load` or `error`. */
+/**
+The state of `link`'s sheet: loaded if its `sheet` is set, or it has `weftSettled` (the server's
+links set it when they load or fail: one that failed has no `sheet`, and fires nothing again), or
+once it fires `load` or `error`.
+*/
 let watch = link => {
-  let state = {loaded: !Nullable.isNullable(sheet(link)), promise: Promise.resolve()}
+  let state = {
+    loaded: !Nullable.isNullable(sheet(link)) || !Nullable.isNullable(settled(link)),
+    promise: Promise.resolve(),
+  }
   if !state.loaded {
     state.promise = Promise.make((resolve, _) => {
       let settle = () => {

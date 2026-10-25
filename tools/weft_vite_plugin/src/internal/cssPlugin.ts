@@ -36,11 +36,16 @@ import {
 import {cssEvent, devUrl} from './virtualModules.js';
 
 type Change = {
-  sheet: string;
-  /** Whether only the file's CSS changed: it did, and its code without its definitions is the same. */
+  /**
+   * Whether only the file's CSS changed: it's a style file, its sheet's CSS is different, and its
+   * code without its definitions is the same.
+   */
   cssOnly: boolean;
-  /** Whether its sheet's CSS is different. */
-  changed: boolean;
+  /**
+   * The sheets whose CSS is different: the file's, and those of the style files that import it (at
+   * any depth), whose definitions may use what it exports.
+   */
+  changed: string[];
 };
 
 export type CssPluginOptions = {
@@ -103,7 +108,10 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
     else ownScan = scan(config.root);
   };
 
-  /** Extracts every style file's sheet, the first time it's asked for (for this build). */
+  /**
+   * Extracts every style file's sheet, the first time it's asked for (for this build). In
+   * development, one that fails is tried again the next time, once the file's fixed.
+   */
   const extractAll = () => {
     extracted ??= (async () => {
       extractor ??= new Extractor(config.root, config.mode);
@@ -114,14 +122,18 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
         // Nothing changes during a build: the runner isn't needed again.
         await extractor.close();
       }
-    })();
+    })().catch((error: unknown) => {
+      if (config.command === 'serve') extracted = undefined;
+      throw error;
+    });
     return extracted;
   };
 
   /**
-   * What a compiled file's change is to its styles: rescanned if it gained or lost them, its sheet
-   * extracted again if it has them, and whether only its CSS changed (its code without its
-   * definitions is as it was). `undefined` if it isn't a style file, or nothing's extracted yet.
+   * What a compiled file's change is to its styles: rescanned if it gained or lost them; its sheet,
+   * and those of the style files importing it, extracted again; and whether only its CSS changed
+   * (its code without its definitions is as it was). `undefined` if neither it nor any file
+   * importing it has styles, or nothing's extracted yet.
    */
   const handle = (file: string, type: string): Promise<Change | undefined> => {
     const current = scanned();
@@ -156,31 +168,51 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
         extractor.forget(was.sheet);
         options.onChange?.();
       }
-      if (now?.sheet === undefined) return undefined;
+      // The style files whose definitions may use what it exports (the extraction ran them).
+      const importers = (await extractor.importersOf(file)).flatMap(
+        (importer) => {
+          const found = scanned().files.get(importer);
+          return found?.sheet === undefined ? [] : [found];
+        },
+      );
+      const files = now?.sheet === undefined ? importers : [now, ...importers];
+      if (files.length === 0) return undefined;
       await extractAll();
-      const before = extractor.sheets.get(now.sheet);
-      await extractor.extract([now]);
-      const after = extractor.sheets.get(now.sheet);
-      if (after?.dependencies.join() !== before?.dependencies.join()) {
-        options.onChange?.();
+      const before = new Map(
+        files.map(({sheet}) => [sheet!, extractor!.sheets.get(sheet!)]),
+      );
+      await extractor.extract(files);
+      const changed: string[] = [];
+      for (const [sheet, was] of before) {
+        const after = extractor.sheets.get(sheet);
+        if (after?.dependencies.join() !== was?.dependencies.join()) {
+          options.onChange?.();
+        }
+        if (after?.css !== was?.css) changed.push(sheet);
       }
-      // The sheet's module loads again, with the new CSS, whoever asks for it next.
-      for (const environment of Object.values(devServer?.environments ?? {})) {
-        for (const node of environment.moduleGraph.getModulesByFile(
-          sheetPath(config.root, now.sheet),
-        ) ?? []) {
-          environment.moduleGraph.invalidateModule(node);
+      // The sheets' modules load again, with the new CSS, whoever asks for them next.
+      for (const sheet of changed) {
+        for (const environment of Object.values(
+          devServer?.environments ?? {},
+        )) {
+          for (const node of environment.moduleGraph.getModulesByFile(
+            sheetPath(config.root, sheet),
+          ) ?? []) {
+            environment.moduleGraph.invalidateModule(node);
+          }
         }
       }
+      if (now?.sheet === undefined) return {cssOnly: false, changed};
       const names = lastNames.get(file);
       const nowNames = namesOnly(code, parseAst);
       lastNames.set(file, nowNames);
-      const changed = before?.css !== after?.css;
       return {
-        sheet: now.sheet,
         // (A file written again unchanged, as for a dependency's change, is handled as it always
         // was: only a change to the CSS alone skips the reload or refetch.)
-        cssOnly: changed && was?.sheet === now.sheet && names === nowNames,
+        cssOnly:
+          changed.includes(now.sheet) &&
+          was?.sheet === now.sheet &&
+          names === nowNames,
         changed,
       };
     })();
@@ -257,34 +289,39 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
 
     async hotUpdate({file, type}) {
       const change = await handle(file, type);
-      if (change === undefined || !change.cssOnly) return undefined;
-      // Only the CSS changed: the module's code is the same, so nothing reloads or refetches (this
-      // plugin is before `weft()`'s, whose `hotUpdate` then has no modules to act on).
-      if (this.environment.name !== 'client') return [];
+      if (change === undefined) return undefined;
+      // When only the CSS changed, the module's code is the same, so nothing reloads or refetches
+      // (this plugin is before `weft()`'s, whose `hotUpdate` then has no modules to act on).
+      // Otherwise the change is handled as usual, and the sheets that changed are updated too (a
+      // refetch's rows name sheets the page has loaded already).
+      const usual = change.cssOnly ? [] : undefined;
+      if (this.environment.name !== 'client') return usual;
       if (options.importSheets) {
-        // Its sheet is a CSS module the client imports: Vite's own CSS update applies it.
-        return [
+        // Each sheet is a CSS module the client imports: Vite's own CSS update applies it. (A change
+        // to code reloads the page, which loads the sheets again.)
+        if (!change.cssOnly) return undefined;
+        return change.changed.flatMap((sheet) => [
           ...(this.environment.moduleGraph.getModulesByFile(
-            sheetPath(config.root, change.sheet),
+            sheetPath(config.root, sheet),
           ) ?? []),
-        ];
+        ]);
       }
-      {
-        // The page links it: the client swaps its link for a fresh one (`virtual:weft/client`).
+      // The page links them: the client swaps each link for a fresh one (`virtual:weft/client`).
+      for (const sheet of change.changed) {
         this.environment.hot.send({
           type: 'custom',
           event: cssEvent,
           data: {
-            id: change.sheet,
+            id: sheet,
             href: devUrl(
               config.root,
               config.base,
-              sheetPath(config.root, change.sheet),
+              sheetPath(config.root, sheet),
             ),
           },
         });
       }
-      return [];
+      return usual;
     },
 
     async closeBundle() {

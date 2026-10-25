@@ -31,7 +31,9 @@ describe("the harness's stylesheets", () => {
     const pieces: Piece[] = [];
     await readPage(
       html(
-        '<!doctype html><html><head><link rel="stylesheet" href="/a.css?x=1&amp;y=2">' +
+        // As `WeftServer.Page` writes them, saying when they've loaded or failed.
+        '<!doctype html><html><head><link rel="stylesheet" href="/a.css?x=1&amp;y=2" ' +
+          'onload="this.weftSettled=1" onerror="this.weftSettled=1">' +
           '<script>1</script></head><body><div id="root"></div></body></html>',
       ).body!,
       (piece) => pieces.push(piece),

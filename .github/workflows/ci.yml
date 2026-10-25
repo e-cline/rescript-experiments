@@ -54,7 +54,7 @@ jobs:
 
   e2e:
     # The browser tests (examples/weft_notes/e2e and examples/weft_shop/e2e), against the built apps
-    # in Chromium, on one Node version. Everything a browser isn't needed for is tested in the job
+    # in Chromium (and weft_shop's styles test in Firefox and WebKit too), on one Node version. Everything a browser isn't needed for is tested in the job
     # above.
     name: Browser tests
     runs-on: ubuntu-latest
@@ -76,9 +76,9 @@ jobs:
       - run: vp pack
         working-directory: tools/weft_vite_plugin
       - run: vp run build
-      - name: Install Chromium for Playwright
+      - name: Install Chromium, Firefox and WebKit for Playwright
         run:
           pnpm --filter @e-cline/weft_notes_example exec playwright install
-          --with-deps chromium
+          --with-deps chromium firefox webkit
       - run: vp run --filter @e-cline/weft_notes_example e2e
       - run: vp run --filter @e-cline/weft_shop_example e2e

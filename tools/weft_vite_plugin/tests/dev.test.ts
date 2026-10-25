@@ -278,6 +278,55 @@ describe('the dev server', () => {
     expect(css).toContain('opacity: 0.5');
   });
 
+  test('extracts a sheet again when a file its definitions use changes, though it has no styles', async () => {
+    await fetch(`${base}/assets.json`);
+    await server.environments[clientEnvironment]!.transformRequest(
+      '/src/Likes.res.js',
+    );
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    const path = join(root, 'src/Colors.res.js');
+    writeFileSync(
+      path,
+      readFileSync(path, 'utf8').replace('"#1d1b19"', '"#123456"'),
+    );
+    server.watcher.emit('change', path);
+    await clientMessage();
+    // `Colors` is the server's and the client's too: handled as usual, and Theme's link swapped.
+    expect(events(clientEnvironment)).toContain(
+      `weft:css {"id":"${theme}","href":"/node_modules/.weft-css/${theme}.css"}`,
+    );
+    const css = await (
+      await fetch(`${base}/node_modules/.weft-css/${theme}.css?t=1`, {
+        headers: {Accept: 'text/css'},
+      })
+    ).text();
+    expect(css).toContain(`--Theme-ink_${theme}: #123456;`);
+  });
+
+  test('extracts the sheets again once a definition that threw is fixed', async () => {
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    const path = join(root, 'src/Theme.res.js');
+    const code = readFileSync(path, 'utf8');
+    writeFileSync(
+      path,
+      code.replace(
+        'content: "\\"DEFINITION_SENTINEL_THEME\\""',
+        'content: (() => { throw new Error("boom"); })()',
+      ),
+    );
+    const sheet = () =>
+      fetch(`${base}/node_modules/.weft-css/${theme}.css`, {
+        headers: {Accept: 'text/css'},
+      });
+    expect((await sheet()).status).toBe(500);
+    writeFileSync(path, code);
+    server.watcher.emit('change', path);
+    await clientMessage();
+    const fixed = await sheet();
+    expect(fixed.status).toBe(200);
+    expect(await fixed.text()).toContain(`--Theme-ink_${theme}: #1d1b19;`);
+  });
+
   test('reloads as usual when a style is added, which changes the code too', async () => {
     await fetch(`${base}/assets.json`);
     await server.environments[clientEnvironment]!.transformRequest(

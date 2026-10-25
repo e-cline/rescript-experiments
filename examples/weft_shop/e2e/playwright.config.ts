@@ -23,6 +23,21 @@ export default defineConfig({
       testMatch: ['shop.e2e.ts', 'styles.e2e.ts'],
       use: {...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${gated}`},
     },
+    // When a stylesheet counts as loaded, and when a script runs, differ by engine: the flash test
+    // runs in each.
+    {
+      name: 'gated, Firefox',
+      testMatch: 'styles.e2e.ts',
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: `http://127.0.0.1:${gated}`,
+      },
+    },
+    {
+      name: 'gated, WebKit',
+      testMatch: 'styles.e2e.ts',
+      use: {...devices['Desktop Safari'], baseURL: `http://127.0.0.1:${gated}`},
+    },
     {
       name: 'random latency',
       testMatch: 'random.e2e.ts',

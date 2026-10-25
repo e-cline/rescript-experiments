@@ -24,6 +24,23 @@ module Waits = {
     <em className="W-x_waaaaaa"> {string(Weft.Hooks.use(promise))} </em>
 }
 
+module Inner = {
+  @weft.component
+  let make = (~promise: promise<string>) => <b> {string(Weft.Hooks.use(promise))} </b>
+}
+
+/** Content that needs `/a.css`, with a boundary of its own inside. */
+module Outer = {
+  @weft.component
+  let make = (~promise: promise<string>, ~inner: promise<string>) =>
+    <em className="W-x_waaaaaa">
+      {string(Weft.Hooks.use(promise))}
+      <Weft.Suspense fallback={<i> {string("inner loading")} </i>}>
+        <Inner promise=inner />
+      </Weft.Suspense>
+    </em>
+}
+
 type element
 let linkFor: string => Nullable.t<element> = %raw(`href =>
   [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.getAttribute("href") === href) ?? null`)
@@ -39,6 +56,16 @@ let addLoadedLink: string => unit = %raw(`href => {
   Object.defineProperty(link, "sheet", {value: {}});
   document.head.append(link);
 }`)
+let addFailedLink: string => element = %raw(`href => {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.setAttribute("href", href);
+  // A link that failed, as the server's are once they have: no sheet, and \`weftSettled\` (its
+  // \`onerror\`, which jsdom doesn't run).
+  link.weftSettled = 1;
+  document.head.append(link);
+  return link;
+}`)
 let reset: unit => unit = %raw(`() => {
   document.head.innerHTML = "";
   document.body.innerHTML = "";
@@ -47,6 +74,32 @@ let reset: unit => unit = %raw(`() => {
 let state: string => Nullable.t<{
   "loaded": bool,
 }> = %raw(`href => globalThis.__weftCss?.[href] ?? null`)
+
+/**
+A page with a boundary whose content needs `/a.css`, and has a boundary in it: the inner one's
+segment comes after the outer's, with the inner content (or, `~fail`, an error).
+*/
+let pageWithNested = async (~fail=false) => {
+  let (outer, resolveOuter) = deferred()
+  let settleInner = ref(() => ())
+  let innerPromise = Promise.make((resolve, reject) =>
+    settleInner := (() => fail ? reject(Failure("inner failed")) : resolve("inner done"))
+  )
+  let rendering = Html.render(
+    <Weft.Suspense fallback={<i> {string("outer loading")} </i>}>
+      <Outer promise=outer inner=innerPromise />
+    </Weft.Suspense>,
+    ~onError=_ => None,
+    ~stylesheetsOf=markup => markup->String.includes("_waaaaaa") ? ["/a.css"] : [],
+  )
+  let container = page(await rendering->Html.shell)
+  let rest = chunks(rendering->Html.rest)
+  resolveOuter("outer done")
+  await tick()
+  await tick()
+  settleInner.contents()
+  (container, await rest)
+}
 
 /** A page with one boundary whose content needs `/a.css` (and `/base.css`, which it depends on). */
 let pageWithSegment = async () => {
@@ -102,6 +155,54 @@ describe("a segment that needs stylesheets", () => {
       ->expect(state("/a.css")->Nullable.toOption->Option.map(state => state["loaded"]))
       ->Expect.toEqual(Some(true))
       t->expect(WeftCss.Sheets.isLoaded("/a.css"))->Expect.toBe(true)
+    },
+  )
+
+  testAsync("doesn't wait for the page's link that has failed already", async t => {
+    let _ = addFailedLink("/a.css")
+    addLoadedLink("/base.css")
+    let (container, segment) = await pageWithSegment()
+    arrive(segment)
+    run(segment)
+    t->expect(markup(container))->Expect.String.toContain(">done</em>")
+  })
+
+  testAsync(
+    "swaps in a boundary inside one still waiting for its sheets, once that one is in",
+    async t => {
+      let (container, segments) = await pageWithNested()
+      t->expect(segments->Array.length)->Expect.toBe(2)
+      // The inner one's segment arrives (and runs) while the outer waits for `/a.css`.
+      segments->Array.forEach(
+        segment => {
+          arrive(segment)
+          run(segment)
+        },
+      )
+      await tick()
+      t->expect(markup(container))->Expect.String.toContain("outer loading")
+      fire(Nullable.getUnsafe(linkFor("/a.css")), "load")
+      await tick()
+      t->expect(markup(container))->Expect.String.toContain("outer done")
+      t->expect(markup(container))->Expect.String.toContain("<b>inner done</b>")
+      t->expect(markup(container)->String.includes("inner loading"))->Expect.toBe(false)
+    },
+  )
+
+  testAsync(
+    "fails a boundary inside one still waiting for its sheets, once that one is in",
+    async t => {
+      let (container, segments) = await pageWithNested(~fail=true)
+      segments->Array.forEach(
+        segment => {
+          arrive(segment)
+          run(segment)
+        },
+      )
+      await tick()
+      fire(Nullable.getUnsafe(linkFor("/a.css")), "load")
+      await tick()
+      t->expect(markup(container))->Expect.String.toContain("<!--$!-->")
     },
   )
 

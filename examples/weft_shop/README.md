@@ -130,7 +130,7 @@ opens them in the order it's about:
 - [`styles.e2e.ts`](e2e/styles.e2e.ts), gated too, with every stylesheet slowed down: a probe on
   every frame finds nothing shown without its CSS, from the home page streaming to a navigation, a
   product, the cart's drawer and page, and a quantity changed (its totals refetched); and, as a
-  control, that it does find a page shown before its stylesheet.
+  control, that it does find a page shown before its stylesheet. In Firefox and WebKit too.
 - [`random.e2e.ts`](e2e/random.e2e.ts), with seeded random latency and failures, as `vp run start`
   serves it: every page streaming in completely, once, and hydrating; navigating quickly through
   pages still streaming; and a purchase, retrying whatever fails.

@@ -94,11 +94,18 @@ knows it's needed, while the boundary's content is still rendering. Its swap lin
 let stylesheetPreload = row =>
   hrefOf(row)->Option.mapOr("", href => `<link rel="preload" as="style" href="${escape(href)}">`)
 
-/** The stylesheet links for the `C` rows in `rows`. */
+/**
+The stylesheet links for the `C` rows in `rows`. Each sets `weftSettled` once it loads or fails, so
+what waits for it later knows: one that failed has no `sheet`, and fires nothing again.
+*/
 let sheetLinks = (rows: array<Payload.row>) =>
   rows
   ->Array.filterMap(row =>
-    hrefOf(row)->Option.map(href => `<link rel="stylesheet" href="${escape(href)}">`)
+    hrefOf(row)->Option.map(href =>
+      `<link rel="stylesheet" href="${escape(
+          href,
+        )}" onload="this.weftSettled=1" onerror="this.weftSettled=1">`
+    )
   )
   ->Array.join("")
 

@@ -765,7 +765,9 @@ export async function readPage(
       // the test's own document's.
       const body = /<body(?:[^>"']|"[^"]*"|'[^']*')*>/.exec(text);
       const script = text.indexOf('<script>');
-      const stylesheet = /<link rel="stylesheet" href="([^"]*)">/.exec(text);
+      const stylesheet = /<link rel="stylesheet" href="([^"]*)"[^>]*>/.exec(
+        text,
+      );
       if (
         stylesheet !== null &&
         (body === null || stylesheet.index < body.index) &&

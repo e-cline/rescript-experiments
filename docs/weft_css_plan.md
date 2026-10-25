@@ -911,7 +911,8 @@ What's left, most useful first. The first two are the gaps in what's sent (the f
    handlers, which has no reason to import them. `weft_shop`'s cards gained a sale badge, in a file
    of its own (`SaleBadge`), which is what the test needs: sorted dearest first, the shoes' first
    page has nothing on sale and "Load more" brings two. Tests: `weft_server`'s `Sheets_test` ("RPCs,
-   with sheets": the answer held back until its sheet loads; without assets, no sheets), and
+   with sheets": the answer held back until its sheet loads; a boundary in it keeping its fallback,
+   after the answer, until its later row's sheet loads; without assets, no sheets), and
    `weft_shop`'s `Styles_test` (the grid keeps its old cards, "Loading…", until the badge's sheet
    loads, and nothing is ever unstyled). Both fail with the styles left out.
 

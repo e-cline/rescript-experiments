@@ -409,14 +409,42 @@ Vitest.describe("Navigation, with sheets", undefined, undefined, undefined, unde
 
 let cards = Rpc$WeftServer.make("shop.cards", RpcCodec$WeftServer.string, undefined, undefined);
 
-let cardsRouter = RpcServer$WeftServer.router([RpcServer$WeftServer.handler(cards, async (label, param) => ({
+let stocked = Rpc$WeftServer.make("shop.stocked", RpcCodec$WeftServer.string, undefined, undefined);
+
+let stockReady = {
+  contents: Promise.withResolvers()
+};
+
+let cardsRouter = RpcServer$WeftServer.router([
+  RpcServer$WeftServer.handler(cards, async (label, param) => ({
     TAG: "Ok",
     _0: TestJsx$Weft.Elements.jsx("p", {
       id: "card",
       className: "D-z_wdddddd",
       children: Support$WeftServer.text(label)
     })
-  }))], undefined, undefined, undefined);
+  })),
+  RpcServer$WeftServer.handler(stocked, async (label, param) => ({
+    TAG: "Ok",
+    _0: TestJsx$Weft.Elements.jsxs("div", {
+      id: "card",
+      className: "A-x_waaaaaa",
+      children: [
+        Support$WeftServer.text(label),
+        TestJsx$Weft.jsx(Suspense$Weft.make, {
+          fallback: Support$WeftServer.text("checking"),
+          children: TestJsx$Weft.jsx(PageSupport$WeftServer.Later.make, {
+            ready: stockReady.contents.promise,
+            children: TestJsx$Weft.Elements.jsx("i", {
+              id: "stock",
+              className: "D-z_wdddddd"
+            })
+          })
+        })
+      ]
+    })
+  }))
+], undefined, undefined, undefined);
 
 let globalFetch = globalThis.fetch;
 
@@ -443,6 +471,35 @@ Vitest.describe("RPCs, with sheets", undefined, undefined, undefined, undefined,
     TestRenderer$Weft.render(renderer, element._0);
     return t.expect(Stdlib_Option.isSome(TestRenderer$Weft.findById(renderer, "card"))).toBe(true);
   });
+  Vitest.testAsync("keep a boundary's fallback until a later row's sheets have loaded, after the answer", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    setFetch(fetchWith(pageAssets()));
+    stockReady.contents = Promise.withResolvers();
+    let sheets = make();
+    release(sheets, [
+      "/cycle.css",
+      "/base.css",
+      "/a.css"
+    ]);
+    let answer = Rpc$WeftServer.call(stocked, clientWith(sheets), "more", undefined, undefined);
+    t.expect(await isSettled(answer)).toBe(true);
+    let renderer = TestRenderer$Weft.create();
+    let element = await answer;
+    if (element.TAG === "Ok") {
+      TestRenderer$Weft.render(renderer, element._0);
+    } else {
+      Stdlib_JsError.throwWithMessage("the RPC failed");
+    }
+    await Support$WeftServer.settle();
+    t.expect(TestRenderer$Weft.toString(renderer)).toContain("checking");
+    stockReady.contents.resolve();
+    await Support$WeftServer.settle();
+    t.expect(sheets.asked).toEqual(["/d.css"]);
+    t.expect(TestRenderer$Weft.toString(renderer)).toContain("checking");
+    t.expect(Stdlib_Option.isSome(TestRenderer$Weft.findById(renderer, "stock"))).toBe(false);
+    release(sheets, ["/d.css"]);
+    await Support$WeftServer.settle();
+    return t.expect(Stdlib_Option.isSome(TestRenderer$Weft.findById(renderer, "stock"))).toBe(true);
+  });
   Vitest.testAsync("without the assets, send no sheets, and wait for none", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     setFetch(fetchWith(undefined));
     let sheets = make();
@@ -462,6 +519,8 @@ export {
   decoded,
   isSettled,
   cards,
+  stocked,
+  stockReady,
   cardsRouter,
   globalFetch,
   setFetch,

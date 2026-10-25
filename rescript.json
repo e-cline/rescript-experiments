@@ -15,6 +15,7 @@
     "@e-cline/weft_signals",
     "@e-cline/weft_server",
     "@e-cline/weft",
+    "@e-cline/weft_ui",
     "@e-cline/weft_benchmarks",
     "@e-cline/weft_app_example",
     "@e-cline/pretty_print_example",

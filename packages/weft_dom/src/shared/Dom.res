@@ -56,6 +56,7 @@ external removeEventListener: (element, string, event => unit) => unit = "remove
 @send external dispatchEvent: (element, event) => unit = "dispatchEvent"
 
 @send external focus: element => unit = "focus"
+@send external blur: element => unit = "blur"
 @send external click: element => unit = "click"
 @send external querySelector: (element, string) => Nullable.t<element> = "querySelector"
 type nodeList
@@ -65,6 +66,39 @@ type nodeList
 let querySelectorAll = (element, selector) =>
   nodeListToArray(querySelectorAllList(element, selector))
 
+/** Whether `other` is `element` or inside it. */
+@send external contains: (element, element) => bool = "contains"
+/** Whether `element` matches `selector`. */
+@send external matches: (element, string) => bool = "matches"
+/** `element`, or the nearest element above it, matching `selector`. */
+@send external closest: (element, string) => Nullable.t<element> = "closest"
+@get external parentElement: element => Nullable.t<element> = "parentElement"
+@send external scrollIntoView: (element, {"block": string}) => unit = "scrollIntoView"
+
+type rect = {top: float, right: float, bottom: float, left: float, width: float, height: float}
+@send external getBoundingClientRect: element => rect = "getBoundingClientRect"
+
+// Listening on the document: a popup's "click outside", a key anywhere.
+@send
+external addDocumentListener: (document, string, event => unit) => unit = "addEventListener"
+@send
+external removeDocumentListener: (document, string, event => unit) => unit = "removeEventListener"
+
+/** A `<dialog>`'s: whether it's open, opening it as a modal (in the top layer, the page inert), or not, and closing it. */
+module Dialog = {
+  @get external isOpen: element => bool = "open"
+  @send external showModal: element => unit = "showModal"
+  @send external show: element => unit = "show"
+  @send external close: element => unit = "close"
+}
+
+/** The Popover API's, on an element with a `popover` attribute. */
+module Popover = {
+  @send external show: element => unit = "showPopover"
+  @send external hide: element => unit = "hidePopover"
+  @send external toggle: element => bool = "togglePopover"
+}
+
 module Event = {
   type init = {bubbles?: bool, cancelable?: bool}
 
@@ -73,8 +107,18 @@ module Event = {
   @get external type_: event => string = "type"
   @get external target: event => element = "target"
   @get external currentTarget: event => element = "currentTarget"
+  @send external stopPropagation: event => unit = "stopPropagation"
+  @get external defaultPrevented: event => bool = "defaultPrevented"
   /** A keyboard event's `key`. */
   @get external key: event => string = "key"
+  @get external shiftKey: event => bool = "shiftKey"
+  @get external altKey: event => bool = "altKey"
+  @get external ctrlKey: event => bool = "ctrlKey"
+  @get external metaKey: event => bool = "metaKey"
+  /** A focus event's other element: where focus went (`focusout`) or came from (`focusin`). */
+  @get external relatedTarget: event => Nullable.t<element> = "relatedTarget"
+  /** A `toggle` or `beforetoggle` event's new state: `"open"` or `"closed"`. */
+  @get external newState: event => string = "newState"
 
   external toString: unknown => string = "%identity"
   external toBool: unknown => bool = "%identity"

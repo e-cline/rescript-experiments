@@ -440,6 +440,42 @@ describe("More DOM cases", () => {
     t->expect(Dom.activeElement(Dom.document) == Nullable.make(other))->Expect.toBe(true)
   })
 
+  test("the focus, pointer, toggle and dialog props listen for their events", t => {
+    let heard = []
+    let hear = (name, _) => heard->Array.push(name)
+    let (container, _) = mount(
+      <div
+        id="d"
+        onFocusIn={hear("focusin", ...)}
+        onFocusOut={hear("focusout", ...)}
+        onPointerDown={hear("pointerdown", ...)}
+        onPointerUp={hear("pointerup", ...)}
+        onPointerMove={hear("pointermove", ...)}
+        onPointerEnter={hear("pointerenter", ...)}
+        onPointerLeave={hear("pointerleave", ...)}
+        onToggle={hear("toggle", ...)}
+        onBeforeToggle={hear("beforetoggle", ...)}
+        onClose={hear("close", ...)}
+        onCancel={hear("cancel", ...)}
+      />,
+    )
+    let names = [
+      "focusin",
+      "focusout",
+      "pointerdown",
+      "pointerup",
+      "pointermove",
+      "pointerenter",
+      "pointerleave",
+      "toggle",
+      "beforetoggle",
+      "close",
+      "cancel",
+    ]
+    names->Array.forEach(name => Dom.dispatchEvent(find(container, "#d"), Dom.Event.make(name, {})))
+    t->expect(heard)->Expect.toEqual(names)
+  })
+
   test("removing the value prop empties the input", t => {
     let (container, root) = mount(<input id="i" value="text" onInput={_ => ()} />)
     rerender(root, <input id="i" />)

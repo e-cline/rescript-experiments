@@ -43,7 +43,7 @@ switch WeftDom.Dom.document->WeftDom.Dom.body->WeftDom.Dom.querySelector("#app")
   events there bubble through the DOM (to `container`'s ancestors), not through the component tree
   as in React.
 - **`Dom`**: the small set of DOM bindings the renderer and components need (elements, events,
-  `Event.targetValue`, ...).
+  `Event.targetValue`, `contains`, `closest`, `Dialog.showModal`, `Popover.show`, ...).
 
 ## Props
 
@@ -57,7 +57,15 @@ switch WeftDom.Dom.document->WeftDom.Dom.body->WeftDom.Dom.querySelector("#app")
   lowercased. Unlike React, `onChange` is the DOM's `change` event; `onInput` fires on every
   keystroke.
 - Everything else is an attribute: `className` is `class`, `htmlFor` is `for`, `type_` is `type`,
-  `ariaLabel` is `aria-label`, and `true`/`false` add or remove a boolean attribute.
+  `open_` is `open`, `ariaLabel` is `aria-label`, `popoverTarget` is `popovertarget`, and
+  `true`/`false` add or remove a boolean attribute (`inert`, `dataHighlighted`).
+- The ARIA attributes widgets need (`ariaInvalid`, `ariaHaspopup`, `ariaActivedescendant`,
+  `ariaValuenow`, ...), a few data attributes for a component's state (`dataState`,
+  `dataOrientation`, `dataHighlighted`, `dataSide`, `dataVariant`), and the Popover API's
+  (`popover`, `popoverTarget`, `popoverTargetAction`).
+- `onFocusIn`/`onFocusOut` (which bubble), the pointer events, `onToggle`/`onBeforeToggle` (a
+  `<details>` or popover opening or closing) and `onClose`/`onCancel` (a `<dialog>`'s) are listened
+  for on the element itself, so the ones that don't bubble work too.
 - `autoFocus` is the attribute too, which the browser only acts on for elements there as the page
   loads (the server's HTML): an element rendered later with `autoFocus` (a dialog's field) is
   focused once the commit has put it in the page.

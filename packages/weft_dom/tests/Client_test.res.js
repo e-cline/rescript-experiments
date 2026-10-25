@@ -610,6 +610,63 @@ Vitest.describe("More DOM cases", undefined, undefined, undefined, undefined, un
     Client$WeftDom.act(() => Client$WeftDom.render(root, element$1));
     t.expect(Primitive_object.equal(document.activeElement, other)).toBe(true);
   });
+  Vitest.test("the focus, pointer, toggle and dialog props listen for their events", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let heard = [];
+    let match = mount(Jsx$WeftDom.Elements.jsx("div", {
+      id: "d",
+      onFocusIn: extra => {
+        heard.push("focusin");
+      },
+      onFocusOut: extra => {
+        heard.push("focusout");
+      },
+      onPointerDown: extra => {
+        heard.push("pointerdown");
+      },
+      onPointerUp: extra => {
+        heard.push("pointerup");
+      },
+      onPointerMove: extra => {
+        heard.push("pointermove");
+      },
+      onPointerEnter: extra => {
+        heard.push("pointerenter");
+      },
+      onPointerLeave: extra => {
+        heard.push("pointerleave");
+      },
+      onToggle: extra => {
+        heard.push("toggle");
+      },
+      onBeforeToggle: extra => {
+        heard.push("beforetoggle");
+      },
+      onClose: extra => {
+        heard.push("close");
+      },
+      onCancel: extra => {
+        heard.push("cancel");
+      }
+    }));
+    let container = match[0];
+    let names = [
+      "focusin",
+      "focusout",
+      "pointerdown",
+      "pointerup",
+      "pointermove",
+      "pointerenter",
+      "pointerleave",
+      "toggle",
+      "beforetoggle",
+      "close",
+      "cancel"
+    ];
+    names.forEach(name => {
+      find(container, "#d").dispatchEvent(new Event(name, {}));
+    });
+    t.expect(heard).toEqual(names);
+  });
   Vitest.test("removing the value prop empties the input", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let match = mount(Jsx$WeftDom.Elements.jsx("input", {
       id: "i",

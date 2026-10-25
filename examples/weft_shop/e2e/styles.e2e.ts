@@ -1,6 +1,6 @@
 // The store's styles in a browser, against the build, with the latency gated and every stylesheet
-// slowed down: nothing is ever on screen without its CSS. A probe on every animation frame looks at
-// each element with a `weft_css` class (a name ending in a sheet id) and checks the sheet it's in
+// slowed down: nothing is ever on screen without its CSS. A probe (every frame, and every task) looks
+// at each element with a `weft_css` class (a name ending in a sheet id) and checks the sheet it's in
 // has been applied (its link has fired `load`, or `error`), while the page streams in, block by
 // block, and as the shopper navigates, adds to the cart and changes a quantity.
 
@@ -25,15 +25,22 @@ const hydrated = (page: Page, selector: string) =>
   }, selector);
 
 /**
- * Records, every frame, each element shown with a class whose sheet hasn't been applied, and counts
- * the frames (a probe that never ran would see nothing). A link's sheet is applied once it fires
- * `load` (or `error`): each is watched from when it's added, as its `sheet` can be set while it's
- * still loading (in WebKit on Linux).
+ * Records each element shown with a class whose sheet hasn't been applied (a link's sheet is applied
+ * once it fires `load`, or `error`: each is watched from when it's added). It looks every animation
+ * frame and, from the first (once the head's stylesheets, which block rendering, have loaded), after
+ * every task too: headless WebKit on Linux runs animation frames rarely, and what's in the document
+ * after a task is what the next frame would show. It counts its looks: one that never looked would
+ * see nothing.
  */
 function probe() {
   const seen: string[] = [];
-  const state = window as unknown as {__unstyled: string[]; __frames: number};
+  const state = window as unknown as {
+    __unstyled: string[];
+    __looks: number;
+    __frames: number;
+  };
   state.__unstyled = seen;
+  state.__looks = 0;
   state.__frames = 0;
   const settled = new WeakSet<Element>();
   const watch = (link: Element) => {
@@ -55,7 +62,8 @@ function probe() {
       (link) =>
         (link.getAttribute('href') ?? '').includes(id) && settled.has(link),
     );
-  const check = () => {
+  const look = () => {
+    state.__looks++;
     for (const element of document.querySelectorAll('[class]')) {
       for (const name of (element.getAttribute('class') ?? '').split(/\s+/)) {
         const id = /_(w[0-9a-z]{6})$/.exec(name)?.[1];
@@ -65,18 +73,40 @@ function probe() {
         }
       }
     }
-    state.__frames++;
-    requestAnimationFrame(check);
   };
-  requestAnimationFrame(check);
+  const everyTask = () => {
+    look();
+    setTimeout(everyTask, 0);
+  };
+  const everyFrame = () => {
+    if (state.__frames++ === 0) setTimeout(everyTask, 0);
+    look();
+    requestAnimationFrame(everyFrame);
+  };
+  requestAnimationFrame(everyFrame);
 }
 
 const unstyled = (page: Page) =>
   page.evaluate(() => (window as unknown as {__unstyled: string[]}).__unstyled);
 
-/** How many frames the probe has checked. */
-const frames = (page: Page) =>
-  page.evaluate(() => (window as unknown as {__frames: number}).__frames);
+/** How many times the probe has looked, and how many frames there were, as a message. */
+const looked = async (page: Page) => {
+  const {looks, frames, visibility} = await page.evaluate(() => {
+    const state = window as unknown as {__looks: number; __frames: number};
+    return {
+      looks: state.__looks,
+      frames: state.__frames,
+      visibility: document.visibilityState,
+    };
+  });
+  return {looks, message: `${looks} looks, ${frames} frames, ${visibility}`};
+};
+
+/** Fails unless the probe has looked enough times to have seen anything. */
+const expectLooked = async (page: Page) => {
+  const {looks, message} = await looked(page);
+  expect(looks, message).toBeGreaterThan(5);
+};
 
 /** Every stylesheet the page asks for, `delay` ms late. */
 const slowStylesheets = (page: Page, delay = 500) =>
@@ -109,7 +139,7 @@ test('the probe sees a page shown before its CSS (a stylesheet a script adds, no
       .classList.add('Control-x_wzzzzzz');
   });
   await page.waitForTimeout(200);
-  expect(await frames(page)).toBeGreaterThan(5);
+  await expectLooked(page);
   expect((await unstyled(page)).length).toBeGreaterThan(0);
 });
 
@@ -161,7 +191,7 @@ test('nothing shows without its CSS: streaming, navigating, the cart and its tot
     subtotal!,
   );
   await page.waitForTimeout(300);
-  expect(await frames(page)).toBeGreaterThan(5);
+  await expectLooked(page);
   expect(await unstyled(page)).toEqual([]);
   // And it was styled: the sheets of what it rendered, each once.
   const hrefs = await page.evaluate(() =>

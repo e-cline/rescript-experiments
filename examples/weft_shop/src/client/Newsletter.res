@@ -27,7 +27,6 @@ let make = () => {
       <label htmlFor=inputId> {WeftDom.Jsx.string("Get the newsletter")} </label>
       <input
         id=inputId
-        className="newsletter-email"
         type_="email"
         inputMode="email"
         autoComplete="email"

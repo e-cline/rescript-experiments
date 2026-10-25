@@ -95,7 +95,6 @@ function Gallery(props) {
       Jsx$WeftDom.Elements.jsx("div", {
         id: "main-picture",
         className: Css$WeftCss.cx([
-          "picture",
           Theme$WeftShop.picture,
           main
         ]),
@@ -106,16 +105,10 @@ function Gallery(props) {
         })
       }),
       Jsx$WeftDom.Elements.jsx("div", {
-        className: Css$WeftCss.cx([
-          "thumbnails",
-          thumbnails
-        ]),
+        className: thumbnails,
         children: views.map((view, index) => Jsx$WeftDom.Elements.jsxKeyed("button", {
           id: `thumb-` + index.toString(),
-          className: Css$WeftCss.cx([
-            "thumbnail",
-            thumbnail
-          ]),
+          className: thumbnail,
           style: Theme$WeftShop.pictureVars(hue, index),
           "aria-label": view,
           "aria-pressed": index === selected ? "true" : "false",

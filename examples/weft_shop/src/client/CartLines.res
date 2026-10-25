@@ -70,10 +70,10 @@ let make = () => {
     : <ul id="cart-lines" className=Styles.lines>
         {lines
         ->Array.map(line =>
-          <li key=line.sku id={`line-${line.sku}`} className={Css.cx(["cart-line", Styles.line])}>
+          <li key=line.sku id={`line-${line.sku}`} className={Styles.line}>
             <Link href={`/p/${line.slug}`}> {WeftDom.Jsx.string(line.name)} </Link>
-            <span className="line-variant"> {WeftDom.Jsx.string(line.variant)} </span>
-            <span className={Css.cx(["stepper", Styles.stepper])}>
+            <span> {WeftDom.Jsx.string(line.variant)} </span>
+            <span className={Styles.stepper}>
               <button
                 id={`less-${line.sku}`}
                 ariaLabel="One fewer"
@@ -81,7 +81,7 @@ let make = () => {
               >
                 {WeftDom.Jsx.string("−")}
               </button>
-              <span id={`quantity-${line.sku}`} className="line-quantity">
+              <span id={`quantity-${line.sku}`}>
                 {WeftDom.Jsx.string(Int.toString(line.quantity))}
               </span>
               <button
@@ -93,7 +93,7 @@ let make = () => {
                 {WeftDom.Jsx.string("+")}
               </button>
             </span>
-            <span className="line-total">
+            <span id={`total-${line.sku}`}>
               {WeftDom.Jsx.string(Money.format(line.unitPrice * line.quantity, currency))}
             </span>
             <button id={`remove-${line.sku}`} onClick={_ => change(line.sku, 0)}>

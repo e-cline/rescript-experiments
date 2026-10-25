@@ -161,10 +161,7 @@ function SearchBox$Suggestions(props) {
   } else {
     return Jsx$WeftDom.Elements.jsx("ul", {
       id: props.listId,
-      className: Css$WeftCss.cx([
-        "suggestions",
-        suggestions
-      ]),
+      className: suggestions,
       role: "listbox",
       children: suggestions$1.map(suggestion => Jsx$WeftDom.Elements.jsxsKeyed("li", {
         role: "option",
@@ -176,10 +173,7 @@ function SearchBox$Suggestions(props) {
             children: suggestion.name
           }),
           Jsx$WeftDom.Elements.jsx("span", {
-            className: Css$WeftCss.cx([
-              "suggestion-category",
-              category
-            ]),
+            className: category,
             children: suggestion.category
           })
         ]

@@ -65,7 +65,7 @@ let make = (~noteId: string) => {
     <button id="post-comment" className=Styles.post type_="submit">
       {WeftDom.Jsx.string("Post")}
     </button>
-    <p id=hintId className={Css.cx(["hint", Styles.note, Theme.secondary])}>
+    <p id=hintId className={Css.cx([Styles.note, Theme.secondary])}>
       {WeftDom.Jsx.string(`At most ${Int.toString(Api.maxLength)} characters.`)}
     </p>
     {switch error {

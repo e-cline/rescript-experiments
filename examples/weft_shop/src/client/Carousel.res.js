@@ -66,22 +66,15 @@ function Carousel(props) {
   let first = (page << 2);
   return Jsx$WeftDom.Elements.jsxs("div", {
     id: `carousel-` + id,
-    className: "carousel",
     children: [
       Jsx$WeftDom.Elements.jsxs("div", {
-        className: Css$WeftCss.cx([
-          "carousel-head",
-          head
-        ]),
+        className: head,
         children: [
           Jsx$WeftDom.Elements.jsx("h2", {
             children: props.title
           }),
           pages > 1 ? Jsx$WeftDom.Elements.jsxs("div", {
-              className: Css$WeftCss.cx([
-                "carousel-controls",
-                controls
-              ]),
+              className: controls,
               children: [
                 Jsx$WeftDom.Elements.jsx("button", {
                   id: `prev-` + id,
@@ -92,7 +85,6 @@ function Carousel(props) {
                 }),
                 Jsx$WeftDom.Elements.jsx("span", {
                   id: `position-` + id,
-                  className: "carousel-position",
                   children: (first + 1 | 0).toString() + `–` + Math.min(count, first + 4 | 0).toString() + ` of ` + count.toString()
                 }),
                 Jsx$WeftDom.Elements.jsx("button", {
@@ -107,15 +99,9 @@ function Carousel(props) {
         ]
       }),
       Jsx$WeftDom.Elements.jsx("div", {
-        className: Css$WeftCss.cx([
-          "carousel-window",
-          window
-        ]),
+        className: window,
         children: Jsx$WeftDom.Elements.jsx("div", {
-          className: Css$WeftCss.cx([
-            "carousel-track",
-            track
-          ]),
+          className: track,
           style: Css$WeftCss.vars([[
               offset,
               `-` + (page * 100 | 0).toString() + `%`

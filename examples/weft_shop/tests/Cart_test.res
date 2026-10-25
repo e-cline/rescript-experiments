@@ -38,7 +38,7 @@ describe("the cart", () => {
   testAsync("lists the session's cart, with the totals worked out on the server", async t => {
     let page = await openCart([("p1-9", 2), ("p19-one", 1)])
     t->expect(quantity(page, "p1-9"))->Expect.toBe("2")
-    t->expect(text(page, "#line-p1-9 .line-total"))->Expect.toBe("$258.00")
+    t->expect(text(page, "#total-p1-9"))->Expect.toBe("$258.00")
     t->expect(text(page, "#summary-subtotal"))->Expect.toBe("$307.00")
     t->expect(text(page, "#summary-points"))->Expect.toBe("307")
     t->expect(text(page, "#cart-button"))->Expect.toBe("Cart (3)")
@@ -109,24 +109,24 @@ describe("the cart", () => {
     "takes promo codes: an empty one isn't sent, unknown and expired ones are refused, a good one is applied",
     async t => {
       let page = await openCart([("p1-9", 2), ("p19-one", 1)])
-      page->WeftTesting.input(".promo-code", "   ")
+      page->WeftTesting.input("#promo input", "   ")
       submitAnywhere("#promo")
       await page->WeftTesting.waitFor(() => has(page, "#promo-message"))
       t->expect(text(page, "#promo-message"))->Expect.toBe("That code isn't one of ours.")
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/cart"])
-      page->WeftTesting.input(".promo-code", "nope")
+      page->WeftTesting.input("#promo input", "nope")
       submitAnywhere("#promo")
       await page->WeftTesting.waitFor(
         () => page->WeftTesting.pageRequests->Array.includes("/_weft/rpc/cart.applyPromo"),
       )
       await page->WeftTesting.settle
       t->expect(text(page, "#promo-message"))->Expect.toBe("That code isn't one of ours.")
-      page->WeftTesting.input(".promo-code", "summer")
+      page->WeftTesting.input("#promo input", "summer")
       submitAnywhere("#promo")
       await page->WeftTesting.waitFor(
         () => text(page, "#promo-message") == "That code has expired.",
       )
-      page->WeftTesting.input(".promo-code", " weft10 ")
+      page->WeftTesting.input("#promo input", " weft10 ")
       submitAnywhere("#promo")
       await page->WeftTesting.waitFor(() => text(page, "#promo-message") == "Applied WEFT10")
       await page->WeftTesting.waitFor(() => has(page, "#summary-discount"))
@@ -278,8 +278,8 @@ describe("the session", () => {
       // The page is where the redirect led, as the browser's location would be.
       t->expect(page->WeftTesting.url)->Expect.toBe("/signin?next=/account")
       t->expect(await urlOf(page))->Expect.toBe("/signin?next=/account")
-      page->WeftTesting.input("#signin-page .signin-name", "Grace")
-      submitAnywhere("#signin-page .signin-form")
+      page->WeftTesting.input("#signin-page input", "Grace")
+      submitAnywhere("#signin-page form")
       await page->WeftTesting.waitFor(() => has(page, "#account-title"))
       t->expect(text(page, "#account-title"))->Expect.toBe("Grace's account")
       t->expect(text(page, "#account-menu"))->Expect.toBe("Hi, GraceSign out")
@@ -314,28 +314,32 @@ describe("the session", () => {
       let page = app()->open_("/signin?next=/cart")
       await page->WeftTesting.waitFor(() => has(page, "#signin-page"))
       await page->WeftTesting.hydrated
-      submitAnywhere("#signin-page .signin-form")
-      await page->WeftTesting.waitFor(() => has(page, ".signin-error"))
-      t->expect(text(page, ".signin-error"))->Expect.toBe("Enter a name.")
-      page->WeftTesting.input("#signin-page .signin-name", "x"->String.repeat(41))
-      submitAnywhere("#signin-page .signin-form")
-      await page->WeftTesting.waitFor(() => text(page, ".signin-error") == "That name is too long.")
+      submitAnywhere("#signin-page form")
+      await page->WeftTesting.waitFor(() => has(page, "#signin-page [role=\"alert\"]"))
+      t->expect(text(page, "#signin-page [role=\"alert\"]"))->Expect.toBe("Enter a name.")
+      page->WeftTesting.input("#signin-page input", "x"->String.repeat(41))
+      submitAnywhere("#signin-page form")
+      await page->WeftTesting.waitFor(
+        () => text(page, "#signin-page [role=\"alert\"]") == "That name is too long.",
+      )
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/signin?next=/cart"])
       // A client that doesn't check: the server does.
       app()->WeftTesting.rewriteBodies(
         "/_weft/rpc/auth.signIn",
         _ => JSON.stringify(JSON.String("y"->String.repeat(41))),
       )
-      page->WeftTesting.input("#signin-page .signin-name", "Grace")
-      submitAnywhere("#signin-page .signin-form")
+      page->WeftTesting.input("#signin-page input", "Grace")
+      submitAnywhere("#signin-page form")
       await page->WeftTesting.waitFor(
         () => page->WeftTesting.pageRequests->Array.includes("/_weft/rpc/auth.signIn"),
       )
-      await page->WeftTesting.waitFor(() => text(page, ".signin-error") == "That name is too long.")
+      await page->WeftTesting.waitFor(
+        () => text(page, "#signin-page [role=\"alert\"]") == "That name is too long.",
+      )
       app()->WeftTesting.stopRewriting
       t->expect((await app()->session).user)->Expect.toBe("")
       // A good name, on to `next`.
-      submitAnywhere("#signin-page .signin-form")
+      submitAnywhere("#signin-page form")
       await page->WeftTesting.waitFor(() => has(page, "#cart-title"))
     },
   )

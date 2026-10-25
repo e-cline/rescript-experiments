@@ -10,7 +10,7 @@ import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigati
 let app = ShopSupport$WeftShop.useApp();
 
 let names = (() =>
-  [...document.querySelectorAll('#grid .card-name')].map((node) => node.textContent));
+  [...document.querySelectorAll('#grid article h3')].map((node) => node.textContent));
 
 async function openCatalog(urlOpt) {
   let url = urlOpt !== undefined ? urlOpt : "/c/shoes";
@@ -88,7 +88,7 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
     t.expect(ShopSupport$WeftShop.text(page, "#stock-p7")).toBe("In stock");
     t.expect(ShopSupport$WeftShop.has(page, "#stock-loading-p5")).toBe(true);
     await ShopSupport$WeftShop.change(page, "#currency", "GBP");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#card-p7 .price") === "£94.01");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#card-p7 data") === "£94.01");
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/c/shoes",
       "/_weft/rpc/catalog.more",
@@ -174,8 +174,8 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
   });
   Vitest.testAsync("narrows by price, and the range resets when the filters are cleared", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
-    let low = ".range-low";
-    let high = ".range-high";
+    let low = "#facet-price input:first-of-type";
+    let high = "#facet-price input:last-of-type";
     t.expect(Stdlib_Option.map(WeftTesting.query(page, low), prim => prim.value)).toEqual("59");
     WeftTesting.input(page, low, "80");
     WeftTesting.input(page, high, "130");
@@ -213,12 +213,12 @@ Vitest.describe("search", undefined, undefined, undefined, undefined, undefined,
     let second = await ShopSupport$WeftShop.nextWaiter(app(), page, "search:suggest", [first]);
     t.expect(await ShopSupport$WeftShop.abandonedSoon(app(), page, first)).toBe(true);
     await ShopSupport$WeftShop.release(app(), second);
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, ".suggestions"));
-    t.expect(ShopSupport$WeftShop.text(page, ".suggestions")).toBe("Leather BootshoesRain BootshoesHiking Bootshoes");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[role=\"listbox\"]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[role=\"listbox\"]")).toBe("Leather BootshoesRain BootshoesHiking Bootshoes");
     WeftTesting.click(page, "#suggestion-rain-boot");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#product-name"));
     t.expect(ShopSupport$WeftShop.text(page, "#product-name")).toBe("Rain Boot");
-    return t.expect(ShopSupport$WeftShop.has(page, ".suggestions")).toBe(false);
+    return t.expect(ShopSupport$WeftShop.has(page, "[role=\"listbox\"]")).toBe(false);
   });
   Vitest.testAsync("shows the results on Enter, keeping what was typed in the header's box", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);

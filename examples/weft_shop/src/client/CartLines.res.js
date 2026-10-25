@@ -122,24 +122,17 @@ function CartLines(props) {
       className: lines,
       children: lines$1.map(line$1 => Jsx$WeftDom.Elements.jsxsKeyed("li", {
         id: `line-` + line$1.sku,
-        className: Css$WeftCss.cx([
-          "cart-line",
-          line
-        ]),
+        className: line,
         children: [
           Jsx$WeftDom.jsx(Link$WeftShop.make, {
             href: `/p/` + line$1.slug,
             children: line$1.name
           }),
           Jsx$WeftDom.Elements.jsx("span", {
-            className: "line-variant",
             children: line$1.variant
           }),
           Jsx$WeftDom.Elements.jsxs("span", {
-            className: Css$WeftCss.cx([
-              "stepper",
-              stepper
-            ]),
+            className: stepper,
             children: [
               Jsx$WeftDom.Elements.jsx("button", {
                 id: `less-` + line$1.sku,
@@ -149,7 +142,6 @@ function CartLines(props) {
               }),
               Jsx$WeftDom.Elements.jsx("span", {
                 id: `quantity-` + line$1.sku,
-                className: "line-quantity",
                 children: line$1.quantity.toString()
               }),
               Jsx$WeftDom.Elements.jsx("button", {
@@ -162,7 +154,7 @@ function CartLines(props) {
             ]
           }),
           Jsx$WeftDom.Elements.jsx("span", {
-            className: "line-total",
+            id: `total-` + line$1.sku,
             children: Money$WeftShop.format(line$1.unitPrice * line$1.quantity | 0, currency)
           }),
           Jsx$WeftDom.Elements.jsx("button", {

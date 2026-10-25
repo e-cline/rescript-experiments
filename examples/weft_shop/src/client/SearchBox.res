@@ -80,16 +80,14 @@ module Suggestions = {
     let (forQuery, suggestions) = found
     suggestions == [] || forQuery != String.trim(query)
       ? WeftDom.Jsx.null
-      : <ul id=listId className={Css.cx(["suggestions", Styles.suggestions])} role="listbox">
+      : <ul id=listId className={Styles.suggestions} role="listbox">
           {suggestions
           ->Array.map(suggestion =>
             <li key=suggestion.slug role="option" onClick={_ => onPick()}>
               <Link id={`suggestion-${suggestion.slug}`} href={`/p/${suggestion.slug}`}>
                 {WeftDom.Jsx.string(suggestion.name)}
               </Link>
-              <span className={Css.cx(["suggestion-category", Styles.category])}>
-                {WeftDom.Jsx.string(suggestion.category)}
-              </span>
+              <span className={Styles.category}> {WeftDom.Jsx.string(suggestion.category)} </span>
             </li>
           )
           ->WeftDom.Jsx.array}

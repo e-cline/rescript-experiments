@@ -198,17 +198,14 @@ describe("hydrating the first page", () => {
         page
         ->WeftTesting.query(selector)
         ->Option.flatMap(element => WeftDom.Dom.getAttribute(element, name)->Nullable.toOption)
-      let hint = attribute(".hint", "id")
+      let hint = attribute("#comment-text", "aria-describedby")
       t->expect(Option.isSome(hint))->Expect.toBe(true)
-      t->expect(attribute("#comment-text", "aria-describedby"))->Expect.toEqual(hint)
+      let hint = Option.getUnsafe(hint)
+      t->expect(text(page, `[id="${hint}"]`))->Expect.toBe("At most 500 characters.")
       // As the server wrote it (`openNote` checked hydration warned of no attribute differing).
-      t
-      ->expect(
-        (await page->WeftTesting.shell)->String.includes(
-          `aria-describedby="${Option.getUnsafe(hint)}"`,
-        ),
-      )
-      ->Expect.toBe(true)
+      let shell = await page->WeftTesting.shell
+      t->expect(shell->String.includes(`aria-describedby="${hint}"`))->Expect.toBe(true)
+      t->expect(shell->String.includes(`id="${hint}"`))->Expect.toBe(true)
     },
   )
 

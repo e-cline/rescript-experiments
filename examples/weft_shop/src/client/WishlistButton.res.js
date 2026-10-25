@@ -43,10 +43,7 @@ function WishlistButton(props) {
   let toggle = Rpc$WeftServer.use(Api$WeftShop.toggleWishlist, undefined);
   return Jsx$WeftDom.Elements.jsx("button", {
     id: `wishlist-` + productId,
-    className: Css$WeftCss.cx([
-      "wishlist",
-      wishlist
-    ]),
+    className: wishlist,
     "aria-label": saved ? "Remove from wishlist" : "Save to wishlist",
     "aria-pressed": saved ? "true" : "false",
     onClick: event => {

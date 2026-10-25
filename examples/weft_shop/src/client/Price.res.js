@@ -34,29 +34,22 @@ function Price(props) {
   let cents = props.cents;
   let match = ShopContext$WeftShop.use();
   let currency = match.currency;
-  return Jsx$WeftDom.Elements.jsx("span", {
+  return Jsx$WeftDom.Elements.jsx("data", {
     id: props.id,
-    className: "price",
+    value: cents.toString(),
     children: compareAt !== undefined ? Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
         children: [
           Jsx$WeftDom.Elements.jsx("s", {
-            className: Css$WeftCss.cx([
-              "was",
-              was
-            ]),
+            className: was,
             children: Money$WeftShop.format(compareAt, currency)
           }),
           " ",
           Jsx$WeftDom.Elements.jsx("span", {
-            className: Css$WeftCss.cx([
-              "now sale",
-              sale
-            ]),
+            className: sale,
             children: Money$WeftShop.format(cents, currency)
           })
         ]
       }) : Jsx$WeftDom.Elements.jsx("span", {
-        className: "now",
         children: Money$WeftShop.format(cents, currency)
       })
   });

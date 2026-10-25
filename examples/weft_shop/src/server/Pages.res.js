@@ -121,10 +121,7 @@ function viewerOf(request) {
 
 function Pages$Breadcrumbs(props) {
   return Jsx$WeftDom.Elements.jsxs("nav", {
-    className: Css$WeftCss.cx([
-      "breadcrumbs",
-      breadcrumbs
-    ]),
+    className: breadcrumbs,
     "aria-label": "Breadcrumbs",
     children: [
       Jsx$WeftDom.jsx(Link$WeftShop.make, {
@@ -163,7 +160,6 @@ function Pages$PageBlocks(props) {
     await Latency$WeftShop.wait(`layout:` + page, request.signal);
     return Jsx$WeftDom.Elements.jsx("div", {
       id: `blocks-` + page,
-      className: "blocks",
       children: Blocks$WeftShop.blockList(Cms$WeftShop.layout(page, viewerOf(request)), page, request)
     });
   })());
@@ -201,7 +197,6 @@ function Pages$BlockPart(props) {
     });
   } else {
     return Jsx$WeftDom.Elements.jsx("p", {
-      className: "gone",
       children: Ui$WeftShop.text("This isn't here any more.")
     });
   }
@@ -316,10 +311,7 @@ function Pages$CategoryPage(props) {
         })
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
-        className: Css$WeftCss.cx([
-          "catalog",
-          catalog
-        ]),
+        className: catalog,
         children: [
           Jsx$WeftDom.jsx(Suspense$Weft.make, {
             fallback: Ui$WeftShop.loading("facets-loading", "Loading filters…"),
@@ -551,17 +543,13 @@ function Pages$ProductPage(props) {
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
         id: `product-` + summary.id,
-        className: Css$WeftCss.cx([
-          "product",
-          product
-        ]),
+        className: product,
         children: [
           Jsx$WeftDom.jsx(Gallery$WeftShop.make, {
             name: summary.name,
             hue: summary.hue
           }),
           Jsx$WeftDom.Elements.jsxs("div", {
-            className: "product-info",
             children: [
               Jsx$WeftDom.Elements.jsx("h1", {
                 id: "product-name",
@@ -709,14 +697,10 @@ function Pages$CartPage(props) {
         children: Ui$WeftShop.text("Your cart")
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
-        className: Css$WeftCss.cx([
-          "cart",
-          cart
-        ]),
+        className: cart,
         children: [
           Jsx$WeftDom.jsx(CartLines$WeftShop.make, {}),
           Jsx$WeftDom.Elements.jsxs("aside", {
-            className: "cart-side",
             children: [
               Jsx$WeftDom.jsx(CartSummaryFrame$WeftShop.make, {
                 children: Jsx$WeftDom.jsx(Pages$CartSummaryPart, {
@@ -729,10 +713,7 @@ function Pages$CartPage(props) {
               Jsx$WeftDom.jsx(Link$WeftShop.make, {
                 href: "/checkout",
                 id: "checkout-link",
-                className: Css$WeftCss.cx([
-                  "cta",
-                  Theme$WeftShop.cta
-                ]),
+                className: Theme$WeftShop.cta,
                 children: Ui$WeftShop.text("Check out")
               })
             ]
@@ -893,7 +874,6 @@ function Pages$AccountPage(props) {
               id: "no-saved",
               children: Ui$WeftShop.text("Nothing saved yet.")
             }) : Jsx$WeftDom.Elements.jsx("div", {
-              className: "card-row",
               children: Ui$WeftShop.cards(saved, request)
             })
         ]

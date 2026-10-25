@@ -112,7 +112,6 @@ function CommentForm(props) {
       Jsx$WeftDom.Elements.jsx("p", {
         id: hintId,
         className: Css$WeftCss.cx([
-          "hint",
           note,
           Theme$WeftNotes.secondary
         ]),

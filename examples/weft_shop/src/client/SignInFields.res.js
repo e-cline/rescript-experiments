@@ -50,10 +50,7 @@ function SignInFields(props) {
     })();
   };
   return Jsx$WeftDom.Elements.jsxs("form", {
-    className: Css$WeftCss.cx([
-      "signin-form",
-      form
-    ]),
+    className: form,
     onSubmit: submit,
     children: [
       Jsx$WeftDom.Elements.jsx("label", {
@@ -62,20 +59,17 @@ function SignInFields(props) {
       }),
       Jsx$WeftDom.Elements.jsx("input", {
         id: inputId,
-        className: "signin-name",
         value: name,
         autoFocus: __autoFocus_value,
         autoComplete: "name",
         onInput: event => setName(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        className: "signin-submit",
         type: "submit",
         disabled: busy,
         children: busy ? "Signing in…" : "Sign in"
       }),
       error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          className: "signin-error",
           role: "alert",
           children: error
         }) : Jsx$WeftDom.$$null

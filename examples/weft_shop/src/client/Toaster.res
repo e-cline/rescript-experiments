@@ -32,13 +32,9 @@ module Toast = {
       let timer = setTimeout(() => Store.dismiss(toast.id), 4000)
       Some(() => clearTimeout(timer))
     }, [toast.id])
-    <li className={Css.cx(["toast", Styles.toast])}>
+    <li className={Styles.toast}>
       {WeftDom.Jsx.string(toast.text)}
-      <button
-        className={Css.cx(["toast-dismiss", Styles.dismiss])}
-        ariaLabel="Dismiss"
-        onClick={_ => Store.dismiss(toast.id)}
-      >
+      <button className={Styles.dismiss} ariaLabel="Dismiss" onClick={_ => Store.dismiss(toast.id)}>
         {WeftDom.Jsx.string("×")}
       </button>
     </li>

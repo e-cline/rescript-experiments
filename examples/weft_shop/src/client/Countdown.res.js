@@ -41,10 +41,7 @@ function Countdown(props) {
   });
   return Jsx$WeftDom.Elements.jsx("span", {
     id: props.id,
-    className: Css$WeftCss.cx([
-      "countdown",
-      countdown
-    ]),
+    className: countdown,
     children: endsAt <= now ? "Ended" : `Ends in ` + format(endsAt - now)
   });
 }

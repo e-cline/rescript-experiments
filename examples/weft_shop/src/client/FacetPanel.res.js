@@ -64,10 +64,7 @@ function FacetPanel$RangeFacet(props) {
   let toId = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("fieldset", {
     id: `facet-` + name,
-    className: Css$WeftCss.cx([
-      "facet",
-      facet
-    ]),
+    className: facet,
     children: [
       Jsx$WeftDom.Elements.jsx("legend", {
         children: props.label
@@ -78,7 +75,6 @@ function FacetPanel$RangeFacet(props) {
       }),
       Jsx$WeftDom.Elements.jsx("input", {
         id: fromId,
-        className: "range-low",
         type: "number",
         value: from,
         min: min.toString(),
@@ -91,7 +87,6 @@ function FacetPanel$RangeFacet(props) {
       }),
       Jsx$WeftDom.Elements.jsx("input", {
         id: toId,
-        className: "range-high",
         type: "number",
         value: to,
         min: min.toString(),
@@ -136,14 +131,10 @@ function FacetPanel(props) {
   let sort = pending ? Stdlib_Option.getOr(Primitive_option.fromNullable(params.get("sort")), "featured") : props.sort;
   return Jsx$WeftDom.Elements.jsxs("aside", {
     id: "facets",
-    className: pending ? Css$WeftCss.cx([
-        "pending",
-        Theme$WeftShop.stale
-      ]) : "",
+    className: pending ? Theme$WeftShop.stale : "",
     "aria-busy": pending ? "true" : "false",
     children: [
       Jsx$WeftDom.Elements.jsxs("label", {
-        className: "sort",
         children: [
           "Sort by ",
           Jsx$WeftDom.Elements.jsx("select", {
@@ -189,10 +180,7 @@ function FacetPanel(props) {
             let selected = pending ? params.getAll(name) : facet$1.selected;
             return Jsx$WeftDom.Elements.jsxsKeyed("fieldset", {
               id: `facet-` + name,
-              className: Css$WeftCss.cx([
-                "facet",
-                facet
-              ]),
+              className: facet,
               children: [
                 Jsx$WeftDom.Elements.jsx("legend", {
                   children: facet$1.label
@@ -200,10 +188,7 @@ function FacetPanel(props) {
                 facet$1.options.map(param => {
                   let value = param[0];
                   return Jsx$WeftDom.Elements.jsxsKeyed("label", {
-                    className: Css$WeftCss.cx([
-                      "choice",
-                      Theme$WeftShop.choice
-                    ]),
+                    className: Theme$WeftShop.choice,
                     children: [
                       Jsx$WeftDom.Elements.jsx("input", {
                         id: name + `-` + value,
@@ -258,10 +243,7 @@ function FacetPanel(props) {
             let on = pending ? Primitive_object.equal(Primitive_option.fromNullable(params.get(name$2)), "1") : facet$1.on;
             return Jsx$WeftDom.Elements.jsxsKeyed("label", {
               id: `facet-` + name$2,
-              className: Css$WeftCss.cx([
-                "facet toggle",
-                facet
-              ]),
+              className: facet,
               children: [
                 Jsx$WeftDom.Elements.jsx("input", {
                   id: `toggle-` + name$2,

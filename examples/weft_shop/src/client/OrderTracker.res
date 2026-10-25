@@ -44,9 +44,7 @@ let make = (~status: orderStatus, ~every: option<int>=?) => {
     ->Array.map(step =>
       <li
         key={statusLabel(step)}
-        className={rank(step) <= rank(status)
-          ? Css.cx(["done", Styles.done])
-          : Css.cx(["todo", Styles.todo])}
+        className={rank(step) <= rank(status) ? Styles.done : Styles.todo}
         ariaCurrent={step == status ? "step" : "false"}
       >
         {WeftDom.Jsx.string(statusLabel(step))}

@@ -25,14 +25,14 @@ test.afterEach(() => {
 
 /** Waits until nothing on the page is still loading (no fallback, skeleton or pending stock). */
 const streamedIn = (page: Page) =>
-  expect(page.locator('.loading, .skeleton, .stock.loading')).toHaveCount(0, {
+  expect(page.locator('[aria-busy="true"]')).toHaveCount(0, {
     timeout: 15_000,
   });
 
 /** Clicks Retry on every block that failed, until none has. */
 const retryFailures = async (page: Page) => {
   for (let tries = 0; tries < 20; tries++) {
-    const failed = page.locator('.block-error button');
+    const failed = page.locator('[id^="block-error-"] button');
     if ((await failed.count()) === 0) return;
     await failed.first().click();
     await page.waitForTimeout(300);
@@ -76,7 +76,7 @@ test('navigating quickly through pages still streaming lands on the last, comple
   await expect(page).toHaveURL('/c/bags');
   await expect(page.locator('#hero-bags-hero h1')).toHaveText('Bags');
   await streamedIn(page);
-  await expect(page.locator('#grid .card-name').first()).toHaveText(
+  await expect(page.locator('#grid article h3').first()).toHaveText(
     'Weekender',
   );
   await expect(page.locator('#blocks-c-bags')).toHaveCount(1);

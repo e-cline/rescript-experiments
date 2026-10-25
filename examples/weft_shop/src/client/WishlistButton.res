@@ -25,7 +25,7 @@ let make = (~productId: string, ~saved as serverSaved: bool) => {
   }, [serverSaved])
   let toggle = WeftServer.Rpc.use(Api.toggleWishlist)
   <button
-    className={Css.cx(["wishlist", Styles.wishlist])}
+    className={Styles.wishlist}
     id={`wishlist-${productId}`}
     ariaPressed={saved ? "true" : "false"}
     ariaLabel={saved ? "Remove from wishlist" : "Save to wishlist"}

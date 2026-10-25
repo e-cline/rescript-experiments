@@ -222,11 +222,11 @@ Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined,
   });
   Vitest.testAsync("show each half of the experiment its own promotion, in the same place", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openHome();
-    t.expect(ShopSupport$WeftShop.text(page, "#promo-promo-a .promo-text")).toBe("10% off everything with code WEFT10");
+    t.expect(ShopSupport$WeftShop.text(page, "#promo-promo-a > p")).toBe("10% off everything with code WEFT10");
     await ShopSupport$WeftShop.setBucket(app(), "b");
     await WeftTesting.refresh(page);
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#promo-promo-b"));
-    t.expect(ShopSupport$WeftShop.text(page, "#promo-promo-b .promo-text")).toBe("20% off orders over $100 with code LOOM20");
+    t.expect(ShopSupport$WeftShop.text(page, "#promo-promo-b > p")).toBe("20% off orders over $100 with code LOOM20");
     return t.expect(blockIds(page).at(1)).toEqual("block-promo-b");
   });
   Vitest.testAsync("fail by themselves: the rest of the page is shown, and Retry fetches the block again", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -262,9 +262,9 @@ Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined,
   Vitest.testAsync("that are live refetch themselves, and show the server's newer stock", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.setLiveEvery(app(), 1);
     let page = await openHome();
-    t.expect(ShopSupport$WeftShop.text(page, "#live-p3 .live-stock")).toBe(" 20 left");
+    t.expect(ShopSupport$WeftShop.text(page, "#left-p3")).toBe(" 20 left");
     await ShopSupport$WeftShop.setStock(app(), "p3-7", 0);
-    await WeftTesting.waitFor(page, 3000, () => ShopSupport$WeftShop.text(page, "#live-p3 .live-stock") === " 15 left");
+    await WeftTesting.waitFor(page, 3000, () => ShopSupport$WeftShop.text(page, "#left-p3") === " 15 left");
     t.expect(WeftTesting.pageRequests(page).includes("/blocks/home/live")).toBe(true);
     return t.expect(WeftTesting.pageRequests(page).every(url => {
       if (url === "/") {
@@ -296,8 +296,8 @@ Vitest.describe("personalised", undefined, undefined, undefined, undefined, unde
     await WeftTesting.hydrated(page, undefined);
     WeftTesting.click(page, "#sign-in");
     await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("#signin-dialog")));
-    ShopSupport$WeftShop.inputAnywhere(".signin-name", "Ada");
-    ShopSupport$WeftShop.submitAnywhere(".signin-form");
+    ShopSupport$WeftShop.inputAnywhere("#signin-dialog input", "Ada");
+    ShopSupport$WeftShop.submitAnywhere("#signin-dialog form");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#account-menu").includes("Hi, Ada"));
     t.expect(ShopSupport$WeftShop.Doc.find("#signin-dialog")).toBe(undefined);
     await WeftTesting.navigate(page, "/");
@@ -333,8 +333,8 @@ Vitest.describe("personalised", undefined, undefined, undefined, undefined, unde
     await WeftTesting.hydrated(page, undefined);
     WeftTesting.click(page, "#sign-in");
     await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("#signin-dialog")));
-    ShopSupport$WeftShop.inputAnywhere(".signin-name", "Grace");
-    ShopSupport$WeftShop.submitAnywhere(".signin-form");
+    ShopSupport$WeftShop.inputAnywhere("#signin-dialog input", "Grace");
+    ShopSupport$WeftShop.submitAnywhere("#signin-dialog form");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#block-error-for-you"));
     t.expect(ShopSupport$WeftShop.text(page, "#block-error-for-you p")).toBe("Couldn't load this: the recommendations service timed out");
     t.expect(ShopSupport$WeftShop.has(page, "#hero-welcome")).toBe(true);
@@ -348,11 +348,11 @@ Vitest.describe("personalised", undefined, undefined, undefined, undefined, unde
 
 Vitest.describe("prices", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("change currency everywhere at once, with nothing fetched, and stay changed on the next page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
   let page = await openHome();
-  t.expect(ShopSupport$WeftShop.text(page, "#card-p1 .price")).toBe("$129.00");
+  t.expect(ShopSupport$WeftShop.text(page, "#card-p1 data")).toBe("$129.00");
   await ShopSupport$WeftShop.change(page, "#currency", "EUR");
-  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#card-p1 .price") === "€118.68");
-  t.expect(ShopSupport$WeftShop.text(page, "#carousel-tab-bags #card-p17 .price")).toBe("€146.28");
-  t.expect(ShopSupport$WeftShop.text(page, "#live-p3 .price")).toBe("€67.85 €54.28");
+  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#card-p1 data") === "€118.68");
+  t.expect(ShopSupport$WeftShop.text(page, "#carousel-tab-bags #card-p17 data")).toBe("€146.28");
+  t.expect(ShopSupport$WeftShop.text(page, "#live-p3 data")).toBe("€67.85 €54.28");
   await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/prefs.setCurrency"));
   t.expect(WeftTesting.pageRequests(page)).toEqual([
     "/",
@@ -361,7 +361,7 @@ Vitest.describe("prices", undefined, undefined, undefined, undefined, undefined,
   t.expect((await ShopSupport$WeftShop.session(app())).currency).toBe("EUR");
   let page$1 = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
   await WeftTesting.waitFor(page$1, undefined, () => ShopSupport$WeftShop.has(page$1, "#card-p1"));
-  t.expect(ShopSupport$WeftShop.text(page$1, "#card-p1 .price")).toBe("€118.68");
+  t.expect(ShopSupport$WeftShop.text(page$1, "#card-p1 data")).toBe("€118.68");
   return await ShopSupport$WeftShop.hydratedAsServed(page$1, undefined);
 }));
 

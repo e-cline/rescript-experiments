@@ -47,10 +47,7 @@ module Styles = {
 }
 
 /** A product's stock's classes: its semantic ones (which tests find it by), and its style. */
-let stockClass = stock =>
-  stock == 0
-    ? Css.cx(["stock out", Styles.stock, Styles.stockOut])
-    : Css.cx(["stock", Styles.stock])
+let stockClass = stock => stock == 0 ? Css.cx([Styles.stock, Styles.stockOut]) : Styles.stock
 
 /** What a server component needs from the request: the shopper's session, and the request's signal. */
 type request = {
@@ -86,21 +83,20 @@ module StockBadge = {
 module ProductCard = {
   @weft.component({kind: Server})
   let make = (~summary: summary, ~saved: bool, ~signal) =>
-    <article className={Css.cx(["card", Styles.card])} id={`card-${summary.id}`}>
-      <Link className={Css.cx(["card-link", Styles.cardLink])} href={`/p/${summary.slug}`}>
-        <div
-          className={Css.cx(["picture", Theme.picture])} style={Theme.pictureVars(~hue=summary.hue)}
-        />
-        <h3 className={Css.cx(["card-name", Styles.cardName])}> {text(summary.name)} </h3>
+    <article className={Styles.card} id={`card-${summary.id}`}>
+      <Link className={Styles.cardLink} href={`/p/${summary.slug}`}>
+        <div className={Theme.picture} style={Theme.pictureVars(~hue=summary.hue)} />
+        <h3 className={Styles.cardName}> {text(summary.name)} </h3>
       </Link>
-      <div className={Css.cx(["card-meta", Styles.cardMeta])}>
+      <div className={Styles.cardMeta}>
         <Price cents=summary.price compareAt=?summary.compareAt />
         <WishlistButton productId=summary.id saved />
       </div>
       <Weft.Suspense
         fallback={<span
-          className={Css.cx(["stock loading", Styles.stock, Styles.stockLoading])}
+          className={Css.cx([Styles.stock, Styles.stockLoading])}
           id={`stock-loading-${summary.id}`}
+          ariaBusy="true"
         >
           {text("Checking stock…")}
         </span>}
@@ -143,7 +139,7 @@ module Header = {
         ->WeftDom.Jsx.array}
       </nav>
       <SearchBox initial=query />
-      <div className={Css.cx(["header-tools", Styles.headerTools])}>
+      <div className={Styles.headerTools}>
         <CurrencySelect />
         <AccountMenu />
         <CartBadge />
@@ -168,4 +164,4 @@ module Shell = {
 }
 
 let loading = (id, message) =>
-  <p id className={Css.cx(["loading", Theme.placeholder])}> {text(message)} </p>
+  <p id className={Theme.placeholder} ariaBusy="true"> {text(message)} </p>

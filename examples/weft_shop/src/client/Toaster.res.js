@@ -84,17 +84,11 @@ function Toaster$Toast(props) {
     };
   }, [toast$1.id]);
   return Jsx$WeftDom.Elements.jsxs("li", {
-    className: Css$WeftCss.cx([
-      "toast",
-      toast
-    ]),
+    className: toast,
     children: [
       toast$1.text,
       Jsx$WeftDom.Elements.jsx("button", {
-        className: Css$WeftCss.cx([
-          "toast-dismiss",
-          dismiss
-        ]),
+        className: dismiss,
         "aria-label": "Dismiss",
         onClick: param => Store$WeftShop.dismiss(toast$1.id),
         children: "×"

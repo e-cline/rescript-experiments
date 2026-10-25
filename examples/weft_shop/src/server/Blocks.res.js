@@ -230,15 +230,13 @@ function Blocks$Body(props) {
     }
     switch (match.TAG) {
       case "Hero" :
-        let tone = match.tone;
         let match$1 = match.cta;
         await Latency$WeftShop.wait(`block:` + block.id, signal);
         return Jsx$WeftDom.Elements.jsxs("div", {
           id: `hero-` + block.id,
           className: Css$WeftCss.cx([
-            `hero ` + tone,
             hero,
-            tone === "cool" ? heroCool : ""
+            match.tone === "cool" ? heroCool : ""
           ]),
           children: [
             Jsx$WeftDom.Elements.jsx("h1", {
@@ -249,10 +247,7 @@ function Blocks$Body(props) {
             }),
             Jsx$WeftDom.jsx(Link$WeftShop.make, {
               href: match$1[1],
-              className: Css$WeftCss.cx([
-                "cta",
-                Theme$WeftShop.cta
-              ]),
+              className: Theme$WeftShop.cta,
               children: Ui$WeftShop.text(match$1[0])
             })
           ]
@@ -274,10 +269,7 @@ function Blocks$Body(props) {
       case "CategoryTiles" :
         await Latency$WeftShop.wait(`block:` + block.id, signal);
         return Jsx$WeftDom.Elements.jsxs("div", {
-          className: Css$WeftCss.cx([
-            "tiles",
-            tiles
-          ]),
+          className: tiles,
           children: [
             Jsx$WeftDom.Elements.jsx("h2", {
               children: Ui$WeftShop.text(match.title)
@@ -301,13 +293,9 @@ function Blocks$Body(props) {
         let now = Date.now();
         return Jsx$WeftDom.Elements.jsxs("div", {
           id: `promo-` + block.id,
-          className: Css$WeftCss.cx([
-            "promo",
-            promo
-          ]),
+          className: promo,
           children: [
             Jsx$WeftDom.Elements.jsxs("p", {
-              className: "promo-text",
               children: [
                 Ui$WeftShop.text(match.text + ` with code `),
                 Jsx$WeftDom.Elements.jsx("b", {
@@ -325,10 +313,7 @@ function Blocks$Body(props) {
       case "LiveDeals" :
         await Latency$WeftShop.wait(`block:` + block.id, signal);
         return Jsx$WeftDom.Elements.jsxs("div", {
-          className: Css$WeftCss.cx([
-            "live-deals",
-            liveDeals
-          ]),
+          className: liveDeals,
           children: [
             Jsx$WeftDom.Elements.jsx("h2", {
               children: Ui$WeftShop.text(match.title)
@@ -348,7 +333,7 @@ function Blocks$Body(props) {
                     compareAt: summary.compareAt
                   }),
                   Jsx$WeftDom.Elements.jsx("span", {
-                    className: "live-stock",
+                    id: `left-` + summary.id,
                     children: Ui$WeftShop.text(` ` + Db$WeftShop.productStock(summary.id).toString() + ` left`)
                   })
                 ]
@@ -360,7 +345,6 @@ function Blocks$Body(props) {
         let body = match.body;
         return Jsx$WeftDom.Elements.jsxs("div", {
           id: `text-` + block.id,
-          className: "text-block",
           children: [
             Jsx$WeftDom.Elements.jsx("h2", {
               children: Ui$WeftShop.text(match.title)
@@ -401,10 +385,7 @@ function skeleton(block) {
   }
   return Jsx$WeftDom.Elements.jsx("div", {
     id: `loading-` + block.id,
-    className: Css$WeftCss.cx([
-      "skeleton",
-      Theme$WeftShop.placeholder
-    ]),
+    className: Theme$WeftShop.placeholder,
     "aria-busy": "true",
     children: Ui$WeftShop.text(tmp)
   });
@@ -443,12 +424,8 @@ function framed(_block, _keyOpt, page, request) {
         case "Columns" :
           return Jsx$WeftDom.Elements.jsxKeyed("div", {
             id: `columns-` + block.id,
-            className: Css$WeftCss.cx([
-              "columns",
-              columns
-            ]),
+            className: columns,
             children: match.columns.map((blocks, index) => Jsx$WeftDom.Elements.jsxKeyed("div", {
-              className: "column",
               children: blockList(blocks, page, request)
             }, index.toString(), undefined))
           }, key, undefined);

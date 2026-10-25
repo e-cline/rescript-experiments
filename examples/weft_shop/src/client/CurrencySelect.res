@@ -4,16 +4,12 @@ Picks the currency prices are shown in: at once, for every price on the page (th
 `prefs.setCurrency` RPC). If saving fails, it goes back, and says so.
 */
 
-open WeftCss
-
 @weft.component({kind: Entrypoint})
 let make = () => {
   let {currency, setCurrency} = ShopContext.use()
   let save = WeftServer.Rpc.use(Api.setCurrency)
-  <label className="currency">
-    <span className={Css.cx(["visually-hidden", Theme.visuallyHidden])}>
-      {WeftDom.Jsx.string("Currency")}
-    </span>
+  <label>
+    <span className={Theme.visuallyHidden}> {WeftDom.Jsx.string("Currency")} </span>
     <select
       id="currency"
       value={Money.code(currency)}

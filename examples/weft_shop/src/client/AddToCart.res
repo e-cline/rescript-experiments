@@ -17,7 +17,6 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
     <label htmlFor=quantityId> {WeftDom.Jsx.string("Quantity")} </label>
     <select
       id=quantityId
-      className="quantity"
       disabled={stock == 0}
       value={Int.toString(quantity)}
       onChange={event => {

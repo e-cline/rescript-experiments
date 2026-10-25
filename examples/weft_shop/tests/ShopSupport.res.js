@@ -359,8 +359,8 @@ function noWarnings(page) {
 async function signIn(page, name) {
   WeftTesting.click(page, "#sign-in");
   await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(Primitive_option.fromNullable(document.querySelector("#signin-dialog"))));
-  inputAnywhere(".signin-name", name);
-  submitAnywhere(".signin-form");
+  inputAnywhere("#signin-dialog input", name);
+  submitAnywhere("#signin-dialog form");
   return await WeftTesting.waitFor(page, undefined, () => text(page, "#account-menu").includes(`Hi, ` + name));
 }
 

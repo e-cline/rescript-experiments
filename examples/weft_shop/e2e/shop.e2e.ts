@@ -120,7 +120,7 @@ test('shopping, start to finish: a filter, a product, a variant, the cart, a pro
   await page.locator('#color-green').check();
   await expect(page).toHaveURL('/c/shoes?color=green');
   await expect(page.locator('#result-count')).toHaveText('Showing 2 of 2');
-  await page.locator('#card-p8 .card-link').click();
+  await page.locator('#card-p8 > a').click();
   await expect(page.locator('#product-name')).toHaveText('Hiking Boot');
   await expect(page).toHaveURL('/p/hiking-boot');
   await hydrated(page, '#variant-p8-9');
@@ -140,7 +140,7 @@ test('shopping, start to finish: a filter, a product, a variant, the cart, a pro
   await page.locator('#drawer-cart-link').click();
   await expect(page.locator('#cart-title')).toBeVisible();
   await expect(page.locator('#cart-drawer')).toHaveCount(0);
-  await page.locator('.promo-code').fill('loom20');
+  await page.locator('#promo input').fill('loom20');
   await page.locator('#apply-promo').click();
   await expect(page.locator('#summary-discount')).toHaveText('-$67.60');
   await expect(page.locator('#summary-total')).toHaveText('$270.40');
@@ -177,11 +177,11 @@ test('the sign-in dialog takes focus, closes on Escape, and signing in personali
   await expect(
     page.locator('body > #signin-overlay #signin-dialog'),
   ).toBeVisible();
-  await expect(page.locator('#signin-dialog .signin-name')).toBeFocused();
+  await expect(page.locator('#signin-dialog input')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#signin-dialog')).toHaveCount(0);
   await page.locator('#sign-in').click();
-  await page.locator('#signin-dialog .signin-name').fill('Ada');
+  await page.locator('#signin-dialog input').fill('Ada');
   await page.keyboard.press('Enter');
   await expect(page.locator('#account-menu')).toContainText('Hi, Ada');
   await expect(page.locator('#hero-welcome h1')).toHaveText(
@@ -210,7 +210,7 @@ test('a link to a page that redirects lands at the URL the redirect leads to, in
   await page.goto('/');
   await hydrated(page, '#sign-in');
   await page.locator('#sign-in').click();
-  await page.locator('#signin-dialog .signin-name').fill('Ada');
+  await page.locator('#signin-dialog input').fill('Ada');
   await page.keyboard.press('Enter');
   await hydrated(page, '#account-link');
   // Signed out behind the page's back: its account link now redirects to sign in.
@@ -230,8 +230,8 @@ test('a link to a page that redirects lands at the URL the redirect leads to, in
   await expect(page.locator('#signin-page')).toBeVisible();
   expect(where()).toBe('/signin?next=/account');
   // Signing in there goes on to the account.
-  await hydrated(page, '#signin-page .signin-name');
-  await page.locator('#signin-page .signin-name').fill('Grace');
+  await hydrated(page, '#signin-page input');
+  await page.locator('#signin-page input').fill('Grace');
   await page.keyboard.press('Enter');
   await expect(page.locator('#account-title')).toHaveText("Grace's account");
   expect(where()).toBe('/account');
@@ -255,18 +255,18 @@ test('the currency picked changes every price at once, and is the session’s fo
   await releaseAll(request);
   await page.goto('/c/outerwear');
   await hydrated(page, '#currency');
-  await expect(page.locator('#card-p10 .price')).toHaveText('$149.00');
+  await expect(page.locator('#card-p10 data')).toHaveText('$149.00');
   // On sale: the price it was, too.
-  await expect(page.locator('#card-p9 .price')).toHaveText('$373.75 $299.00');
+  await expect(page.locator('#card-p9 data')).toHaveText('$373.75 $299.00');
   const saved = page.waitForResponse((response) =>
     response.url().endsWith('/_weft/rpc/prefs.setCurrency'),
   );
   await page.locator('#currency').selectOption('EUR');
-  await expect(page.locator('#card-p10 .price')).toHaveText('€137.08');
-  await expect(page.locator('#card-p9 .price')).toHaveText('€343.85 €275.08');
+  await expect(page.locator('#card-p10 data')).toHaveText('€137.08');
+  await expect(page.locator('#card-p9 data')).toHaveText('€343.85 €275.08');
   await saved;
   await page.reload();
-  await expect(page.locator('#card-p10 .price')).toHaveText('€137.08');
+  await expect(page.locator('#card-p10 data')).toHaveText('€137.08');
   await expect(page.locator('#currency')).toHaveValue('EUR');
 });
 
@@ -328,10 +328,10 @@ test.describe('with JavaScript off', () => {
     await releaseAll(request);
     await page.goto('/');
     await expect(page.locator('#hero-hero h1')).toHaveText('Made to last');
-    await expect(
-      page.locator('#carousel-featured #card-p1 .card-name'),
-    ).toHaveText('Trail Runner');
-    await expect(page.locator('#carousel-featured #card-p1 .price')).toHaveText(
+    await expect(page.locator('#carousel-featured #card-p1 h3')).toHaveText(
+      'Trail Runner',
+    );
+    await expect(page.locator('#carousel-featured #card-p1 data')).toHaveText(
       '$129.00',
     );
     await page.goto('/p/trail-runner');

@@ -59,7 +59,7 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
       ]
     ]);
     t.expect(quantity(page, "p1-9")).toBe("2");
-    t.expect(ShopSupport$WeftShop.text(page, "#line-p1-9 .line-total")).toBe("$258.00");
+    t.expect(ShopSupport$WeftShop.text(page, "#total-p1-9")).toBe("$258.00");
     t.expect(ShopSupport$WeftShop.text(page, "#summary-subtotal")).toBe("$307.00");
     t.expect(ShopSupport$WeftShop.text(page, "#summary-points")).toBe("307");
     return t.expect(ShopSupport$WeftShop.text(page, "#cart-button")).toBe("Cart (3)");
@@ -143,20 +143,20 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
         1
       ]
     ]);
-    WeftTesting.input(page, ".promo-code", "   ");
+    WeftTesting.input(page, "#promo input", "   ");
     ShopSupport$WeftShop.submitAnywhere("#promo");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#promo-message"));
     t.expect(ShopSupport$WeftShop.text(page, "#promo-message")).toBe("That code isn't one of ours.");
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/cart"]);
-    WeftTesting.input(page, ".promo-code", "nope");
+    WeftTesting.input(page, "#promo input", "nope");
     ShopSupport$WeftShop.submitAnywhere("#promo");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/cart.applyPromo"));
     await WeftTesting.settle(page);
     t.expect(ShopSupport$WeftShop.text(page, "#promo-message")).toBe("That code isn't one of ours.");
-    WeftTesting.input(page, ".promo-code", "summer");
+    WeftTesting.input(page, "#promo input", "summer");
     ShopSupport$WeftShop.submitAnywhere("#promo");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#promo-message") === "That code has expired.");
-    WeftTesting.input(page, ".promo-code", " weft10 ");
+    WeftTesting.input(page, "#promo input", " weft10 ");
     ShopSupport$WeftShop.submitAnywhere("#promo");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#promo-message") === "Applied WEFT10");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#summary-discount"));
@@ -363,8 +363,8 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
     t.expect(ShopSupport$WeftShop.text(page, "#signin-title")).toBe("Sign in");
     t.expect(WeftTesting.url(page)).toBe("/signin?next=/account");
     t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/signin?next=/account");
-    WeftTesting.input(page, "#signin-page .signin-name", "Grace");
-    ShopSupport$WeftShop.submitAnywhere("#signin-page .signin-form");
+    WeftTesting.input(page, "#signin-page input", "Grace");
+    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#account-title"));
     t.expect(ShopSupport$WeftShop.text(page, "#account-title")).toBe("Grace's account");
     t.expect(ShopSupport$WeftShop.text(page, "#account-menu")).toBe("Hi, GraceSign out");
@@ -392,21 +392,21 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/signin?next=/cart");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#signin-page"));
     await WeftTesting.hydrated(page, undefined);
-    ShopSupport$WeftShop.submitAnywhere("#signin-page .signin-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, ".signin-error"));
-    t.expect(ShopSupport$WeftShop.text(page, ".signin-error")).toBe("Enter a name.");
-    WeftTesting.input(page, "#signin-page .signin-name", "x".repeat(41));
-    ShopSupport$WeftShop.submitAnywhere("#signin-page .signin-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, ".signin-error") === "That name is too long.");
+    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#signin-page [role=\"alert\"]"));
+    t.expect(ShopSupport$WeftShop.text(page, "#signin-page [role=\"alert\"]")).toBe("Enter a name.");
+    WeftTesting.input(page, "#signin-page input", "x".repeat(41));
+    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#signin-page [role=\"alert\"]") === "That name is too long.");
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/signin?next=/cart"]);
     WeftTesting.rewriteBodies(app(), "/_weft/rpc/auth.signIn", param => JSON.stringify("y".repeat(41)));
-    WeftTesting.input(page, "#signin-page .signin-name", "Grace");
-    ShopSupport$WeftShop.submitAnywhere("#signin-page .signin-form");
+    WeftTesting.input(page, "#signin-page input", "Grace");
+    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/auth.signIn"));
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, ".signin-error") === "That name is too long.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#signin-page [role=\"alert\"]") === "That name is too long.");
     WeftTesting.stopRewriting(app());
     t.expect((await ShopSupport$WeftShop.session(app())).user).toBe("");
-    ShopSupport$WeftShop.submitAnywhere("#signin-page .signin-form");
+    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
     return await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#cart-title"));
   });
 });

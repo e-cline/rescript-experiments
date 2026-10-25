@@ -703,9 +703,12 @@ which for client code is the right one (§ How it works).
   `Blocks`, `Pages`: server-only sheets) and twenty entrypoints and shared components. Selectors on
   ids and descendants became classes on the elements, or `selectors` of their parent's class; the
   `@media` block became each class's `media`.
-- **The semantic class names stay** beside the styles' (`Css.cx(["card", Styles.card])`): the tests
-  find elements by them (`.price`, `.signin-name`, `.suggestions`), and they read better in the
-  HTML.
+- **No class names but `weft_css`'s.** The semantic ones were first kept beside the styles'
+  (`Css.cx(["card", Styles.card])`), since the tests found elements by them. They were taken out
+  later, in `weft_notes` too, and the tests find elements by what the page already has: ids (some
+  added, as `#total-<sku>`), roles and ARIA attributes (`[role="listbox"]`, `[aria-busy="true"]`),
+  or elements in one with an id (`#signin-page form`, `#card-p1 h3`). A price is a `<data>` element,
+  its value in cents.
 - **`weft_css` gained `clip`**, the one property the store used that it didn't have.
 - **Tier 2** (`tests/Styles_test.res`): the home page's head links the theme's and the frame's
   sheets and not the cart's or the checkout's; the cart's lines' sheet comes when the cart's opened;

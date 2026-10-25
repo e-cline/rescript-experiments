@@ -123,12 +123,12 @@ module Body = {
     | Hero({title, subtitle, cta: (label, href), tone}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
       <div
-        className={Css.cx([`hero ${tone}`, Styles.hero, tone == "cool" ? Styles.heroCool : ""])}
+        className={Css.cx([Styles.hero, tone == "cool" ? Styles.heroCool : ""])}
         id={`hero-${block.id}`}
       >
         <h1> {text(title)} </h1>
         <p> {text(subtitle)} </p>
-        <Link className={Css.cx(["cta", Theme.cta])} href> {text(label)} </Link>
+        <Link className={Theme.cta} href> {text(label)} </Link>
       </div>
     | Rail({title, source, limit}) =>
       await Latency.wait(railGate(block.id, source), ~signal)
@@ -140,7 +140,7 @@ module Body = {
       }
     | CategoryTiles({title}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
-      <div className={Css.cx(["tiles", Styles.tiles])}>
+      <div className={Styles.tiles}>
         <h2> {text(title)} </h2>
         <ul>
           {Db.categories
@@ -157,8 +157,8 @@ module Body = {
     | Promo({code, text: offer, endsInMinutes}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
       let now = Date.now()
-      <div className={Css.cx(["promo", Styles.promo])} id={`promo-${block.id}`}>
-        <p className="promo-text">
+      <div className={Styles.promo} id={`promo-${block.id}`}>
+        <p>
           {text(`${offer} with code `)}
           <b> {text(code)} </b>
         </p>
@@ -168,7 +168,7 @@ module Body = {
       </div>
     | LiveDeals({title}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
-      <div className={Css.cx(["live-deals", Styles.liveDeals])}>
+      <div className={Styles.liveDeals}>
         <h2> {text(title)} </h2>
         <ul id="live-list">
           {Db.deals()
@@ -178,7 +178,7 @@ module Body = {
               <Link href={`/p/${summary.slug}`}> {text(summary.name)} </Link>
               {text(" ")}
               <Price cents=summary.price compareAt=?summary.compareAt />
-              <span className="live-stock">
+              <span id={`left-${summary.id}`}>
                 {text(` ${Int.toString(Db.productStock(summary.id))} left`)}
               </span>
             </li>
@@ -188,7 +188,7 @@ module Body = {
       </div>
     | Newsletter => <Newsletter />
     | Text({title, body}) =>
-      <div className="text-block" id={`text-${block.id}`}>
+      <div id={`text-${block.id}`}>
         <h2> {text(title)} </h2>
         {body == "" ? WeftDom.Jsx.null : <p> {text(body)} </p>}
       </div>
@@ -199,9 +199,7 @@ module Body = {
 }
 
 let skeleton = (block: Cms.block) =>
-  <div
-    className={Css.cx(["skeleton", Theme.placeholder])} id={`loading-${block.id}`} ariaBusy="true"
-  >
+  <div className={Theme.placeholder} id={`loading-${block.id}`} ariaBusy="true">
     {text(
       switch block.kind {
       | Rail({title}) | LiveDeals({title}) => `Loading ${title->String.toLowerCase}…`
@@ -234,12 +232,10 @@ let rec framed = (block: Cms.block, ~key=block.id, ~page: string, ~request: requ
       panels={tabs->Array.map(((_, blocks)) => blockList(blocks, ~page, ~request))}
     />
   | Columns({columns}) =>
-    <div key className={Css.cx(["columns", Styles.columns])} id={`columns-${block.id}`}>
+    <div key className={Styles.columns} id={`columns-${block.id}`}>
       {columns
       ->Array.mapWithIndex((blocks, index) =>
-        <div key={Int.toString(index)} className="column">
-          {blockList(blocks, ~page, ~request)}
-        </div>
+        <div key={Int.toString(index)}> {blockList(blocks, ~page, ~request)} </div>
       )
       ->WeftDom.Jsx.array}
     </div>

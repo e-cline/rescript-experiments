@@ -43,12 +43,11 @@ module RangeFacet = {
     let (to, setTo) = Weft.Hooks.useState(() => Int.toString(high))
     let fromId = Weft.Hooks.useId()
     let toId = Weft.Hooks.useId()
-    <fieldset className={Css.cx(["facet", Styles.facet])} id={`facet-${name}`}>
+    <fieldset className={Styles.facet} id={`facet-${name}`}>
       <legend> {WeftDom.Jsx.string(label)} </legend>
       <label htmlFor=fromId> {WeftDom.Jsx.string("From")} </label>
       <input
         id=fromId
-        className="range-low"
         type_="number"
         min={Int.toString(min)}
         max={Int.toString(max)}
@@ -58,7 +57,6 @@ module RangeFacet = {
       <label htmlFor=toId> {WeftDom.Jsx.string("To")} </label>
       <input
         id=toId
-        className="range-high"
         type_="number"
         min={Int.toString(min)}
         max={Int.toString(max)}
@@ -103,12 +101,8 @@ let make = (
     )()->ignore
   }
   let sort = pending ? params->getParam("sort")->Option.getOr("featured") : sort
-  <aside
-    id="facets"
-    ariaBusy={pending ? "true" : "false"}
-    className={pending ? Css.cx(["pending", Theme.stale]) : ""}
-  >
-    <label className="sort">
+  <aside id="facets" ariaBusy={pending ? "true" : "false"} className={pending ? Theme.stale : ""}>
+    <label>
       {WeftDom.Jsx.string("Sort by ")}
       <select
         id="sort"
@@ -135,11 +129,11 @@ let make = (
       switch facet {
       | Choices({name, label, options, selected}) =>
         let selected = pending ? params->getAll(name) : selected
-        <fieldset key=name className={Css.cx(["facet", Styles.facet])} id={`facet-${name}`}>
+        <fieldset key=name className={Styles.facet} id={`facet-${name}`}>
           <legend> {WeftDom.Jsx.string(label)} </legend>
           {options
           ->Array.map(((value, count)) =>
-            <label key=value className={Css.cx(["choice", Theme.choice])}>
+            <label key=value className={Theme.choice}>
               <input
                 type_="checkbox"
                 id={`${name}-${value}`}
@@ -191,7 +185,7 @@ let make = (
         />
       | Toggle({name, label, on}) =>
         let on = pending ? params->getParam(name) == Some("1") : on
-        <label key=name className={Css.cx(["facet toggle", Styles.facet])} id={`facet-${name}`}>
+        <label key=name className={Styles.facet} id={`facet-${name}`}>
           <input
             type_="checkbox"
             id={`toggle-${name}`}

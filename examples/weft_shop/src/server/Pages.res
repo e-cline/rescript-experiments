@@ -42,7 +42,7 @@ let viewerOf = (request: request): Cms.viewer => {
 module Breadcrumbs = {
   @weft.component({kind: Server})
   let make = (~trail: array<(string, string)>, ~current: string) =>
-    <nav className={Css.cx(["breadcrumbs", Styles.breadcrumbs])} ariaLabel="Breadcrumbs">
+    <nav className={Styles.breadcrumbs} ariaLabel="Breadcrumbs">
       <Link href="/"> {text("Home")} </Link>
       {trail
       ->Array.map(((label, href)) =>
@@ -64,7 +64,7 @@ module PageBlocks = {
   @weft.component({kind: Server})
   let make = async (~page: string, ~request: request) => {
     await Latency.wait(`layout:${page}`, ~signal=request.signal)
-    <div className="blocks" id={`blocks-${page}`}>
+    <div id={`blocks-${page}`}>
       {Blocks.blockList(Cms.layout(page, viewerOf(request)), ~page, ~request)}
     </div>
   }
@@ -86,7 +86,7 @@ module BlockPart = {
   let make = (~page: string, ~id: string, ~request: request) =>
     switch Cms.find(Cms.layout(page, viewerOf(request)), id) {
     | Some(block) => <Blocks.Content block request />
-    | None => <p className="gone"> {text("This isn't here any more.")} </p>
+    | None => <p> {text("This isn't here any more.")} </p>
     }
 }
 
@@ -165,7 +165,7 @@ module CategoryPage = {
       <Weft.Suspense fallback={loading("banner-loading", "…")}>
         <PageBlocks page={`c-${slug}`} request />
       </Weft.Suspense>
-      <div className={Css.cx(["catalog", Styles.catalog])}>
+      <div className={Styles.catalog}>
         <Weft.Suspense fallback={loading("facets-loading", "Loading filters…")}>
           <Facets slug filters request />
         </Weft.Suspense>
@@ -298,9 +298,9 @@ module ProductPage = {
       <Breadcrumbs
         trail=[(Db.categoryName(summary.category), `/c/${summary.category}`)] current=summary.name
       />
-      <div className={Css.cx(["product", Styles.product])} id={`product-${summary.id}`}>
+      <div className={Styles.product} id={`product-${summary.id}`}>
         <Gallery name=summary.name hue=summary.hue />
-        <div className="product-info">
+        <div>
           <h1 id="product-name"> {text(summary.name)} </h1>
           <WishlistButton productId=summary.id saved={wishlist(request)->Set.has(summary.id)} />
           <p id="rating"> {text(`★ ${Float.toFixed(summary.rating, ~digits=1)}`)} </p>
@@ -373,14 +373,14 @@ module CartPage = {
   let make = (~request: request) =>
     <Shell request>
       <h1 id="cart-title"> {text("Your cart")} </h1>
-      <div className={Css.cx(["cart", Styles.cart])}>
+      <div className={Styles.cart}>
         <CartLines />
-        <aside className="cart-side">
+        <aside>
           <CartSummaryFrame>
             <CartSummaryPart request />
           </CartSummaryFrame>
           <PromoForm applied=request.session.promo />
-          <Link id="checkout-link" className={Css.cx(["cta", Theme.cta])} href="/checkout">
+          <Link id="checkout-link" className={Theme.cta} href="/checkout">
             {text("Check out")}
           </Link>
         </aside>
@@ -470,7 +470,7 @@ module AccountPage = {
         <h2> {text("Saved for later")} </h2>
         {saved == []
           ? <p id="no-saved"> {text("Nothing saved yet.")} </p>
-          : <div className="card-row"> {cards(saved, request)} </div>}
+          : <div> {cards(saved, request)} </div>}
       </section>
     </Shell>
   }

@@ -76,10 +76,7 @@ function ProductGrid(props) {
     id: "grid-wrap",
     children: [
       Jsx$WeftDom.Elements.jsxs("div", {
-        className: Css$WeftCss.cx([
-          "grid-tools",
-          tools
-        ]),
+        className: tools,
         children: [
           Jsx$WeftDom.Elements.jsx("input", {
             id: "quick-filter",
@@ -97,16 +94,11 @@ function ProductGrid(props) {
       }),
       Jsx$WeftDom.Elements.jsx("ul", {
         id: "grid",
-        className: filter === deferred ? Css$WeftCss.cx([
-            "grid",
-            grid
-          ]) : Css$WeftCss.cx([
-            "grid stale",
+        className: filter === deferred ? grid : Css$WeftCss.cx([
             grid,
             Theme$WeftShop.stale
           ]),
         children: shown.map(item => Jsx$WeftDom.Elements.jsxKeyed("li", {
-          className: "grid-item",
           children: item.card
         }, item.key, undefined))
       }),

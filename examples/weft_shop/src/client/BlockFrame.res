@@ -53,16 +53,14 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
   , (refreshEvery, src))
   <section
     id={`block-${id}`}
-    className={Css.cx(["block", Styles.block])}
+    className={Styles.block}
     ariaBusy={block.isPending ? "true" : "false"}
     title={block.isPending ? "pending" : "idle"}
   >
     <Weft.ErrorBoundary
       fallback={(~error, ~reset as resetBoundary) => {
         reset.current = resetBoundary
-        <div
-          className={Css.cx(["block-error", Styles.error])} id={`block-error-${id}`} role="alert"
-        >
+        <div className={Styles.error} id={`block-error-${id}`} role="alert">
           <p> {WeftDom.Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))} </p>
           <button
             id={`retry-${id}`}

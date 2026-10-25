@@ -35,18 +35,18 @@ let make = (~name: string, ~hue: int) => {
   >
     <div
       id="main-picture"
-      className={Css.cx(["picture", Theme.picture, Styles.main])}
+      className={Css.cx([Theme.picture, Styles.main])}
       style={Theme.pictureVars(~hue, ~view=selected)}
     >
       <span id="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
     </div>
-    <div className={Css.cx(["thumbnails", Styles.thumbnails])}>
+    <div className={Styles.thumbnails}>
       {views
       ->Array.mapWithIndex((view, index) =>
         <button
           key=view
           id={`thumb-${Int.toString(index)}`}
-          className={Css.cx(["thumbnail", Styles.thumbnail])}
+          className={Styles.thumbnail}
           ariaLabel=view
           ariaPressed={index == selected ? "true" : "false"}
           style={Theme.pictureVars(~hue, ~view=index)}

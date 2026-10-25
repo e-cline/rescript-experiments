@@ -223,15 +223,11 @@ let Styles = {
 function stockClass(stock$1) {
   if (stock$1 === 0) {
     return Css$WeftCss.cx([
-      "stock out",
       stock,
       stockOut
     ]);
   } else {
-    return Css$WeftCss.cx([
-      "stock",
-      stock
-    ]);
+    return stock;
   }
 }
 
@@ -267,39 +263,24 @@ function Ui$ProductCard(props) {
   let summary = props.summary;
   return Jsx$WeftDom.Elements.jsxs("article", {
     id: `card-` + summary.id,
-    className: Css$WeftCss.cx([
-      "card",
-      card
-    ]),
+    className: card,
     children: [
       Jsx$WeftDom.jsxs(Link$WeftShop.make, {
         href: `/p/` + summary.slug,
-        className: Css$WeftCss.cx([
-          "card-link",
-          cardLink
-        ]),
+        className: cardLink,
         children: [
           Jsx$WeftDom.Elements.jsx("div", {
-            className: Css$WeftCss.cx([
-              "picture",
-              Theme$WeftShop.picture
-            ]),
+            className: Theme$WeftShop.picture,
             style: Theme$WeftShop.pictureVars(summary.hue, undefined)
           }),
           Jsx$WeftDom.Elements.jsx("h3", {
-            className: Css$WeftCss.cx([
-              "card-name",
-              cardName
-            ]),
+            className: cardName,
             children: summary.name
           })
         ]
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
-        className: Css$WeftCss.cx([
-          "card-meta",
-          cardMeta
-        ]),
+        className: cardMeta,
         children: [
           Jsx$WeftDom.jsx(Price$WeftShop.make, {
             cents: summary.price,
@@ -315,10 +296,10 @@ function Ui$ProductCard(props) {
         fallback: Jsx$WeftDom.Elements.jsx("span", {
           id: `stock-loading-` + summary.id,
           className: Css$WeftCss.cx([
-            "stock loading",
             stock,
             stockLoading
           ]),
+          "aria-busy": "true",
           children: "Checking stock…"
         }),
         children: Jsx$WeftDom.jsx(Ui$StockBadge, {
@@ -383,10 +364,7 @@ function Ui$Header(props) {
         initial: props.query
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
-        className: Css$WeftCss.cx([
-          "header-tools",
-          headerTools
-        ]),
+        className: headerTools,
         children: [
           Jsx$WeftDom.jsx(CurrencySelect$WeftShop.make, {}),
           Jsx$WeftDom.jsx(AccountMenu$WeftShop.make, {}),
@@ -437,10 +415,8 @@ let Shell = {
 function loading(id, message) {
   return Jsx$WeftDom.Elements.jsx("p", {
     id: id,
-    className: Css$WeftCss.cx([
-      "loading",
-      Theme$WeftShop.placeholder
-    ]),
+    className: Theme$WeftShop.placeholder,
+    "aria-busy": "true",
     children: message
   });
 }

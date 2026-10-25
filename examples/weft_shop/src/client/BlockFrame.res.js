@@ -87,10 +87,7 @@ function BlockFrame(props) {
   ]);
   return Jsx$WeftDom.Elements.jsx("section", {
     id: `block-` + id,
-    className: Css$WeftCss.cx([
-      "block",
-      block
-    ]),
+    className: block,
     title: block$1.isPending ? "pending" : "idle",
     "aria-busy": block$1.isPending ? "true" : "false",
     children: Jsx$WeftDom.jsx(ErrorBoundary$Weft.make, {
@@ -98,10 +95,7 @@ function BlockFrame(props) {
         reset.current = resetBoundary;
         return Jsx$WeftDom.Elements.jsxs("div", {
           id: `block-error-` + id,
-          className: Css$WeftCss.cx([
-            "block-error",
-            error
-          ]),
+          className: error,
           role: "alert",
           children: [
             Jsx$WeftDom.Elements.jsx("p", {

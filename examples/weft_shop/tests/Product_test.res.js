@@ -47,7 +47,7 @@ Vitest.describe("a product's page", undefined, undefined, undefined, undefined, 
     t.expect(ShopSupport$WeftShop.text(page, "#offer-price")).toBe("$129.00");
     await ShopSupport$WeftShop.release(app(), "rail:also-p1");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-also-bought"));
-    t.expect(ShopSupport$WeftShop.count("#carousel-also-bought .card")).toBe(4);
+    t.expect(ShopSupport$WeftShop.count("#carousel-also-bought article")).toBe(4);
     await ShopSupport$WeftShop.release(app(), "qa:p1");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#questions"));
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/p/trail-runner"]);

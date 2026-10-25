@@ -49,7 +49,7 @@ describe("a product's page", () => {
       t->expect(text(page, "#offer-price"))->Expect.toBe("$129.00")
       await app()->release("rail:also-p1")
       await page->WeftTesting.waitFor(() => has(page, "#carousel-also-bought"))
-      t->expect(count("#carousel-also-bought .card"))->Expect.toBe(4)
+      t->expect(count("#carousel-also-bought article"))->Expect.toBe(4)
       await app()->release("qa:p1")
       await page->WeftTesting.waitFor(() => has(page, "#questions"))
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/p/trail-runner"])

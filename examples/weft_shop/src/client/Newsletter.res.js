@@ -47,7 +47,6 @@ function Newsletter(props) {
       }),
       Jsx$WeftDom.Elements.jsx("input", {
         id: inputId,
-        className: "newsletter-email",
         type: "email",
         value: email,
         autoComplete: "email",

@@ -28,11 +28,11 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
   // The rail can shrink under the page it was on (a refetch with fewer cards).
   let page = Math.Int.min(page, pages - 1)
   let first = page * pageSize
-  <div className="carousel" id={`carousel-${id}`}>
-    <div className={Css.cx(["carousel-head", Styles.head])}>
+  <div id={`carousel-${id}`}>
+    <div className={Styles.head}>
       <h2> {WeftDom.Jsx.string(title)} </h2>
       {pages > 1
-        ? <div className={Css.cx(["carousel-controls", Styles.controls])}>
+        ? <div className={Styles.controls}>
             <button
               id={`prev-${id}`}
               ariaLabel="Previous"
@@ -41,7 +41,7 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
             >
               {WeftDom.Jsx.string("‹")}
             </button>
-            <span className="carousel-position" id={`position-${id}`}>
+            <span id={`position-${id}`}>
               {WeftDom.Jsx.string(
                 `${Int.toString(first + 1)}–${Int.toString(
                     Math.Int.min(count, first + pageSize),
@@ -59,9 +59,9 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
           </div>
         : WeftDom.Jsx.null}
     </div>
-    <div className={Css.cx(["carousel-window", Styles.window])}>
+    <div className={Styles.window}>
       <div
-        className={Css.cx(["carousel-track", Styles.track])}
+        className={Styles.track}
         style={Css.vars([(Styles.offset, `-${Int.toString(page * 100)}%`)])}
       >
         children

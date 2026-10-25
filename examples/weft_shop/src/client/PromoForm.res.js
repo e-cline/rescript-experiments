@@ -42,7 +42,6 @@ function PromoForm(props) {
       }),
       Jsx$WeftDom.Elements.jsx("input", {
         id: inputId,
-        className: "promo-code",
         value: code,
         placeholder: Stdlib_Option.getOr(props.applied, ""),
         onInput: event => setCode(param => Dom$WeftDom.Event.targetValue(event))

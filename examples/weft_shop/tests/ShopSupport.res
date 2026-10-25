@@ -275,7 +275,7 @@ let noWarnings = page =>
 let signIn = async (page, name) => {
   page->WeftTesting.click("#sign-in")
   await page->WeftTesting.waitFor(() => Doc.find("#signin-dialog")->Option.isSome)
-  inputAnywhere(".signin-name", name)
-  submitAnywhere(".signin-form")
+  inputAnywhere("#signin-dialog input", name)
+  submitAnywhere("#signin-dialog form")
   await page->WeftTesting.waitFor(() => text(page, "#account-menu")->String.includes(`Hi, ${name}`))
 }

@@ -179,10 +179,12 @@ Vitest.describe("hydrating the first page", undefined, undefined, undefined, und
   Vitest.testAsync("links the comment's hint by an ID that's the same in the HTML and once hydrated", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openNote(undefined, undefined);
     let attribute = (selector, name) => Stdlib_Option.flatMap(WeftTesting.query(page, selector), element => Primitive_option.fromNullable(element.getAttribute(name)));
-    let hint = attribute(".hint", "id");
+    let hint = attribute("#comment-text", "aria-describedby");
     t.expect(Stdlib_Option.isSome(hint)).toBe(true);
-    t.expect(attribute("#comment-text", "aria-describedby")).toEqual(hint);
-    return t.expect((await WeftTesting.shell(page)).includes(`aria-describedby="` + hint + `"`)).toBe(true);
+    t.expect(NotesSupport$WeftNotes.text(page, `[id="` + hint + `"]`)).toBe("At most 500 characters.");
+    let shell = await WeftTesting.shell(page);
+    t.expect(shell.includes(`aria-describedby="` + hint + `"`)).toBe(true);
+    return t.expect(shell.includes(`id="` + hint + `"`)).toBe(true);
   });
   Vitest.testAsync("renders the failing component's error box on the client, and only that", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openNote(undefined, undefined);

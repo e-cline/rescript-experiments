@@ -33,21 +33,20 @@ let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
       }
     )()->ignore
   }
-  <form className={Css.cx(["signin-form", Styles.form])} onSubmit=submit>
+  <form className={Styles.form} onSubmit=submit>
     <label htmlFor=inputId> {WeftDom.Jsx.string("Your name")} </label>
     <input
       id=inputId
-      className="signin-name"
       value=name
       autoFocus
       autoComplete="name"
       onInput={event => setName(_ => WeftDom.Dom.Event.targetValue(event))}
     />
-    <button className="signin-submit" type_="submit" disabled=busy>
+    <button type_="submit" disabled=busy>
       {WeftDom.Jsx.string(busy ? "Signing in…" : "Sign in")}
     </button>
     {switch error {
-    | Some(message) => <p className="signin-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+    | Some(message) => <p role="alert"> {WeftDom.Jsx.string(message)} </p>
     | None => WeftDom.Jsx.null
     }}
   </form>

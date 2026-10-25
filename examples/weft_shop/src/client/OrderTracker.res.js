@@ -87,13 +87,7 @@ function OrderTracker(props) {
     id: "timeline",
     className: timeline,
     children: steps.map(step => Jsx$WeftDom.Elements.jsxKeyed("li", {
-      className: rank(step) <= rank(status) ? Css$WeftCss.cx([
-          "done",
-          done
-        ]) : Css$WeftCss.cx([
-          "todo",
-          todo
-        ]),
+      className: rank(step) <= rank(status) ? done : todo,
       "aria-current": step === status ? "step" : "false",
       children: Types$WeftShop.statusLabel(step)
     }, Types$WeftShop.statusLabel(step), undefined))

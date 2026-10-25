@@ -6,8 +6,6 @@ re-sorts without blocking the select), and a few show until "Show all".
 
 open Types
 
-open WeftCss
-
 module Items = {
   @weft.component
   let make = (~reviews: promise<array<review>>) => {
@@ -24,7 +22,7 @@ module Items = {
     let average =
       reviews->Array.reduce(0, (total, review) => total + review.stars)->Int.toFloat /.
         Int.toFloat(Math.Int.max(1, Array.length(reviews)))
-    <div id="reviews" className={isPending ? Css.cx(["pending", Theme.stale]) : ""}>
+    <div id="reviews" className={isPending ? Theme.stale : ""}>
       <p id="review-summary">
         {WeftDom.Jsx.string(
           `${Float.toFixed(average, ~digits=1)} out of 5, from ${Int.toString(

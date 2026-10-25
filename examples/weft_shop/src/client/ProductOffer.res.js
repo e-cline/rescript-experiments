@@ -65,10 +65,7 @@ function ProductOffer(props) {
           "aria-label": "Variant",
           children: variants$1.map(variant$1 => Jsx$WeftDom.Elements.jsxKeyed("button", {
             id: `variant-` + variant$1.sku,
-            className: Css$WeftCss.cx([
-              "variant",
-              variant
-            ]),
+            className: variant,
             "aria-pressed": variant$1.sku === sku ? "true" : "false",
             onClick: param => {
               setSku(param => variant$1.sku);
@@ -79,10 +76,7 @@ function ProductOffer(props) {
         }) : Jsx$WeftDom.$$null,
       Jsx$WeftDom.Elements.jsx("div", {
         id: "offer",
-        className: offer.isPending ? Css$WeftCss.cx([
-            "pending",
-            Theme$WeftShop.stale
-          ]) : "",
+        className: offer.isPending ? Theme$WeftShop.stale : "",
         "aria-busy": offer.isPending ? "true" : "false",
         children: offer.element
       })

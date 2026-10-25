@@ -89,7 +89,7 @@ module Field = {
   @weft.component
   let make = (~label: string, ~name: string, ~value: string, ~autoComplete: string, ~onEdit) => {
     let id = Weft.Hooks.useId()
-    <div className={Css.cx(["field", Styles.field])}>
+    <div className={Styles.field}>
       <label htmlFor=id> {WeftDom.Jsx.string(label)} </label>
       <input
         id name value autoComplete onInput={event => onEdit(WeftDom.Dom.Event.targetValue(event))}
@@ -184,7 +184,7 @@ let make = (~total: cents, ~count: int) => {
           {[(Standard, "Standard (3–5 days)"), (Express, "Express (next day)")]
           ->Array.map(((delivery, label)) => {
             let value = delivery == Standard ? "standard" : "express"
-            <label key=value className={Css.cx(["choice", Theme.choice])}>
+            <label key=value className={Theme.choice}>
               <input
                 type_="radio"
                 name="delivery"
@@ -228,7 +228,7 @@ let make = (~total: cents, ~count: int) => {
       | Some(message) => <p id="checkout-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
       | None => WeftDom.Jsx.null
       }}
-      <div className="checkout-buttons">
+      <div>
         {state.step == Address
           ? WeftDom.Jsx.null
           : <button id="checkout-back" type_="button" onClick={_ => dispatch(Back)}>

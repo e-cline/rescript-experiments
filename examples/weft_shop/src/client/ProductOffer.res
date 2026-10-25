@@ -41,7 +41,7 @@ let make = (
             <button
               key=variant.sku
               id={`variant-${variant.sku}`}
-              className={Css.cx(["variant", Styles.variant])}
+              className={Styles.variant}
               ariaPressed={variant.sku == sku ? "true" : "false"}
               onClick={_ => {
                 setSku(_ => variant.sku)
@@ -57,7 +57,7 @@ let make = (
     <div
       id="offer"
       ariaBusy={offer.isPending ? "true" : "false"}
-      className={offer.isPending ? Css.cx(["pending", Theme.stale]) : ""}
+      className={offer.isPending ? Theme.stale : ""}
     >
       {offer.element}
     </div>

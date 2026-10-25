@@ -237,10 +237,7 @@ function CheckoutForm$Field(props) {
   let onEdit = props.onEdit;
   let id = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("div", {
-    className: Css$WeftCss.cx([
-      "field",
-      field
-    ]),
+    className: field,
     children: [
       Jsx$WeftDom.Elements.jsx("label", {
         htmlFor: id,
@@ -373,10 +370,7 @@ function CheckoutForm(props) {
             let delivery = param[0];
             let value = delivery === "Standard" ? "standard" : "express";
             return Jsx$WeftDom.Elements.jsxsKeyed("label", {
-              className: Css$WeftCss.cx([
-                "choice",
-                Theme$WeftShop.choice
-              ]),
+              className: Theme$WeftShop.choice,
               children: [
                 Jsx$WeftDom.Elements.jsx("input", {
                   id: `delivery-` + value,
@@ -492,7 +486,6 @@ function CheckoutForm(props) {
               children: message
             }) : Jsx$WeftDom.$$null,
           Jsx$WeftDom.Elements.jsxs("div", {
-            className: "checkout-buttons",
             children: [
               state.step === "Address" ? Jsx$WeftDom.$$null : Jsx$WeftDom.Elements.jsx("button", {
                   id: "checkout-back",

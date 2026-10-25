@@ -54,7 +54,7 @@ let make = (
       ? all
       : all->Array.filter(item => item.name->String.toLowerCase->String.includes(needle))
   <div id="grid-wrap">
-    <div className={Css.cx(["grid-tools", Styles.tools])}>
+    <div className={Styles.tools}>
       <input
         id="quick-filter"
         type_="search"
@@ -69,14 +69,9 @@ let make = (
         )}
       </p>
     </div>
-    <ul
-      id="grid"
-      className={filter == deferred
-        ? Css.cx(["grid", Styles.grid])
-        : Css.cx(["grid stale", Styles.grid, Theme.stale])}
-    >
+    <ul id="grid" className={filter == deferred ? Styles.grid : Css.cx([Styles.grid, Theme.stale])}>
       {shown
-      ->Array.map(item => <li key=item.key className="grid-item"> {item.card} </li>)
+      ->Array.map(item => <li key=item.key> {item.card} </li>)
       ->WeftDom.Jsx.array}
     </ul>
     {shown == []

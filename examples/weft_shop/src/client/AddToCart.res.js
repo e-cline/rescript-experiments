@@ -37,7 +37,6 @@ function AddToCart(props) {
       }),
       Jsx$WeftDom.Elements.jsx("select", {
         id: quantityId,
-        className: "quantity",
         value: quantity.toString(),
         disabled: stock === 0,
         onChange: event => {

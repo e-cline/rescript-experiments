@@ -11,7 +11,7 @@ let app = useApp()
 
 /** The names on the grid's cards, in order. */
 let names: unit => array<string> = %raw(`() =>
-  [...document.querySelectorAll('#grid .card-name')].map((node) => node.textContent)`)
+  [...document.querySelectorAll('#grid article h3')].map((node) => node.textContent)`)
 
 /** Opens `url` with every gate open, once its grid and filters are in, and hydrated. */
 let openCatalog = async (~url="/c/shoes") => {
@@ -76,7 +76,7 @@ describe("a category page", () => {
       t->expect(has(page, "#stock-loading-p5"))->Expect.toBe(true)
       // And the cards work: their prices follow the currency, their links navigate.
       await change(page, "#currency", "GBP")
-      await page->WeftTesting.waitFor(() => text(page, "#card-p7 .price") == "£94.01")
+      await page->WeftTesting.waitFor(() => text(page, "#card-p7 data") == "£94.01")
       t
       ->expect(page->WeftTesting.pageRequests)
       ->Expect.toEqual(["/c/shoes", "/_weft/rpc/catalog.more", "/_weft/rpc/prefs.setCurrency"])
@@ -173,8 +173,8 @@ describe("a category page", () => {
 
   testAsync("narrows by price, and the range resets when the filters are cleared", async t => {
     let page = await openCatalog()
-    let low = ".range-low"
-    let high = ".range-high"
+    let low = "#facet-price input:first-of-type"
+    let high = "#facet-price input:last-of-type"
     t->expect(page->WeftTesting.query(low)->Option.map(Doc.value))->Expect.toEqual(Some("59"))
     page->WeftTesting.input(low, "80")
     page->WeftTesting.input(high, "130")
@@ -211,15 +211,15 @@ describe("search", () => {
     // The first's request was cancelled: the server sees it abandoned, and it never answers.
     t->expect(await app()->abandonedSoon(page, first))->Expect.toBe(true)
     await app()->release(second)
-    await page->WeftTesting.waitFor(() => has(page, ".suggestions"))
+    await page->WeftTesting.waitFor(() => has(page, "[role=\"listbox\"]"))
     t
-    ->expect(text(page, ".suggestions"))
+    ->expect(text(page, "[role=\"listbox\"]"))
     ->Expect.toBe("Leather BootshoesRain BootshoesHiking Bootshoes")
     // A suggestion is a link to its product.
     page->WeftTesting.click("#suggestion-rain-boot")
     await page->WeftTesting.waitFor(() => has(page, "#product-name"))
     t->expect(text(page, "#product-name"))->Expect.toBe("Rain Boot")
-    t->expect(has(page, ".suggestions"))->Expect.toBe(false)
+    t->expect(has(page, "[role=\"listbox\"]"))->Expect.toBe(false)
   })
 
   testAsync("shows the results on Enter, keeping what was typed in the header's box", async t => {

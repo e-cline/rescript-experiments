@@ -54,10 +54,7 @@ function Tabs(props) {
   let panelId = index => id + `-panel-` + index.toString();
   return Jsx$WeftDom.Elements.jsxs("div", {
     id: id,
-    className: Css$WeftCss.cx([
-      "tabs",
-      tabs
-    ]),
+    className: tabs,
     children: [
       Jsx$WeftDom.Elements.jsx("div", {
         role: "tablist",

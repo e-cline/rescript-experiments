@@ -107,8 +107,8 @@ test('nothing shows without its CSS: streaming, navigating, the cart and its tot
   // A category (a navigation: its filters and grid bring theirs), then a product.
   await page.locator('#nav-shoes').click();
   await expect(page.locator('#grid')).toBeVisible();
-  await hydrated(page, '#grid .card-link');
-  await page.locator('#grid .card-link').first().click();
+  await hydrated(page, '#grid article > a');
+  await page.locator('#grid article > a').first().click();
   await expect(page.locator('#product-name')).toBeVisible();
   await hydrated(page, '#add');
   await page.locator('#add').click();

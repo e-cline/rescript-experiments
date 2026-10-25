@@ -26,7 +26,6 @@ let make = (~applied: option<string>) => {
     <label htmlFor=inputId> {WeftDom.Jsx.string("Promo code")} </label>
     <input
       id=inputId
-      className="promo-code"
       value=code
       placeholder={applied->Option.getOr("")}
       onInput={event => setCode(_ => WeftDom.Dom.Event.targetValue(event))}

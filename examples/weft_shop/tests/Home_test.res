@@ -212,13 +212,13 @@ describe("blocks", () => {
   testAsync("show each half of the experiment its own promotion, in the same place", async t => {
     let page = await openHome()
     t
-    ->expect(text(page, "#promo-promo-a .promo-text"))
+    ->expect(text(page, "#promo-promo-a > p"))
     ->Expect.toBe("10% off everything with code WEFT10")
     await app()->setBucket("b")
     await page->WeftTesting.refresh
     await page->WeftTesting.waitFor(() => has(page, "#promo-promo-b"))
     t
-    ->expect(text(page, "#promo-promo-b .promo-text"))
+    ->expect(text(page, "#promo-promo-b > p"))
     ->Expect.toBe("20% off orders over $100 with code LOOM20")
     t->expect(blockIds(page)->Array.at(1))->Expect.toEqual(Some("block-promo-b"))
   })
@@ -263,12 +263,9 @@ describe("blocks", () => {
   testAsync("that are live refetch themselves, and show the server's newer stock", async t => {
     await app()->setLiveEvery(1)
     let page = await openHome()
-    t->expect(text(page, "#live-p3 .live-stock"))->Expect.toBe(" 20 left")
+    t->expect(text(page, "#left-p3"))->Expect.toBe(" 20 left")
     await app()->setStock("p3-7", 0)
-    await page->WeftTesting.waitFor(
-      ~timeout=3000,
-      () => text(page, "#live-p3 .live-stock") == " 15 left",
-    )
+    await page->WeftTesting.waitFor(~timeout=3000, () => text(page, "#left-p3") == " 15 left")
     t
     ->expect(page->WeftTesting.pageRequests->Array.includes("/blocks/home/live"))
     ->Expect.toBe(true)
@@ -307,8 +304,8 @@ describe("personalised", () => {
       // Signing in, from the dialog.
       page->WeftTesting.click("#sign-in")
       await page->WeftTesting.waitFor(() => Doc.find("#signin-dialog")->Option.isSome)
-      inputAnywhere(".signin-name", "Ada")
-      submitAnywhere(".signin-form")
+      inputAnywhere("#signin-dialog input", "Ada")
+      submitAnywhere("#signin-dialog form")
       await page->WeftTesting.waitFor(() => text(page, "#account-menu")->String.includes("Hi, Ada"))
       t->expect(Doc.find("#signin-dialog"))->Expect.toBe(None)
       await page->WeftTesting.navigate("/")
@@ -340,8 +337,8 @@ describe("personalised", () => {
       await page->WeftTesting.hydrated
       page->WeftTesting.click("#sign-in")
       await page->WeftTesting.waitFor(() => Doc.find("#signin-dialog")->Option.isSome)
-      inputAnywhere(".signin-name", "Grace")
-      submitAnywhere(".signin-form")
+      inputAnywhere("#signin-dialog input", "Grace")
+      submitAnywhere("#signin-dialog form")
       await page->WeftTesting.waitFor(() => has(page, "#block-error-for-you"))
       t
       ->expect(text(page, "#block-error-for-you p"))
@@ -361,12 +358,12 @@ describe("prices", () => {
     "change currency everywhere at once, with nothing fetched, and stay changed on the next page",
     async t => {
       let page = await openHome()
-      t->expect(text(page, "#card-p1 .price"))->Expect.toBe("$129.00")
+      t->expect(text(page, "#card-p1 data"))->Expect.toBe("$129.00")
       await change(page, "#currency", "EUR")
-      await page->WeftTesting.waitFor(() => text(page, "#card-p1 .price") == "€118.68")
+      await page->WeftTesting.waitFor(() => text(page, "#card-p1 data") == "€118.68")
       // Every price, in every block and tab, hidden or not.
-      t->expect(text(page, "#carousel-tab-bags #card-p17 .price"))->Expect.toBe("€146.28")
-      t->expect(text(page, "#live-p3 .price"))->Expect.toBe("€67.85 €54.28")
+      t->expect(text(page, "#carousel-tab-bags #card-p17 data"))->Expect.toBe("€146.28")
+      t->expect(text(page, "#live-p3 data"))->Expect.toBe("€67.85 €54.28")
       await page->WeftTesting.waitFor(
         () => page->WeftTesting.pageRequests->Array.includes("/_weft/rpc/prefs.setCurrency"),
       )
@@ -377,7 +374,7 @@ describe("prices", () => {
       // A new page load: the server renders it in euros.
       let page = app()->open_("/c/shoes")
       await page->WeftTesting.waitFor(() => has(page, "#card-p1"))
-      t->expect(text(page, "#card-p1 .price"))->Expect.toBe("€118.68")
+      t->expect(text(page, "#card-p1 data"))->Expect.toBe("€118.68")
       await hydratedAsServed(page)
     },
   )

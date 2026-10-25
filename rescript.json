@@ -10,6 +10,7 @@
     "@e-cline/signals_benchmarks",
     "@e-cline/signal_maps",
     "@e-cline/signal_maps_benchmarks",
+    "@e-cline/weft_css",
     "@e-cline/weft_dom",
     "@e-cline/weft_signals",
     "@e-cline/weft_server",

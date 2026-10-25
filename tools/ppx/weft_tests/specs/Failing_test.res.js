@@ -55,7 +55,7 @@ function suite(dir, withPpx) {
   });
 }
 
-Vitest.describe("misuses of @weft.component", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => suite("errors", true));
+Vitest.describe("misuses of @weft.component, @weft.rpc, @@weft.server and Css.*", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => suite("errors", true));
 
 Vitest.describe("compiler canaries", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => suite("canaries", false));
 

@@ -1,0 +1,2 @@
+// One definition per call.
+let card = Css.class({padding: Px(20)}, {margin: Zero})

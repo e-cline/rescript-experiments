@@ -56,7 +56,8 @@ loaded.
 
 Reviewed: the recommended decisions are taken (Decisions). Phase 0's spikes are done, and the design
 below is corrected by what they found ("Phase 0: what the spikes found", after Phases), in Chromium,
-Firefox and WebKit. Phase 1 is in progress.
+Firefox and WebKit. Phase 1 is done (`packages/weft_css`, and the PPX's rewrite), with notes on what
+it settled under "As built (phase 1)", after §2. Phase 2 is next.
 
 ## What was checked before writing this
 
@@ -180,7 +181,7 @@ The API follows rescript-css's, so its documentation mostly applies and code por
 | `Css.global(~selector, css)`                      | `unit`         | `selector { ... }`                                          |
 | `Css.var(initial)`                                | a `Css.var`    | `--name: initial` on `:root`, in the declaring file's sheet |
 | `Css.keyframes([Css.frame(~at, css), ...])`       | a name         | `@keyframes name { ... }`                                   |
-| `Css.fontFace({...})`                             | a family name  | `@font-face { ... }`                                        |
+| `Css.fontFace({...})` (later)                     | a family name  | `@font-face { ... }`                                        |
 | `Css.media(~query, css)`, `supports`, `container` | a condition    | nested in the class's rule                                  |
 | `Css.layerOrder([...])`, `~layer=` on the above   |                | `@layer` (§5)                                               |
 | `Css.vars([(var, value)])`                        | a `style` dict | none: custom properties for `style=`, at run time           |
@@ -265,6 +266,34 @@ let button = Css$WeftCss.Internal.class_('AddToCart-Styles-button_wk3f9a', () =>
 entrypoints (§3). A file can be any kind (server, entrypoint, shared) and have styles too, so the
 directive goes alongside whichever of the others the file gets (the spike only handled a file with
 neither).
+
+**As built (phase 1).**
+
+- **Keywords are `@unboxed` variants** whose constructors are `@as` their CSS keyword, with a
+  `Raw(string)` catch-all (`InlineFlex` is the string `"inline-flex"` at run time), so serializing
+  one is the identity, and constructor names needn't kebab-case into the keyword (`Nowrap` for
+  `nowrap`). An unboxed variant can only have one string payload, so `display` has no `Var`:
+  `Raw("var(...)")` does it. Lengths and colours are ordinary variants, serialized by a `switch`.
+- **The serializer is explicit**, a line per property in the order `Css.t` declares its fields
+  (`Serialize.declarations`), rather than walking the runtime object, whose key order a spread
+  changes. Selectors nest as rescript-css's do (`&` is the parent, no `&` is a descendant, lists are
+  crossed); at-rules wrap their block's rules.
+- **`Extract` groups registrations by the sheet id their names end in**, so the collector is one
+  list for everything that ran while recording (a file imported by another records once, whoever
+  imports it first). Per sheet: variables on `:root` and globals in `weft.base`, classes and
+  keyframes in `weft.components`, any other `~layer` after those, each in declaration order; and the
+  sheet's dependencies, from the other sheet ids in its text. It throws for a definition that throws
+  (naming it), a name registered twice, and a name with no sheet id.
+- **What the PPX writes** compiles positionally: `Internal.class_(name, layer, () => ...)` and
+  `Internal.global_(name, selector, layer, () => ...)`, with `undefined` for an absent layer.
+  Globals are named `<Module>-global<n>`. A nested style call is checked for before anything else,
+  so its error is the "static" one even in a file with no `rescript.json`; the missing
+  `rescript.json` error says `Css.class:` rather than `@weft.component:`.
+- **The hash, twice**: OCaml hashes the file id's bytes, so `SheetId` hashes its UTF-8 encoding
+  (`TextEncoder`), not UTF-16 code units; a fixture under `fixtures/größe/` pins the two together.
+  bsc compiles `x >>> 0` to `x` (a no-op in its int model), so the unsigned value is made in floats.
+- **Left for later**: `Css.fontFace` and `registerProperty` (nothing uses them yet), and
+  `Css.layerOrder`, which is the page's to declare (phase 3).
 
 ### 3. Extraction (the Vite plugin)
 

@@ -1,8 +1,10 @@
 # @e-cline/ppx_weft
 
 A [ReScript](https://rescript-lang.org/) PPX for Weft's attributes: `@weft.component`, for
-components; `@weft.rpc`, for declaring RPCs; and `@@weft.server`, for marking a file server-only.
-See [the server components plan](../../../docs/weft_server_components_plan.md).
+components; `@weft.rpc`, for declaring RPCs; and `@@weft.server`, for marking a file server-only. It
+also names [`weft_css`](../../../packages/weft_css)'s styles (see "Styles", below). See
+[the server components plan](../../../docs/weft_server_components_plan.md) and
+[the CSS plan](../../../docs/weft_css_plan.md).
 
 ```rescript
 @@jsxConfig({version: 4, module_: "WeftDom.Jsx"})
@@ -86,6 +88,35 @@ be in a server file, which the client can't import.
 can't import it (the plugin refuses it, naming the chain of imports): for server-only modules with
 no server components, like a database module or an RPC's handlers. It's an error in a module, or in
 a file with entrypoints.
+
+## Styles
+
+`weft_css`'s `Css.class`, `Css.var`, `Css.keyframes` and `Css.global` (with any prefix:
+`WeftCss.Css.class` keeps it), in a `let` at a module's top level (in any nesting of modules), or a
+`Css.global(...)` statement there, get a name and their definition in a function:
+
+```rescript
+// src/Card.res
+module Styles = {
+  let card = Css.class({padding: Px(10)})
+}
+
+// what the compiler then sees
+module Styles = {
+  let card = Css.Internal.class_("Card-Styles-card_wk3f9a2", () => {padding: Px(10)})
+}
+```
+
+The name is the file's module, the modules inside it and the binding (`global<n>` for globals, a
+leading `--` for a variable), then the file's sheet id: `w` and six base-36 digits of a hash of its
+id (`<package name>/<path from the package root>`, as `WeftCss.SheetId.ofFileId` computes it). The
+definition runs only when the Vite plugin extracts the CSS. The file gets
+`@@directive("'use weft css'")`, after any other directive.
+
+Styles are static: a style call anywhere else (in a function, in a module inside one, inside another
+style's definition) is an error, as is one with more than one unlabelled argument, or a `Css.class`
+with no binding to name it. Without the PPX, the calls throw "weft_css: Css.class was called
+directly" when the file is loaded.
 
 ## Without the PPX
 

@@ -1,0 +1,2 @@
+// A class inside a definition: nested blocks are Css.style.
+let card = Css.class({hover: Css.class({opacity: 0.5})})

@@ -50,6 +50,7 @@
     "@e-cline/weft": "workspace:*",
     "@e-cline/weft_app_example": "workspace:*",
     "@e-cline/weft_benchmarks": "workspace:*",
+    "@e-cline/weft_css": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
     "@e-cline/weft_notes_example": "workspace:*",
     "@e-cline/weft_server": "workspace:*",

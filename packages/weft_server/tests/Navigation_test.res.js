@@ -28,7 +28,7 @@ async function andSettle(promise) {
 
 async function start(fetch, route, url, onNavigate, onRedirect, onFailed) {
   let renderer = TestRenderer$Weft.create();
-  let client = Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch);
+  let client = Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch, undefined);
   let navigation = Navigation$WeftServer.make(client, element => TestRenderer$Weft.scheduleRender(renderer, element), url, onNavigate, onRedirect, onFailed);
   let element = await Support$WeftServer.roundTrip(Primitive_option.some(client), undefined, route(url));
   Navigation$WeftServer.show(navigation, element);

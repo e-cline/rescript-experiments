@@ -163,6 +163,13 @@ let releaseLoads: page => unit
 /** The entrypoint files loaded, in order. */
 let loads: page => array<string>
 
+/**
+The stylesheets the client loaded, in order: the sheets of what it rendered (the harness doesn't
+apply the head's links, so the shell's are among them). jsdom loads none, so the harness has each
+"load" a task after it's added.
+*/
+let stylesheets: page => array<string>
+
 /** How many times the entrypoint `id` (`<file>#<module path>`) has rendered. */
 let renderCount: (page, string) => int
 

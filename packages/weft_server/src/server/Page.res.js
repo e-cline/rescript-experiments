@@ -98,7 +98,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head, onError, signal
     let match$1 = Render$WeftServer.toStream(element, onError$1, signal, stylesOf(assets)).tee();
     let forHtml = match$1[1];
     let forPage = match$1[0];
-    let decoder = Decoder$WeftServer.make(match, undefined);
+    let decoder = Decoder$WeftServer.make(match, undefined, undefined);
     let navigation = Navigation$WeftServer.makeForServer(decoder, url);
     let encoder = new TextEncoder();
     let output = {

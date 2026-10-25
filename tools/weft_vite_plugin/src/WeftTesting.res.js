@@ -209,6 +209,10 @@ function loads(prim) {
   return prim.loads;
 }
 
+function stylesheets(prim) {
+  return prim.stylesheets;
+}
+
 function renderCount(prim0, prim1) {
   return prim0.renderCount(prim1);
 }
@@ -253,6 +257,7 @@ export {
   holdLoads,
   releaseLoads,
   loads,
+  stylesheets,
   renderCount,
   snapshot,
   removedSince,

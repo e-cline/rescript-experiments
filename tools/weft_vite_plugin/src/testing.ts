@@ -881,6 +881,8 @@ export class Page {
   readonly renders = new Map<string, number>();
   /** The entrypoint files loaded, in order (`source` mode). */
   readonly loads: string[] = [];
+  /** The stylesheets the client loaded, in order (jsdom loads none: see `loadStylesheets`). */
+  readonly stylesheets: string[] = [];
   private readonly act: (f: () => void) => void;
   /** Where the app's requests had got to when the page opened. */
   private readonly firstRequest: number;
@@ -1177,6 +1179,49 @@ export class Page {
 
 let builtBootstrapImported = false;
 
+/** The documents `loadStylesheets` watches, and who to tell about each stylesheet. */
+const watchedHeads = new WeakMap<Document, {onLoad: (href: string) => void}>();
+
+/**
+ * Has each `<link rel="stylesheet">` added to `document`'s head "load", a task later: jsdom loads no
+ * stylesheets, so without this, what waits for one (the client's rows, through `WeftCss.Sheets`)
+ * would wait forever. `onLoad` hears of each (the page open in it, which records them); the latest
+ * call's is the one told.
+ */
+export function loadStylesheets(
+  document: Document,
+  onLoad: (href: string) => void,
+): void {
+  const watched = watchedHeads.get(document);
+  if (watched !== undefined) {
+    watched.onLoad = onLoad;
+    return;
+  }
+  const state = {onLoad};
+  watchedHeads.set(document, state);
+  const window = document.defaultView as unknown as {
+    MutationObserver: typeof MutationObserver;
+    HTMLLinkElement: typeof HTMLLinkElement;
+    Event: typeof Event;
+  };
+  new window.MutationObserver((records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (
+          node instanceof window.HTMLLinkElement &&
+          node.rel === 'stylesheet'
+        ) {
+          const href = node.getAttribute('href') ?? '';
+          setTimeout(() => {
+            state.onLoad(href);
+            node.dispatchEvent(new window.Event('load'));
+          }, 0);
+        }
+      }
+    }
+  }).observe(document.head, {childList: true});
+}
+
 /** The page opened last, which opening another closes. */
 let openedLast: Page | undefined;
 
@@ -1230,6 +1275,9 @@ export function openPage(app: App, options: OpenOptions): Page {
     );
     collecting = page.warnings;
     openedLast = page;
+    loadStylesheets(container.ownerDocument, (href) =>
+      page.stylesheets.push(href),
+    );
     return page;
   };
   if (app.mode === 'source') {

@@ -318,7 +318,7 @@ let loading = TestJsx$Weft.Elements.jsx("i", {
 
 function makeClient(modulesOpt) {
   let modules = modulesOpt !== undefined ? Primitive_option.valFromOption(modulesOpt) : makeModules();
-  return Decoder$WeftServer.make(Testing$WeftServer.loadModule(modules), (param, param$1) => Stdlib_JsError.throwWithMessage("this test client doesn't fetch"));
+  return Decoder$WeftServer.make(Testing$WeftServer.loadModule(modules), (param, param$1) => Stdlib_JsError.throwWithMessage("this test client doesn't fetch"), undefined);
 }
 
 function roundTrip(clientOpt, chunking, element) {

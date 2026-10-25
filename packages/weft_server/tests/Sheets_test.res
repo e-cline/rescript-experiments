@@ -189,3 +189,127 @@ describe("Page, with styles", () => {
     t->expect(page->String.includes(`<link rel="stylesheet" href="/d.css">`))->Expect.toBe(false)
   })
 })
+
+/** A stand-in for the document's sheets: each loads when a test says so. */
+module FakeSheets = {
+  type t = {loaded: Set.t<string>, pending: dict<unit => unit>, asked: array<string>}
+  let make = () => {loaded: Set.make(), pending: Dict.make(), asked: []}
+  let loadSheet = (sheets, href) =>
+    if sheets.loaded->Set.has(href) {
+      None
+    } else {
+      sheets.asked->Array.push(href)
+      Some(
+        Promise.make((resolve, _) => {
+          let previous = sheets.pending->Dict.get(href)
+          sheets.pending->Dict.set(href, () => {
+            previous->Option.forEach(previous => previous())
+            resolve()
+          })
+        }),
+      )
+    }
+  /** Loads the sheets at `hrefs`. */
+  let release = (sheets, hrefs) =>
+    hrefs->Array.forEach(href => {
+      sheets.loaded->Set.add(href)
+      sheets.pending->Dict.get(href)->Option.forEach(resolve => resolve())
+      sheets.pending->Dict.delete(href)
+    })
+}
+
+let clientWith = sheets =>
+  Decoder.make(~loadModule=Testing.loadModule(makeModules()), ~loadSheet=href =>
+    FakeSheets.loadSheet(sheets, href)
+  )
+
+let decoded = (client, element) => client->Decoder.fromStream(Render.toStream(element, ~styles))
+
+let isSettled = async promise => {
+  let done = ref(false)
+  promise->Promise.thenResolve(_ => done := true)->ignore
+  await settle()
+  done.contents
+}
+
+describe("Decoder, loading the sheets a row needs", () => {
+  testAsync("holds the root back until its sheets have loaded", async t => {
+    let sheets = FakeSheets.make()
+    let root = clientWith(sheets)->decoded(<p className="A-x_waaaaaa" />)
+    t->expect(await isSettled(root))->Expect.toBe(false)
+    t->expect(sheets.asked)->Expect.toEqual(["/cycle.css", "/base.css", "/a.css"])
+    sheets->FakeSheets.release(["/cycle.css", "/base.css"])
+    t->expect(await isSettled(root))->Expect.toBe(false)
+    sheets->FakeSheets.release(["/a.css"])
+    t->expect(await isSettled(root))->Expect.toBe(true)
+  })
+
+  testAsync("waits for nothing that has loaded already", async t => {
+    let sheets = FakeSheets.make()
+    sheets->FakeSheets.release(["/cycle.css", "/base.css", "/a.css"])
+    let root = clientWith(sheets)->decoded(<p className="A-x_waaaaaa" />)
+    t->expect(await isSettled(root))->Expect.toBe(true)
+    t->expect(sheets.asked)->Expect.toEqual([])
+  })
+
+  testAsync("keeps a boundary's fallback until its content's sheets have loaded", async t => {
+    let sheets = FakeSheets.make()
+    sheets->FakeSheets.release(["/cycle.css", "/base.css", "/a.css"])
+    let {promise: ready, resolve} = Promise.withResolvers()
+    let root = clientWith(sheets)->decoded(
+      <div className="A-x_waaaaaa">
+        <Weft.Suspense fallback={text("loading")}>
+          <PageSupport.Later ready>
+            <i id="content" className="D-z_wdddddd" />
+          </PageSupport.Later>
+        </Weft.Suspense>
+      </div>,
+    )
+    let renderer = TestRenderer.create()
+    TestRenderer.render(renderer, await root)
+    await settle()
+    resolve()
+    await settle()
+    // The content has arrived, but its sheet hasn't: the fallback stays.
+    t->expect(TestRenderer.toString(renderer))->Expect.String.toContain("loading")
+    t->expect(TestRenderer.findById(renderer, "content")->Option.isSome)->Expect.toBe(false)
+    t->expect(sheets.asked)->Expect.toEqual(["/d.css"])
+    sheets->FakeSheets.release(["/d.css"])
+    await settle()
+    t->expect(TestRenderer.findById(renderer, "content")->Option.isSome)->Expect.toBe(true)
+  })
+})
+
+describe("Navigation, with sheets", () => {
+  testAsync("keeps the old page on screen until the new one's sheets have loaded", async t => {
+    let sheets = FakeSheets.make()
+    let route = url =>
+      url == "/plain"
+        ? <h1 id="plain"> {text("plain")} </h1>
+        : <h1 id="styled" className="D-z_wdddddd"> {text("styled")} </h1>
+    let fetch = (url, ~signal) =>
+      Promise.resolve({Decoder.stream: Render.toStream(route(url), ~signal, ~styles)})
+    let client = Decoder.make(
+      ~loadModule=Testing.loadModule(makeModules()),
+      ~fetch,
+      ~loadSheet=href => FakeSheets.loadSheet(sheets, href),
+    )
+    let renderer = TestRenderer.create()
+    let navigation = Navigation.make(
+      client,
+      ~render=element => TestRenderer.scheduleRender(renderer, element),
+      ~url="/plain",
+    )
+    navigation->Navigation.show(await client->Decoder.fromStream(Render.toStream(route("/plain"))))
+    await settle()
+    let navigated = navigation->Navigation.navigate("/styled")
+    await settle()
+    t->expect(TestRenderer.findById(renderer, "plain")->Option.isSome)->Expect.toBe(true)
+    t->expect(TestRenderer.findById(renderer, "styled")->Option.isSome)->Expect.toBe(false)
+    sheets->FakeSheets.release(["/d.css"])
+    await settle()
+    await navigated
+    await settle()
+    t->expect(TestRenderer.findById(renderer, "styled")->Option.isSome)->Expect.toBe(true)
+  })
+})

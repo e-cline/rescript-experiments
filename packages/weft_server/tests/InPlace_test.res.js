@@ -441,7 +441,7 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
       });
     };
     return [
-      Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch),
+      Decoder$WeftServer.make(Testing$WeftServer.loadModule(Support$WeftServer.makeModules()), fetch, undefined),
       pipes
     ];
   };

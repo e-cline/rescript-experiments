@@ -60,7 +60,8 @@ Firefox and WebKit. Phase 1 is done (`packages/weft_css`, and the PPX's rewrite)
 it settled under "As built (phase 1)", after §2. Phase 2 is done too (the plugin's extraction,
 `weftCss()` and `weft_app` on it), under "As built (phase 2)", after §3. And phase 3 (the server's
 half of sending sheets: the manifest, `Render`'s `C` rows, the page's head), under "As built (phase
-3)", after §4. Phase 4 is next.
+3)", after §4. And phase 4 (the client's half: loading sheets, rows waiting for them), under "As
+built (phase 4)", after phase 3's. Phase 5 is next.
 
 ## What was checked before writing this
 
@@ -481,6 +482,45 @@ other way (a `Weft.Lazy` around an `import()` in a client-only app), and develop
   decoding the same elements with sheets as without; the page's head held, then the shell's links);
   the plugin's (`imports.test.ts`; the manifest in development, with the sheet served as CSS, and in
   a build, with the sheets emitted and the server's assets naming them).
+
+**As built (phase 4).** The client's half: loading the sheets, and rows waiting for them.
+
+- **`WeftCss.Sheets`** (`weft_css/src/client/`): `load(href)` adds a `<link rel="stylesheet">` to
+  the head, once per document, or adopts the one the document has (the server's, for the shell,
+  found by its `href` attribute); `isLoaded(href)` says whether it has. A link whose `sheet` is set
+  has loaded (its `load` may have fired before anyone listened, as phase 0 found); otherwise its
+  `load` or `error` settles it: a sheet that fails shows what waits for it unstyled, rather than
+  never. The states live on `globalThis.__weftCss` (`{loaded, promise}` by URL), for phase 5's
+  inline runtime to share. Without a document (on the server), every sheet has loaded.
+- **The decoder** takes `~loadSheet` (by default the document's: `None` if the sheet has loaded, or
+  a promise that settles once it has), starts loading a `C` row's sheet as the row arrives, and
+  holds back a `J` row until the sheets it names have loaded, as it does until its entrypoints have.
+  A sheet that has loaded already is `None`, not a resolved promise, so a row needing only those
+  decodes at once: a payload that has fully arrived still never suspends (the shell's sheets, linked
+  in the head, have loaded by the time the bootstrap runs).
+- **Navigation and refetching** need nothing more: their payloads render in a transition, so a root
+  row waiting for its sheets keeps the old page on screen, and a boundary's row keeps its old
+  content (or, if it's new, its fallback).
+- **Sheets are appended in the order they're needed**, not base sheets first (§5): with every rule
+  in a layer, and every sheet stating the layers' order, the order of links only matters within a
+  layer, where §5 already says not to rely on it.
+- **Not done**: style modules registering their own sheets when the client evaluates them (§4's
+  "client code's own sheets"). Entrypoints' sheets come with the rows that use them, which covers
+  every Weft app so far; code loaded some other way (a `Weft.Lazy` around an `import()`, in a
+  `weft()` app) would have its classes unstyled. A follow-up, with RPC responses' sheets.
+- **The harness** (`loadStylesheets`, in `testing.ts`): jsdom loads no stylesheets, so the harness
+  has each one added to the head fire `load` a task later, and records it
+  (`WeftTesting.stylesheets`). Phase 5 puts loading under a test's control.
+- **Checked in browsers**: `weft_split` again, with a style added for the check (not committed),
+  navigating from `/other` to `/` (whose motto's sheet `/other` never needed) with CSS slowed by 800
+  ms. In Chromium, Firefox and WebKit the motto was never on screen without its colour (first shown
+  about 880 ms in; the old page stayed until then). With the decoder made not to wait, as a control,
+  Chromium showed it unstyled in every frame from 82 ms on.
+- **Tests**: `weft_css`'s `Sheets_test` (in jsdom: one link per URL, loading, failing, adopting the
+  page's links, loaded or not, the shared states) and `SheetsWithoutDocument_test`; `weft_server`'s
+  `Sheets_test` (the root held back until its sheets load, nothing held for sheets already loaded, a
+  boundary keeping its fallback until its content's sheet loads, a navigation keeping the old page
+  until the new one's sheets load); the plugin's `stylesheets.test.ts`.
 
 ### 5. Order
 

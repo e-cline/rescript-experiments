@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@rescript/runtime": "catalog:",
+    "jsdom": "catalog:",
     "rescript": "catalog:",
     "rescript-vitest": "catalog:"
   },

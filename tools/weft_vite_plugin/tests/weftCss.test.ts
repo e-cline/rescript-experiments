@@ -1,7 +1,13 @@
 import {readdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-import {build, createServer, type InlineConfig, type ViteDevServer} from 'vite';
+import {
+  build,
+  createServer,
+  type HotPayload,
+  type InlineConfig,
+  type ViteDevServer,
+} from 'vite';
 import {afterAll, afterEach, describe, expect, test} from 'vite-plus/test';
 
 import {weftCss} from '../src/index.js';
@@ -195,5 +201,60 @@ describe('a dev server with weftCss()', () => {
     }
     expect(code).toContain('opacity: 0.5');
     expect(code).not.toContain('opacity: 0.9');
+  });
+});
+
+describe('a dev server with weftCss(), when only CSS changes', () => {
+  let server: ViteDevServer | undefined;
+  afterEach(async () => {
+    await server?.close();
+    server = undefined;
+  });
+
+  test('updates the sheet as Vite updates CSS, with no reload; a code change reloads', async () => {
+    const root = copyFixture('styled');
+    server = await createServer({
+      ...config(root),
+      server: {middlewareMode: true, watch: null, ws: false},
+    });
+    const client = server.environments.client!;
+    const sent: HotPayload[] = [];
+    const send = client.hot.send.bind(client.hot);
+    client.hot.send = ((payload: HotPayload) => {
+      sent.push(payload);
+      send(payload);
+    }) as typeof client.hot.send;
+    const card = sheetOf('Card.res');
+    // The page has the module, and so its sheet.
+    await client.transformRequest('/src/Card.res.js');
+    await client.transformRequest(`/node_modules/.weft-css/${card}.css`);
+    const wait = async () => {
+      for (let i = 0; i < 100 && sent.length === 0; i++) {
+        await new Promise((done) => setTimeout(done, 10));
+      }
+    };
+    server.watcher.emit(
+      'change',
+      rewrite(root, 'src/Card.res.js', 'opacity: 0.9', 'opacity: 0.4'),
+    );
+    await wait();
+    expect(sent.map((payload) => payload.type)).toEqual(['update']);
+    const [update] = sent as [Extract<HotPayload, {type: 'update'}>];
+    expect(update.updates.map(({path}) => path)).toEqual([
+      `/node_modules/.weft-css/${card}.css`,
+    ]);
+    // A change to the code (a class added) reloads, as any change to a ReScript module does.
+    sent.length = 0;
+    server.watcher.emit(
+      'change',
+      rewrite(
+        root,
+        'src/Card.res.js',
+        'export {',
+        `let extra = Css$WeftCss.Internal.class_("Card-extra_${card}", undefined, () => ({}));\n\nexport {\n  extra,`,
+      ),
+    );
+    await wait();
+    expect(sent.map((payload) => payload.type)).toEqual(['full-reload']);
   });
 });

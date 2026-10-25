@@ -5,6 +5,7 @@ import {parseAst} from 'vite';
 import {describe, expect, test} from 'vite-plus/test';
 
 import {
+  namesOnly,
   resolveSheet,
   sheetOfPath,
   sheetPath,
@@ -90,5 +91,34 @@ let c = Css$WeftCss.Internal.other_("x", () => 1);
     expect(stripped).not.toContain('DEFINITION_SENTINEL_CARD');
     expect(stripped).not.toContain('Internal.');
     expect(stripped).not.toContain('Css$WeftCss.frame');
+  });
+});
+
+describe('namesOnly', () => {
+  const parse = (code: string) => parseAst(code);
+  const file = (definition: string, extra = '') =>
+    `let x = Css$WeftCss.Internal.class_("A-x_wabc123", undefined, () => (${definition}));\n${extra}`;
+
+  test('is the same when only a definition changed', () => {
+    expect(namesOnly(file('{color: "red"}'), parse)).toBe(
+      namesOnly(
+        file('{\n  color: "blue",\n  padding: {TAG: "Px", _0: 4}\n}'),
+        parse,
+      ),
+    );
+  });
+
+  test('differs when the code did: a style added, or other code changed', () => {
+    const before = namesOnly(file('{}'), parse);
+    expect(
+      namesOnly(
+        file(
+          '{}',
+          'let y = Css$WeftCss.Internal.class_("A-y_wabc123", undefined, () => ({}));\n',
+        ),
+        parse,
+      ),
+    ).not.toBe(before);
+    expect(namesOnly(file('{}', 'let z = 1;\n'), parse)).not.toBe(before);
   });
 });

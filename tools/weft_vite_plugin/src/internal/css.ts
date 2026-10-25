@@ -104,7 +104,7 @@ function internalCall(call: Node): string | undefined {
 }
 
 /** `text`, then `code[start, end)` blanked out: spaces, but its line breaks kept. */
-function inPlace(code: string, start: number, end: number, text: string) {
+function blanked(code: string, start: number, end: number, text: string) {
   return text + code.slice(start + text.length, end).replace(/[^\n\r]/g, ' ');
 }
 
@@ -117,6 +117,7 @@ function inPlace(code: string, start: number, end: number, text: string) {
 export function stripStyles(
   code: string,
   parse: (code: string) => unknown,
+  {inPlace = true}: {inPlace?: boolean} = {},
 ): string {
   const replacements: {start: number; end: number; text: string}[] = [];
   const visit = (value: unknown): void => {
@@ -148,10 +149,23 @@ export function stripStyles(
   for (const {start, end, text} of replacements.sort(
     (a, b) => a.start - b.start,
   )) {
-    stripped += code.slice(at, start) + inPlace(code, start, end, text);
+    stripped +=
+      code.slice(at, start) +
+      (inPlace ? blanked(code, start, end, text) : text);
     at = end;
   }
   return stripped + code.slice(at);
+}
+
+/**
+ * `code` without its styles' definitions (`stripStyles`, not in place): what's the same before and
+ * after an edit that changed only the CSS, which needs no reload, and no refetch.
+ */
+export function namesOnly(
+  code: string,
+  parse: (code: string) => unknown,
+): string {
+  return stripStyles(code, parse, {inPlace: false});
 }
 
 /** The module `WeftCss.Extract` is, as an app imports it. */

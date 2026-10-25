@@ -62,7 +62,8 @@ it settled under "As built (phase 1)", after §2. Phase 2 is done too (the plugi
 half of sending sheets: the manifest, `Render`'s `C` rows, the page's head), under "As built (phase
 3)", after §4. And phase 4 (the client's half: loading sheets, rows waiting for them), under "As
 built (phase 4)", after phase 3's. And phase 5 (streamed segments wait for their sheets), under "As
-built (phase 5)", after §6. Phase 6 is next.
+built (phase 5)", after §6. And phase 6 (CSS edits in development, in place), under "As built (phase
+6)", after §7. Phase 7 is next.
 
 ## What was checked before writing this
 
@@ -626,6 +627,35 @@ little:
 - Development pages link sheets by the dev server's URLs; the manifest's per-entrypoint sheets come
   from the module graph, so the first page in development is as unflashy as in production (the usual
   development FOUC of Vite frameworks comes from CSS injected by JavaScript; nothing here is).
+
+**As built (phase 6).**
+
+- **"Only the CSS changed" is decided from the file's code**: each style file's code without its
+  definitions (`namesOnly`, `stripStyles` not in place) is remembered when it's transformed, and a
+  change is CSS-only if that's the same afterwards and the sheet's CSS isn't. A file written again
+  unchanged (as for a dependency's change, which the plugin's tests rely on) is handled as before,
+  as is anything that changed the code (a style added or renamed, other code).
+- **A CSS-only change is handled once, for every environment**: the first `hotUpdate` to ask
+  re-extracts the sheet (and invalidates its module everywhere); every environment's then returns
+  `[]`, so nothing reloads, and `weft()`'s own `hotUpdate` (after this plugin's) has nothing to
+  refetch for. The answers are kept by file: ReScript writes a copy of each compiled file in its
+  `lib/`, and its change is handled at the same moment. With one slot for both, the live check below
+  first found the server environments recomputing (and reloading) after the client had decided; the
+  dev test now has that copy too, and fails without the fix.
+- **`weftCss()`** hands Vite the sheet's CSS module, so Vite's own CSS update applies it.
+- **`weft()`** sends `weft:css` (`{id, href}`); `virtual:weft/client`'s `replaceStylesheet` (the
+  source of `replaceStylesheet.ts`'s, so its tests run the real function) puts a fresh link
+  (`?t=<now>`) after the page's, and takes the old away once the new has loaded, so the page is
+  never without it. What waits for the sheet already has it (`WeftCss.Sheets`' state for the URL
+  stays loaded).
+- **Checked live**, on `weft_split`'s dev server with a style added for the check (not committed):
+  changing its colour in the ReScript source and compiling changed the colour on the page, with a
+  counter's state and a marker on `window` kept (no reload, no refetch), one link left, and no
+  reload in any environment's log.
+- **Tests**: `namesOnly` (`css.test.ts`); the client's swap, in jsdom (`clientStylesheets.test.ts`);
+  `weft()`'s dev server (a definition edit sends `weft:css` alone, with the `lib/` copy changing
+  too, and the new CSS is served; a style added reloads); `weftCss()`'s (a definition edit is Vite's
+  CSS update of the sheet; a code change reloads).
 
 ### 8. Client-only apps
 

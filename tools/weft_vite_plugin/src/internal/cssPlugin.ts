@@ -2,12 +2,19 @@
 // without a server: it finds the style files, extracts their sheets, strips the definitions from
 // every environment's modules, and serves each sheet as a CSS module.
 
+import {readFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 
-import {parseAst, type Plugin, type ResolvedConfig} from 'vite';
+import {
+  parseAst,
+  type Plugin,
+  type ResolvedConfig,
+  type ViteDevServer,
+} from 'vite';
 
 import {
   Extractor,
+  namesOnly,
   type Sheet,
   resolveSheet,
   sheetOfPath,
@@ -26,6 +33,15 @@ import {
   type CompiledFile,
   type Scan,
 } from './scan.js';
+import {cssEvent, devUrl} from './virtualModules.js';
+
+type Change = {
+  sheet: string;
+  /** Whether only the file's CSS changed: it did, and its code without its definitions is the same. */
+  cssOnly: boolean;
+  /** Whether its sheet's CSS is different. */
+  changed: boolean;
+};
 
 export type CssPluginOptions = {
   /**
@@ -68,6 +84,18 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
   let extractor: Extractor | undefined;
   /** The extraction of every style file, once per build, or once a dev server's started. */
   let extracted: Promise<unknown> | undefined;
+  let devServer: ViteDevServer | undefined;
+  /** Each style file's code without its definitions (`namesOnly`), as it was last transformed. */
+  const lastNames = new Map<string, string>();
+  /**
+   * The change being handled to each file: each environment's `hotUpdate` asks, and they all get
+   * the one answer (the extraction it does runs once). By file, since changes to several are handled
+   * at once (ReScript writes a copy of each compiled file in its `lib/`, too).
+   */
+  const handling = new Map<
+    string,
+    {code: string; change: Promise<Change | undefined>}
+  >();
 
   const scanned = () => options.scanned?.() ?? ownScan!;
   const rescan = () => {
@@ -88,6 +116,76 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
       }
     })();
     return extracted;
+  };
+
+  /**
+   * What a compiled file's change is to its styles: rescanned if it gained or lost them, its sheet
+   * extracted again if it has them, and whether only its CSS changed (its code without its
+   * definitions is as it was). `undefined` if it isn't a style file, or nothing's extracted yet.
+   */
+  const handle = (file: string, type: string): Promise<Change | undefined> => {
+    const current = scanned();
+    const pkg = packageOf(current, file);
+    if (
+      !file.endsWith(current.suffix) ||
+      pkg === undefined ||
+      !current.dirs.has(dirname(file))
+    ) {
+      return Promise.resolve(undefined);
+    }
+    let code = '';
+    try {
+      if (type !== 'delete') code = readFileSync(file, 'utf8');
+    } catch {}
+    const handled = handling.get(file);
+    if (handled?.code === code) return handled.change;
+    const change = (async (): Promise<Change | undefined> => {
+      if (extractor === undefined) return undefined;
+      const was = current.files.get(file);
+      const now: CompiledFile | undefined =
+        type === 'delete'
+          ? undefined
+          : readCompiledFile(pkg, file, current.suffix, code);
+      if (
+        was?.sheet !== now?.sheet ||
+        (was === undefined) !== (now === undefined)
+      ) {
+        rescan();
+      }
+      if (was?.sheet !== undefined && now?.sheet === undefined) {
+        extractor.forget(was.sheet);
+        options.onChange?.();
+      }
+      if (now?.sheet === undefined) return undefined;
+      await extractAll();
+      const before = extractor.sheets.get(now.sheet);
+      await extractor.extract([now]);
+      const after = extractor.sheets.get(now.sheet);
+      if (after?.dependencies.join() !== before?.dependencies.join()) {
+        options.onChange?.();
+      }
+      // The sheet's module loads again, with the new CSS, whoever asks for it next.
+      for (const environment of Object.values(devServer?.environments ?? {})) {
+        for (const node of environment.moduleGraph.getModulesByFile(
+          sheetPath(config.root, now.sheet),
+        ) ?? []) {
+          environment.moduleGraph.invalidateModule(node);
+        }
+      }
+      const names = lastNames.get(file);
+      const nowNames = namesOnly(code, parseAst);
+      lastNames.set(file, nowNames);
+      const changed = before?.css !== after?.css;
+      return {
+        sheet: now.sheet,
+        // (A file written again unchanged, as for a dependency's change, is handled as it always
+        // was: only a change to the CSS alone skips the reload or refetch.)
+        cssOnly: changed && was?.sheet === now.sheet && names === nowNames,
+        changed,
+      };
+    })();
+    handling.set(file, {code, change});
+    return change;
   };
 
   const plugin: Plugin = {
@@ -119,6 +217,10 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
       await extractAll();
     },
 
+    configureServer(server) {
+      devServer = server;
+    },
+
     resolveId(source) {
       return resolveSheet(config.root, source);
     },
@@ -139,6 +241,7 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
       handler(code, id) {
         if (findDirectives(code)?.css !== true) return undefined;
         let stripped = blankCssDirective(stripStyles(code, parseAst));
+        lastNames.set(id.split('?')[0]!, namesOnly(code, parseAst));
         const sheet = scanned().files.get(id.split('?')[0]!)?.sheet;
         if (
           options.importSheets &&
@@ -153,42 +256,35 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
     },
 
     async hotUpdate({file, type}) {
-      // Once per change, in the one environment every app has.
-      if (this.environment.name !== 'client' || extractor === undefined) return;
-      const current = scanned();
-      if (!file.endsWith(current.suffix)) return;
-      const pkg = packageOf(current, file);
-      if (pkg === undefined || !current.dirs.has(dirname(file))) return;
-      const was = current.files.get(file);
-      const now: CompiledFile | undefined =
-        type === 'delete'
-          ? undefined
-          : readCompiledFile(pkg, file, current.suffix);
-      if (
-        was?.sheet !== now?.sheet ||
-        (was === undefined) !== (now === undefined)
-      ) {
-        rescan();
+      const change = await handle(file, type);
+      if (change === undefined || !change.cssOnly) return undefined;
+      // Only the CSS changed: the module's code is the same, so nothing reloads or refetches (this
+      // plugin is before `weft()`'s, whose `hotUpdate` then has no modules to act on).
+      if (this.environment.name !== 'client') return [];
+      if (options.importSheets) {
+        // Its sheet is a CSS module the client imports: Vite's own CSS update applies it.
+        return [
+          ...(this.environment.moduleGraph.getModulesByFile(
+            sheetPath(config.root, change.sheet),
+          ) ?? []),
+        ];
       }
-      if (was?.sheet !== undefined && now?.sheet === undefined) {
-        extractor.forget(was.sheet);
-        options.onChange?.();
+      {
+        // The page links it: the client swaps its link for a fresh one (`virtual:weft/client`).
+        this.environment.hot.send({
+          type: 'custom',
+          event: cssEvent,
+          data: {
+            id: change.sheet,
+            href: devUrl(
+              config.root,
+              config.base,
+              sheetPath(config.root, change.sheet),
+            ),
+          },
+        });
       }
-      if (now?.sheet === undefined) return;
-      await extractAll();
-      const before = extractor.sheets.get(now.sheet)?.dependencies.join();
-      await extractor.extract([now]);
-      if (extractor.sheets.get(now.sheet)?.dependencies.join() !== before) {
-        options.onChange?.();
-      }
-      // The sheet's module loads again, with the new CSS, when the page does (a change to a
-      // ReScript module reloads it).
-      const graph = this.environment.moduleGraph;
-      for (const node of graph.getModulesByFile(
-        sheetPath(config.root, now.sheet),
-      ) ?? []) {
-        graph.invalidateModule(node);
-      }
+      return [];
     },
 
     async closeBundle() {

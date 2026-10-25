@@ -1,5 +1,6 @@
 import {
   copyFileSync,
+  mkdirSync,
   readFileSync,
   realpathSync,
   renameSync,
@@ -235,6 +236,65 @@ describe('the dev server', () => {
       'weft:refresh {"file":"src/Notes.res.js"}',
     ]);
     expect(await notesInstance()).not.toBe(before);
+  });
+
+  test('swaps a sheet in place, with no reload or refetch, when only a definition changes', async () => {
+    // The sheets are extracted once the assets are first asked for (the first page).
+    await fetch(`${base}/assets.json`);
+    await server.environments[clientEnvironment]!.transformRequest(
+      '/src/Likes.res.js',
+    );
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    const path = join(root, 'src/Theme.res.js');
+    writeFileSync(
+      path,
+      readFileSync(path, 'utf8').replace(
+        'content: "\\"DEFINITION_SENTINEL_THEME\\""',
+        'opacity: 0.5',
+      ),
+    );
+    // ReScript writes a copy in its `lib/` too, whose change is handled at the same time.
+    const copy = join(root, 'lib/bs/src/Theme.res.js');
+    mkdirSync(join(root, 'lib/bs/src'), {recursive: true});
+    copyFileSync(path, copy);
+    server.watcher.emit('change', path);
+    server.watcher.emit('change', copy);
+    await clientMessage();
+    expect(events(clientEnvironment)).toEqual([
+      `weft:css {"id":"${theme}","href":"/node_modules/.weft-css/${theme}.css"}`,
+    ]);
+    // Nor does the server's module runner reload the file (its code is the same).
+    expect(
+      events(serverEnvironment).filter(
+        (event) => !event.startsWith('vite:invoke'),
+      ),
+    ).toEqual([]);
+    // The dev server serves the new CSS (the client asks for it with a new query).
+    const css = await (
+      await fetch(`${base}/node_modules/.weft-css/${theme}.css?t=1`, {
+        headers: {Accept: 'text/css'},
+      })
+    ).text();
+    expect(css).toContain('opacity: 0.5');
+  });
+
+  test('reloads as usual when a style is added, which changes the code too', async () => {
+    await fetch(`${base}/assets.json`);
+    await server.environments[clientEnvironment]!.transformRequest(
+      '/src/Likes.res.js',
+    );
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    const path = join(root, 'src/Theme.res.js');
+    writeFileSync(
+      path,
+      readFileSync(path, 'utf8').replace(
+        'export {',
+        `let extra = Css$WeftCss.Internal.class_("Theme-extra_${theme}", undefined, () => ({}));\n\nexport {\n  extra,`,
+      ),
+    );
+    server.watcher.emit('change', path);
+    await clientMessage();
+    expect(events(clientEnvironment)).toEqual(['full-reload']);
   });
 
   test('reloads the page when an entrypoint file changes', async () => {

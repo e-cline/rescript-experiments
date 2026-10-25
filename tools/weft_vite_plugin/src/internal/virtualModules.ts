@@ -3,6 +3,7 @@
 import {relative, sep} from 'node:path';
 
 import {sheetPath, sheetPrefix, type Sheet} from './css.js';
+import {replaceStylesheet} from './replaceStylesheet.js';
 import type {CompiledFile} from './scan.js';
 
 export const clientReferencesId = 'virtual:weft/client-references';
@@ -14,6 +15,9 @@ export const sheetsId = 'virtual:weft/sheets';
 
 /** The custom HMR event that tells the client to refetch the page (a server-only file changed). */
 export const refreshEvent = 'weft:refresh';
+
+/** The custom HMR event that tells the client a sheet's CSS changed (only its CSS: no reload). */
+export const cssEvent = 'weft:css';
 
 /**
  * `virtual:weft/client-references`: each entrypoint file's id, and a function importing it. Each
@@ -88,10 +92,13 @@ export function onRefresh(listener) {
   };
 }
 
+export ${replaceStylesheet.toString()}
+
 if (import.meta.hot) {
   import.meta.hot.on(${JSON.stringify(refreshEvent)}, (data) => {
     for (const listener of listeners) listener(data);
   });
+  import.meta.hot.on(${JSON.stringify(cssEvent)}, ({href}) => replaceStylesheet(href));
 }
 `;
 }

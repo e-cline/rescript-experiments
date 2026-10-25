@@ -61,7 +61,8 @@ it settled under "As built (phase 1)", after §2. Phase 2 is done too (the plugi
 `weftCss()` and `weft_app` on it), under "As built (phase 2)", after §3. And phase 3 (the server's
 half of sending sheets: the manifest, `Render`'s `C` rows, the page's head), under "As built (phase
 3)", after §4. And phase 4 (the client's half: loading sheets, rows waiting for them), under "As
-built (phase 4)", after phase 3's. Phase 5 is next.
+built (phase 4)", after phase 3's. And phase 5 (streamed segments wait for their sheets), under "As
+built (phase 5)", after §6. Phase 6 is next.
 
 ## What was checked before writing this
 
@@ -576,6 +577,42 @@ little:
    same `C` rows, finds their links loaded, and doesn't wait.
 
 `html=false` pages get the same head (minus the shell), and the client loads sheets from the rows.
+
+**As built (phase 5).**
+
+- **A segment's sheets are exactly its markup's**, not "every sheet requested since the shell", as
+  first planned: `WeftDom.Html.render(~stylesheetsOf)` hands each segment's HTML, once rendered, to
+  a function from `Page` that finds the sheet ids its class names end in (`SheetId.inText`) and
+  gives their URLs, dependencies first. Classes an entrypoint renders are in the markup too, so its
+  code's sheets come only if the server rendered something of them. A segment needing none is
+  written as before, `$weftSwap(n)`.
+- **The runtime** gains `$weftCss(href)`, a sheet's state on `self.__weftCss` (`{loaded, promise}`,
+  the shape `WeftCss.Sheets` keeps): from the page's link for it (loaded if its `sheet` is set) or a
+  new one in the head. `$weftSwap(n, hrefs)` waits for those not loaded, then swaps. The client's
+  `Sheets` and the runtime use the same states, so a sheet has one link, whichever asked first. The
+  runtime has no `<` in it, so nothing reading the page's scripts can take one for a tag.
+- **Preloads**: a `C` row written after the shell is preceded by `<link rel="preload" as="style">`,
+  so the download starts when the server learns of the sheet, not when the segment arrives.
+- **The server's decoder never waits for a sheet** (`Page` gives it `~loadSheet=_ => None`): it has
+  no document to show anything in. Found when a jsdom test, with the server and the client in one
+  process, made the server's decoder wait for a link that the client side was meant to load.
+- **Hydration** needed nothing new: the swap tells hydration only once it has swapped, and the
+  boundary's rows wait for the same sheets through the same states.
+- **Tier 2**: the harness applies the head's stylesheet links to its document as loaded (a browser
+  shows nothing before them), loads the others a task after they're added unless a test holds them
+  (`holdStylesheets`, `releaseStylesheets`), and reports elements with a `weft_css` class whose
+  sheet hasn't loaded (`unstyled`, which should always be empty). `weft_shop`'s tests use them in
+  phase 7.
+- **Checked in browsers**: `weft_split`'s home page with a boundary added for the check (not
+  committed) whose content arrives after 1 s and has a sheet of its own, slowed by 1.5 s. Chromium,
+  Firefox and WebKit never showed it without its colour (first shown at about 2.55 s: the preload
+  started the download when the row was written), and it hydrated. With the swap rewritten in flight
+  not to wait, as a control, Chromium showed it unstyled for 91 frames from 1.0 s.
+- **Tests**: `weft_dom`'s `HtmlStylesheets_test` (the swap naming its sheets, waiting for them,
+  adding their links, an error counting as loaded, the page's loaded links and the client's loading
+  ones shared); `weft_server`'s (the page's preload and swap; in jsdom, a boundary swapped in and
+  hydrated once its sheet loads, from one link); the plugin's `stylesheets.test.ts` (head sheets as
+  pieces, applied loaded; others loaded, held, released; `unstyled`).
 
 ### 7. Development
 

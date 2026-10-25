@@ -180,6 +180,97 @@ Vitest.describe("a server-rendered page", undefined, undefined, undefined, undef
   });
 });
 
+let stylesheetLinks = (href =>
+  [...document.querySelectorAll('link[rel="stylesheet"]')].filter(link => link.getAttribute("href") === href));
+
+let fireLoad = (link => link.dispatchEvent(new Event("load")));
+
+let resetStylesheets = (() => {
+  document.head.innerHTML = "";
+  delete globalThis.__weftCss;
+});
+
+function exists(selector) {
+  return !((selector => document.querySelector(selector))(selector) == null);
+}
+
+Vitest.describe("a server-rendered page with stylesheets", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("swaps a boundary in, and hydrates it, once its sheet has loaded, from one link", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+  reset();
+  resetStylesheets();
+  let resolve = {
+    contents: () => {}
+  };
+  let promise = new Promise((done, param) => {
+    resolve.contents = () => done();
+  });
+  let newrecord = {...PageSupport$WeftServer.assets()};
+  newrecord.sheets = {
+    wdddddd: {
+      href: "/d.css",
+      dependencies: []
+    }
+  };
+  let page = Page$WeftServer.toStream(Jsx$WeftDom.Elements.jsx("main", {
+    children: Jsx$WeftDom.jsx(Suspense$Weft.make, {
+      fallback: Jsx$WeftDom.Elements.jsx("i", {
+        children: PageSupport$WeftServer.string("loading")
+      }),
+      children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Later.make, {
+        ready: promise,
+        children: Jsx$WeftDom.Elements.jsx("section", {
+          id: "styled",
+          className: "D-z_wdddddd",
+          children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Counter.make, {
+            label: "styled"
+          })
+        })
+      })
+    })
+  }), newrecord, undefined, undefined, undefined, undefined, undefined, undefined);
+  let reader = page.getReader();
+  let decoder = new TextDecoder();
+  let next = async () => {
+    let match = await reader.read();
+    if (match.done) {
+      return;
+    }
+    let value = match.value;
+    if (value !== undefined) {
+      return decoder.decode(value, {
+        stream: true
+      });
+    }
+  };
+  await next();
+  let body = await next();
+  if (body !== undefined) {
+    apply(body);
+  } else {
+    Stdlib_JsError.throwWithMessage("the page ended early");
+  }
+  await Bootstrap$WeftServer.start(newrecord.loadModule, undefined, Primitive_option.some(rootOf()), "/", undefined, undefined, undefined);
+  await settle();
+  resolve.contents();
+  let finished = false;
+  while (!finished) {
+    let chunk = await next();
+    if (chunk !== undefined) {
+      apply(chunk);
+    } else {
+      finished = true;
+    }
+  };
+  await settle();
+  t.expect(exists("#styled")).toBe(false);
+  t.expect(query("#root i").textContent).toBe("loading");
+  let links = stylesheetLinks("/d.css");
+  t.expect(links.length).toBe(1);
+  fireLoad(links[0]);
+  await settle();
+  t.expect(clicked("#styled button")).toBe("styled: 1");
+  return t.expect(stylesheetLinks("/d.css").length).toBe(1);
+}));
+
 export {
   apply,
   reset,
@@ -190,5 +281,9 @@ export {
   sameElements,
   settle,
   clicked,
+  stylesheetLinks,
+  fireLoad,
+  resetStylesheets,
+  exists,
 }
 /*  Not a pure module */

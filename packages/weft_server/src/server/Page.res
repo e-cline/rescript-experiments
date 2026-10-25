@@ -59,18 +59,46 @@ let headStart = (assets, ~title, ~head, ~recordEvents=false) =>
 
 let headEnd = `</head><body>`
 
+/**
+The URLs of the stylesheets `markup` (a segment's HTML) needs: those its class names are in, and
+what they depend on, before them.
+*/
+let stylesheetsIn = (styles: Render.styles, markup) => {
+  let hrefs = []
+  let seen = Set.make()
+  let rec add = id =>
+    if !(seen->Set.has(id)) {
+      seen->Set.add(id)
+      switch styles.sheets->Dict.get(id) {
+      | Some({href, dependencies}) =>
+        dependencies->Array.forEach(add)
+        hrefs->Array.push(href)
+      | None => ()
+      }
+    }
+  WeftCss.SheetId.inText(markup)->Array.forEach(add)
+  hrefs
+}
+
+/** A `C` row's URL. */
+let hrefOf = (row: Payload.row) =>
+  switch row.tag {
+  | Stylesheet => jsonField(row.json, "href")->Nullable.toOption->Option.flatMap(JSON.Decode.string)
+  | _ => None
+  }
+
+/**
+A preload for a `C` row's sheet, written after the shell: the download starts as soon as the server
+knows it's needed, while the boundary's content is still rendering. Its swap links it.
+*/
+let stylesheetPreload = row =>
+  hrefOf(row)->Option.mapOr("", href => `<link rel="preload" as="style" href="${escape(href)}">`)
+
 /** The stylesheet links for the `C` rows in `rows`. */
 let sheetLinks = (rows: array<Payload.row>) =>
   rows
   ->Array.filterMap(row =>
-    switch row.tag {
-    | Stylesheet =>
-      jsonField(row.json, "href")
-      ->Nullable.toOption
-      ->Option.flatMap(JSON.Decode.string)
-      ->Option.map(href => `<link rel="stylesheet" href="${escape(href)}">`)
-    | _ => None
-    }
+    hrefOf(row)->Option.map(href => `<link rel="stylesheet" href="${escape(href)}">`)
   )
   ->Array.join("")
 
@@ -172,7 +200,9 @@ let withHtml = (element, ~assets, ~loadModule, ~url, ~title, ~head as extra, ~on
     }
   let (forPage, forHtml) =
     Render.toStream(element, ~onError, ~signal?, ~styles=?stylesOf(assets))->tee
-  let decoder = Decoder.make(~loadModule)
+  // The server waits for no stylesheet (there's no document to show anything in), even in a process
+  // that has one (a test's).
+  let decoder = Decoder.make(~loadModule, ~loadSheet=_ => None)
   let navigation = Navigation.makeForServer(decoder, ~url)
   let encoder = Streams.Encoder.make()
   let output = ref(None)
@@ -185,7 +215,9 @@ let withHtml = (element, ~assets, ~loadModule, ~url, ~title, ~head as extra, ~on
     }
   let preloaded = Set.make()
   let rowHtml = (row: Payload.row) =>
-    preloads(assets, preloaded, row) ++ rowScript(Some(Payload.rowToString(row)))
+    preloads(assets, preloaded, row) ++
+    stylesheetPreload(row) ++
+    rowScript(Some(Payload.rowToString(row)))
   // Until the shell is written, the rows wait.
   let held: ref<option<array<Payload.row>>> = ref(Some([]))
   let rowsDone = ref(false)
@@ -239,6 +271,9 @@ let withHtml = (element, ~assets, ~loadModule, ~url, ~title, ~head as extra, ~on
         Navigation.wrap(navigation, decoded),
         ~onError=htmlOnError,
         ~signal=?signal->Option.map(toHtmlSignal),
+        ~stylesheetsOf=?stylesOf(assets)->Option.map(styles =>
+          markup => stylesheetsIn(styles, markup)
+        ),
       )
       switch await rendering->WeftDom.Html.shell {
       | shell =>

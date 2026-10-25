@@ -634,6 +634,8 @@ export type Piece =
   | {type: 'root'; attributes: [string, string][]; html: string}
   /** An inline script: a row, the swap runtime, or a swap. */
   | {type: 'script'; code: string}
+  /** A stylesheet the head links (the shell's): loaded before anything shows, as in a browser. */
+  | {type: 'stylesheet'; href: string}
   /** Anything else: a preload, a boundary's segment, the end of the body. */
   | {type: 'markup'; html: string};
 
@@ -732,6 +734,16 @@ function toPiece(node: string): Piece {
 const rowScript =
   /<script>\(self\.__weft\|\|=\[\]\)\.push\((?:"(?:[^"\\]|\\.)*"|null)\)<\/script>/g;
 
+/** An attribute's value as the page escapes it (`WeftServer.Page`'s `escape`), unescaped. */
+function unescapeAttribute(value: string): string {
+  return value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+}
+
 /**
  * Reads a page's HTML as it arrives, as a streaming parser would: `onPiece` gets the head's inline
  * scripts, then each top-level node of the body once it has all arrived (`#root` with the shell in
@@ -749,9 +761,20 @@ export async function readPage(
   let inBody = false;
   const take = () => {
     while (!inBody) {
-      // The head: its inline scripts run (the event runtime), the rest is the test's own document's.
+      // The head: its inline scripts run (the event runtime), and its stylesheets apply; the rest is
+      // the test's own document's.
       const body = /<body(?:[^>"']|"[^"]*"|'[^']*')*>/.exec(text);
       const script = text.indexOf('<script>');
+      const stylesheet = /<link rel="stylesheet" href="([^"]*)">/.exec(text);
+      if (
+        stylesheet !== null &&
+        (body === null || stylesheet.index < body.index) &&
+        (script === -1 || stylesheet.index < script)
+      ) {
+        onPiece({type: 'stylesheet', href: unescapeAttribute(stylesheet[1]!)});
+        text = text.slice(stylesheet.index + stylesheet[0].length);
+        continue;
+      }
       if (script !== -1 && (body === null || script < body.index)) {
         const end = text.indexOf('</script>', script);
         if (end === -1) return;
@@ -881,8 +904,16 @@ export class Page {
   readonly renders = new Map<string, number>();
   /** The entrypoint files loaded, in order (`source` mode). */
   readonly loads: string[] = [];
-  /** The stylesheets the client loaded, in order (jsdom loads none: see `loadStylesheets`). */
+  /**
+   * The stylesheets the client (or a segment's swap) added, in order, which the harness loads (jsdom
+   * loads none: see `loadStylesheets`). The head's aren't among them: those it applies, as loaded.
+   */
   readonly stylesheets: string[] = [];
+  /** The stylesheets that have loaded: the head's, and the others', once they do. */
+  private readonly loadedStylesheets = new Set<string>();
+  private heldStylesheets: (() => void)[] | undefined;
+  /** Which stylesheets `holdStylesheets` holds: those whose URL contains this. */
+  private holdingStylesheets = '';
   private readonly act: (f: () => void) => void;
   /** Where the app's requests had got to when the page opened. */
   private readonly firstRequest: number;
@@ -966,7 +997,73 @@ export class Page {
         document.body.append(holder.content);
         break;
       }
+      case 'stylesheet': {
+        // Render-blocking, in a browser: nothing of the body shows before it has loaded.
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.setAttribute('href', piece.href);
+        Object.defineProperty(link, 'sheet', {value: {}});
+        this.loadedStylesheets.add(piece.href);
+        document.head.append(link);
+        break;
+      }
     }
+  }
+
+  /** A stylesheet link added to the head (by the client, or a segment's swap): loaded, or held. */
+  addedStylesheet(link: HTMLLinkElement) {
+    if (link.sheet !== null) return;
+    const href = link.getAttribute('href') ?? '';
+    this.stylesheets.push(href);
+    const load = () =>
+      setTimeout(() => {
+        this.loadedStylesheets.add(href);
+        link.dispatchEvent(new link.ownerDocument.defaultView!.Event('load'));
+      }, 0);
+    if (
+      this.heldStylesheets !== undefined &&
+      href.includes(this.holdingStylesheets)
+    ) {
+      this.heldStylesheets.push(load);
+    } else {
+      load();
+    }
+  }
+
+  /** Holds stylesheets (they don't load) until `releaseStylesheets`: those whose URL contains `matching`. */
+  holdStylesheets(matching = '') {
+    this.heldStylesheets ??= [];
+    this.holdingStylesheets = matching;
+  }
+
+  releaseStylesheets() {
+    const held = this.heldStylesheets ?? [];
+    this.heldStylesheets = undefined;
+    for (const load of held) load();
+  }
+
+  /**
+   * The elements on the page that show without their CSS: each with a `weft_css` class (a name
+   * ending in a sheet id) whose sheet hasn't loaded, as `<tag class="...">`. Nothing should ever be.
+   */
+  unstyled(): string[] {
+    const loaded = new Set(
+      [...this.loadedStylesheets].flatMap(
+        (href) =>
+          /(w[0-9a-z]{6})(?:-[^/]*)?\.css(?:\?.*)?$/.exec(href)?.[1] ?? [],
+      ),
+    );
+    return [...this.container.querySelectorAll('[class]')].flatMap(
+      (element) => {
+        const missing = (element.getAttribute('class') ?? '')
+          .split(/\s+/)
+          .flatMap((name) => /_(w[0-9a-z]{6})$/.exec(name)?.[1] ?? [])
+          .filter((id) => !loaded.has(id));
+        return missing.length === 0
+          ? []
+          : [`<${element.localName} class="${element.getAttribute('class')}">`];
+      },
+    );
   }
 
   private bootstrapIfWanted() {
@@ -1179,30 +1276,32 @@ export class Page {
 
 let builtBootstrapImported = false;
 
-/** The documents `loadStylesheets` watches, and who to tell about each stylesheet. */
-const watchedHeads = new WeakMap<Document, {onLoad: (href: string) => void}>();
+/** The documents `loadStylesheets` watches, and who to tell about each stylesheet link. */
+const watchedHeads = new WeakMap<
+  Document,
+  {onAdd: (link: HTMLLinkElement) => void}
+>();
 
 /**
- * Has each `<link rel="stylesheet">` added to `document`'s head "load", a task later: jsdom loads no
- * stylesheets, so without this, what waits for one (the client's rows, through `WeftCss.Sheets`)
- * would wait forever. `onLoad` hears of each (the page open in it, which records them); the latest
- * call's is the one told.
+ * Tells `onAdd` of each `<link rel="stylesheet">` added to `document`'s head: jsdom loads no
+ * stylesheets, so the page open in it does (`Page.addedStylesheet`: a task later, or when a test
+ * releases it), or what waits for one (the client's rows, through `WeftCss.Sheets`, or a segment's
+ * swap) would wait forever. The latest call's `onAdd` is the one told.
  */
 export function loadStylesheets(
   document: Document,
-  onLoad: (href: string) => void,
+  onAdd: (link: HTMLLinkElement) => void,
 ): void {
   const watched = watchedHeads.get(document);
   if (watched !== undefined) {
-    watched.onLoad = onLoad;
+    watched.onAdd = onAdd;
     return;
   }
-  const state = {onLoad};
+  const state = {onAdd};
   watchedHeads.set(document, state);
   const window = document.defaultView as unknown as {
     MutationObserver: typeof MutationObserver;
     HTMLLinkElement: typeof HTMLLinkElement;
-    Event: typeof Event;
   };
   new window.MutationObserver((records) => {
     for (const record of records) {
@@ -1211,11 +1310,7 @@ export function loadStylesheets(
           node instanceof window.HTMLLinkElement &&
           node.rel === 'stylesheet'
         ) {
-          const href = node.getAttribute('href') ?? '';
-          setTimeout(() => {
-            state.onLoad(href);
-            node.dispatchEvent(new window.Event('load'));
-          }, 0);
+          state.onAdd(node);
         }
       }
     }
@@ -1275,8 +1370,8 @@ export function openPage(app: App, options: OpenOptions): Page {
     );
     collecting = page.warnings;
     openedLast = page;
-    loadStylesheets(container.ownerDocument, (href) =>
-      page.stylesheets.push(href),
+    loadStylesheets(container.ownerDocument, (link) =>
+      page.addedStylesheet(link),
     );
     return page;
   };

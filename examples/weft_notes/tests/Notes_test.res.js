@@ -40,7 +40,7 @@ Vitest.describe("the first page", undefined, undefined, undefined, undefined, un
   t.expect(shell.includes(`<h1 id="title">Groceries</h1>`)).toBe(true);
   t.expect(shell.includes(`<template id="ws:`)).toBe(true);
   t.expect(shell.endsWith(`</body></html>`)).toBe(true);
-  t.expect(shell.includes("__weft")).toBe(false);
+  t.expect(shell.includes("(self.__weft||=[])")).toBe(false);
   return t.expect(shell.includes(`<link rel="modulepreload" href="/src/client/LikeButton.res.js">`)).toBe(true);
 }));
 

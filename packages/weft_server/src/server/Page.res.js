@@ -6,6 +6,7 @@ import * as Html$WeftDom from "@e-cline/weft_dom/src/server/Html.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
+import * as SheetId$WeftCss from "@e-cline/weft_css/src/shared/SheetId.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Render$WeftServer from "./Render.res.js";
 import * as Decoder$WeftServer from "../shared/Decoder.res.js";
@@ -41,13 +42,19 @@ function headStart(assets, title, head, recordEventsOpt) {
 
 let headEnd = `</head><body>`;
 
+function hrefOf(row) {
+  let match = row.tag;
+  if (match === "Stylesheet") {
+    return Stdlib_Option.flatMap(Primitive_option.fromNullable(row.json["href"]), Stdlib_JSON.Decode.string);
+  }
+}
+
+function stylesheetPreload(row) {
+  return Stdlib_Option.mapOr(hrefOf(row), "", href => `<link rel="preload" as="style" href="` + escape(href) + `">`);
+}
+
 function sheetLinks(rows) {
-  return Stdlib_Array.filterMap(rows, row => {
-    let match = row.tag;
-    if (match === "Stylesheet") {
-      return Stdlib_Option.map(Stdlib_Option.flatMap(Primitive_option.fromNullable(row.json["href"]), Stdlib_JSON.Decode.string), href => `<link rel="stylesheet" href="` + escape(href) + `">`);
-    }
-  }).join("");
+  return Stdlib_Array.filterMap(rows, row => Stdlib_Option.map(hrefOf(row), href => `<link rel="stylesheet" href="` + escape(href) + `">`)).join("");
 }
 
 function root(shell) {
@@ -98,7 +105,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head, onError, signal
     let match$1 = Render$WeftServer.toStream(element, onError$1, signal, stylesOf(assets)).tee();
     let forHtml = match$1[1];
     let forPage = match$1[0];
-    let decoder = Decoder$WeftServer.make(match, undefined, undefined);
+    let decoder = Decoder$WeftServer.make(match, undefined, param => {});
     let navigation = Navigation$WeftServer.makeForServer(decoder, url);
     let encoder = new TextEncoder();
     let output = {
@@ -115,7 +122,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head, onError, signal
       }
     };
     let preloaded = new Set();
-    let rowHtml = row => preloads(assets, preloaded, row) + rowScript(Payload$WeftServer.rowToString(row));
+    let rowHtml = row => preloads(assets, preloaded, row) + stylesheetPreload(row) + rowScript(Payload$WeftServer.rowToString(row));
     let held = {
       contents: []
     };
@@ -194,7 +201,24 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head, onError, signal
         writeShell(undefined);
       }
       if (exit === 1) {
-        let rendering = Html$WeftDom.render(Navigation$WeftServer.wrap(navigation, decoded), htmlOnError, Stdlib_Option.map(signal, prim => prim), undefined);
+        let rendering = Html$WeftDom.render(Navigation$WeftServer.wrap(navigation, decoded), htmlOnError, Stdlib_Option.map(signal, prim => prim), undefined, Stdlib_Option.map(stylesOf(assets), styles => (markup => {
+          let hrefs = [];
+          let seen = new Set();
+          let add = id => {
+            if (seen.has(id)) {
+              return;
+            }
+            seen.add(id);
+            let match = styles.sheets[id];
+            if (match !== undefined) {
+              match.dependencies.forEach(add);
+              hrefs.push(match.href);
+              return;
+            }
+          };
+          SheetId$WeftCss.inText(markup).forEach(add);
+          return hrefs;
+        })));
         let exit$1 = 0;
         let shell;
         try {

@@ -940,6 +940,9 @@ importers:
       '@e-cline/ppx_weft':
         specifier: workspace:*
         version: link:../../tools/ppx/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../weft_css
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1

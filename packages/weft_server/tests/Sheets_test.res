@@ -184,9 +184,15 @@ describe("Page, with styles", () => {
     resolve()
     await Testing.finished(pipe)
     let page = Testing.written(pipe)
-    // The boundary's sheet isn't the shell's: it comes with its rows (loading it is the client's).
+    // The boundary's sheet isn't the shell's: preloaded as soon as its row is written, after the
+    // shell, and named in its segment's swap, which waits for it.
     t->expect(page)->Expect.String.toContain(`C{\\"id\\":\\"wdddddd\\"`)
     t->expect(page->String.includes(`<link rel="stylesheet" href="/d.css">`))->Expect.toBe(false)
+    let preload = page->String.indexOf(`<link rel="preload" as="style" href="/d.css">`)
+    let swap = page->String.indexOf(`$weftSwap(0,["/d.css"])`)
+    t
+    ->expect((preload > page->String.indexOf("</head>"), swap > preload))
+    ->Expect.toEqual((true, true))
   })
 })
 

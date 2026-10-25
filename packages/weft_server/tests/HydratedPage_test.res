@@ -185,3 +185,82 @@ describe("a server-rendered page", () => {
     },
   )
 })
+
+let stylesheetLinks: string => array<WeftDom.Dom.element> = %raw(`href =>
+  [...document.querySelectorAll('link[rel="stylesheet"]')].filter(link => link.getAttribute("href") === href)`)
+let fireLoad: WeftDom.Dom.element => unit = %raw(`link => link.dispatchEvent(new Event("load"))`)
+let resetStylesheets: unit => unit = %raw(`() => {
+  document.head.innerHTML = "";
+  delete globalThis.__weftCss;
+}`)
+let exists = selector =>
+  !Nullable.isNullable(%raw(`selector => document.querySelector(selector)`)(selector))
+
+describe("a server-rendered page with stylesheets", () => {
+  testAsync(
+    "swaps a boundary in, and hydrates it, once its sheet has loaded, from one link",
+    async t => {
+      reset()
+      resetStylesheets()
+      let (ready, open_) = {
+        let resolve = ref(() => ())
+        let promise = Promise.make((done, _) => resolve := (() => done()))
+        (promise, () => resolve.contents())
+      }
+      let assets = {
+        ...assets(),
+        sheets: dict{"wdddddd": {Render.href: "/d.css", dependencies: []}},
+      }
+      let page = Page.toStream(
+        <main>
+          <Weft.Suspense fallback={<i> {string("loading")} </i>}>
+            <Later ready>
+              <section id="styled" className="D-z_wdddddd">
+                <Counter label="styled" />
+              </section>
+            </Later>
+          </Weft.Suspense>
+        </main>,
+        ~assets,
+      )
+      let reader = page->Streams.getReader
+      let decoder = Streams.Decoder.make()
+      let next = async () =>
+        switch await reader->Streams.Reader.read {
+        | {done: false, value} => Some(decoder->Streams.Decoder.decode(value, {stream: true}))
+        | _ => None
+        }
+      let _ = await next()
+      switch await next() {
+      | Some(body) => apply(body)
+      | None => JsError.throwWithMessage("the page ended early")
+      }
+      let _ = await Bootstrap.start(
+        ~loadModule=assets.loadModule->Option.getUnsafe,
+        ~container=rootOf(),
+        ~url="/",
+        (),
+      )
+      await settle()
+      open_()
+      let finished = ref(false)
+      while !finished.contents {
+        switch await next() {
+        | Some(chunk) => apply(chunk)
+        | None => finished := true
+        }
+      }
+      await settle()
+      // Its segment has arrived, and its rows; its sheet hasn't loaded: the fallback stays.
+      t->expect(exists("#styled"))->Expect.toBe(false)
+      t->expect(WeftDom.Dom.textContent(query("#root i")))->Expect.toBe("loading")
+      // One link, the runtime's and the client's both.
+      let links = stylesheetLinks("/d.css")
+      t->expect(Array.length(links))->Expect.toBe(1)
+      fireLoad(links->Array.getUnsafe(0))
+      await settle()
+      t->expect(clicked("#styled button"))->Expect.toBe("styled: 1")
+      t->expect(Array.length(stylesheetLinks("/d.css")))->Expect.toBe(1)
+    },
+  )
+})

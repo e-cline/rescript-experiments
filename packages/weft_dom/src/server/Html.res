@@ -55,9 +55,12 @@ let scriptString = text =>
   ->String.replaceAll(lineSeparator, "\\u2028")
   ->String.replaceAll(paragraphSeparator, "\\u2029")
 
-// The swap runtime: written once, before the first segment.
+// The swap runtime: written once, before the first segment (with no `<` in it, so nothing reading
+// the page's scripts can take one for a tag). `$weftSwap(n, hrefs)` waits for those
+// stylesheets first; `$weftCss(href)` is a sheet's state, shared with `WeftCss.Sheets` on
+// `self.__weftCss` (`{loaded, promise}`), from the page's link for it or a new one in the head.
 
-let runtime = `$weftSwap=function(n){var a=document.getElementById("wb:"+n),t=document.getElementById("ws:"+n);if(!a||!t)return;var m=a.previousSibling,p=a.parentNode,e=a.nextSibling,d=0;while(e){if(e.nodeType===8){if(e.data==="/$"){if(d===0)break;d--}else if(e.data[0]==="$")d++}var x=e.nextSibling;p.removeChild(e);e=x}p.insertBefore(t.content,e);p.removeChild(a);t.parentNode.removeChild(t);m.data="$";if(m.$weftRetry)m.$weftRetry()};$weftFail=function(n,g,s){var a=document.getElementById("wb:"+n);if(!a)return;var m=a.previousSibling;a.removeAttribute("id");if(g!=null)a.setAttribute("data-digest",g);if(s!=null)a.setAttribute("data-message",s);m.data="$!";if(m.$weftRetry)m.$weftRetry()};`
+let runtime = `$weftCss=function(h){var c=self.__weftCss||(self.__weftCss={}),s=c[h];if(s)return s;var l,k=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;k[i];i++)if(k[i].getAttribute("href")===h){l=k[i];break}if(!l){l=document.createElement("link");l.rel="stylesheet";l.setAttribute("href",h);document.head.appendChild(l)}s={loaded:!!l.sheet,promise:Promise.resolve()};if(!s.loaded)s.promise=new Promise(function(r){function f(){s.loaded=true;r()}l.addEventListener("load",f,{once:true});l.addEventListener("error",f,{once:true})});return c[h]=s};$weftSwap=function(n,h){if(h){var w=[];for(var i=0;i!==h.length;i++){var s=$weftCss(h[i]);if(!s.loaded)w.push(s.promise)}if(w.length){Promise.all(w).then(function(){$weftSwap(n)});return}}var a=document.getElementById("wb:"+n),t=document.getElementById("ws:"+n);if(!a||!t)return;var m=a.previousSibling,p=a.parentNode,e=a.nextSibling,d=0;while(e){if(e.nodeType===8){if(e.data==="/$"){if(d===0)break;d--}else if(e.data[0]==="$")d++}var x=e.nextSibling;p.removeChild(e);e=x}p.insertBefore(t.content,e);p.removeChild(a);t.parentNode.removeChild(t);m.data="$";if(m.$weftRetry)m.$weftRetry()};$weftFail=function(n,g,s){var a=document.getElementById("wb:"+n);if(!a)return;var m=a.previousSibling;a.removeAttribute("id");if(g!=null)a.setAttribute("data-digest",g);if(s!=null)a.setAttribute("data-message",s);m.data="$!";if(m.$weftRetry)m.$weftRetry()};`
 
 // The event runtime: written in the page's head (by `WeftServer.Page`), before the shell. Until an
 // element under the hydrating root (`[data-weft-html]`) has hydrated (has its props), its clicks,
@@ -602,7 +605,13 @@ let defaultOnError = error => {
   None
 }
 
-let render = (element, ~onError=defaultOnError, ~signal=?, ~idPrefix="w") => {
+let render = (
+  element,
+  ~onError=defaultOnError,
+  ~signal=?,
+  ~idPrefix="w",
+  ~stylesheetsOf=(_: string) => [],
+) => {
   let request = {onError, idPrefix, waitForAll: false, nextBoundary: 0, aborted: false}
   let encoder = makeEncoder()
   let output = ref(None)
@@ -649,7 +658,12 @@ let render = (element, ~onError=defaultOnError, ~signal=?, ~idPrefix="w") => {
         switch await renderUntilReady(request, spawn.context, spawn.children) {
         | attempt =>
           let content = html(request, attempt)
-          emit(`<template id="ws:${id}">${content}</template><script>$weftSwap(${id})</script>`)
+          // The stylesheets its markup needs: the swap waits for them, so it never shows without.
+          let swap = switch stylesheetsOf(content) {
+          | [] => `$weftSwap(${id})`
+          | hrefs => `$weftSwap(${id},[${hrefs->Array.map(scriptString)->Array.join(",")}])`
+          }
+          emit(`<template id="ws:${id}">${content}</template><script>${swap}</script>`)
           start(attempt.spawns)
         | exception Aborted => ()
         | exception error =>
@@ -705,8 +719,8 @@ type readResult = {done: bool, value?: Uint8Array.t}
 @send external getReader: stream => reader = "getReader"
 @send external read: reader => promise<readResult> = "read"
 
-let renderToStream = (element, ~onError=?, ~signal=?, ~idPrefix=?) => {
-  let rendering = render(element, ~onError?, ~signal?, ~idPrefix?)
+let renderToStream = (element, ~onError=?, ~signal=?, ~idPrefix=?, ~stylesheetsOf=?) => {
+  let rendering = render(element, ~onError?, ~signal?, ~idPrefix?, ~stylesheetsOf?)
   let encoder = makeEncoder()
   makeStream({
     start: controller => {

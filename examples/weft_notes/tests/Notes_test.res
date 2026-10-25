@@ -44,7 +44,7 @@ describe("the first page", () => {
       t->expect(shell->String.includes(`<h1 id="title">Groceries</h1>`))->Expect.toBe(true)
       t->expect(shell->String.includes(`<template id="ws:`))->Expect.toBe(true)
       t->expect(shell->String.endsWith(`</body></html>`))->Expect.toBe(true)
-      t->expect(shell->String.includes("__weft"))->Expect.toBe(false)
+      t->expect(shell->String.includes("(self.__weft||=[])"))->Expect.toBe(false)
       t
       ->expect(
         shell->String.includes(`<link rel="modulepreload" href="/src/client/LikeButton.res.js">`),

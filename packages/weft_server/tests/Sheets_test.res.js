@@ -220,7 +220,16 @@ Vitest.describe("Page, with styles", undefined, undefined, undefined, undefined,
   await Testing$WeftServer.finished(pipe);
   let page = Testing$WeftServer.written(pipe);
   t.expect(page).toContain(`C{\\"id\\":\\"wdddddd\\"`);
-  return t.expect(page.includes(`<link rel="stylesheet" href="/d.css">`)).toBe(false);
+  t.expect(page.includes(`<link rel="stylesheet" href="/d.css">`)).toBe(false);
+  let preload = page.indexOf(`<link rel="preload" as="style" href="/d.css">`);
+  let swap = page.indexOf(`$weftSwap(0,["/d.css"])`);
+  return t.expect([
+    preload > page.indexOf("</head>"),
+    swap > preload
+  ]).toEqual([
+    true,
+    true
+  ]);
 }));
 
 function make() {

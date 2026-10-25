@@ -109,6 +109,9 @@ let refresh = async page => await (await started(page))->WeftServer.Navigation.r
 @send external releaseLoads: page => unit = "releaseLoads"
 @get external loads: page => array<string> = "loads"
 @get external stylesheets: page => array<string> = "stylesheets"
+@send external holdStylesheets: (page, ~matching: string=?) => unit = "holdStylesheets"
+@send external releaseStylesheets: page => unit = "releaseStylesheets"
+@send external unstyled: page => array<string> = "unstyled"
 @send external renderCount: (page, string) => int = "renderCount"
 
 type snapshot

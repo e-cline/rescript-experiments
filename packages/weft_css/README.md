@@ -1,8 +1,13 @@
 # @e-cline/weft_css
 
-Styles for Weft, written in ReScript next to the components that use them, and extracted into CSS
-files at build time. The plan, and what's still to come (the Vite plugin's extraction, and sending
-each page only the CSS it uses), is [docs/weft_css_plan.md](../../docs/weft_css_plan.md).
+Styles for Weft, written in ReScript next to the components that use them, extracted into a
+stylesheet per file at build time, and sent to each page only when something on it uses them: the
+first page's shell with its stylesheets in its head, each part streamed in after it shown only once
+its own have loaded, and a page navigated to (or refetched) only once its have. Server components'
+styles reach the browser as CSS, never as code. With
+[`weft_vite_plugin`](../../tools/weft_vite_plugin) (`weft()`, or `weftCss()` for an app without a
+server). The design is [docs/weft_css_plan.md](../../docs/weft_css_plan.md);
+[`weft_shop`](../../examples/weft_shop) and [`weft_app`](../../examples/weft_app) use it.
 
 The API follows [rescript-css](https://github.com/jderochervlk/rescript-css)'s.
 
@@ -35,7 +40,8 @@ module Styles = {
 Needs ReScript 12, and [`ppx_weft`](../../tools/ppx/weft), which names each style: add
 `@e-cline/weft_css` to the `dependencies` in your `rescript.json`, and `"@e-cline/ppx_weft/ppx"` to
 its `ppx-flags`. The modules are `WeftCss.Css` (the API), `WeftCss.SheetId` and `WeftCss.Extract`
-(what the Vite plugin uses).
+(what the Vite plugin uses), and `WeftCss.Sheets` (loading stylesheets in the browser, which
+`WeftServer.Decoder` does for the rows that need them).
 
 ## Using it
 

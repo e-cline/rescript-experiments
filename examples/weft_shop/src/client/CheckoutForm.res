@@ -60,11 +60,36 @@ let reducer = (state, action) =>
   | Failed(error) => {...state, placing: false, error: Some(error)}
   }
 
+open WeftCss
+
+module Styles = {
+  let steps = Css.class({
+    display: Flex,
+    gap: Px(16),
+    padding: Zero,
+    listStyle: None,
+    color: Var(Theme.muted),
+    selectors: [("[aria-current=\"step\"]", Css.style({color: Var(Theme.ink), fontWeight: 600}))],
+  })
+  let field = Css.class({
+    display: Grid,
+    gap: Px(2),
+    marginBottom: Px(10),
+    maxWidth: Px(360),
+    selectors: [
+      (
+        "input",
+        Css.style({padding: Pair(Px(6), Px(8)), border: Theme.hairline(), borderRadius: Px(6)}),
+      ),
+    ],
+  })
+}
+
 module Field = {
   @weft.component
   let make = (~label: string, ~name: string, ~value: string, ~autoComplete: string, ~onEdit) => {
     let id = Weft.Hooks.useId()
-    <div className="field">
+    <div className={Css.cx(["field", Styles.field])}>
       <label htmlFor=id> {WeftDom.Jsx.string(label)} </label>
       <input
         id name value autoComplete onInput={event => onEdit(WeftDom.Dom.Event.targetValue(event))}
@@ -108,7 +133,7 @@ let make = (~total: cents, ~count: int) => {
     )()->ignore
   }
   <div id="checkout">
-    <ol id="checkout-steps">
+    <ol id="checkout-steps" className=Styles.steps>
       {[(Address, "Address"), (Delivery, "Delivery"), (Review, "Review")]
       ->Array.map(((step, label)) =>
         <li key=label ariaCurrent={step == state.step ? "step" : "false"}>
@@ -159,7 +184,7 @@ let make = (~total: cents, ~count: int) => {
           {[(Standard, "Standard (3–5 days)"), (Express, "Express (next day)")]
           ->Array.map(((delivery, label)) => {
             let value = delivery == Standard ? "standard" : "express"
-            <label key=value className="choice">
+            <label key=value className={Css.cx(["choice", Theme.choice])}>
               <input
                 type_="radio"
                 name="delivery"

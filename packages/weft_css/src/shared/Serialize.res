@@ -61,6 +61,7 @@ let declarations = (css: Css.t) => {
   add("overflow-y", css.overflowY, keyword)
   add("visibility", css.visibility, keyword)
   add("aspect-ratio", css.aspectRatio, text)
+  add("clip", css.clip, text)
   add("width", css.width, length)
   add("height", css.height, length)
   add("min-width", css.minWidth, length)

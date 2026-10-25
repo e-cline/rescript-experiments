@@ -38,7 +38,7 @@ let requestOf = (ctx: RequestContext.t): Ui.request => {
 }
 
 let respond = (ctx: RequestContext.t, ~title, element) =>
-  WeftServer.Page.respond(ctx.request, element, ~assets, ~title, ~head=Styles.head, ~onError)
+  WeftServer.Page.respond(ctx.request, element, ~assets, ~title, ~onError)
 
 let page = (~title, render: (RequestContext.t, Ui.request) => Weft.Element.t): Servy.Handler.t =>
   async ctx => respond(ctx, ~title=`${title} · Loom & Co.`, render(ctx, requestOf(ctx)))

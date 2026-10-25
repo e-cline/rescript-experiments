@@ -9,6 +9,30 @@ when the shopper navigates away stops.
 
 open Types
 open Ui
+open WeftCss
+
+module Styles = {
+  let breadcrumbs = Css.class({color: Var(Theme.muted), fontSize: Px(13), marginBottom: Px(12)})
+  /** A page's two columns, one above the other on a narrow screen. */
+  let twoColumns = (~columns, ~gap) =>
+    Css.style({
+      display: Grid,
+      gridTemplateColumns: columns,
+      gap,
+      media: [Css.media(~query="(max-width: 720px)", {gridTemplateColumns: "1fr"})],
+    })
+  let catalog = Css.class({
+    ...twoColumns(~columns="220px 1fr", ~gap=Px(24)),
+    marginTop: Px(16),
+  })
+  let product = Css.class(twoColumns(~columns="1fr 1fr", ~gap=Px(32)))
+  let cart = Css.class(twoColumns(~columns="1fr 300px", ~gap=Px(24)))
+  let summary = Css.class({
+    display: Grid,
+    gridTemplateColumns: "1fr auto",
+    gap: Pair(Px(4), Px(12)),
+  })
+}
 
 let viewerOf = (request: request): Cms.viewer => {
   user: request.session.user,
@@ -18,7 +42,7 @@ let viewerOf = (request: request): Cms.viewer => {
 module Breadcrumbs = {
   @weft.component({kind: Server})
   let make = (~trail: array<(string, string)>, ~current: string) =>
-    <nav className="breadcrumbs" ariaLabel="Breadcrumbs">
+    <nav className={Css.cx(["breadcrumbs", Styles.breadcrumbs])} ariaLabel="Breadcrumbs">
       <Link href="/"> {text("Home")} </Link>
       {trail
       ->Array.map(((label, href)) =>
@@ -141,7 +165,7 @@ module CategoryPage = {
       <Weft.Suspense fallback={loading("banner-loading", "…")}>
         <PageBlocks page={`c-${slug}`} request />
       </Weft.Suspense>
-      <div className="catalog">
+      <div className={Css.cx(["catalog", Styles.catalog])}>
         <Weft.Suspense fallback={loading("facets-loading", "Loading filters…")}>
           <Facets slug filters request />
         </Weft.Suspense>
@@ -193,7 +217,7 @@ module Offer = {
           cents=price
           compareAt=?{product.summary.compareAt->Option.map(was => was + variant.priceDelta)}
         />
-        <p id="stock" className={stock == 0 ? "stock out" : "stock"}>
+        <p id="stock" className={stockClass(stock)}>
           {text(
             switch stock {
             | 0 => `${variant.label}: sold out`
@@ -274,7 +298,7 @@ module ProductPage = {
       <Breadcrumbs
         trail=[(Db.categoryName(summary.category), `/c/${summary.category}`)] current=summary.name
       />
-      <div className="product" id={`product-${summary.id}`}>
+      <div className={Css.cx(["product", Styles.product])} id={`product-${summary.id}`}>
         <Gallery name=summary.name hue=summary.hue />
         <div className="product-info">
           <h1 id="product-name"> {text(summary.name)} </h1>
@@ -313,7 +337,7 @@ module CartSummary = {
     await Latency.wait("block:summary", ~signal=request.signal)
     let cart = Session.cart(request.session)
     let total = cart.subtotal - cart.discount
-    <dl id="summary">
+    <dl id="summary" className=Styles.summary>
       <dt> {text("Subtotal")} </dt>
       <dd>
         <Price id="summary-subtotal" cents=cart.subtotal />
@@ -349,14 +373,16 @@ module CartPage = {
   let make = (~request: request) =>
     <Shell request>
       <h1 id="cart-title"> {text("Your cart")} </h1>
-      <div className="cart">
+      <div className={Css.cx(["cart", Styles.cart])}>
         <CartLines />
         <aside className="cart-side">
           <CartSummaryFrame>
             <CartSummaryPart request />
           </CartSummaryFrame>
           <PromoForm applied=request.session.promo />
-          <Link id="checkout-link" className="cta" href="/checkout"> {text("Check out")} </Link>
+          <Link id="checkout-link" className={Css.cx(["cta", Theme.cta])} href="/checkout">
+            {text("Check out")}
+          </Link>
         </aside>
       </div>
     </Shell>

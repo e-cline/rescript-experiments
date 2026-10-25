@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import {fileURLToPath} from 'node:url';
 
 import {defineConfig, devices} from '@playwright/test';
@@ -19,7 +20,7 @@ export default defineConfig({
   projects: [
     {
       name: 'gated',
-      testMatch: 'shop.e2e.ts',
+      testMatch: ['shop.e2e.ts', 'styles.e2e.ts'],
       use: {...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${gated}`},
     },
     {

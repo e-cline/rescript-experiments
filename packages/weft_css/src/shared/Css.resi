@@ -253,6 +253,7 @@ type rec t = {
   overflowY?: overflow,
   visibility?: visibility,
   aspectRatio?: string,
+  clip?: string,
   // Size
   width?: length,
   height?: length,

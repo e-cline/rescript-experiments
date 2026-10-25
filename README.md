@@ -24,7 +24,7 @@ components for it are under way: `weft_server` and `weft_vite_plugin`, with the 
 | [`@e-cline/weft`](packages/weft)                      | A React-like component library: `@weft.component` components and hooks, rendered by a fiber reconciler through a pluggable host renderer.            |
 | [`@e-cline/weft_dom`](packages/weft_dom)              | The DOM renderer for `weft`: render components into a browser page.                                                                                  |
 | [`@e-cline/weft_signals`](packages/weft_signals)      | Hooks for reading `signals` atoms and computeds from `weft` components.                                                                              |
-| [`@e-cline/weft_css`](packages/weft_css)              | Styles written in ReScript beside their components, extracted into CSS at build time (the delivery to pages is still to come).                       |
+| [`@e-cline/weft_css`](packages/weft_css)              | Styles written in ReScript beside their components, extracted into CSS at build time, and each page sent only the CSS of what it renders.            |
 | [`@e-cline/weft_server`](packages/weft_server)        | Server components for Weft: render on the server into a streamed payload, decode it on the client, with entrypoints loaded on demand.                |
 | [`@e-cline/weft_vite_plugin`](tools/weft_vite_plugin) | The Vite plugin for Weft's server components: server and client environments, an entrypoint per chunk, the boundary enforced, dev and build.         |
 

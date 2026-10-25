@@ -2,6 +2,22 @@
 
 let pageSize = 4
 
+open WeftCss
+
+module Styles = {
+  let head = Css.class({display: Flex, justifyContent: SpaceBetween, alignItems: Center})
+  let controls = Css.class({display: Flex, gap: Px(8), alignItems: Center, color: Var(Theme.muted)})
+  let window = Css.class({overflow: Hidden})
+  let track = Css.class({
+    display: Grid,
+    gridAutoFlow: "column",
+    gridAutoColumns: "calc(25% - 12px)",
+    gap: Px(16),
+    transition: "transform .3s",
+    media: [Css.media(~query="(max-width: 720px)", {gridAutoColumns: "calc(50% - 8px)"})],
+  })
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t) => {
   let (page, setPage) = Weft.Hooks.useState(() => 0)
@@ -10,10 +26,10 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
   let page = Math.Int.min(page, pages - 1)
   let first = page * pageSize
   <div className="carousel" id={`carousel-${id}`}>
-    <div className="carousel-head">
+    <div className={Css.cx(["carousel-head", Styles.head])}>
       <h2> {WeftDom.Jsx.string(title)} </h2>
       {pages > 1
-        ? <div className="carousel-controls">
+        ? <div className={Css.cx(["carousel-controls", Styles.controls])}>
             <button
               id={`prev-${id}`}
               ariaLabel="Previous"
@@ -40,9 +56,9 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
           </div>
         : WeftDom.Jsx.null}
     </div>
-    <div className="carousel-window">
+    <div className={Css.cx(["carousel-window", Styles.window])}>
       <div
-        className="carousel-track"
+        className={Css.cx(["carousel-track", Styles.track])}
         style={Dict.fromArray([("transform", `translateX(-${Int.toString(page * 100)}%)`)])}
       >
         children

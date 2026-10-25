@@ -22,6 +22,21 @@ let reducer = (state: pending, action) => {
   next
 }
 
+open WeftCss
+
+module Styles = {
+  let lines = Css.class({padding: Zero, listStyle: None})
+  let line = Css.class({
+    display: Grid,
+    gridTemplateColumns: "1fr auto auto auto auto",
+    gap: Px(12),
+    alignItems: Center,
+    padding: Pair(Px(10), Zero),
+    borderBottom: Theme.hairline(),
+  })
+  let stepper = Css.class({display: InlineFlex, gap: Px(6), alignItems: Center})
+}
+
 @weft.component({kind: Entrypoint})
 let make = () => {
   let {cart, currency} = ShopContext.use()
@@ -52,13 +67,13 @@ let make = () => {
         <p> {WeftDom.Jsx.string("Your cart is empty.")} </p>
         <Link id="keep-shopping" href="/"> {WeftDom.Jsx.string("Keep shopping")} </Link>
       </div>
-    : <ul id="cart-lines">
+    : <ul id="cart-lines" className=Styles.lines>
         {lines
         ->Array.map(line =>
-          <li key=line.sku id={`line-${line.sku}`} className="cart-line">
+          <li key=line.sku id={`line-${line.sku}`} className={Css.cx(["cart-line", Styles.line])}>
             <Link href={`/p/${line.slug}`}> {WeftDom.Jsx.string(line.name)} </Link>
             <span className="line-variant"> {WeftDom.Jsx.string(line.variant)} </span>
-            <span className="stepper">
+            <span className={Css.cx(["stepper", Styles.stepper])}>
               <button
                 id={`less-${line.sku}`}
                 ariaLabel="One fewer"

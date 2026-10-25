@@ -13,6 +13,26 @@ refresh with the same filters keeps the pages loaded.
 
 open Types
 
+open WeftCss
+
+module Styles = {
+  let tools = Css.class({
+    display: Flex,
+    justifyContent: SpaceBetween,
+    alignItems: Center,
+    gap: Px(12),
+  })
+  let grid = Css.class({
+    display: Grid,
+    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+    gap: Px(16),
+    padding: Zero,
+    listStyle: None,
+    transition: "opacity .2s",
+  })
+  let loadMore = Css.class({marginTop: Px(16)})
+}
+
 @weft.component({kind: Entrypoint})
 let make = (
   ~items: array<gridItem>,
@@ -34,7 +54,7 @@ let make = (
       ? all
       : all->Array.filter(item => item.name->String.toLowerCase->String.includes(needle))
   <div id="grid-wrap">
-    <div className="grid-tools">
+    <div className={Css.cx(["grid-tools", Styles.tools])}>
       <input
         id="quick-filter"
         type_="search"
@@ -49,7 +69,12 @@ let make = (
         )}
       </p>
     </div>
-    <ul id="grid" className={filter == deferred ? "grid" : "grid stale"}>
+    <ul
+      id="grid"
+      className={filter == deferred
+        ? Css.cx(["grid", Styles.grid])
+        : Css.cx(["grid stale", Styles.grid, Theme.stale])}
+    >
       {shown
       ->Array.map(item => <li key=item.key className="grid-item"> {item.card} </li>)
       ->WeftDom.Jsx.array}
@@ -61,6 +86,7 @@ let make = (
     | Some(page) =>
       <button
         id="load-more"
+        className=Styles.loadMore
         disabled=loading
         onClick={_ => {
           setLoading(_ => true)

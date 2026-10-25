@@ -54,16 +54,24 @@ loaded.
 
 ## Status
 
-Reviewed: the recommended decisions are taken (Decisions). Phase 0's spikes are done, and the design
-below is corrected by what they found ("Phase 0: what the spikes found", after Phases), in Chromium,
-Firefox and WebKit. Phase 1 is done (`packages/weft_css`, and the PPX's rewrite), with notes on what
-it settled under "As built (phase 1)", after §2. Phase 2 is done too (the plugin's extraction,
-`weftCss()` and `weft_app` on it), under "As built (phase 2)", after §3. And phase 3 (the server's
-half of sending sheets: the manifest, `Render`'s `C` rows, the page's head), under "As built (phase
-3)", after §4. And phase 4 (the client's half: loading sheets, rows waiting for them), under "As
-built (phase 4)", after phase 3's. And phase 5 (streamed segments wait for their sheets), under "As
-built (phase 5)", after §6. And phase 6 (CSS edits in development, in place), under "As built (phase
-6)", after §7. Phase 7 is next.
+Every phase, 0 to 7, is done, on the branch `claude/weft-css-support-c3db73`, a commit each (one PR
+for all of them). The decisions were taken as recommended (Decisions). The design sections are as
+first written, each followed by "As built" notes where the implementation went its own way or
+settled what the design left open: phase 0's spikes under "Phase 0: what the spikes found" (after
+Phases), then phase 1's after §2, phase 2's after §3, phases 3 and 4's after §4, phase 5's after §6,
+phase 6's after §7, and phase 7's after §8. What's left to do is under Follow-ups, at the end.
+
+The things most worth knowing, for whoever works on this next:
+
+- **Phase 3 took `Render`'s scan from phase 4**: the head can only link the shell's sheets if the
+  server knows them. An entrypoint's sheets go on the row that uses it, not its `E` row.
+- **A segment's sheets are its markup's**, found by `Page` in the HTML, not "every sheet since the
+  shell" (phase 5).
+- **The server's decoder never waits for a sheet**, and the harness starts every page with no
+  stylesheet loaded and counts a swap that happens late (after its sheets load) as the HTML's: each
+  found when a jsdom test put the server and the client in one process.
+- **ReScript writes a copy of each compiled file in its `lib/`**, whose change arrives with the real
+  one's: anything the plugin decides per change has to be kept per file (phase 6).
 
 ## What was checked before writing this
 
@@ -665,6 +673,34 @@ each style module import its sheet (`import "virtual:weft/css/<id>.css"`), so Vi
 splitting applies: chunk CSS, loaded before a dynamic import resolves. That's the module-graph rule,
 which for client code is the right one (§ How it works).
 
+**As built (phase 7).** `weft_shop` on `weft_css`:
+
+- **Its stylesheet** (a hundred lines, inlined in every page's head through `Page.respond(~head)`)
+  is gone: the theme's variables and the page's own rules are in `src/shared/Theme.res`, with the
+  looks both sides use (a picture, a placeholder, a call to action, "stale", a choice), and each
+  component's rules beside it, in a `Styles` module: the server's frame, blocks and pages (`Ui`,
+  `Blocks`, `Pages`: server-only sheets) and twenty entrypoints and shared components. Selectors on
+  ids and descendants became classes on the elements, or `selectors` of their parent's class; the
+  `@media` block became each class's `media`.
+- **The semantic class names stay** beside the styles' (`Css.cx(["card", Styles.card])`): the tests
+  find elements by them (`.price`, `.signin-name`, `.suggestions`), and they read better in the
+  HTML.
+- **`weft_css` gained `clip`**, the one property the store used that it didn't have.
+- **Tier 2** (`tests/Styles_test.res`): the home page's head links the theme's and the frame's
+  sheets and not the cart's or the checkout's; the cart's lines' sheet comes when the cart's opened;
+  nothing is ever unstyled as the home page streams in, gate by gate; and with the cart's sheet
+  held, navigating to the cart keeps the home page on screen until it's released. Two harness fixes
+  came out of it: a page opened starts with no stylesheet loaded (the states on
+  `globalThis.__weftCss`, and the head's links, are dropped, as a new page load has them), and a
+  swap that runs after its script (waiting for its sheets) is counted as the HTML's, by wrapping
+  `$weftSwap` (without it, a hydration test took the swapped-out fallback for one it had replaced).
+- **Tier 3** (`e2e/styles.e2e.ts`, in the gated project): with every stylesheet slowed by 500 ms, a
+  probe on every frame finds no element with a `weft_css` class shown before its sheet applied,
+  through the home page streaming, a navigation to a category, a product, adding to the cart, the
+  drawer, the cart's page and a quantity changed (its totals refetched); and a control, a class
+  whose sheet a script adds without waiting, which it does find. In Chromium (the suite's), and, run
+  once with a throwaway config, in Firefox and WebKit. The whole e2e suite passes as before.
+
 ## Testing
 
 As the other plans: unit tests per package, the plugin's build and dev tests, tier 2 (the harness,
@@ -782,7 +818,7 @@ Scripts in the session's scratchpad, not committed, against ReScript 12.3.1, the
    spec says.) So holding the head open doesn't change when Safari hydrates. Weft's pages have this
    already: a page whose shell is out, with a slow boundary and no rows in between, hydrates in
    Safari only once the boundary's segment arrives. That's outside this plan; it's a follow-up
-   (Follow-ups 7).
+   (Follow-ups 9).
 
 ## Decisions
 
@@ -834,19 +870,30 @@ Settled in review: each recommendation below was taken.
 
 ## Follow-ups
 
-1. **Inline small sheets** in the first page's HTML (`<style data-href>`, adopted by `Sheets`), as
+What's left, most useful first. The first two are the gaps in what's sent:
+
+1. **Sheets for RPC responses**: `RpcServer` encodes without `~styles`, so an element an RPC returns
+   (`weft_shop`'s "Load more" cards) is styled only by sheets already loaded. They are there in
+   `weft_shop` (the grid's first cards brought them), but needn't be. Small: `RpcServer` given the
+   assets, as `Page` is.
+2. **Style modules loaded some other way** (a `Weft.Lazy` around an `import()`, in a `weft()` app)
+   bring no sheets: entrypoints' come with the rows using them, but nothing registers a module's own
+   when the client runs it (§4's "client code's own sheets"). Small.
+3. **Inline small sheets** in the first page's HTML (`<style data-href>`, adopted by `Sheets`), as
    SvelteKit and Astro do. Small.
-2. **Group sheets** that always load together (an entrypoint's, a layout's) into one asset. Medium.
-3. **Short class names in production**, rewritten by the plugin in both builds. Medium.
-4. **Skip sheets the client already has** on navigation: the client sends what it has loaded (a
+4. **Group sheets** that always load together (an entrypoint's, a layout's) into one asset. Medium.
+5. **Short class names in production**, rewritten by the plugin in both builds. Medium.
+6. **Skip sheets the client already has** on navigation: the client sends what it has loaded (a
    header), and the server leaves out those `C` rows. Small, once measured to matter.
-5. **An atomic mode** (StyleX-like), for apps that would rather ship one cached sheet. Large.
-6. **The cross-file conflict check** (§5). Medium.
-7. **Hydrating sooner in Safari** (not CSS: found in phase 0). WebKit runs the `async` bootstrap
+7. **An atomic mode** (StyleX-like), for apps that would rather ship one cached sheet. Large.
+8. **The cross-file conflict check** (§5). Medium.
+9. **Hydrating sooner in Safari** (not CSS: found in phase 0). WebKit runs the `async` bootstrap
    only when the parser gets more bytes, so a streamed page that goes quiet after its shell hydrates
    only once something more arrives. The page could write a tiny keep-alive (an empty comment) soon
    after the shell, or load the bootstrap as a classic `async` script that imports the module.
    Small, with a WebKit browser test.
+
+10. **`Css.fontFace` and `registerProperty`**, left out of phase 1 (nothing used them). Small.
 
 ## Out of scope
 

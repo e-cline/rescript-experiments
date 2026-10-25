@@ -978,17 +978,8 @@ export class Page {
       case 'script': {
         // As an inline script runs: in the global scope. What it changes under the container (a
         // swap: nothing renders while it runs) is the HTML's doing.
-        const before = this.rootArrived ? this.snapshot() : [];
-        (0, eval)(piece.code);
-        if (this.rootArrived) {
-          const after = this.snapshot();
-          const kept = new Set(after);
-          const was = new Set(before);
-          this.htmlNodes = [
-            ...this.htmlNodes.filter((node) => kept.has(node)),
-            ...after.filter((node) => !was.has(node)),
-          ];
-        }
+        this.asTheHtml(() => (0, eval)(piece.code));
+        this.watchSwaps();
         break;
       }
       case 'markup': {
@@ -1008,6 +999,38 @@ export class Page {
         break;
       }
     }
+  }
+
+  /** Runs `change`, taking what it does under the container to be the HTML's (a swap's). */
+  private asTheHtml(change: () => void) {
+    const before = this.rootArrived ? this.snapshot() : [];
+    change();
+    if (this.rootArrived) {
+      const after = this.snapshot();
+      const kept = new Set(after);
+      const was = new Set(before);
+      this.htmlNodes = [
+        ...this.htmlNodes.filter((node) => kept.has(node)),
+        ...after.filter((node) => !was.has(node)),
+      ];
+    }
+  }
+
+  /**
+   * Has every swap count as the HTML's doing, whenever it happens: one waiting for its stylesheets
+   * swaps a task (or more) after its script ran, from the runtime's own promise.
+   */
+  private watchSwaps() {
+    const self = globalThis as {
+      $weftSwap?: ((...args: unknown[]) => void) & {weftHarness?: true};
+    };
+    const swap = self.$weftSwap;
+    if (swap === undefined || swap.weftHarness) return;
+    const watched = Object.assign(
+      (...args: unknown[]) => this.asTheHtml(() => swap(...args)),
+      {weftHarness: true as const},
+    );
+    self.$weftSwap = watched;
   }
 
   /** A stylesheet link added to the head (by the client, or a segment's swap): loaded, or held. */
@@ -1332,8 +1355,15 @@ let openedLast: Page | undefined;
 export function openPage(app: App, options: OpenOptions): Page {
   openedLast?.close();
   app.delivery = options.delivery ?? {type: 'immediate'};
-  const self = globalThis as {__weft?: unknown};
+  const self = globalThis as {__weft?: unknown; __weftCss?: unknown};
   delete self.__weft;
+  // A new page load: no stylesheet loaded yet (but those its head links, which it applies).
+  delete self.__weftCss;
+  for (const link of options.container.ownerDocument.head.querySelectorAll(
+    'link[rel="stylesheet"]',
+  )) {
+    link.remove();
+  }
   const container = options.container;
   container.removeAttribute('data-weft-html');
   container.innerHTML = '';

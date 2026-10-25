@@ -5,12 +5,29 @@ drawer listing them, rendered into `<body>` (a portal) while it's open.
 
 open Types
 
+open WeftCss
+
+module Styles = {
+  let drawer = Css.class({
+    position: Fixed,
+    top: Zero,
+    right: Zero,
+    bottom: Zero,
+    width: Px(320),
+    padding: Px(20),
+    backgroundColor: Named("white"),
+    borderLeft: Theme.hairline(),
+    boxShadow: "-8px 0 24px #0001",
+    overflow: Auto,
+  })
+}
+
 module Drawer = {
   @weft.component
   let make = (~cart: cart, ~onClose: unit => unit) => {
     let {currency} = ShopContext.use()
     WeftDom.Portal.create(
-      <aside id="cart-drawer" role="dialog" ariaLabel="Cart">
+      <aside id="cart-drawer" className=Styles.drawer role="dialog" ariaLabel="Cart">
         <h2> {WeftDom.Jsx.string("Your cart")} </h2>
         {cart.lines == []
           ? <p id="drawer-empty"> {WeftDom.Jsx.string("Nothing here yet.")} </p>

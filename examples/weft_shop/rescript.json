@@ -17,6 +17,7 @@
     "@e-cline/servy",
     "@e-cline/signals",
     "@e-cline/weft",
+    "@e-cline/weft_css",
     "@e-cline/weft_dom",
     "@e-cline/weft_server",
     "@e-cline/weft_signals",

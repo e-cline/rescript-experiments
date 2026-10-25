@@ -7,6 +7,20 @@ one is ready; the add to cart button inside keeps the quantity chosen.
 
 open Types
 
+open WeftCss
+
+module Styles = {
+  let variants = Css.class({display: Flex, flexWrap: Wrap, gap: Px(6), margin: Pair(Px(10), Zero)})
+  let variant = Css.class({
+    selectors: [
+      (
+        "&[aria-pressed=\"true\"]",
+        Css.style({backgroundColor: Var(Theme.ink), color: Named("white")}),
+      ),
+    ],
+  })
+}
+
 @weft.component({kind: Entrypoint})
 let make = (
   ~slug: string,
@@ -21,13 +35,13 @@ let make = (
   )
   <div id="product-offer">
     {Array.length(variants) > 1
-      ? <div id="variants" role="group" ariaLabel="Variant">
+      ? <div id="variants" className=Styles.variants role="group" ariaLabel="Variant">
           {variants
           ->Array.map(variant =>
             <button
               key=variant.sku
               id={`variant-${variant.sku}`}
-              className="variant"
+              className={Css.cx(["variant", Styles.variant])}
               ariaPressed={variant.sku == sku ? "true" : "false"}
               onClick={_ => {
                 setSku(_ => variant.sku)
@@ -43,7 +57,7 @@ let make = (
     <div
       id="offer"
       ariaBusy={offer.isPending ? "true" : "false"}
-      className={offer.isPending ? "pending" : ""}
+      className={offer.isPending ? Css.cx(["pending", Theme.stale]) : ""}
     >
       {offer.element}
     </div>

@@ -9,6 +9,21 @@ Retry refetches the block, then resets the boundary once the refetched block has
 again), so what renders is the newly fetched block: another failure is caught again.
 */
 
+open WeftCss
+
+module Styles = {
+  let block = Css.class({
+    margin: Four(Zero, Zero, Px(28), Zero),
+    selectors: [("&[aria-busy=\"true\"]", Css.style({opacity: 0.7, transition: "opacity .2s"}))],
+  })
+  let error = Css.class({
+    padding: Px(12),
+    border: "1px solid #f0c8c4",
+    backgroundColor: Hex("fdf1f0"),
+    borderRadius: Px(8),
+  })
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: Weft.Element.t) => {
   let block = WeftServer.Navigation.useRefetchable(~src, children)
@@ -38,14 +53,16 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
   , (refreshEvery, src))
   <section
     id={`block-${id}`}
-    className="block"
+    className={Css.cx(["block", Styles.block])}
     ariaBusy={block.isPending ? "true" : "false"}
     title={block.isPending ? "pending" : "idle"}
   >
     <Weft.ErrorBoundary
       fallback={(~error, ~reset as resetBoundary) => {
         reset.current = resetBoundary
-        <div className="block-error" id={`block-error-${id}`} role="alert">
+        <div
+          className={Css.cx(["block-error", Styles.error])} id={`block-error-${id}`} role="alert"
+        >
           <p> {WeftDom.Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))} </p>
           <button
             id={`retry-${id}`}

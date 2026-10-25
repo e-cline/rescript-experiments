@@ -1,11 +1,17 @@
 /*** Who's signed in, and signing in (the dialog) or out (the `auth.signOut` RPC, then a refresh). */
 
+open WeftCss
+
+module Styles = {
+  let menu = Css.class({display: Flex, gap: Px(8), alignItems: Center})
+}
+
 @weft.component({kind: Entrypoint})
 let make = () => {
   let {user} = ShopContext.use()
   let navigation = WeftServer.Navigation.useNavigation()
   let signOut = WeftServer.Rpc.use(Api.signOut)
-  <div id="account-menu">
+  <div id="account-menu" className=Styles.menu>
     {switch user {
     | Some(name) =>
       <>

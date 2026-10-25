@@ -7,6 +7,50 @@ under a boundary of its own.
 */
 
 open Types
+open WeftCss
+
+module Styles = {
+  let app = Css.class({
+    maxWidth: Px(1100),
+    margin: Pair(Zero, Auto),
+    padding: Four(Zero, Px(16), Px(48), Px(16)),
+  })
+  let header = Css.class({
+    display: Flex,
+    flexWrap: Wrap,
+    gap: Pair(Px(12), Px(20)),
+    alignItems: Center,
+    padding: Pair(Px(16), Zero),
+    borderBottom: Theme.hairline(),
+  })
+  let logo = Css.class({fontWeight: 700, fontSize: Px(20), textDecoration: None})
+  let nav = Css.class({
+    display: Flex,
+    gap: Px(14),
+    selectors: [("a", Css.style({textDecoration: None, color: Var(Theme.muted)}))],
+  })
+  let headerTools = Css.class({display: Flex, gap: Px(10), alignItems: Center})
+  let main = Css.class({paddingTop: Px(20)})
+  let footer = Css.class({marginTop: Px(48), color: Var(Theme.muted), fontSize: Px(13)})
+  let card = Css.class({
+    backgroundColor: Named("white"),
+    border: Theme.hairline(),
+    borderRadius: Px(10),
+    padding: Px(10),
+  })
+  let cardLink = Css.class({textDecoration: None})
+  let cardName = Css.class({fontSize: Px(15), margin: Four(Px(8), Zero, Px(4), Zero)})
+  let cardMeta = Css.class({display: Flex, justifyContent: SpaceBetween, alignItems: Center})
+  let stock = Css.class({fontSize: Px(13), color: Hex("2f6b3a")})
+  let stockOut = Css.class({color: Var(Theme.sale)})
+  let stockLoading = Css.class({color: Var(Theme.muted)})
+}
+
+/** A product's stock's classes: its semantic ones (which tests find it by), and its style. */
+let stockClass = stock =>
+  stock == 0
+    ? Css.cx(["stock out", Styles.stock, Styles.stockOut])
+    : Css.cx(["stock", Styles.stock])
 
 /** What a server component needs from the request: the shopper's session, and the request's signal. */
 type request = {
@@ -37,7 +81,7 @@ module StockBadge = {
   let make = async (~id, ~signal) => {
     await Latency.wait(`stock:${id}`, ~signal)
     let stock = Db.productStock(id)
-    <span className={stock == 0 ? "stock out" : "stock"} id={`stock-${id}`}>
+    <span className={stockClass(stock)} id={`stock-${id}`}>
       {text(
         switch stock {
         | 0 => "Sold out"
@@ -52,17 +96,20 @@ module StockBadge = {
 module ProductCard = {
   @weft.component({kind: Server})
   let make = (~summary: summary, ~saved: bool, ~signal) =>
-    <article className="card" id={`card-${summary.id}`}>
-      <Link className="card-link" href={`/p/${summary.slug}`}>
-        <div className="picture" style={picture(summary)} />
-        <h3 className="card-name"> {text(summary.name)} </h3>
+    <article className={Css.cx(["card", Styles.card])} id={`card-${summary.id}`}>
+      <Link className={Css.cx(["card-link", Styles.cardLink])} href={`/p/${summary.slug}`}>
+        <div className={Css.cx(["picture", Theme.picture])} style={picture(summary)} />
+        <h3 className={Css.cx(["card-name", Styles.cardName])}> {text(summary.name)} </h3>
       </Link>
-      <div className="card-meta">
+      <div className={Css.cx(["card-meta", Styles.cardMeta])}>
         <Price cents=summary.price compareAt=?summary.compareAt />
         <WishlistButton productId=summary.id saved />
       </div>
       <Weft.Suspense
-        fallback={<span className="stock loading" id={`stock-loading-${summary.id}`}>
+        fallback={<span
+          className={Css.cx(["stock loading", Styles.stock, Styles.stockLoading])}
+          id={`stock-loading-${summary.id}`}
+        >
           {text("Checking stock…")}
         </span>}
       >
@@ -94,9 +141,9 @@ let gridItems = (summaries: array<summary>, request): array<gridItem> => {
 module Header = {
   @weft.component({kind: Server})
   let make = (~query) =>
-    <header id="header">
-      <Link id="logo" href="/"> {text("Loom & Co.")} </Link>
-      <nav id="nav">
+    <header id="header" className=Styles.header>
+      <Link id="logo" className=Styles.logo href="/"> {text("Loom & Co.")} </Link>
+      <nav id="nav" className=Styles.nav>
         {Db.categories
         ->Array.map(((slug, name)) =>
           <Link key=slug id={`nav-${slug}`} href={`/c/${slug}`}> {text(name)} </Link>
@@ -104,7 +151,7 @@ module Header = {
         ->WeftDom.Jsx.array}
       </nav>
       <SearchBox initial=query />
-      <div className="header-tools">
+      <div className={Css.cx(["header-tools", Styles.headerTools])}>
         <CurrencySelect />
         <AccountMenu />
         <CartBadge />
@@ -117,10 +164,10 @@ module Shell = {
   let make = (~request: request, ~children) => {
     let session = request.session
     <ShopShell currency=session.currency user=session.user cart={Session.cart(session)}>
-      <div id="app">
+      <div id="app" className=Styles.app>
         <Header query=request.query />
-        <main id="main"> children </main>
-        <footer id="footer">
+        <main id="main" className=Styles.main> children </main>
+        <footer id="footer" className=Styles.footer>
           {text("Loom & Co. — a Weft example. Nothing here is for sale.")}
         </footer>
       </div>
@@ -128,4 +175,5 @@ module Shell = {
   }
 }
 
-let loading = (id, message) => <p id className="loading"> {text(message)} </p>
+let loading = (id, message) =>
+  <p id className={Css.cx(["loading", Theme.placeholder])}> {text(message)} </p>

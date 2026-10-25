@@ -13,6 +13,41 @@ type controller
 @get external controllerSignal: controller => WeftServer.Rpc.signal = "signal"
 @send external abort: controller => unit = "abort"
 
+open WeftCss
+
+module Styles = {
+  let search = Css.class({
+    position: Relative,
+    flex: "1",
+    minWidth: Px(200),
+    display: Flex,
+    gap: Px(6),
+  })
+  let input = Css.class({
+    flex: "1",
+    padding: Pair(Px(6), Px(10)),
+    border: Theme.hairline(),
+    borderRadius: Px(6),
+  })
+  let suggestions = Css.class({
+    position: Absolute,
+    top: Pct(100.),
+    left: Zero,
+    right: Zero,
+    zIndex: 5,
+    margin: Four(Px(4), Zero, Zero, Zero),
+    padding: Px(4),
+    listStyle: None,
+    backgroundColor: Named("white"),
+    border: Theme.hairline(),
+    borderRadius: Px(6),
+    selectors: [
+      ("li", Css.style({display: Flex, justifyContent: SpaceBetween, padding: Pair(Px(4), Px(6))})),
+    ],
+  })
+  let category = Css.class({color: Var(Theme.muted), fontSize: Px(13)})
+}
+
 module Suggestions = {
   @weft.component
   let make = (~query: string, ~listId: string, ~onPick: unit => unit) => {
@@ -45,14 +80,14 @@ module Suggestions = {
     let (forQuery, suggestions) = found
     suggestions == [] || forQuery != String.trim(query)
       ? WeftDom.Jsx.null
-      : <ul id=listId className="suggestions" role="listbox">
+      : <ul id=listId className={Css.cx(["suggestions", Styles.suggestions])} role="listbox">
           {suggestions
           ->Array.map(suggestion =>
             <li key=suggestion.slug role="option" onClick={_ => onPick()}>
               <Link id={`suggestion-${suggestion.slug}`} href={`/p/${suggestion.slug}`}>
                 {WeftDom.Jsx.string(suggestion.name)}
               </Link>
-              <span className="suggestion-category">
+              <span className={Css.cx(["suggestion-category", Styles.category])}>
                 {WeftDom.Jsx.string(suggestion.category)}
               </span>
             </li>
@@ -71,6 +106,7 @@ let make = (~initial: string) => {
   let listId = Weft.Hooks.useId()
   <form
     id="search"
+    className=Styles.search
     role="search"
     onSubmit={event => {
       WeftDom.Dom.Event.preventDefault(event)
@@ -82,6 +118,7 @@ let make = (~initial: string) => {
   >
     <input
       id="search-input"
+      className=Styles.input
       type_="search"
       ariaLabel="Search"
       placeholder="Search the store"

@@ -9,6 +9,12 @@ let format = ms => {
   `${Int.toString(seconds / 3600)}h ${pad(mod(seconds / 60, 60))}m ${pad(mod(seconds, 60))}s`
 }
 
+open WeftCss
+
+module Styles = {
+  let countdown = Css.class({fontVariantNumeric: TabularNums, color: Var(Theme.accent)})
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~id: string, ~endsAt: float, ~now as serverNow: float) => {
   let (now, setNow) = Weft.Hooks.useState(() => serverNow)
@@ -17,7 +23,7 @@ let make = (~id: string, ~endsAt: float, ~now as serverNow: float) => {
     let timer = setInterval(() => setNow(_ => Date.now()), 1000)
     Some(() => clearInterval(timer))
   })
-  <span className="countdown" id>
+  <span className={Css.cx(["countdown", Styles.countdown])} id>
     {WeftDom.Jsx.string(endsAt <= now ? "Ended" : `Ends in ${format(endsAt -. now)}`)}
   </span>
 }

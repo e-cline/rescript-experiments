@@ -3,6 +3,12 @@ Signing in (the `auth.signIn` RPC): a name, and no password (it's a demo). Used 
 the sign-in page. Its label is linked by an ID from `useId`.
 */
 
+open WeftCss
+
+module Styles = {
+  let form = Css.class({display: Grid, gap: Px(8)})
+}
+
 @weft.component
 let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
   let (name, setName) = Weft.Hooks.useState(() => "")
@@ -27,7 +33,7 @@ let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
       }
     )()->ignore
   }
-  <form className="signin-form" onSubmit=submit>
+  <form className={Css.cx(["signin-form", Styles.form])} onSubmit=submit>
     <label htmlFor=inputId> {WeftDom.Jsx.string("Your name")} </label>
     <input
       id=inputId

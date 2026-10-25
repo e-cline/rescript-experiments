@@ -5,6 +5,7 @@ import * as Env$Common from "@e-cline/common/src/Env.res.js";
 import * as Stdlib_Int from "@rescript/runtime/lib/es6/Stdlib_Int.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
+import * as Page$WeftServer from "./Page.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Primitive_string from "@rescript/runtime/lib/es6/Primitive_string.js";
@@ -224,7 +225,7 @@ async function readBody(request, limit) {
   }
 }
 
-async function respond(router, request, id) {
+async function respond(router, request, id, assets) {
   let handler = router.handlers.get(id);
   if (handler === undefined) {
     return refuse(404, `There's no RPC ` + id + `.`);
@@ -277,7 +278,7 @@ async function respond(router, request, id) {
         return payloadResponse(500, failure(router, error));
       }
       if (exit$2 === 3) {
-        return payloadResponse(val[0], Render$WeftServer.valueToStream(val[1], router.onError, Primitive_option.some(request.signal), undefined));
+        return payloadResponse(val[0], Render$WeftServer.valueToStream(val[1], router.onError, Primitive_option.some(request.signal), Stdlib_Option.flatMap(assets, Page$WeftServer.stylesOf)));
       }
     }
   }

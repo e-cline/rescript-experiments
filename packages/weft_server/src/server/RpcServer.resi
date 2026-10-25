@@ -12,10 +12,13 @@ let addComment = WeftServer.RpcServer.handler(Api.addComment, async (request, ~h
 let router = WeftServer.RpcServer.router([addComment])
 
 // src/Server.res
+@module("virtual:weft/assets") external assets: WeftServer.Page.assets = "default"
+
 Route.post(list{"_weft", "rpc", ":id"}, async ctx =>
   await ApiServer.router->WeftServer.RpcServer.respond(
     ctx.request,
     ~id=ctx->RequestContext.paramOrThrow("id"),
+    ~assets,
   )
 )
 ```
@@ -68,8 +71,13 @@ The response to `request`, a call of the RPC `id`. In order:
 6. otherwise the handler's result is the answer, as a payload, with `Payload.cacheControl`. A
    handler that throws is a 500 (`Failed`), with the digest `onError` gave it and, in development
    only, its message.
+
+With `assets` (`virtual:weft/assets`, as `Page.respond` is given), the answer brings the
+stylesheets of the elements in it, as a page's payload does (see `Render`'s `styles`), and the
+client's call resolves once they've loaded, so what it renders never shows without its CSS. Without
+them, an element in the answer is styled only by what the page has loaded already.
 */
-let respond: (router, Request.t, ~id: string) => promise<Response.t>
+let respond: (router, Request.t, ~id: string, ~assets: Page.assets=?) => promise<Response.t>
 
 /** The IDs the router answers, sorted. */
 let ids: router => array<string>

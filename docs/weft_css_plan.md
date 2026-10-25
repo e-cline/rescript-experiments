@@ -59,7 +59,8 @@ for all of them). The decisions were taken as recommended (Decisions). The desig
 first written, each followed by "As built" notes where the implementation went its own way or
 settled what the design left open: phase 0's spikes under "Phase 0: what the spikes found" (after
 Phases), then phase 1's after §2, phase 2's after §3, phases 3 and 4's after §4, phase 5's after §6,
-phase 6's after §7, and phase 7's after §8. What's left to do is under Follow-ups, at the end.
+phase 6's after §7, and phase 7's after §8. What's left to do is under Follow-ups, at the end;
+follow-up 1 (RPC responses' sheets) is done since, with its own "As built" note there.
 
 The things most worth knowing, for whoever works on this next:
 
@@ -468,8 +469,8 @@ other way (a `Weft.Lazy` around an `import()` in a client-only app), and develop
   stylesheet links for the `C` rows written so far, the entrypoints' `modulepreload`s (which used to
   be at the start of the body), and `</head><body>`. Payload responses (navigation) get `C` rows
   too. A page without HTML (`html=false`) closes its head at once, as before: its sheets are the
-  client's to load. RPC responses (`RpcServer`) don't send sheets yet: an element an RPC returns is
-  styled only by what's already loaded (phase 4).
+  client's to load. RPC responses (`RpcServer`) didn't send sheets yet: an element an RPC returned
+  was styled only by what had loaded already (follow-up 1 added them).
 - **The layer order is in every sheet**, `@layer weft.base, weft.components;` first
   (`Extract.layerOrder`), not in the page's head: the first stylesheet to name a layer fixes its
   place, whichever that is, and `weftCss()` apps, with no page of Weft's, need it as much.
@@ -895,12 +896,26 @@ Settled in review: each recommendation below was taken.
 
 ## Follow-ups
 
-What's left, most useful first. The first two are the gaps in what's sent:
+What's left, most useful first. The first two are the gaps in what's sent (the first is done):
 
-1. **Sheets for RPC responses**: `RpcServer` encodes without `~styles`, so an element an RPC returns
-   (`weft_shop`'s "Load more" cards) is styled only by sheets already loaded. They are there in
-   `weft_shop` (the grid's first cards brought them), but needn't be. Small: `RpcServer` given the
-   assets, as `Page` is.
+1. **Sheets for RPC responses** (done). `RpcServer` encoded without `~styles`, so an element an RPC
+   returned (`weft_shop`'s "Load more" cards) was styled only by sheets already loaded.
+
+   **As built.** `RpcServer.respond` takes `~assets` (an app's route passes `virtual:weft/assets`,
+   as it does to `Page.respond`), and encodes the answer with their styles (`Page.stylesOf`, now
+   public): the `C` rows of what the answer renders come before the rows needing them, as in a
+   page's payload. The client needed nothing: `Rpc.call` decodes with `Decoder.valueFromStream`,
+   which already holds the root back until its sheets load, so the call resolves only then, and what
+   the caller renders with it is styled; a later row (a card's stock) waits as any other does. On
+   the router rather than `respond` would have meant giving the assets to the module that lists the
+   handlers, which has no reason to import them. `weft_shop`'s cards gained a sale badge, in a file
+   of its own (`SaleBadge`), which is what the test needs: sorted dearest first, the shoes' first
+   page has nothing on sale and "Load more" brings two. Tests: `weft_server`'s `Sheets_test` ("RPCs,
+   with sheets": the answer held back until its sheet loads; a boundary in it keeping its fallback,
+   after the answer, until its later row's sheet loads; without assets, no sheets), and
+   `weft_shop`'s `Styles_test` (the grid keeps its old cards, "Loading…", until the badge's sheet
+   loads, and nothing is ever unstyled). Both fail with the styles left out.
+
 2. **Style modules loaded some other way** (a `Weft.Lazy` around an `import()`, in a `weft()` app)
    bring no sheets: entrypoints' come with the rows using them, but nothing registers a module's own
    when the client runs it (§4's "client code's own sheets"). Small.

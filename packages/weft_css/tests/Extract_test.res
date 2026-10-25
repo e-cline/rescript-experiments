@@ -46,7 +46,7 @@ describe("recording", () => {
         id: "waaaaaa",
         css: `@layer weft.base, weft.components;
 @layer weft.base {
-  :root {
+  :where(:root) {
     --Theme-ink_waaaaaa: #1d1b19;
     --Theme-line_waaaaaa: #e6e0d8;
   }

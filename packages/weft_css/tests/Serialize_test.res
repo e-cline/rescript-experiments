@@ -68,6 +68,44 @@ describe("declarations", () => {
     ])
   })
 
+  test("writes logical properties, anchor positioning and the rest", t => {
+    t
+    ->expect(
+      Serialize.declarations({
+        insetInlineEnd: Zero,
+        anchorName: "--trigger",
+        positionAnchor: "--trigger",
+        positionArea: "bottom span-right",
+        positionTryFallbacks: "flip-block",
+        inlineSize: Pct(100.),
+        maxBlockSize: Vh(80.),
+        paddingInline: Px(12),
+        marginBlockStart: Rem(1.),
+        textOverflow: "ellipsis",
+        borderInlineStart: "2px solid",
+        accentColor: Hex("2563eb"),
+        appearance: "none",
+        translate: "0 4px",
+      }),
+    )
+    ->Expect.toEqual([
+      "inset-inline-end: 0",
+      "anchor-name: --trigger",
+      "position-anchor: --trigger",
+      "position-area: bottom span-right",
+      "position-try-fallbacks: flip-block",
+      "inline-size: 100%",
+      "max-block-size: 80vh",
+      "margin-block-start: 1rem",
+      "padding-inline: 12px",
+      "text-overflow: ellipsis",
+      "border-inline-start: 2px solid",
+      "accent-color: #2563eb",
+      "appearance: none",
+      "translate: 0 4px",
+    ])
+  })
+
   test("puts the block's own custom properties first", t => {
     let ink: Css.var = %raw(`"--Theme-ink_waaaaaa"`)
     t

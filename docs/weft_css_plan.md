@@ -188,18 +188,18 @@ A new ReScript package, `@e-cline/weft_css`, namespace `WeftCss`, depending on n
 `@rescript/runtime`. Its main module is `Css`, so code reads `Css.class(...)` after `open WeftCss`.
 The API follows rescript-css's, so its documentation mostly applies and code ports with few changes:
 
-| Call                                              | Gives          | CSS                                                         |
-| ------------------------------------------------- | -------------- | ----------------------------------------------------------- |
-| `Css.class(css)`                                  | a class name   | `.name { ... }` and its nested rules                        |
-| `Css.style(css)`                                  | a `Css.t`      | none by itself: a nested block, or a fragment to reuse      |
-| `Css.global(~selector, css)`                      | `unit`         | `selector { ... }`                                          |
-| `Css.var(initial)`                                | a `Css.var`    | `--name: initial` on `:root`, in the declaring file's sheet |
-| `Css.keyframes([Css.frame(~at, css), ...])`       | a name         | `@keyframes name { ... }`                                   |
-| `Css.fontFace({...})` (later)                     | a family name  | `@font-face { ... }`                                        |
-| `Css.media(~query, css)`, `supports`, `container` | a condition    | nested in the class's rule                                  |
-| `Css.layerOrder([...])`, `~layer=` on the above   |                | `@layer` (§5)                                               |
-| `Css.vars([(var, value)])`                        | a `style` dict | none: custom properties for `style=`, at run time           |
-| `Css.cx([a, b])`, `Css.cxOpt([Some(a), None])`    | a class list   | none                                                        |
+| Call                                              | Gives          | CSS                                                                                          |
+| ------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| `Css.class(css)`                                  | a class name   | `.name { ... }` and its nested rules                                                         |
+| `Css.style(css)`                                  | a `Css.t`      | none by itself: a nested block, or a fragment to reuse                                       |
+| `Css.global(~selector, css)`                      | `unit`         | `selector { ... }`                                                                           |
+| `Css.var(initial)`                                | a `Css.var`    | `--name: initial` on `:where(:root)` (`:root` before weft_ui), in the declaring file's sheet |
+| `Css.keyframes([Css.frame(~at, css), ...])`       | a name         | `@keyframes name { ... }`                                                                    |
+| `Css.fontFace({...})` (later)                     | a family name  | `@font-face { ... }`                                                                         |
+| `Css.media(~query, css)`, `supports`, `container` | a condition    | nested in the class's rule                                                                   |
+| `Css.layerOrder([...])`, `~layer=` on the above   |                | `@layer` (§5)                                                                                |
+| `Css.vars([(var, value)])`                        | a `style` dict | none: custom properties for `style=`, at run time                                            |
+| `Css.cx([a, b])`, `Css.cxOpt([Some(a), None])`    | a class list   | none                                                                                         |
 
 `css` is a record of optional fields, one per property, typed where it's worth it (`display`,
 lengths, colours, `Var(v)`) and with `Raw(string)` everywhere as the way out; nested selectors are

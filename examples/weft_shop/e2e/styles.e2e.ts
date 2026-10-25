@@ -1,8 +1,8 @@
 // The store's styles in a browser, against the build, with the latency gated and every stylesheet
 // slowed down: nothing is ever on screen without its CSS. A probe on every animation frame looks at
 // each element with a `weft_css` class (a name ending in a sheet id) and checks the sheet it's in
-// has been applied (its link's `sheet` is set), while the page streams in, block by block, and as
-// the shopper navigates, adds to the cart and changes a quantity.
+// has been applied (its link has fired `load`, or `error`), while the page streams in, block by
+// block, and as the shopper navigates, adds to the cart and changes a quantity.
 
 import {
   expect,
@@ -24,16 +24,36 @@ const hydrated = (page: Page, selector: string) =>
     return element !== null && '$$resFiberProps' in element;
   }, selector);
 
-/** Records, every frame, each element shown with a class whose sheet hasn't been applied. */
+/**
+ * Records, every frame, each element shown with a class whose sheet hasn't been applied, and counts
+ * the frames (a probe that never ran would see nothing). A link's sheet is applied once it fires
+ * `load` (or `error`): each is watched from when it's added, as its `sheet` can be set while it's
+ * still loading (in WebKit on Linux).
+ */
 function probe() {
   const seen: string[] = [];
-  (window as unknown as {__unstyled: string[]}).__unstyled = seen;
+  const state = window as unknown as {__unstyled: string[]; __frames: number};
+  state.__unstyled = seen;
+  state.__frames = 0;
+  const settled = new WeakSet<Element>();
+  const watch = (link: Element) => {
+    const done = () => settled.add(link);
+    link.addEventListener('load', done, {once: true});
+    link.addEventListener('error', done, {once: true});
+  };
+  new MutationObserver((records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        if (node.matches('link[rel="stylesheet"]')) watch(node);
+        node.querySelectorAll('link[rel="stylesheet"]').forEach(watch);
+      }
+    }
+  }).observe(document, {childList: true, subtree: true});
   const applied = (id: string) =>
-    [
-      ...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
-    ].some(
+    [...document.querySelectorAll('link[rel="stylesheet"]')].some(
       (link) =>
-        (link.getAttribute('href') ?? '').includes(id) && link.sheet !== null,
+        (link.getAttribute('href') ?? '').includes(id) && settled.has(link),
     );
   const check = () => {
     for (const element of document.querySelectorAll('[class]')) {
@@ -45,6 +65,7 @@ function probe() {
         }
       }
     }
+    state.__frames++;
     requestAnimationFrame(check);
   };
   requestAnimationFrame(check);
@@ -52,6 +73,10 @@ function probe() {
 
 const unstyled = (page: Page) =>
   page.evaluate(() => (window as unknown as {__unstyled: string[]}).__unstyled);
+
+/** How many frames the probe has checked. */
+const frames = (page: Page) =>
+  page.evaluate(() => (window as unknown as {__frames: number}).__frames);
 
 /** Every stylesheet the page asks for, `delay` ms late. */
 const slowStylesheets = (page: Page, delay = 500) =>
@@ -84,6 +109,7 @@ test('the probe sees a page shown before its CSS (a stylesheet a script adds, no
       .classList.add('Control-x_wzzzzzz');
   });
   await page.waitForTimeout(200);
+  expect(await frames(page)).toBeGreaterThan(5);
   expect((await unstyled(page)).length).toBeGreaterThan(0);
 });
 
@@ -135,6 +161,7 @@ test('nothing shows without its CSS: streaming, navigating, the cart and its tot
     subtotal!,
   );
   await page.waitForTimeout(300);
+  expect(await frames(page)).toBeGreaterThan(5);
   expect(await unstyled(page)).toEqual([]);
   // And it was styled: the sheets of what it rendered, each once.
   const hrefs = await page.evaluate(() =>

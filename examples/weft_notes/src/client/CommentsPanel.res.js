@@ -48,13 +48,13 @@ let Styles = {
 function CommentsPanel(props) {
   let comments = Navigation$WeftServer.useRefetchable(`/notes/` + props.noteId + `/comments`, props.children);
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "comments-panel",
     className: panel,
+    "data-id": "comments-panel",
     children: [
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "reload-comments",
         className: reload,
         title: comments.isPending ? "pending" : "idle",
+        "data-id": "reload-comments",
         onClick: param => {
           comments.refetch(undefined);
         },

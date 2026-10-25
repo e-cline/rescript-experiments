@@ -53,34 +53,37 @@ let make = (
     needle == ""
       ? all
       : all->Array.filter(item => item.name->String.toLowerCase->String.includes(needle))
-  <div id="grid-wrap">
+  <div dataId="grid-wrap">
     <div className={Styles.tools}>
       <input
-        id="quick-filter"
+        dataId="quick-filter"
         type_="search"
         ariaLabel="Filter these results"
         placeholder="Filter these results"
         value=filter
         onInput={event => setFilter(_ => WeftDom.Dom.Event.targetValue(event))}
       />
-      <p id="result-count">
+      <p dataId="result-count">
         {WeftDom.Jsx.string(
           `Showing ${Int.toString(Array.length(shown))} of ${Int.toString(total)}`,
         )}
       </p>
     </div>
-    <ul id="grid" className={filter == deferred ? Styles.grid : Css.cx([Styles.grid, Theme.stale])}>
+    <ul
+      dataId="grid"
+      className={filter == deferred ? Styles.grid : Css.cx([Styles.grid, Theme.stale])}
+    >
       {shown
       ->Array.map(item => <li key=item.key> {item.card} </li>)
       ->WeftDom.Jsx.array}
     </ul>
     {shown == []
-      ? <p id="no-results"> {WeftDom.Jsx.string("Nothing matches.")} </p>
+      ? <p dataId="no-results"> {WeftDom.Jsx.string("Nothing matches.")} </p>
       : WeftDom.Jsx.null}
     {switch next {
     | Some(page) =>
       <button
-        id="load-more"
+        dataId="load-more"
         className=Styles.loadMore
         disabled=loading
         onClick={_ => {

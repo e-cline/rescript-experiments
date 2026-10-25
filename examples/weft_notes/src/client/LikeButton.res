@@ -19,7 +19,7 @@ let make = (~noteId: string, ~likes: int) => {
   let (justLiked, setJustLiked) = Weft.Hooks.useState(() => false)
   let like = WeftServer.Rpc.use(Api.like)
   <button
-    id="like"
+    dataId="like"
     className=Styles.like
     onClick={_ => {
       setJustLiked(_ => true)

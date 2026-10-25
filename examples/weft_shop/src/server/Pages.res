@@ -64,7 +64,7 @@ module PageBlocks = {
   @weft.component({kind: Server})
   let make = async (~page: string, ~request: request) => {
     await Latency.wait(`layout:${page}`, ~signal=request.signal)
-    <div id={`blocks-${page}`}>
+    <div dataId={`blocks-${page}`}>
       {Blocks.blockList(Cms.layout(page, viewerOf(request)), ~page, ~request)}
     </div>
   }
@@ -193,7 +193,7 @@ module SearchPage = {
   @weft.component({kind: Server})
   let make = (~request: request) =>
     <Shell request>
-      <h1 id="search-title"> {text(`Results for “${request.query}”`)} </h1>
+      <h1 dataId="search-title"> {text(`Results for “${request.query}”`)} </h1>
       <Weft.Suspense fallback={loading("results-loading", "Searching…")}>
         <SearchResults request />
       </Weft.Suspense>
@@ -213,11 +213,11 @@ module Offer = {
       let price = product.summary.price + variant.priceDelta
       <>
         <Price
-          id="offer-price"
+          dataId="offer-price"
           cents=price
           compareAt=?{product.summary.compareAt->Option.map(was => was + variant.priceDelta)}
         />
-        <p id="stock" className={stockClass(stock)}>
+        <p dataId="stock" className={stockClass(stock)}>
           {text(
             switch stock {
             | 0 => `${variant.label}: sold out`
@@ -228,7 +228,7 @@ module Offer = {
         </p>
         <AddToCart sku name=product.summary.name stock />
       </>
-    | None => <p id="stock"> {text("Not sold any more.")} </p>
+    | None => <p dataId="stock"> {text("Not sold any more.")} </p>
     }
   }
 }
@@ -258,7 +258,7 @@ module Questions = {
   let make = async (~id, ~request: request) => {
     await Latency.wait(`qa:${id}`, ~signal=request.signal)
     let name = Db.summary(id)->Option.mapOr("it", summary => summary.name)
-    <div id="questions">
+    <div dataId="questions">
       <h2> {text("Questions")} </h2>
       <dl>
         <dt> {text(`Is the ${name} true to size?`)} </dt>
@@ -298,19 +298,19 @@ module ProductPage = {
       <Breadcrumbs
         trail=[(Db.categoryName(summary.category), `/c/${summary.category}`)] current=summary.name
       />
-      <div className={Styles.product} id={`product-${summary.id}`}>
+      <div className={Styles.product} dataId={`product-${summary.id}`}>
         <Gallery name=summary.name hue=summary.hue />
         <div>
-          <h1 id="product-name"> {text(summary.name)} </h1>
+          <h1 dataId="product-name"> {text(summary.name)} </h1>
           <WishlistButton productId=summary.id saved={wishlist(request)->Set.has(summary.id)} />
-          <p id="rating"> {text(`★ ${Float.toFixed(summary.rating, ~digits=1)}`)} </p>
+          <p dataId="rating"> {text(`★ ${Float.toFixed(summary.rating, ~digits=1)}`)} </p>
           <ProductOffer slug=summary.slug variants=product.variants selected=firstSku.sku>
             <OfferPart sku=firstSku.sku request />
           </ProductOffer>
-          <p id="description"> {text(product.description)} </p>
+          <p dataId="description"> {text(product.description)} </p>
         </div>
       </div>
-      <section id="reviews-section">
+      <section dataId="reviews-section">
         <h2> {text("Reviews")} </h2>
         <ReviewList
           reviews={Latency.after(`reviews:${summary.id}`, ~signal=request.signal, () =>
@@ -337,25 +337,25 @@ module CartSummary = {
     await Latency.wait("block:summary", ~signal=request.signal)
     let cart = Session.cart(request.session)
     let total = cart.subtotal - cart.discount
-    <dl id="summary" className=Styles.summary>
+    <dl dataId="summary" className=Styles.summary>
       <dt> {text("Subtotal")} </dt>
       <dd>
-        <Price id="summary-subtotal" cents=cart.subtotal />
+        <Price dataId="summary-subtotal" cents=cart.subtotal />
       </dd>
       {cart.discount > 0
         ? <>
             <dt> {text(`Discount (${cart.promo->Option.getOr("")})`)} </dt>
             <dd>
-              <Price id="summary-discount" cents={-cart.discount} />
+              <Price dataId="summary-discount" cents={-cart.discount} />
             </dd>
           </>
         : WeftDom.Jsx.null}
       <dt> {text("Total")} </dt>
       <dd>
-        <Price id="summary-total" cents=total />
+        <Price dataId="summary-total" cents=total />
       </dd>
       <dt> {text("Points")} </dt>
-      <dd id="summary-points"> {text(Int.toString(total / 100))} </dd>
+      <dd dataId="summary-points"> {text(Int.toString(total / 100))} </dd>
     </dl>
   }
 }
@@ -372,7 +372,7 @@ module CartPage = {
   @weft.component({kind: Server})
   let make = (~request: request) =>
     <Shell request>
-      <h1 id="cart-title"> {text("Your cart")} </h1>
+      <h1 dataId="cart-title"> {text("Your cart")} </h1>
       <div className={Styles.cart}>
         <CartLines />
         <aside>
@@ -380,7 +380,7 @@ module CartPage = {
             <CartSummaryPart request />
           </CartSummaryFrame>
           <PromoForm applied=request.session.promo />
-          <Link id="checkout-link" className={Theme.cta} href="/checkout">
+          <Link dataId="checkout-link" className={Theme.cta} href="/checkout">
             {text("Check out")}
           </Link>
         </aside>
@@ -393,7 +393,7 @@ module CheckoutPage = {
   let make = (~request: request) => {
     let cart = Session.cart(request.session)
     <Shell request>
-      <h1 id="checkout-title"> {text("Checkout")} </h1>
+      <h1 dataId="checkout-title"> {text("Checkout")} </h1>
       // An empty cart is redirected to the cart (`Server`), so there's something to check out.
       <CheckoutForm total={cart.subtotal - cart.discount} count=cart.count />
     </Shell>
@@ -404,7 +404,7 @@ module DeliveryEstimate = {
   @weft.component({kind: Server})
   let make = async (~order: order, ~request: request) => {
     await Latency.wait(`estimate:${order.id}`, ~signal=request.signal)
-    <p id="estimate">
+    <p dataId="estimate">
       {text(
         switch order.status {
         | Delivered => "Delivered."
@@ -423,10 +423,10 @@ module OrderPage = {
   @weft.component({kind: Server})
   let make = (~order: order, ~request: request) =>
     <Shell request>
-      <h1 id="order-title"> {text(`Order ${order.id}`)} </h1>
-      <p id="order-status"> {text(`Status: ${statusLabel(order.status)}`)} </p>
+      <h1 dataId="order-title"> {text(`Order ${order.id}`)} </h1>
+      <p dataId="order-status"> {text(`Status: ${statusLabel(order.status)}`)} </p>
       <OrderTracker status=order.status every=?pollEvery.contents />
-      <ul id="order-lines">
+      <ul dataId="order-lines">
         {order.lines
         ->Array.map(line =>
           <li key=line.sku>
@@ -437,7 +437,7 @@ module OrderPage = {
       </ul>
       <p>
         {text("Total: ")}
-        <Price id="order-total" cents=order.total />
+        <Price dataId="order-total" cents=order.total />
       </p>
       <Weft.Suspense fallback={loading("estimate-loading", "Estimating delivery…")}>
         <DeliveryEstimate order request />
@@ -451,25 +451,25 @@ module AccountPage = {
     let user = Db.user(name)
     let saved = user.wishlist->Set.values->Iterator.toArray->Array.filterMap(Db.summary)
     <Shell request>
-      <h1 id="account-title"> {text(`${name}'s account`)} </h1>
-      <section id="orders">
+      <h1 dataId="account-title"> {text(`${name}'s account`)} </h1>
+      <section dataId="orders">
         <h2> {text("Orders")} </h2>
         {user.orders == []
-          ? <p id="no-orders"> {text("No orders yet.")} </p>
+          ? <p dataId="no-orders"> {text("No orders yet.")} </p>
           : <ul>
               {user.orders
               ->Array.map(id =>
                 <li key=id>
-                  <Link id={`order-link-${id}`} href={`/orders/${id}`}> {text(id)} </Link>
+                  <Link dataId={`order-link-${id}`} href={`/orders/${id}`}> {text(id)} </Link>
                 </li>
               )
               ->WeftDom.Jsx.array}
             </ul>}
       </section>
-      <section id="wishlist">
+      <section dataId="wishlist">
         <h2> {text("Saved for later")} </h2>
         {saved == []
-          ? <p id="no-saved"> {text("Nothing saved yet.")} </p>
+          ? <p dataId="no-saved"> {text("Nothing saved yet.")} </p>
           : <div> {cards(saved, request)} </div>}
       </section>
     </Shell>
@@ -480,7 +480,7 @@ module SignInPage = {
   @weft.component({kind: Server})
   let make = (~next: string, ~request: request) =>
     <Shell request>
-      <h1 id="signin-title"> {text("Sign in")} </h1>
+      <h1 dataId="signin-title"> {text("Sign in")} </h1>
       <SignInForm next />
     </Shell>
 }
@@ -489,7 +489,7 @@ module NotFound = {
   @weft.component({kind: Server})
   let make = (~request: request) =>
     <Shell request>
-      <h1 id="not-found"> {text("Not found")} </h1>
+      <h1 dataId="not-found"> {text("Not found")} </h1>
       <Link href="/"> {text("Back to the store")} </Link>
     </Shell>
 }

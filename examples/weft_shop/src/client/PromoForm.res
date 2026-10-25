@@ -7,7 +7,7 @@ let make = (~applied: option<string>) => {
   let apply = WeftServer.Rpc.use(Api.applyPromo)
   let inputId = Weft.Hooks.useId()
   <form
-    id="promo"
+    dataId="promo"
     onSubmit={event => {
       WeftDom.Dom.Event.preventDefault(event)
 
@@ -30,9 +30,9 @@ let make = (~applied: option<string>) => {
       placeholder={applied->Option.getOr("")}
       onInput={event => setCode(_ => WeftDom.Dom.Event.targetValue(event))}
     />
-    <button id="apply-promo" type_="submit"> {WeftDom.Jsx.string("Apply")} </button>
+    <button dataId="apply-promo" type_="submit"> {WeftDom.Jsx.string("Apply")} </button>
     {switch message {
-    | Some(text) => <p id="promo-message" role="status"> {WeftDom.Jsx.string(text)} </p>
+    | Some(text) => <p dataId="promo-message" role="status"> {WeftDom.Jsx.string(text)} </p>
     | None => WeftDom.Jsx.null
     }}
   </form>

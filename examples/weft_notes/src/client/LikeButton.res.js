@@ -46,8 +46,8 @@ function LikeButton(props) {
   let setJustLiked = match[1];
   let like$1 = Rpc$WeftServer.use(Api$WeftNotes.like, undefined);
   return Jsx$WeftDom.Elements.jsx("button", {
-    id: "like",
     className: like,
+    "data-id": "like",
     onClick: param => {
       setJustLiked(param => true);
       like$1(noteId);

@@ -298,7 +298,7 @@ function CheckoutForm(props) {
   switch (match$2) {
     case "Address" :
       tmp = Jsx$WeftDom.Elements.jsxs("fieldset", {
-        id: "address-step",
+        "data-id": "address-step",
         children: [
           Jsx$WeftDom.Elements.jsx("legend", {
             children: "Where to?"
@@ -352,7 +352,7 @@ function CheckoutForm(props) {
       break;
     case "Delivery" :
       tmp = Jsx$WeftDom.Elements.jsxs("fieldset", {
-        id: "delivery-step",
+        "data-id": "delivery-step",
         children: [
           Jsx$WeftDom.Elements.jsx("legend", {
             children: "How fast?"
@@ -373,7 +373,7 @@ function CheckoutForm(props) {
               className: Theme$WeftShop.choice,
               children: [
                 Jsx$WeftDom.Elements.jsx("input", {
-                  id: `delivery-` + value,
+                  "data-id": `delivery-` + value,
                   type: "radio",
                   name: "delivery",
                   value: value,
@@ -411,18 +411,18 @@ function CheckoutForm(props) {
       break;
     case "Review" :
       tmp = Jsx$WeftDom.Elements.jsxs("div", {
-        id: "review-step",
+        "data-id": "review-step",
         children: [
           Jsx$WeftDom.Elements.jsx("p", {
-            id: "review-address",
+            "data-id": "review-address",
             children: details.name + `, ` + details.street + `, ` + details.city + ` ` + details.postcode
           }),
           Jsx$WeftDom.Elements.jsx("p", {
-            id: "review-items",
+            "data-id": "review-items",
             children: props.count.toString() + ` items`
           }),
           Jsx$WeftDom.Elements.jsx("p", {
-            id: "review-total",
+            "data-id": "review-total",
             children: `Total: ` + Money$WeftShop.format(props.total + Types$WeftShop.deliveryCost(details.delivery) | 0, currency)
           })
         ]
@@ -442,11 +442,11 @@ function CheckoutForm(props) {
       break;
   }
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "checkout",
+    "data-id": "checkout",
     children: [
       Jsx$WeftDom.Elements.jsx("ol", {
-        id: "checkout-steps",
         className: steps,
+        "data-id": "checkout-steps",
         children: [
           [
             "Address",
@@ -469,7 +469,7 @@ function CheckoutForm(props) {
         })
       }),
       Jsx$WeftDom.Elements.jsxs("form", {
-        id: "checkout-form",
+        "data-id": "checkout-form",
         onSubmit: event => {
           event.preventDefault();
           if (state.step === "Review") {
@@ -481,20 +481,20 @@ function CheckoutForm(props) {
         children: [
           tmp,
           message !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-              id: "checkout-error",
               role: "alert",
+              "data-id": "checkout-error",
               children: message
             }) : Jsx$WeftDom.$$null,
           Jsx$WeftDom.Elements.jsxs("div", {
             children: [
               state.step === "Address" ? Jsx$WeftDom.$$null : Jsx$WeftDom.Elements.jsx("button", {
-                  id: "checkout-back",
+                  "data-id": "checkout-back",
                   type: "button",
                   onClick: param => dispatch("Back"),
                   children: "Back"
                 }),
               Jsx$WeftDom.Elements.jsx("button", {
-                id: "checkout-next",
+                "data-id": "checkout-next",
                 type: "submit",
                 disabled: state.placing,
                 children: tmp$1

@@ -31,17 +31,17 @@ function AccountMenu(props) {
   let navigation = Navigation$WeftServer.useNavigation();
   let signOut = Rpc$WeftServer.use(Api$WeftShop.signOut, undefined);
   return Jsx$WeftDom.Elements.jsx("div", {
-    id: "account-menu",
     className: menu,
+    "data-id": "account-menu",
     children: user !== undefined ? Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
         children: [
           Jsx$WeftDom.jsx(Link$WeftShop.make, {
             href: "/account",
-            id: "account-link",
+            dataId: "account-link",
             children: `Hi, ` + user
           }),
           Jsx$WeftDom.Elements.jsx("button", {
-            id: "sign-out",
+            "data-id": "sign-out",
             onClick: param => {
               (async () => {
                 let error = await signOut();
@@ -56,7 +56,7 @@ function AccountMenu(props) {
           })
         ]
       }) : Jsx$WeftDom.Elements.jsx("button", {
-        id: "sign-in",
+        "data-id": "sign-in",
         onClick: param => Store$WeftShop.openSignIn(),
         children: "Sign in"
       })

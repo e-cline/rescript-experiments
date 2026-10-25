@@ -124,7 +124,7 @@ module Body = {
       await Latency.wait(`block:${block.id}`, ~signal)
       <div
         className={Css.cx([Styles.hero, tone == "cool" ? Styles.heroCool : ""])}
-        id={`hero-${block.id}`}
+        dataId={`hero-${block.id}`}
       >
         <h1> {text(title)} </h1>
         <p> {text(subtitle)} </p>
@@ -146,7 +146,7 @@ module Body = {
           {Db.categories
           ->Array.map(((slug, name)) =>
             <li key=slug>
-              <Link id={`tile-${slug}`} href={`/c/${slug}`}>
+              <Link dataId={`tile-${slug}`} href={`/c/${slug}`}>
                 {text(`${name} (${Int.toString(Array.length(Db.inCategory(slug)))})`)}
               </Link>
             </li>
@@ -157,7 +157,7 @@ module Body = {
     | Promo({code, text: offer, endsInMinutes}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
       let now = Date.now()
-      <div className={Styles.promo} id={`promo-${block.id}`}>
+      <div className={Styles.promo} dataId={`promo-${block.id}`}>
         <p>
           {text(`${offer} with code `)}
           <b> {text(code)} </b>
@@ -170,15 +170,15 @@ module Body = {
       await Latency.wait(`block:${block.id}`, ~signal)
       <div className={Styles.liveDeals}>
         <h2> {text(title)} </h2>
-        <ul id="live-list">
+        <ul dataId="live-list">
           {Db.deals()
           ->Array.slice(~start=0, ~end=4)
           ->Array.map(summary =>
-            <li key=summary.id id={`live-${summary.id}`}>
+            <li key=summary.id dataId={`live-${summary.id}`}>
               <Link href={`/p/${summary.slug}`}> {text(summary.name)} </Link>
               {text(" ")}
               <Price cents=summary.price compareAt=?summary.compareAt />
-              <span id={`left-${summary.id}`}>
+              <span dataId={`left-${summary.id}`}>
                 {text(` ${Int.toString(Db.productStock(summary.id))} left`)}
               </span>
             </li>
@@ -188,7 +188,7 @@ module Body = {
       </div>
     | Newsletter => <Newsletter />
     | Text({title, body}) =>
-      <div id={`text-${block.id}`}>
+      <div dataId={`text-${block.id}`}>
         <h2> {text(title)} </h2>
         {body == "" ? WeftDom.Jsx.null : <p> {text(body)} </p>}
       </div>
@@ -199,7 +199,7 @@ module Body = {
 }
 
 let skeleton = (block: Cms.block) =>
-  <div className={Theme.placeholder} id={`loading-${block.id}`} ariaBusy="true">
+  <div className={Theme.placeholder} dataId={`loading-${block.id}`} ariaBusy="true">
     {text(
       switch block.kind {
       | Rail({title}) | LiveDeals({title}) => `Loading ${title->String.toLowerCase}…`
@@ -232,7 +232,7 @@ let rec framed = (block: Cms.block, ~key=block.id, ~page: string, ~request: requ
       panels={tabs->Array.map(((_, blocks)) => blockList(blocks, ~page, ~request))}
     />
   | Columns({columns}) =>
-    <div key className={Styles.columns} id={`columns-${block.id}`}>
+    <div key className={Styles.columns} dataId={`columns-${block.id}`}>
       {columns
       ->Array.mapWithIndex((blocks, index) =>
         <div key={Int.toString(index)}> {blockList(blocks, ~page, ~request)} </div>

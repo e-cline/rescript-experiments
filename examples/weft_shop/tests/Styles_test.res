@@ -28,7 +28,7 @@ describe("the store's styles", () => {
     async t => {
       await app()->releaseAll
       let page = app()->open_("/")
-      await page->WeftTesting.waitFor(() => has(page, "#blocks-home"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=blocks-home]"))
       await hydratedAsServed(page)
       let head = headSheets(await page->WeftTesting.shell)
       // The shell's: the theme, the frame around every page (`Ui`, server-only), the blocks.
@@ -41,7 +41,7 @@ describe("the store's styles", () => {
       // Navigating to the cart brings its sheets, loaded by the client.
       await addToCart(app(), "p1-9", 1)
       await page->WeftTesting.navigate("/cart")
-      await page->WeftTesting.waitFor(() => has(page, "#cart-lines"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=cart-lines]"))
       t->expect(page->WeftTesting.stylesheets->hasSheet("client/CartLines"))->Expect.toBe(true)
       t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
     },
@@ -49,7 +49,7 @@ describe("the store's styles", () => {
 
   testAsync("show nothing unstyled while the page streams in, block by block", async t => {
     let page = app()->open_("/")
-    await page->WeftTesting.waitFor(() => has(page, "#home-loading"))
+    await page->WeftTesting.waitFor(() => has(page, "[data-id=home-loading]"))
     t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
     // Each part answers in turn (the layout, a rail, a card's stock, the hero, a tab's rail); the
     // page is styled at every step.
@@ -67,18 +67,18 @@ describe("the store's styles", () => {
   testAsync("keep the old page on screen until the new one's sheets have loaded", async t => {
     await app()->releaseAll
     let page = app()->open_("/")
-    await page->WeftTesting.waitFor(() => has(page, "#blocks-home"))
+    await page->WeftTesting.waitFor(() => has(page, "[data-id=blocks-home]"))
     await hydratedAsServed(page)
     page->WeftTesting.holdStylesheets(~matching=sheetOf("client/CartLines"))
     let navigated = page->WeftTesting.navigate("/cart")
     await page->WeftTesting.settle
     // The cart's page is in, but for its lines' sheet: the home page stays.
-    t->expect(has(page, "#blocks-home"))->Expect.toBe(true)
-    t->expect(has(page, "#cart-title"))->Expect.toBe(false)
+    t->expect(has(page, "[data-id=blocks-home]"))->Expect.toBe(true)
+    t->expect(has(page, "[data-id=cart-title]"))->Expect.toBe(false)
     t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
     page->WeftTesting.releaseStylesheets
     await navigated
-    await page->WeftTesting.waitFor(() => has(page, "#cart-title"))
+    await page->WeftTesting.waitFor(() => has(page, "[data-id=cart-title]"))
     t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
   })
 })

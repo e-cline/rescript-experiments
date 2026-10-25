@@ -33,7 +33,7 @@ let make = () => {
   if isOpen {
     WeftDom.Portal.create(
       <div
-        id="signin-overlay"
+        dataId="signin-overlay"
         className=Styles.overlay
         onClick={event =>
           if WeftDom.Dom.Event.target(event) == WeftDom.Dom.Event.currentTarget(event) {
@@ -47,7 +47,7 @@ let make = () => {
           }}
       >
         <div
-          id="signin-dialog"
+          dataId="signin-dialog"
           className=Styles.dialog
           role="dialog"
           ariaModal="true"
@@ -62,7 +62,7 @@ let make = () => {
               navigation->WeftServer.Navigation.refresh->ignore
             }}
           />
-          <button id="signin-close" onClick={_ => Store.closeSignIn()}>
+          <button dataId="signin-close" onClick={_ => Store.closeSignIn()}>
             {WeftDom.Jsx.string("Close")}
           </button>
         </div>

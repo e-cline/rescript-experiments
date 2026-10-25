@@ -11,7 +11,7 @@ function SignInForm(props) {
   let next = props.next;
   let navigation = Navigation$WeftServer.useNavigation();
   return Jsx$WeftDom.Elements.jsx("div", {
-    id: "signin-page",
+    "data-id": "signin-page",
     children: Jsx$WeftDom.jsx(SignInFields$WeftShop.make, {
       onSignedIn: name => {
         Store$WeftShop.toast(`Signed in as ` + name);

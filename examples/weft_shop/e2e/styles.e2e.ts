@@ -72,14 +72,16 @@ test('the probe sees a page shown before its CSS (a stylesheet a script adds, no
   await page.addInitScript(probe);
   await slowStylesheets(page);
   await page.goto('/');
-  await expect(page.locator('#blocks-home')).toBeVisible();
+  await expect(page.locator('[data-id=blocks-home]')).toBeVisible();
   // A class whose sheet is added without waiting for it: what Weft never does.
   await page.evaluate(() => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = '/assets/wzzzzzz-control.css';
     document.head.append(link);
-    document.querySelector('#main')!.classList.add('Control-x_wzzzzzz');
+    document
+      .querySelector('[data-id=main]')!
+      .classList.add('Control-x_wzzzzzz');
   });
   await page.waitForTimeout(200);
   expect((await unstyled(page)).length).toBeGreaterThan(0);
@@ -94,38 +96,44 @@ test('nothing shows without its CSS: streaming, navigating, the cart and its tot
   // The home page, streaming: the shell (its sheets in the head), then each block, whose sheets
   // come with it.
   await page.goto('/', {waitUntil: 'commit'});
-  await expect(page.locator('#home-loading')).toBeVisible();
+  await expect(page.locator('[data-id=home-loading]')).toBeVisible();
   await release(request, 'layout:home');
-  await expect(page.locator('#loading-featured')).toBeVisible();
+  await expect(page.locator('[data-id=loading-featured]')).toBeVisible();
   await release(request, 'rail:featured');
-  await expect(page.locator('#carousel-featured')).toBeVisible();
+  await expect(page.locator('[data-id=carousel-featured]')).toBeVisible();
   await release(request, 'block:hero');
-  await expect(page.locator('#hero-hero h1')).toBeVisible();
+  await expect(page.locator('[data-id=hero-hero] h1')).toBeVisible();
   await releaseAll(request);
-  await expect(page.locator('#newsletter')).toBeVisible();
-  await hydrated(page, '#nav-shoes');
+  await expect(page.locator('[data-id=newsletter]')).toBeVisible();
+  await hydrated(page, '[data-id=nav-shoes]');
   // A category (a navigation: its filters and grid bring theirs), then a product.
-  await page.locator('#nav-shoes').click();
-  await expect(page.locator('#grid')).toBeVisible();
-  await hydrated(page, '#grid article > a');
-  await page.locator('#grid article > a').first().click();
-  await expect(page.locator('#product-name')).toBeVisible();
-  await hydrated(page, '#add');
-  await page.locator('#add').click();
-  await expect(page.locator('#cart-button')).toHaveText('Cart (1)');
+  await page.locator('[data-id=nav-shoes]').click();
+  await expect(page.locator('[data-id=grid]')).toBeVisible();
+  await hydrated(page, '[data-id=grid] article > a');
+  await page.locator('[data-id=grid] article > a').first().click();
+  await expect(page.locator('[data-id=product-name]')).toBeVisible();
+  await hydrated(page, '[data-id=add]');
+  await page.locator('[data-id=add]').click();
+  await expect(page.locator('[data-id=cart-button]')).toHaveText('Cart (1)');
   // The drawer (a portal), then the cart's page, and a quantity changed (its totals refetched).
-  await page.locator('#cart-button').click();
-  await expect(page.locator('#cart-drawer')).toBeVisible();
-  await page.locator('#drawer-cart-link').click();
-  await expect(page.locator('#cart-lines')).toBeVisible();
-  const subtotal = await page.locator('#summary-subtotal').textContent();
-  const more = page.locator('#cart-lines button[id^="more-"]').first();
+  await page.locator('[data-id=cart-button]').click();
+  await expect(page.locator('[data-id=cart-drawer]')).toBeVisible();
+  await page.locator('[data-id=drawer-cart-link]').click();
+  await expect(page.locator('[data-id=cart-lines]')).toBeVisible();
+  const subtotal = await page
+    .locator('[data-id=summary-subtotal]')
+    .textContent();
+  const more = page
+    .locator('[data-id=cart-lines] button[data-id^="more-"]')
+    .first();
   // Enough of it in stock for one more.
-  const sku = (await more.getAttribute('id'))!.slice('more-'.length);
+  const sku = (await more.getAttribute('data-id'))!.slice('more-'.length);
   await control(request, 'stock', sku, '10');
-  await hydrated(page, `#more-${sku}`);
+  await hydrated(page, `[data-id=more-${sku}]`);
   await more.click();
-  await expect(page.locator('#summary-subtotal')).not.toHaveText(subtotal!);
+  await expect(page.locator('[data-id=summary-subtotal]')).not.toHaveText(
+    subtotal!,
+  );
   await page.waitForTimeout(300);
   expect(await unstyled(page)).toEqual([]);
   // And it was styled: the sheets of what it rendered, each once.

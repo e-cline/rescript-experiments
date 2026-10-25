@@ -24,7 +24,9 @@ let make = (~children: Weft.Element.t) => {
     }
     None
   }, [cart.version])
-  <div id="summary-frame" className=Styles.frame ariaBusy={summary.isPending ? "true" : "false"}>
+  <div
+    dataId="summary-frame" className=Styles.frame ariaBusy={summary.isPending ? "true" : "false"}
+  >
     {summary.element}
   </div>
 }

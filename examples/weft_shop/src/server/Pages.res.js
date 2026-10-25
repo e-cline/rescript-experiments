@@ -159,7 +159,7 @@ function Pages$PageBlocks(props) {
   return Lazy$Weft.fromPromise((async () => {
     await Latency$WeftShop.wait(`layout:` + page, request.signal);
     return Jsx$WeftDom.Elements.jsx("div", {
-      id: `blocks-` + page,
+      "data-id": `blocks-` + page,
       children: Blocks$WeftShop.blockList(Cms$WeftShop.layout(page, viewerOf(request)), page, request)
     });
   })());
@@ -369,7 +369,7 @@ function Pages$SearchPage(props) {
     request: request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "search-title",
+        "data-id": "search-title",
         children: Ui$WeftShop.text(`Results for “` + request.query + `”`)
       }),
       Jsx$WeftDom.jsx(Suspense$Weft.make, {
@@ -394,7 +394,7 @@ function Pages$Offer(props) {
     let match = Db$WeftShop.findSku(sku);
     if (match === undefined) {
       return Jsx$WeftDom.Elements.jsx("p", {
-        id: "stock",
+        "data-id": "stock",
         children: Ui$WeftShop.text("Not sold any more.")
       });
     }
@@ -407,11 +407,11 @@ function Pages$Offer(props) {
         Jsx$WeftDom.jsx(Price$WeftShop.make, {
           cents: price,
           compareAt: Stdlib_Option.map(product.summary.compareAt, was => was + variant.priceDelta | 0),
-          id: "offer-price"
+          dataId: "offer-price"
         }),
         Jsx$WeftDom.Elements.jsx("p", {
-          id: "stock",
           className: Ui$WeftShop.stockClass(stock),
+          "data-id": "stock",
           children: Ui$WeftShop.text(stock !== 0 ? (
               stock !== 1 ? variant.label + `: ` + stock.toString() + ` in stock` : variant.label + `: only 1 left`
             ) : variant.label + `: sold out`)
@@ -470,7 +470,7 @@ function Pages$Questions(props) {
     await Latency$WeftShop.wait(`qa:` + id, request.signal);
     let name = Stdlib_Option.mapOr(Db$WeftShop.summary(id), "it", summary => summary.name);
     return Jsx$WeftDom.Elements.jsxs("div", {
-      id: "questions",
+      "data-id": "questions",
       children: [
         Jsx$WeftDom.Elements.jsx("h2", {
           children: Ui$WeftShop.text("Questions")
@@ -542,8 +542,8 @@ function Pages$ProductPage(props) {
         current: summary.name
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
-        id: `product-` + summary.id,
         className: product,
+        "data-id": `product-` + summary.id,
         children: [
           Jsx$WeftDom.jsx(Gallery$WeftShop.make, {
             name: summary.name,
@@ -552,7 +552,7 @@ function Pages$ProductPage(props) {
           Jsx$WeftDom.Elements.jsxs("div", {
             children: [
               Jsx$WeftDom.Elements.jsx("h1", {
-                id: "product-name",
+                "data-id": "product-name",
                 children: Ui$WeftShop.text(summary.name)
               }),
               Jsx$WeftDom.jsx(WishlistButton$WeftShop.make, {
@@ -560,7 +560,7 @@ function Pages$ProductPage(props) {
                 saved: Ui$WeftShop.wishlist(request).has(summary.id)
               }),
               Jsx$WeftDom.Elements.jsx("p", {
-                id: "rating",
+                "data-id": "rating",
                 children: Ui$WeftShop.text(`★ ` + summary.rating.toFixed(1))
               }),
               Jsx$WeftDom.jsx(ProductOffer$WeftShop.make, {
@@ -573,7 +573,7 @@ function Pages$ProductPage(props) {
                 })
               }),
               Jsx$WeftDom.Elements.jsx("p", {
-                id: "description",
+                "data-id": "description",
                 children: Ui$WeftShop.text(product$1.description)
               })
             ]
@@ -581,7 +581,7 @@ function Pages$ProductPage(props) {
         ]
       }),
       Jsx$WeftDom.Elements.jsxs("section", {
-        id: "reviews-section",
+        "data-id": "reviews-section",
         children: [
           Jsx$WeftDom.Elements.jsx("h2", {
             children: Ui$WeftShop.text("Reviews")
@@ -624,8 +624,8 @@ function Pages$CartSummary(props) {
     let cart = Session$WeftShop.cart(request.session);
     let total = cart.subtotal - cart.discount | 0;
     return Jsx$WeftDom.Elements.jsxs("dl", {
-      id: "summary",
       className: summary,
+      "data-id": "summary",
       children: [
         Jsx$WeftDom.Elements.jsx("dt", {
           children: Ui$WeftShop.text("Subtotal")
@@ -633,7 +633,7 @@ function Pages$CartSummary(props) {
         Jsx$WeftDom.Elements.jsx("dd", {
           children: Jsx$WeftDom.jsx(Price$WeftShop.make, {
             cents: cart.subtotal,
-            id: "summary-subtotal"
+            dataId: "summary-subtotal"
           })
         }),
         cart.discount > 0 ? Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
@@ -644,7 +644,7 @@ function Pages$CartSummary(props) {
               Jsx$WeftDom.Elements.jsx("dd", {
                 children: Jsx$WeftDom.jsx(Price$WeftShop.make, {
                   cents: -cart.discount | 0,
-                  id: "summary-discount"
+                  dataId: "summary-discount"
                 })
               })
             ]
@@ -655,14 +655,14 @@ function Pages$CartSummary(props) {
         Jsx$WeftDom.Elements.jsx("dd", {
           children: Jsx$WeftDom.jsx(Price$WeftShop.make, {
             cents: total,
-            id: "summary-total"
+            dataId: "summary-total"
           })
         }),
         Jsx$WeftDom.Elements.jsx("dt", {
           children: Ui$WeftShop.text("Points")
         }),
         Jsx$WeftDom.Elements.jsx("dd", {
-          id: "summary-points",
+          "data-id": "summary-points",
           children: Ui$WeftShop.text((total / 100 | 0).toString())
         })
       ]
@@ -693,7 +693,7 @@ function Pages$CartPage(props) {
     request: request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "cart-title",
+        "data-id": "cart-title",
         children: Ui$WeftShop.text("Your cart")
       }),
       Jsx$WeftDom.Elements.jsxs("div", {
@@ -712,7 +712,7 @@ function Pages$CartPage(props) {
               }),
               Jsx$WeftDom.jsx(Link$WeftShop.make, {
                 href: "/checkout",
-                id: "checkout-link",
+                dataId: "checkout-link",
                 className: Theme$WeftShop.cta,
                 children: Ui$WeftShop.text("Check out")
               })
@@ -735,7 +735,7 @@ function Pages$CheckoutPage(props) {
     request: request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "checkout-title",
+        "data-id": "checkout-title",
         children: Ui$WeftShop.text("Checkout")
       }),
       Jsx$WeftDom.jsx(CheckoutForm$WeftShop.make, {
@@ -770,7 +770,7 @@ function Pages$DeliveryEstimate(props) {
         break;
     }
     return Jsx$WeftDom.Elements.jsx("p", {
-      id: "estimate",
+      "data-id": "estimate",
       children: Ui$WeftShop.text(tmp)
     });
   })());
@@ -791,11 +791,11 @@ function Pages$OrderPage(props) {
     request: request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "order-title",
+        "data-id": "order-title",
         children: Ui$WeftShop.text(`Order ` + order.id)
       }),
       Jsx$WeftDom.Elements.jsx("p", {
-        id: "order-status",
+        "data-id": "order-status",
         children: Ui$WeftShop.text(`Status: ` + Types$WeftShop.statusLabel(order.status))
       }),
       Jsx$WeftDom.jsx(OrderTracker$WeftShop.make, {
@@ -803,7 +803,7 @@ function Pages$OrderPage(props) {
         every: pollEvery.contents
       }),
       Jsx$WeftDom.Elements.jsx("ul", {
-        id: "order-lines",
+        "data-id": "order-lines",
         children: order.lines.map(line => Jsx$WeftDom.Elements.jsxKeyed("li", {
           children: Ui$WeftShop.text(line.name + ` (` + line.variant + `) × ` + line.quantity.toString())
         }, line.sku, undefined))
@@ -813,7 +813,7 @@ function Pages$OrderPage(props) {
           Ui$WeftShop.text("Total: "),
           Jsx$WeftDom.jsx(Price$WeftShop.make, {
             cents: order.total,
-            id: "order-total"
+            dataId: "order-total"
           })
         ]
       }),
@@ -841,23 +841,23 @@ function Pages$AccountPage(props) {
     request: request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "account-title",
+        "data-id": "account-title",
         children: Ui$WeftShop.text(name + `'s account`)
       }),
       Jsx$WeftDom.Elements.jsxs("section", {
-        id: "orders",
+        "data-id": "orders",
         children: [
           Jsx$WeftDom.Elements.jsx("h2", {
             children: Ui$WeftShop.text("Orders")
           }),
           Primitive_object.equal(user.orders, []) ? Jsx$WeftDom.Elements.jsx("p", {
-              id: "no-orders",
+              "data-id": "no-orders",
               children: Ui$WeftShop.text("No orders yet.")
             }) : Jsx$WeftDom.Elements.jsx("ul", {
               children: user.orders.map(id => Jsx$WeftDom.Elements.jsxKeyed("li", {
                 children: Jsx$WeftDom.jsx(Link$WeftShop.make, {
                   href: `/orders/` + id,
-                  id: `order-link-` + id,
+                  dataId: `order-link-` + id,
                   children: Ui$WeftShop.text(id)
                 })
               }, id, undefined))
@@ -865,13 +865,13 @@ function Pages$AccountPage(props) {
         ]
       }),
       Jsx$WeftDom.Elements.jsxs("section", {
-        id: "wishlist",
+        "data-id": "wishlist",
         children: [
           Jsx$WeftDom.Elements.jsx("h2", {
             children: Ui$WeftShop.text("Saved for later")
           }),
           Primitive_object.equal(saved, []) ? Jsx$WeftDom.Elements.jsx("p", {
-              id: "no-saved",
+              "data-id": "no-saved",
               children: Ui$WeftShop.text("Nothing saved yet.")
             }) : Jsx$WeftDom.Elements.jsx("div", {
               children: Ui$WeftShop.cards(saved, request)
@@ -891,7 +891,7 @@ function Pages$SignInPage(props) {
     request: props.request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "signin-title",
+        "data-id": "signin-title",
         children: Ui$WeftShop.text("Sign in")
       }),
       Jsx$WeftDom.jsx(SignInForm$WeftShop.make, {
@@ -910,7 +910,7 @@ function Pages$NotFound(props) {
     request: props.request,
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "not-found",
+        "data-id": "not-found",
         children: Ui$WeftShop.text("Not found")
       }),
       Jsx$WeftDom.jsx(Link$WeftShop.make, {

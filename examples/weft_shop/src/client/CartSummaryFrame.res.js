@@ -37,9 +37,9 @@ function CartSummaryFrame(props) {
     }
   }, [cart.version]);
   return Jsx$WeftDom.Elements.jsx("div", {
-    id: "summary-frame",
     className: frame,
     "aria-busy": summary.isPending ? "true" : "false",
+    "data-id": "summary-frame",
     children: summary.element
   });
 }

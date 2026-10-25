@@ -24,7 +24,7 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
   Vitest.testAsync("are sent by what each page renders: the home page's in its head, the cart's when it's opened", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#blocks-home"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     let head = headSheets(await WeftTesting.shell(page));
     t.expect(hasSheet(head, "shared/Theme")).toBe(true);
@@ -34,13 +34,13 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
     t.expect(WeftTesting.unstyled(page)).toEqual([]);
     await ShopSupport$WeftShop.addToCart(app(), "p1-9", 1);
     await WeftTesting.navigate(page, "/cart");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#cart-lines"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-lines]"));
     t.expect(hasSheet(WeftTesting.stylesheets(page), "client/CartLines")).toBe(true);
     return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
   Vitest.testAsync("show nothing unstyled while the page streams in, block by block", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#home-loading"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=home-loading]"));
     t.expect(WeftTesting.unstyled(page)).toEqual([]);
     let gates = [
       "layout:home",
@@ -61,17 +61,17 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
   Vitest.testAsync("keep the old page on screen until the new one's sheets have loaded", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#blocks-home"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     WeftTesting.holdStylesheets(page, sheetOf("client/CartLines"));
     let navigated = WeftTesting.navigate(page, "/cart");
     await WeftTesting.settle(page);
-    t.expect(ShopSupport$WeftShop.has(page, "#blocks-home")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#cart-title")).toBe(false);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=blocks-home]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=cart-title]")).toBe(false);
     t.expect(WeftTesting.unstyled(page)).toEqual([]);
     WeftTesting.releaseStylesheets(page);
     await navigated;
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#cart-title"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-title]"));
     return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
 });

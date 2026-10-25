@@ -11,7 +11,7 @@ let make = () => {
   <label>
     <span className={Theme.visuallyHidden}> {WeftDom.Jsx.string("Currency")} </span>
     <select
-      id="currency"
+      dataId="currency"
       value={Money.code(currency)}
       onChange={event =>
         switch Money.fromCode(WeftDom.Dom.Event.targetValue(event)) {

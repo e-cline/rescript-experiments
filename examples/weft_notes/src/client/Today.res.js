@@ -7,8 +7,8 @@ import * as Theme$WeftNotes from "../shared/Theme.res.js";
 
 function Today(props) {
   return Jsx$WeftDom.Elements.jsx("span", {
-    id: "today",
     className: Theme$WeftNotes.secondary,
+    "data-id": "today",
     children: new Date(Date.now()).toISOString().slice(0, 10)
   });
 }

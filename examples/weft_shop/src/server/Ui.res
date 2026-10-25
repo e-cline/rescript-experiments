@@ -68,7 +68,7 @@ module StockBadge = {
   let make = async (~id, ~signal) => {
     await Latency.wait(`stock:${id}`, ~signal)
     let stock = Db.productStock(id)
-    <span className={stockClass(stock)} id={`stock-${id}`}>
+    <span className={stockClass(stock)} dataId={`stock-${id}`}>
       {text(
         switch stock {
         | 0 => "Sold out"
@@ -83,7 +83,7 @@ module StockBadge = {
 module ProductCard = {
   @weft.component({kind: Server})
   let make = (~summary: summary, ~saved: bool, ~signal) =>
-    <article className={Styles.card} id={`card-${summary.id}`}>
+    <article className={Styles.card} dataId={`card-${summary.id}`}>
       <Link className={Styles.cardLink} href={`/p/${summary.slug}`}>
         <div className={Theme.picture} style={Theme.pictureVars(~hue=summary.hue)} />
         <h3 className={Styles.cardName}> {text(summary.name)} </h3>
@@ -95,7 +95,7 @@ module ProductCard = {
       <Weft.Suspense
         fallback={<span
           className={Css.cx([Styles.stock, Styles.stockLoading])}
-          id={`stock-loading-${summary.id}`}
+          dataId={`stock-loading-${summary.id}`}
           ariaBusy="true"
         >
           {text("Checking stock…")}
@@ -129,12 +129,12 @@ let gridItems = (summaries: array<summary>, request): array<gridItem> => {
 module Header = {
   @weft.component({kind: Server})
   let make = (~query) =>
-    <header id="header" className=Styles.header>
-      <Link id="logo" className=Styles.logo href="/"> {text("Loom & Co.")} </Link>
-      <nav id="nav" className=Styles.nav>
+    <header dataId="header" className=Styles.header>
+      <Link dataId="logo" className=Styles.logo href="/"> {text("Loom & Co.")} </Link>
+      <nav dataId="nav" className=Styles.nav>
         {Db.categories
         ->Array.map(((slug, name)) =>
-          <Link key=slug id={`nav-${slug}`} href={`/c/${slug}`}> {text(name)} </Link>
+          <Link key=slug dataId={`nav-${slug}`} href={`/c/${slug}`}> {text(name)} </Link>
         )
         ->WeftDom.Jsx.array}
       </nav>
@@ -152,10 +152,10 @@ module Shell = {
   let make = (~request: request, ~children) => {
     let session = request.session
     <ShopShell currency=session.currency user=session.user cart={Session.cart(session)}>
-      <div id="app" className=Styles.app>
+      <div dataId="app" className=Styles.app>
         <Header query=request.query />
-        <main id="main" className=Styles.main> children </main>
-        <footer id="footer" className=Styles.footer>
+        <main dataId="main" className=Styles.main> children </main>
+        <footer dataId="footer" className=Styles.footer>
           {text("Loom & Co. — a Weft example. Nothing here is for sale.")}
         </footer>
       </div>
@@ -164,4 +164,4 @@ module Shell = {
 }
 
 let loading = (id, message) =>
-  <p id className={Theme.placeholder} ariaBusy="true"> {text(message)} </p>
+  <p dataId=id className={Theme.placeholder} ariaBusy="true"> {text(message)} </p>

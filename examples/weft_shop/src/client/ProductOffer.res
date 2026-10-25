@@ -33,14 +33,14 @@ let make = (
     ~src=`/p/${slug}/offer?sku=${selected}`,
     children,
   )
-  <div id="product-offer">
+  <div dataId="product-offer">
     {Array.length(variants) > 1
-      ? <div id="variants" className=Styles.variants role="group" ariaLabel="Variant">
+      ? <div dataId="variants" className=Styles.variants role="group" ariaLabel="Variant">
           {variants
           ->Array.map(variant =>
             <button
               key=variant.sku
-              id={`variant-${variant.sku}`}
+              dataId={`variant-${variant.sku}`}
               className={Styles.variant}
               ariaPressed={variant.sku == sku ? "true" : "false"}
               onClick={_ => {
@@ -55,7 +55,7 @@ let make = (
         </div>
       : WeftDom.Jsx.null}
     <div
-      id="offer"
+      dataId="offer"
       ariaBusy={offer.isPending ? "true" : "false"}
       className={offer.isPending ? Theme.stale : ""}
     >

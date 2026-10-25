@@ -23,7 +23,7 @@ let make = (~id: string, ~endsAt: float, ~now as serverNow: float) => {
     let timer = setInterval(() => setNow(_ => Date.now()), 1000)
     Some(() => clearInterval(timer))
   })
-  <span className={Styles.countdown} id>
+  <span className={Styles.countdown} dataId=id>
     {WeftDom.Jsx.string(endsAt <= now ? "Ended" : `Ends in ${format(endsAt -. now)}`)}
   </span>
 }

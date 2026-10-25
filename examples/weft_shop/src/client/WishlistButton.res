@@ -26,7 +26,7 @@ let make = (~productId: string, ~saved as serverSaved: bool) => {
   let toggle = WeftServer.Rpc.use(Api.toggleWishlist)
   <button
     className={Styles.wishlist}
-    id={`wishlist-${productId}`}
+    dataId={`wishlist-${productId}`}
     ariaPressed={saved ? "true" : "false"}
     ariaLabel={saved ? "Remove from wishlist" : "Save to wishlist"}
     onClick={event => {

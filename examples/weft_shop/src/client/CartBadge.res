@@ -27,14 +27,14 @@ module Drawer = {
   let make = (~cart: cart, ~onClose: unit => unit) => {
     let {currency} = ShopContext.use()
     WeftDom.Portal.create(
-      <aside id="cart-drawer" className=Styles.drawer role="dialog" ariaLabel="Cart">
+      <aside dataId="cart-drawer" className=Styles.drawer role="dialog" ariaLabel="Cart">
         <h2> {WeftDom.Jsx.string("Your cart")} </h2>
         {cart.lines == []
-          ? <p id="drawer-empty"> {WeftDom.Jsx.string("Nothing here yet.")} </p>
-          : <ul id="drawer-lines">
+          ? <p dataId="drawer-empty"> {WeftDom.Jsx.string("Nothing here yet.")} </p>
+          : <ul dataId="drawer-lines">
               {cart.lines
               ->Array.map(line =>
-                <li key=line.sku id={`drawer-${line.sku}`}>
+                <li key=line.sku dataId={`drawer-${line.sku}`}>
                   {WeftDom.Jsx.string(
                     `${line.name} (${line.variant}) × ${Int.toString(
                         line.quantity,
@@ -44,14 +44,16 @@ module Drawer = {
               )
               ->WeftDom.Jsx.array}
             </ul>}
-        <p id="drawer-subtotal">
+        <p dataId="drawer-subtotal">
           {WeftDom.Jsx.string(`Subtotal: ${Money.format(cart.subtotal, currency)}`)}
         </p>
         // Closing as the link is followed: the drawer is the badge's, which stays on the next page.
         <div onClick={_ => onClose()}>
-          <Link id="drawer-cart-link" href="/cart"> {WeftDom.Jsx.string("View cart")} </Link>
+          <Link dataId="drawer-cart-link" href="/cart"> {WeftDom.Jsx.string("View cart")} </Link>
         </div>
-        <button id="drawer-close" onClick={_ => onClose()}> {WeftDom.Jsx.string("Close")} </button>
+        <button dataId="drawer-close" onClick={_ => onClose()}>
+          {WeftDom.Jsx.string("Close")}
+        </button>
       </aside>,
       ~container=WeftDom.Dom.document->WeftDom.Dom.body,
     )
@@ -62,9 +64,9 @@ module Drawer = {
 let make = () => {
   let {cart} = ShopContext.use()
   let (isOpen, setOpen) = Weft.Hooks.useState(() => false)
-  <div id="cart-badge">
+  <div dataId="cart-badge">
     <button
-      id="cart-button"
+      dataId="cart-button"
       ariaExpanded={isOpen ? "true" : "false"}
       onClick={_ => setOpen(open_ => !open_)}
     >

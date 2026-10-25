@@ -42,10 +42,10 @@ function WishlistButton(props) {
   }, [serverSaved]);
   let toggle = Rpc$WeftServer.use(Api$WeftShop.toggleWishlist, undefined);
   return Jsx$WeftDom.Elements.jsx("button", {
-    id: `wishlist-` + productId,
     className: wishlist,
     "aria-label": saved ? "Remove from wishlist" : "Save to wishlist",
     "aria-pressed": saved ? "true" : "false",
+    "data-id": `wishlist-` + productId,
     onClick: event => {
       event.preventDefault();
       if (user !== undefined) {

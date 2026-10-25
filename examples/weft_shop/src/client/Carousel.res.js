@@ -65,7 +65,7 @@ function Carousel(props) {
   let page = Math.min(match[0], pages - 1 | 0);
   let first = (page << 2);
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: `carousel-` + id,
+    "data-id": `carousel-` + id,
     children: [
       Jsx$WeftDom.Elements.jsxs("div", {
         className: head,
@@ -77,19 +77,19 @@ function Carousel(props) {
               className: controls,
               children: [
                 Jsx$WeftDom.Elements.jsx("button", {
-                  id: `prev-` + id,
                   "aria-label": "Previous",
+                  "data-id": `prev-` + id,
                   disabled: page === 0,
                   onClick: param => setPage(param => page - 1 | 0),
                   children: "‹"
                 }),
                 Jsx$WeftDom.Elements.jsx("span", {
-                  id: `position-` + id,
+                  "data-id": `position-` + id,
                   children: (first + 1 | 0).toString() + `–` + Math.min(count, first + 4 | 0).toString() + ` of ` + count.toString()
                 }),
                 Jsx$WeftDom.Elements.jsx("button", {
-                  id: `next-` + id,
                   "aria-label": "Next",
+                  "data-id": `next-` + id,
                   disabled: page === (pages - 1 | 0),
                   onClick: param => setPage(param => page + 1 | 0),
                   children: "›"

@@ -84,7 +84,7 @@ module Suggestions = {
           {suggestions
           ->Array.map(suggestion =>
             <li key=suggestion.slug role="option" onClick={_ => onPick()}>
-              <Link id={`suggestion-${suggestion.slug}`} href={`/p/${suggestion.slug}`}>
+              <Link dataId={`suggestion-${suggestion.slug}`} href={`/p/${suggestion.slug}`}>
                 {WeftDom.Jsx.string(suggestion.name)}
               </Link>
               <span className={Styles.category}> {WeftDom.Jsx.string(suggestion.category)} </span>
@@ -103,7 +103,7 @@ let make = (~initial: string) => {
   let navigation = WeftServer.Navigation.useNavigation()
   let listId = Weft.Hooks.useId()
   <form
-    id="search"
+    dataId="search"
     className=Styles.search
     role="search"
     onSubmit={event => {
@@ -115,7 +115,7 @@ let make = (~initial: string) => {
     }}
   >
     <input
-      id="search-input"
+      dataId="search-input"
       className=Styles.input
       type_="search"
       ariaLabel="Search"
@@ -131,7 +131,7 @@ let make = (~initial: string) => {
         setShowing(_ => true)
       }}
     />
-    <button id="search-submit" type_="submit"> {WeftDom.Jsx.string("Search")} </button>
+    <button dataId="search-submit" type_="submit"> {WeftDom.Jsx.string("Search")} </button>
     {showing
       ? <Suggestions query=deferred listId onPick={() => setShowing(_ => false)} />
       : WeftDom.Jsx.null}

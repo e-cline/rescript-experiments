@@ -169,7 +169,7 @@ function SearchBox$Suggestions(props) {
         children: [
           Jsx$WeftDom.jsx(Link$WeftShop.make, {
             href: `/p/` + suggestion.slug,
-            id: `suggestion-` + suggestion.slug,
+            dataId: `suggestion-` + suggestion.slug,
             children: suggestion.name
           }),
           Jsx$WeftDom.Elements.jsx("span", {
@@ -198,9 +198,9 @@ function SearchBox(props) {
   let navigation = Navigation$WeftServer.useNavigation();
   let listId = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("form", {
-    id: "search",
     className: search,
     role: "search",
+    "data-id": "search",
     onSubmit: event => {
       event.preventDefault();
       setShowing(param => false);
@@ -208,12 +208,12 @@ function SearchBox(props) {
     },
     children: [
       Jsx$WeftDom.Elements.jsx("input", {
-        id: "search-input",
         className: input,
         role: "combobox",
         "aria-label": "Search",
         "aria-expanded": showing ? "true" : "false",
         "aria-controls": listId,
+        "data-id": "search-input",
         type: "search",
         value: text,
         placeholder: "Search the store",
@@ -225,7 +225,7 @@ function SearchBox(props) {
         }
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "search-submit",
+        "data-id": "search-submit",
         type: "submit",
         children: "Search"
       }),

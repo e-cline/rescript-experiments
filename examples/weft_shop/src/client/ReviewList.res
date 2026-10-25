@@ -22,8 +22,8 @@ module Items = {
     let average =
       reviews->Array.reduce(0, (total, review) => total + review.stars)->Int.toFloat /.
         Int.toFloat(Math.Int.max(1, Array.length(reviews)))
-    <div id="reviews" className={isPending ? Theme.stale : ""}>
-      <p id="review-summary">
+    <div dataId="reviews" className={isPending ? Theme.stale : ""}>
+      <p dataId="review-summary">
         {WeftDom.Jsx.string(
           `${Float.toFixed(average, ~digits=1)} out of 5, from ${Int.toString(
               Array.length(reviews),
@@ -31,7 +31,7 @@ module Items = {
         )}
       </p>
       <select
-        id="review-order"
+        dataId="review-order"
         ariaLabel="Sort reviews"
         value=order
         onChange={event => {
@@ -43,10 +43,10 @@ module Items = {
         <option value="highest"> {WeftDom.Jsx.string("Highest rated")} </option>
         <option value="lowest"> {WeftDom.Jsx.string("Lowest rated")} </option>
       </select>
-      <ul id="review-list">
+      <ul dataId="review-list">
         {shown
         ->Array.map(review =>
-          <li key=review.id id={`review-${review.id}`}>
+          <li key=review.id dataId={`review-${review.id}`}>
             <b> {WeftDom.Jsx.string(`${"★"->String.repeat(review.stars)} ${review.author}`)} </b>
             {WeftDom.Jsx.string(": " ++ review.text)}
           </li>
@@ -54,7 +54,7 @@ module Items = {
         ->WeftDom.Jsx.array}
       </ul>
       {!all && Array.length(reviews) > 3
-        ? <button id="all-reviews" onClick={_ => setAll(_ => true)}>
+        ? <button dataId="all-reviews" onClick={_ => setAll(_ => true)}>
             {WeftDom.Jsx.string(`Show all ${Int.toString(Array.length(reviews))}`)}
           </button>
         : WeftDom.Jsx.null}
@@ -65,7 +65,7 @@ module Items = {
 @weft.component({kind: Entrypoint})
 let make = (~reviews: promise<array<review>>) =>
   <Weft.Suspense
-    fallback={<p id="reviews-loading"> {WeftDom.Jsx.string("Loading reviews…")} </p>}
+    fallback={<p dataId="reviews-loading"> {WeftDom.Jsx.string("Loading reviews…")} </p>}
   >
     <Items reviews />
   </Weft.Suspense>

@@ -104,10 +104,10 @@ let Toast = {
 function Toaster(props) {
   let toasts$1 = SignalHooks$WeftSignals.useSignal(Store$WeftShop.toasts);
   return Jsx$WeftDom.Elements.jsx("ul", {
-    id: "toasts",
     className: toasts,
     role: "status",
     "aria-live": "polite",
+    "data-id": "toasts",
     children: toasts$1.map(toast => Jsx$WeftDom.jsxKeyed(Toaster$Toast, {
       toast: toast
     }, toast.id.toString(), undefined))

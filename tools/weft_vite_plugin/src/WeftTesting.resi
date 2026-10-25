@@ -192,7 +192,10 @@ type snapshot
 
 let snapshot: page => snapshot
 
-/** The nodes in `snapshot` no longer under the container (`tag#id`, or quoted text). */
+/**
+The nodes in `snapshot` no longer under the container (`tag#id`, `tag[data-id=name]`, `tag`, or
+quoted text).
+*/
 let removedSince: (page, snapshot) => array<string>
 
 /**

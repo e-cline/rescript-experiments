@@ -11,9 +11,9 @@ module Styles = {
 }
 
 @weft.component({kind: Entrypoint})
-let make = (~cents: Types.cents, ~compareAt: option<Types.cents>=?, ~id: option<string>=?) => {
+let make = (~cents: Types.cents, ~compareAt: option<Types.cents>=?, ~dataId: option<string>=?) => {
   let {currency} = ShopContext.use()
-  <data ?id value={Int.toString(cents)}>
+  <data ?dataId value={Int.toString(cents)}>
     {switch compareAt {
     | Some(was) =>
       <>

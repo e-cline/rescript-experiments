@@ -10,7 +10,7 @@ import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigati
 let app = ShopSupport$WeftShop.useApp();
 
 let names = (() =>
-  [...document.querySelectorAll('#grid article h3')].map((node) => node.textContent));
+  [...document.querySelectorAll('[data-id=grid] article h3')].map((node) => node.textContent));
 
 async function openCatalog(urlOpt) {
   let url = urlOpt !== undefined ? urlOpt : "/c/shoes";
@@ -18,11 +18,11 @@ async function openCatalog(urlOpt) {
   let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, url);
   let search = url.startsWith("/search");
   await WeftTesting.waitFor(page, undefined, () => {
-    if (ShopSupport$WeftShop.has(page, "#grid")) {
+    if (ShopSupport$WeftShop.has(page, "[data-id=grid]")) {
       if (search) {
         return true;
       } else {
-        return ShopSupport$WeftShop.has(page, "#facets");
+        return ShopSupport$WeftShop.has(page, "[data-id=facets]");
       }
     } else {
       return false;
@@ -35,27 +35,27 @@ async function openCatalog(urlOpt) {
 Vitest.describe("a category page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("streams its blocks, its filters and its results, each by itself", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#results-loading"));
-    t.expect(ShopSupport$WeftShop.has(page, "#facets-loading")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#banner-loading")).toBe(true);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=results-loading]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=facets-loading]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=banner-loading]")).toBe(true);
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     await ShopSupport$WeftShop.release(app(), "results:shoes");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#grid"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=grid]"));
     t.expect(names()).toEqual([
       "Trail Runner",
       "City Sneaker",
       "Canvas Low",
       "Leather Boot"
     ]);
-    t.expect(ShopSupport$WeftShop.text(page, "#result-count")).toBe("Showing 4 of 8");
-    t.expect(ShopSupport$WeftShop.has(page, "#facets-loading")).toBe(true);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=result-count]")).toBe("Showing 4 of 8");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=facets-loading]")).toBe(true);
     await ShopSupport$WeftShop.release(app(), "facets:shoes");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#facets"));
-    t.expect(ShopSupport$WeftShop.text(page, "#facet-color legend")).toBe("Colour");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=facets]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=facet-color] legend")).toBe("Colour");
     await ShopSupport$WeftShop.releasePrefix(app(), "layout:");
     await ShopSupport$WeftShop.releasePrefix(app(), "block:");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#hero-shoes-hero"));
-    t.expect(ShopSupport$WeftShop.text(page, "#hero-shoes-hero h1")).toBe("Shoes");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=hero-shoes-hero]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=hero-shoes-hero] h1")).toBe("Shoes");
     return ShopSupport$WeftShop.noWarnings(page);
   });
   Vitest.testAsync("loads more: the next page's cards, rendered on the server and sent by the RPC, their stock still streaming", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -69,26 +69,26 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
     await ShopSupport$WeftShop.releasePrefix(app(), "stock:p4");
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#load-more")) {
-        return ShopSupport$WeftShop.has(page, "#stock-p4");
+      if (ShopSupport$WeftShop.has(page, "[data-id=load-more]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=stock-p4]");
       } else {
         return false;
       }
     });
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
-    WeftTesting.click(page, "#load-more");
-    t.expect(ShopSupport$WeftShop.text(page, "#load-more")).toBe("Loading…");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#card-p8"));
+    WeftTesting.click(page, "[data-id=load-more]");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=load-more]")).toBe("Loading…");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=card-p8]"));
     t.expect(names().length).toBe(8);
-    t.expect(ShopSupport$WeftShop.text(page, "#result-count")).toBe("Showing 8 of 8");
-    t.expect(ShopSupport$WeftShop.has(page, "#load-more")).toBe(false);
-    t.expect(ShopSupport$WeftShop.text(page, "#stock-loading-p5")).toBe("Checking stock…");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=result-count]")).toBe("Showing 8 of 8");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=load-more]")).toBe(false);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock-loading-p5]")).toBe("Checking stock…");
     await ShopSupport$WeftShop.release(app(), "stock:p7");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#stock-p7"));
-    t.expect(ShopSupport$WeftShop.text(page, "#stock-p7")).toBe("In stock");
-    t.expect(ShopSupport$WeftShop.has(page, "#stock-loading-p5")).toBe(true);
-    await ShopSupport$WeftShop.change(page, "#currency", "GBP");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#card-p7 data") === "£94.01");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=stock-p7]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock-p7]")).toBe("In stock");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=stock-loading-p5]")).toBe(true);
+    await ShopSupport$WeftShop.change(page, "[data-id=currency]", "GBP");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=card-p7] data") === "£94.01");
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/c/shoes",
       "/_weft/rpc/catalog.more",
@@ -98,31 +98,31 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
   });
   Vitest.testAsync("filters the cards already here as you type, without fetching", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
-    let card = WeftTesting.query(page, "#card-p1");
-    WeftTesting.input(page, "#quick-filter", "er");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#result-count") === "Showing 3 of 8");
+    let card = WeftTesting.query(page, "[data-id=card-p1]");
+    WeftTesting.input(page, "[data-id=quick-filter]", "er");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=result-count]") === "Showing 3 of 8");
     t.expect(names()).toEqual([
       "Trail Runner",
       "City Sneaker",
       "Leather Boot"
     ]);
-    t.expect(Primitive_object.equal(WeftTesting.query(page, "#card-p1"), card)).toBe(true);
-    WeftTesting.input(page, "#quick-filter", "zzz");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#no-results"));
-    WeftTesting.input(page, "#quick-filter", "");
+    t.expect(Primitive_object.equal(WeftTesting.query(page, "[data-id=card-p1]"), card)).toBe(true);
+    WeftTesting.input(page, "[data-id=quick-filter]", "zzz");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=no-results]"));
+    WeftTesting.input(page, "[data-id=quick-filter]", "");
     await WeftTesting.waitFor(page, undefined, () => names().length === 4);
-    t.expect(ShopSupport$WeftShop.text(page, "#stock-p3")).toBe("In stock");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock-p3]")).toBe("In stock");
     return t.expect(WeftTesting.pageRequests(page)).toEqual(["/c/shoes"]);
   });
   Vitest.testAsync("filters by navigating: the URL, the results and the filters change together, and the grid starts afresh", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
-    WeftTesting.click(page, "#load-more");
+    WeftTesting.click(page, "[data-id=load-more]");
     await WeftTesting.waitFor(page, undefined, () => names().length === 8);
-    WeftTesting.input(page, "#quick-filter", "boot");
+    WeftTesting.input(page, "[data-id=quick-filter]", "boot");
     await WeftTesting.waitFor(page, undefined, () => names().length === 3);
-    WeftTesting.click(page, "#color-brown");
+    WeftTesting.click(page, "[data-id=color-brown]");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "#facets", "aria-busy"), "false")) {
+      if (Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "[data-id=facets]", "aria-busy"), "false")) {
         return Primitive_object.equal(names(), [
           "Leather Boot",
           "Slip-On Loafer"
@@ -131,16 +131,16 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
         return false;
       }
     });
-    t.expect(ShopSupport$WeftShop.text(page, "#result-count")).toBe("Showing 2 of 2");
-    t.expect(Stdlib_Option.map(WeftTesting.query(page, "#quick-filter"), prim => prim.value)).toEqual("");
-    t.expect(ShopSupport$WeftShop.has(page, "#load-more")).toBe(false);
-    t.expect(ShopSupport$WeftShop.has(page, "#clear-filters")).toBe(true);
-    t.expect(ShopSupport$WeftShop.text(page, "#facet-color").includes("brown (2)")).toBe(true);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=result-count]")).toBe("Showing 2 of 2");
+    t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=quick-filter]"), prim => prim.value)).toEqual("");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=load-more]")).toBe(false);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=clear-filters]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=facet-color]").includes("brown (2)")).toBe(true);
     let navigation = await WeftTesting.navigation(page);
     t.expect(Navigation$WeftServer.url(navigation)).toBe("/c/shoes?color=brown");
-    WeftTesting.click(page, "#color-green");
+    WeftTesting.click(page, "[data-id=color-green]");
     await WeftTesting.waitFor(page, undefined, () => names().length === 4);
-    await ShopSupport$WeftShop.change(page, "#sort", "price-desc");
+    await ShopSupport$WeftShop.change(page, "[data-id=sort]", "price-desc");
     await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(names().at(0), "Leather Boot"));
     t.expect(names()).toEqual([
       "Leather Boot",
@@ -161,26 +161,26 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
   Vitest.testAsync("keeps showing the results it has while the new ones are fetched", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
     await ShopSupport$WeftShop.hold(app(), "results:shoes");
-    WeftTesting.click(page, "#toggle-instock");
-    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "#facets", "aria-busy"), "true"));
+    WeftTesting.click(page, "[data-id=toggle-instock]");
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "[data-id=facets]", "aria-busy"), "true"));
     await WeftTesting.idle(page);
     t.expect(names().length).toBe(4);
-    t.expect(ShopSupport$WeftShop.has(page, "#results-loading")).toBe(false);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=results-loading]")).toBe(false);
     await ShopSupport$WeftShop.release(app(), "results:shoes");
-    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "#facets", "aria-busy"), "false"));
-    t.expect(ShopSupport$WeftShop.text(page, "#result-count")).toBe("Showing 4 of 8");
-    t.expect(ShopSupport$WeftShop.attribute(page, "#toggle-instock", "checked")).toBe(undefined);
-    return t.expect(Stdlib_Option.map(WeftTesting.query(page, "#toggle-instock"), element => element["checked"])).toEqual(true);
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "[data-id=facets]", "aria-busy"), "false"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=result-count]")).toBe("Showing 4 of 8");
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=toggle-instock]", "checked")).toBe(undefined);
+    return t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=toggle-instock]"), element => element["checked"])).toEqual(true);
   });
   Vitest.testAsync("narrows by price, and the range resets when the filters are cleared", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
-    let low = "#facet-price input:first-of-type";
-    let high = "#facet-price input:last-of-type";
+    let low = "[data-id=facet-price] input:first-of-type";
+    let high = "[data-id=facet-price] input:last-of-type";
     t.expect(Stdlib_Option.map(WeftTesting.query(page, low), prim => prim.value)).toEqual("59");
     WeftTesting.input(page, low, "80");
     WeftTesting.input(page, high, "130");
-    WeftTesting.click(page, "#apply-price");
-    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "#load-more"));
+    WeftTesting.click(page, "[data-id=apply-price]");
+    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "[data-id=load-more]"));
     t.expect(names()).toEqual([
       "Trail Runner",
       "City Sneaker",
@@ -188,8 +188,8 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
       "Slip-On Loafer"
     ]);
     t.expect(Stdlib_Option.map(WeftTesting.query(page, low), prim => prim.value)).toEqual("80");
-    WeftTesting.click(page, "#clear-filters");
-    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "#clear-filters"));
+    WeftTesting.click(page, "[data-id=clear-filters]");
+    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "[data-id=clear-filters]"));
     t.expect(Stdlib_Option.map(WeftTesting.query(page, low), prim => prim.value)).toEqual("59");
     t.expect(Stdlib_Option.map(WeftTesting.query(page, high), prim => prim.value)).toEqual("190");
     return t.expect(names().length).toBe(4);
@@ -197,9 +197,9 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
   Vitest.testAsync("that doesn't exist is the server's 404 page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/hats");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#not-found"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=not-found]"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
-    return t.expect(ShopSupport$WeftShop.text(page, "#not-found")).toBe("Not found");
+    return t.expect(ShopSupport$WeftShop.text(page, "[data-id=not-found]")).toBe("Not found");
   });
 });
 
@@ -207,38 +207,38 @@ Vitest.describe("search", undefined, undefined, undefined, undefined, undefined,
   Vitest.testAsync("suggests as you type, and a newer query cancels the older one's request", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
     await ShopSupport$WeftShop.hold(app(), "search:suggest");
-    WeftTesting.input(page, "#search-input", "bo");
+    WeftTesting.input(page, "[data-id=search-input]", "bo");
     let first = await ShopSupport$WeftShop.nextWaiter(app(), page, "search:suggest", undefined);
-    WeftTesting.input(page, "#search-input", "boo");
+    WeftTesting.input(page, "[data-id=search-input]", "boo");
     let second = await ShopSupport$WeftShop.nextWaiter(app(), page, "search:suggest", [first]);
     t.expect(await ShopSupport$WeftShop.abandonedSoon(app(), page, first)).toBe(true);
     await ShopSupport$WeftShop.release(app(), second);
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[role=\"listbox\"]"));
     t.expect(ShopSupport$WeftShop.text(page, "[role=\"listbox\"]")).toBe("Leather BootshoesRain BootshoesHiking Bootshoes");
-    WeftTesting.click(page, "#suggestion-rain-boot");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#product-name"));
-    t.expect(ShopSupport$WeftShop.text(page, "#product-name")).toBe("Rain Boot");
+    WeftTesting.click(page, "[data-id=suggestion-rain-boot]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=product-name]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=product-name]")).toBe("Rain Boot");
     return t.expect(ShopSupport$WeftShop.has(page, "[role=\"listbox\"]")).toBe(false);
   });
   Vitest.testAsync("shows the results on Enter, keeping what was typed in the header's box", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
-    WeftTesting.input(page, "#search-input", "bag");
-    let form = Stdlib_Option.getOrThrow(WeftTesting.query(page, "#search"), undefined);
+    WeftTesting.input(page, "[data-id=search-input]", "bag");
+    let form = Stdlib_Option.getOrThrow(WeftTesting.query(page, "[data-id=search]"), undefined);
     form.dispatchEvent(new Event("submit", {
       bubbles: true,
       cancelable: true
     }));
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#search-title")) {
-        return ShopSupport$WeftShop.has(page, "#grid");
+      if (ShopSupport$WeftShop.has(page, "[data-id=search-title]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=grid]");
       } else {
         return false;
       }
     });
-    t.expect(ShopSupport$WeftShop.text(page, "#search-title")).toBe("Results for “bag”");
-    t.expect(ShopSupport$WeftShop.text(page, "#result-count")).toBe("Showing 4 of 8");
-    t.expect(Stdlib_Option.map(WeftTesting.query(page, "#search-input"), prim => prim.value)).toEqual("bag");
-    WeftTesting.click(page, "#load-more");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=search-title]")).toBe("Results for “bag”");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=result-count]")).toBe("Showing 4 of 8");
+    t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=search-input]"), prim => prim.value)).toEqual("bag");
+    WeftTesting.click(page, "[data-id=load-more]");
     await WeftTesting.waitFor(page, undefined, () => names().length === 8);
     t.expect(names().at(-1)).toEqual("Roll-Top Pack");
     return t.expect(WeftTesting.pageRequests(page).filter(url => !url.includes("suggest"))).toEqual([
@@ -255,7 +255,7 @@ Vitest.describe("search", undefined, undefined, undefined, undefined, undefined,
       "Windbreaker",
       "Tote"
     ]);
-    return t.expect(Stdlib_Option.map(WeftTesting.query(page, "#search-input"), prim => prim.value)).toEqual("white");
+    return t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=search-input]"), prim => prim.value)).toEqual("white");
   });
 });
 

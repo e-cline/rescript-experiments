@@ -52,8 +52,8 @@ function SignInDialog(props) {
   let titleId = Hooks$Weft.useId();
   if (isOpen) {
     return Portal$WeftDom.create(Jsx$WeftDom.Elements.jsx("div", {
-      id: "signin-overlay",
       className: overlay,
+      "data-id": "signin-overlay",
       onClick: event => {
         if (Primitive_object.equal(event.target, event.currentTarget)) {
           return Store$WeftShop.closeSignIn();
@@ -65,11 +65,11 @@ function SignInDialog(props) {
         }
       },
       children: Jsx$WeftDom.Elements.jsxs("div", {
-        id: "signin-dialog",
         className: dialog,
         role: "dialog",
         "aria-labelledby": titleId,
         "aria-modal": "true",
+        "data-id": "signin-dialog",
         children: [
           Jsx$WeftDom.Elements.jsx("h2", {
             id: titleId,
@@ -84,7 +84,7 @@ function SignInDialog(props) {
             autoFocus: true
           }),
           Jsx$WeftDom.Elements.jsx("button", {
-            id: "signin-close",
+            "data-id": "signin-close",
             onClick: param => Store$WeftShop.closeSignIn(),
             children: "Close"
           })

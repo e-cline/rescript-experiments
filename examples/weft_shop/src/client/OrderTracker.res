@@ -39,7 +39,7 @@ let make = (~status: orderStatus, ~every: option<int>=?) => {
       Some(() => clearInterval(timer))
     }
   , (status, every))
-  <ol id="timeline" className=Styles.timeline>
+  <ol dataId="timeline" className=Styles.timeline>
     {steps
     ->Array.map(step =>
       <li

@@ -29,7 +29,7 @@ function AddToCart(props) {
   let quantity = Math.max(1, Math.min(match[0], most));
   let quantityId = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "add-to-cart",
+    "data-id": "add-to-cart",
     children: [
       Jsx$WeftDom.Elements.jsx("label", {
         htmlFor: quantityId,
@@ -49,7 +49,7 @@ function AddToCart(props) {
         }, count.toString(), undefined))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "add",
+        "data-id": "add",
         disabled: stock === 0 || busy,
         onClick: param => {
           setBusy(param => true);
@@ -74,8 +74,8 @@ function AddToCart(props) {
           )
       }),
       error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "add-error",
           role: "alert",
+          "data-id": "add-error",
           children: error
         }) : Jsx$WeftDom.$$null
     ]

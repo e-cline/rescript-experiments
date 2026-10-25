@@ -188,15 +188,15 @@ let Styles = {
 
 function Pages$Layout(props) {
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "app",
     className: app,
+    "data-id": "app",
     children: [
       Jsx$WeftDom.Elements.jsxs("nav", {
         className: nav,
         children: [
           Jsx$WeftDom.jsx(Link$WeftNotes.make, {
             href: "/",
-            id: "home-link",
+            dataId: "home-link",
             className: homeLink,
             children: "All notes"
           }),
@@ -216,17 +216,17 @@ function Pages$NoteList(props) {
   return Jsx$WeftDom.jsxs(Pages$Layout, {
     children: [
       Jsx$WeftDom.Elements.jsx("h1", {
-        id: "list-title",
         className: title,
+        "data-id": "list-title",
         children: "Notes"
       }),
       Jsx$WeftDom.Elements.jsx("ul", {
-        id: "notes",
         className: Theme$WeftNotes.list,
+        "data-id": "notes",
         children: Db$WeftNotes.all().map(note => Jsx$WeftDom.Elements.jsxKeyed("li", {
           children: Jsx$WeftDom.jsx(Link$WeftNotes.make, {
             href: `/notes/` + note.id,
-            id: `note-link-` + note.id,
+            dataId: `note-link-` + note.id,
             className: noteLink,
             children: note.title
           })
@@ -246,23 +246,23 @@ function Pages$NoteTitle(props) {
     return Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
       children: [
         Jsx$WeftDom.Elements.jsx("h1", {
-          id: "title",
+          "data-id": "title",
           children: note.title
         }),
         Jsx$WeftDom.Elements.jsx("span", {
-          id: "saved-at",
           className: Css$WeftCss.cx([
             savedAt,
             Theme$WeftNotes.secondary
           ]),
+          "data-id": "saved-at",
           children: `Saved: ` + note.savedAt
         })
       ]
     });
   } else {
     return Jsx$WeftDom.Elements.jsx("p", {
-      id: "not-found",
       className: Theme$WeftNotes.error,
+      "data-id": "not-found",
       children: "No such note"
     });
   }
@@ -275,8 +275,8 @@ let NoteTitle = {
 function Pages$NoteHeader(props) {
   let id = props.id;
   return Jsx$WeftDom.Elements.jsx("header", {
-    id: "note-header",
     className: header,
+    "data-id": "note-header",
     children: Jsx$WeftDom.jsx(NoteEditor$WeftNotes.make, {
       noteId: id,
       title: Stdlib_Option.mapOr(Db$WeftNotes.find(id), "", note => note.title),
@@ -312,8 +312,8 @@ function Pages$NoteBody(props) {
   return Lazy$Weft.fromPromise((async () => {
     let body$1 = await Db$WeftNotes.body(id, signal);
     return Jsx$WeftDom.Elements.jsx("article", {
-      id: "note-body",
       className: body,
+      "data-id": "note-body",
       children: body$1
     });
   })());
@@ -339,12 +339,12 @@ function Pages$Related(props) {
   return Lazy$Weft.fromPromise((async () => {
     let notes = await Db$WeftNotes.related(id, signal);
     return Jsx$WeftDom.Elements.jsx("ul", {
-      id: "related",
       className: related,
+      "data-id": "related",
       children: notes.map(note => Jsx$WeftDom.Elements.jsxKeyed("li", {
         children: Jsx$WeftDom.jsx(Link$WeftNotes.make, {
           href: `/notes/` + note.id,
-          id: `related-` + note.id,
+          dataId: `related-` + note.id,
           className: chip,
           children: note.title
         })
@@ -367,8 +367,8 @@ let Broken = {
 
 function loading(id, text) {
   return Jsx$WeftDom.Elements.jsx("p", {
-    id: id,
     className: Theme$WeftNotes.loading,
+    "data-id": id,
     children: text
   });
 }
@@ -395,8 +395,8 @@ function Pages$NotePage(props) {
         })
       }),
       Jsx$WeftDom.Elements.jsxs("section", {
-        id: "comments-section",
         className: section,
+        "data-id": "comments-section",
         children: [
           Jsx$WeftDom.Elements.jsx("h2", {
             children: "Comments"

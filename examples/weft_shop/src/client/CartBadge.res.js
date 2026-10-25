@@ -45,38 +45,38 @@ function CartBadge$Drawer(props) {
   let match = ShopContext$WeftShop.use();
   let currency = match.currency;
   return Portal$WeftDom.create(Jsx$WeftDom.Elements.jsxs("aside", {
-    id: "cart-drawer",
     className: drawer,
     role: "dialog",
     "aria-label": "Cart",
+    "data-id": "cart-drawer",
     children: [
       Jsx$WeftDom.Elements.jsx("h2", {
         children: "Your cart"
       }),
       Primitive_object.equal(cart.lines, []) ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "drawer-empty",
+          "data-id": "drawer-empty",
           children: "Nothing here yet."
         }) : Jsx$WeftDom.Elements.jsx("ul", {
-          id: "drawer-lines",
+          "data-id": "drawer-lines",
           children: cart.lines.map(line => Jsx$WeftDom.Elements.jsxKeyed("li", {
-            id: `drawer-` + line.sku,
+            "data-id": `drawer-` + line.sku,
             children: line.name + ` (` + line.variant + `) × ` + line.quantity.toString() + `: ` + Money$WeftShop.format(line.unitPrice * line.quantity | 0, currency)
           }, line.sku, undefined))
         }),
       Jsx$WeftDom.Elements.jsx("p", {
-        id: "drawer-subtotal",
+        "data-id": "drawer-subtotal",
         children: `Subtotal: ` + Money$WeftShop.format(cart.subtotal, currency)
       }),
       Jsx$WeftDom.Elements.jsx("div", {
         onClick: param => onClose(),
         children: Jsx$WeftDom.jsx(Link$WeftShop.make, {
           href: "/cart",
-          id: "drawer-cart-link",
+          dataId: "drawer-cart-link",
           children: "View cart"
         })
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "drawer-close",
+        "data-id": "drawer-close",
         onClick: param => onClose(),
         children: "Close"
       })
@@ -95,11 +95,11 @@ function CartBadge(props) {
   let setOpen = match$1[1];
   let isOpen = match$1[0];
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "cart-badge",
+    "data-id": "cart-badge",
     children: [
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "cart-button",
         "aria-expanded": isOpen ? "true" : "false",
+        "data-id": "cart-button",
         onClick: param => setOpen(open_ => !open_),
         children: `Cart (` + cart.count.toString() + `)`
       }),

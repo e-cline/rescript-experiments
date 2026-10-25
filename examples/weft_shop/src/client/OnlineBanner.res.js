@@ -46,9 +46,9 @@ function OnlineBanner(props) {
     return Jsx$WeftDom.$$null;
   } else {
     return Jsx$WeftDom.Elements.jsx("p", {
-      id: "offline",
       className: offline,
       role: "alert",
+      "data-id": "offline",
       children: "You're offline: prices and stock may be out of date."
     });
   }

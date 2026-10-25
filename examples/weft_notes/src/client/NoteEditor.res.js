@@ -66,8 +66,8 @@ function NoteEditor(props) {
     })();
   };
   return Jsx$WeftDom.Elements.jsxs("form", {
-    id: "editor",
     className: editor,
+    "data-id": "editor",
     onSubmit: save,
     children: [
       Jsx$WeftDom.Elements.jsx("div", {
@@ -75,21 +75,21 @@ function NoteEditor(props) {
         children: saved$1.element
       }),
       Jsx$WeftDom.Elements.jsx("input", {
-        id: "title-input",
         className: input,
         "aria-label": "Title",
+        "data-id": "title-input",
         value: draft,
         onInput: event => setDraft(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "save",
+        "data-id": "save",
         type: "submit",
         children: saved$1.isPending ? "Saving…" : "Save"
       }),
       error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "title-error",
           className: Theme$WeftNotes.error,
           role: "alert",
+          "data-id": "title-error",
           children: error
         }) : Jsx$WeftDom.$$null
     ]

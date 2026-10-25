@@ -19,10 +19,10 @@ let Styles = {
 
 function CommentList$Items(props) {
   return Jsx$WeftDom.Elements.jsx("ul", {
-    id: "comment-list",
     className: Theme$WeftNotes.list,
+    "data-id": "comment-list",
     children: Hooks$Weft.use(props.comments).map(comment => Jsx$WeftDom.Elements.jsxsKeyed("li", {
-      id: `comment-` + comment.id,
+      "data-id": `comment-` + comment.id,
       children: [
         Jsx$WeftDom.Elements.jsx("b", {
           className: author,
@@ -41,8 +41,8 @@ let Items = {
 function CommentList(props) {
   return Jsx$WeftDom.jsx(Suspense$Weft.make, {
     fallback: Jsx$WeftDom.Elements.jsx("p", {
-      id: "comment-list-loading",
       className: Theme$WeftNotes.loading,
+      "data-id": "comment-list-loading",
       children: "Loading comments…"
     }),
     children: Jsx$WeftDom.jsx(CommentList$Items, {

@@ -870,14 +870,18 @@ const isPlain = (value: unknown): value is Record<string, unknown> =>
   value !== null &&
   [Object.prototype, null].includes(Object.getPrototypeOf(value));
 
-/** A node, as a test reads it in a list of what changed. */
+/**
+ * A node, as a test reads it in a list of what changed: `tag#id`, `tag[data-id=name]` (the name an
+ * app gives an element for its tests), `tag`, quoted text, or a comment.
+ */
 function describeNode(node: Node): string {
   if (node.nodeType === 3) return JSON.stringify(node.textContent);
   if (node.nodeType === 8) return `<!--${node.textContent}-->`;
   const element = node as Element;
-  return element.id === ''
-    ? element.tagName.toLowerCase()
-    : `${element.tagName.toLowerCase()}#${element.id}`;
+  const tag = element.tagName.toLowerCase();
+  if (element.id !== '') return `${tag}#${element.id}`;
+  const name = element.getAttribute('data-id');
+  return name === null ? tag : `${tag}[data-id=${name}]`;
 }
 
 export class Page {

@@ -104,25 +104,25 @@ function CartLines(props) {
   })).filter(line => line.quantity > 0);
   if (Primitive_object.equal(lines$1, [])) {
     return Jsx$WeftDom.Elements.jsxs("div", {
-      id: "cart-empty",
+      "data-id": "cart-empty",
       children: [
         Jsx$WeftDom.Elements.jsx("p", {
           children: "Your cart is empty."
         }),
         Jsx$WeftDom.jsx(Link$WeftShop.make, {
           href: "/",
-          id: "keep-shopping",
+          dataId: "keep-shopping",
           children: "Keep shopping"
         })
       ]
     });
   } else {
     return Jsx$WeftDom.Elements.jsx("ul", {
-      id: "cart-lines",
       className: lines,
+      "data-id": "cart-lines",
       children: lines$1.map(line$1 => Jsx$WeftDom.Elements.jsxsKeyed("li", {
-        id: `line-` + line$1.sku,
         className: line,
+        "data-id": `line-` + line$1.sku,
         children: [
           Jsx$WeftDom.jsx(Link$WeftShop.make, {
             href: `/p/` + line$1.slug,
@@ -135,18 +135,18 @@ function CartLines(props) {
             className: stepper,
             children: [
               Jsx$WeftDom.Elements.jsx("button", {
-                id: `less-` + line$1.sku,
                 "aria-label": "One fewer",
+                "data-id": `less-` + line$1.sku,
                 onClick: param => change(line$1.sku, line$1.quantity - 1 | 0),
                 children: "−"
               }),
               Jsx$WeftDom.Elements.jsx("span", {
-                id: `quantity-` + line$1.sku,
+                "data-id": `quantity-` + line$1.sku,
                 children: line$1.quantity.toString()
               }),
               Jsx$WeftDom.Elements.jsx("button", {
-                id: `more-` + line$1.sku,
                 "aria-label": "One more",
+                "data-id": `more-` + line$1.sku,
                 disabled: line$1.quantity >= 10,
                 onClick: param => change(line$1.sku, line$1.quantity + 1 | 0),
                 children: "+"
@@ -154,11 +154,11 @@ function CartLines(props) {
             ]
           }),
           Jsx$WeftDom.Elements.jsx("span", {
-            id: `total-` + line$1.sku,
+            "data-id": `total-` + line$1.sku,
             children: Money$WeftShop.format(line$1.unitPrice * line$1.quantity | 0, currency)
           }),
           Jsx$WeftDom.Elements.jsx("button", {
-            id: `remove-` + line$1.sku,
+            "data-id": `remove-` + line$1.sku,
             onClick: param => change(line$1.sku, 0),
             children: "Remove"
           })

@@ -84,8 +84,8 @@ function OrderTracker(props) {
     every
   ]);
   return Jsx$WeftDom.Elements.jsx("ol", {
-    id: "timeline",
     className: timeline,
+    "data-id": "timeline",
     children: steps.map(step => Jsx$WeftDom.Elements.jsxKeyed("li", {
       className: rank(step) <= rank(status) ? done : todo,
       "aria-current": step === status ? "step" : "false",

@@ -57,9 +57,10 @@ data the server decides on for each request, and each part of them streams in by
   sides, and errors the shopper is told about.
 - **Styles** ([`weft_css`](../../packages/weft_css)): each component's beside it (the theme's
   colours, as CSS variables, and the page's own rules in
-  [`src/shared/Theme.res`](src/shared/Theme.res)), and no other class names (the tests find elements
-  by id, role or ARIA attribute). Each page is sent the stylesheets of what it renders: the shell's
-  linked in its head, a block's with it as it streams in (its swap waiting for them), a page
+  [`src/shared/Theme.res`](src/shared/Theme.res)), and no other class names. The tests find elements
+  by role, ARIA attribute or `data-id` (`dataId`): an element has an `id` only when the page needs
+  it (a label's, an ARIA reference's). Each page is sent the stylesheets of what it renders: the
+  shell's linked in its head, a block's with it as it streams in (its swap waiting for them), a page
   navigated to with its payload (shown once they've loaded). Server components' styles (the frame,
   the blocks, the pages) never reach the client as code, only as CSS. What changes at run time (a
   product's hue, a carousel's page) is a CSS variable its class uses, set with `Css.vars`.

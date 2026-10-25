@@ -87,18 +87,18 @@ describe("Rendering", () => {
 
   test("renamed attributes: className, htmlFor, type_, aria-*, data-*", t => {
     let (container, _) = mount(
-      <label className="l" htmlFor="x" ariaLabel="name" dataTestId="t">
+      <label className="l" htmlFor="x" ariaLabel="name" dataTestId="t" dataId="d">
         <input type_="checkbox" />
       </label>,
     )
     let label = find(container, "label")
     t
     ->expect(
-      ["class", "for", "aria-label", "data-testid"]->Array.map(
+      ["class", "for", "aria-label", "data-testid", "data-id"]->Array.map(
         name => Dom.getAttribute(label, name)->Nullable.toOption,
       ),
     )
-    ->Expect.toEqual([Some("l"), Some("x"), Some("name"), Some("t")])
+    ->Expect.toEqual([Some("l"), Some("x"), Some("name"), Some("t"), Some("d")])
     t
     ->expect(Dom.getAttribute(find(container, "input"), "type"))
     ->Expect.toEqual(Nullable.make("checkbox"))

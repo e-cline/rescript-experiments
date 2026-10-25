@@ -28,20 +28,20 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
   // The rail can shrink under the page it was on (a refetch with fewer cards).
   let page = Math.Int.min(page, pages - 1)
   let first = page * pageSize
-  <div id={`carousel-${id}`}>
+  <div dataId={`carousel-${id}`}>
     <div className={Styles.head}>
       <h2> {WeftDom.Jsx.string(title)} </h2>
       {pages > 1
         ? <div className={Styles.controls}>
             <button
-              id={`prev-${id}`}
+              dataId={`prev-${id}`}
               ariaLabel="Previous"
               disabled={page == 0}
               onClick={_ => setPage(_ => page - 1)}
             >
               {WeftDom.Jsx.string("‹")}
             </button>
-            <span id={`position-${id}`}>
+            <span dataId={`position-${id}`}>
               {WeftDom.Jsx.string(
                 `${Int.toString(first + 1)}–${Int.toString(
                     Math.Int.min(count, first + pageSize),
@@ -49,7 +49,7 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
               )}
             </span>
             <button
-              id={`next-${id}`}
+              dataId={`next-${id}`}
               ariaLabel="Next"
               disabled={page == pages - 1}
               onClick={_ => setPage(_ => page + 1)}

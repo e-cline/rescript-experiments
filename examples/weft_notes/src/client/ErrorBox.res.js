@@ -46,8 +46,8 @@ let Styles = {
 function ErrorBox(props) {
   return Jsx$WeftDom.jsx(ErrorBoundary$Weft.make, {
     fallback: (error, param) => Jsx$WeftDom.Elements.jsx("p", {
-      id: "error-box",
       className: box,
+      "data-id": "error-box",
       children: "Couldn't show this: " + ErrorBoundary$Weft.message(error)
     }),
     children: props.children

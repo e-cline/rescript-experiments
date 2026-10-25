@@ -10,15 +10,15 @@ import * as ShopSupport$WeftShop from "./ShopSupport.res.js";
 let app = ShopSupport$WeftShop.useApp();
 
 let reviewAuthors = (() =>
-  [...document.querySelectorAll('#review-list b')].map((node) => node.textContent.split(' ').at(-1)));
+  [...document.querySelectorAll('[data-id=review-list] b')].map((node) => node.textContent.split(' ').at(-1)));
 
 async function openProduct(urlOpt) {
   let url = urlOpt !== undefined ? urlOpt : "/p/trail-runner";
   await ShopSupport$WeftShop.releaseAll(app());
   let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, url);
   await WeftTesting.waitFor(page, undefined, () => {
-    if (ShopSupport$WeftShop.has(page, "#stock") && ShopSupport$WeftShop.has(page, "#review-list") && ShopSupport$WeftShop.has(page, "#carousel-also-bought")) {
-      return ShopSupport$WeftShop.has(page, "#questions");
+    if (ShopSupport$WeftShop.has(page, "[data-id=stock]") && ShopSupport$WeftShop.has(page, "[data-id=review-list]") && ShopSupport$WeftShop.has(page, "[data-id=carousel-also-bought]")) {
+      return ShopSupport$WeftShop.has(page, "[data-id=questions]");
     } else {
       return false;
     }
@@ -30,26 +30,26 @@ async function openProduct(urlOpt) {
 Vitest.describe("a product's page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("streams the offer, the reviews, the rail and the questions, each by itself", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/p/trail-runner");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#product-name"));
-    t.expect(ShopSupport$WeftShop.text(page, "#product-name")).toBe("Trail Runner");
-    t.expect(ShopSupport$WeftShop.has(page, "#offer-loading")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#reviews-loading")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#also-loading")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#questions-loading")).toBe(true);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=product-name]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=product-name]")).toBe("Trail Runner");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=offer-loading]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=reviews-loading]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=also-loading]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=questions-loading]")).toBe(true);
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     await ShopSupport$WeftShop.release(app(), "reviews:p1");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#review-list"));
-    t.expect(ShopSupport$WeftShop.text(page, "#review-summary")).toBe("3.1 out of 5, from 8 reviews");
-    t.expect(ShopSupport$WeftShop.has(page, "#offer-loading")).toBe(true);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=review-list]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=review-summary]")).toBe("3.1 out of 5, from 8 reviews");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=offer-loading]")).toBe(true);
     await ShopSupport$WeftShop.release(app(), "offer:p1-7");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#stock"));
-    t.expect(ShopSupport$WeftShop.text(page, "#stock")).toBe("Size 7: only 1 left");
-    t.expect(ShopSupport$WeftShop.text(page, "#offer-price")).toBe("$129.00");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=stock]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock]")).toBe("Size 7: only 1 left");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=offer-price]")).toBe("$129.00");
     await ShopSupport$WeftShop.release(app(), "rail:also-p1");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-also-bought"));
-    t.expect(ShopSupport$WeftShop.count("#carousel-also-bought article")).toBe(4);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-also-bought]"));
+    t.expect(ShopSupport$WeftShop.count("[data-id=carousel-also-bought] article")).toBe(4);
     await ShopSupport$WeftShop.release(app(), "qa:p1");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#questions"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=questions]"));
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/p/trail-runner"]);
     return ShopSupport$WeftShop.noWarnings(page);
   });
@@ -60,41 +60,41 @@ Vitest.describe("a product's page", undefined, undefined, undefined, undefined, 
       _0: 61
     }, undefined, "/p/trail-runner");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#review-list")) {
-        return ShopSupport$WeftShop.has(page, "#questions");
+      if (ShopSupport$WeftShop.has(page, "[data-id=review-list]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=questions]");
       } else {
         return false;
       }
     });
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
-    WeftTesting.click(page, "#thumb-2");
-    t.expect(ShopSupport$WeftShop.text(page, "#view-label")).toBe("Back");
-    ShopSupport$WeftShop.press("#gallery", "ArrowRight");
+    WeftTesting.click(page, "[data-id=thumb-2]");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=view-label]")).toBe("Back");
+    ShopSupport$WeftShop.press("[data-id=gallery]", "ArrowRight");
     await WeftTesting.idle(page);
-    t.expect(ShopSupport$WeftShop.text(page, "#view-label")).toBe("Detail");
-    ShopSupport$WeftShop.press("#gallery", "ArrowRight");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=view-label]")).toBe("Detail");
+    ShopSupport$WeftShop.press("[data-id=gallery]", "ArrowRight");
     await WeftTesting.idle(page);
-    return t.expect(ShopSupport$WeftShop.text(page, "#view-label")).toBe("Front");
+    return t.expect(ShopSupport$WeftShop.text(page, "[data-id=view-label]")).toBe("Front");
   });
   Vitest.testAsync("fetches another variant's offer by itself, keeping the old one until it's ready, and the quantity chosen", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct(undefined);
     await ShopSupport$WeftShop.hold(app(), "offer:p1-9");
     await ShopSupport$WeftShop.hold(app(), "offer:p1-7");
-    WeftTesting.click(page, "#variant-p1-9");
-    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "#offer", "aria-busy"), "true"));
-    t.expect(ShopSupport$WeftShop.attribute(page, "#variant-p1-9", "aria-pressed")).toBe("true");
-    t.expect(ShopSupport$WeftShop.text(page, "#stock")).toBe("Size 7: only 1 left");
-    let reviews = WeftTesting.query(page, "#review-list");
+    WeftTesting.click(page, "[data-id=variant-p1-9]");
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "[data-id=offer]", "aria-busy"), "true"));
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=variant-p1-9]", "aria-pressed")).toBe("true");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock]")).toBe("Size 7: only 1 left");
+    let reviews = WeftTesting.query(page, "[data-id=review-list]");
     await ShopSupport$WeftShop.release(app(), "offer:p1-9");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#stock") === "Size 9: 5 in stock");
-    t.expect(ShopSupport$WeftShop.attribute(page, "#offer", "aria-busy")).toBe("false");
-    t.expect(Primitive_object.equal(WeftTesting.query(page, "#review-list"), reviews)).toBe(true);
-    await ShopSupport$WeftShop.change(page, "#add-to-cart select", "3");
-    t.expect(Stdlib_Option.map(WeftTesting.query(page, "#add-to-cart select"), prim => prim.value)).toEqual("3");
-    WeftTesting.click(page, "#variant-p1-7");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=stock]") === "Size 9: 5 in stock");
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=offer]", "aria-busy")).toBe("false");
+    t.expect(Primitive_object.equal(WeftTesting.query(page, "[data-id=review-list]"), reviews)).toBe(true);
+    await ShopSupport$WeftShop.change(page, "[data-id=add-to-cart] select", "3");
+    t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=add-to-cart] select"), prim => prim.value)).toEqual("3");
+    WeftTesting.click(page, "[data-id=variant-p1-7]");
     await ShopSupport$WeftShop.release(app(), "offer:p1-7");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#stock") === "Size 7: only 1 left");
-    t.expect(Stdlib_Option.map(WeftTesting.query(page, "#add-to-cart select"), prim => prim.value)).toEqual("1");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=stock]") === "Size 7: only 1 left");
+    t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=add-to-cart] select"), prim => prim.value)).toEqual("1");
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/p/trail-runner",
       "/p/trail-runner/offer?sku=p1-9",
@@ -104,32 +104,32 @@ Vitest.describe("a product's page", undefined, undefined, undefined, undefined, 
   });
   Vitest.testAsync("adds to the cart: the header's count follows at once, with a toast, and the server checks the stock", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct(undefined);
-    WeftTesting.click(page, "#variant-p1-9");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#stock") === "Size 9: 5 in stock");
-    await ShopSupport$WeftShop.change(page, "#add-to-cart select", "3");
-    WeftTesting.click(page, "#add");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#cart-button") === "Cart (3)");
-    t.expect(ShopSupport$WeftShop.text(page, "#toasts")).toBe("Added 3 × Trail Runner to your cart×");
+    WeftTesting.click(page, "[data-id=variant-p1-9]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=stock]") === "Size 9: 5 in stock");
+    await ShopSupport$WeftShop.change(page, "[data-id=add-to-cart] select", "3");
+    WeftTesting.click(page, "[data-id=add]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=cart-button]") === "Cart (3)");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=toasts]")).toBe("Added 3 × Trail Runner to your cart×");
     t.expect((await ShopSupport$WeftShop.session(app())).count).toBe(3);
-    WeftTesting.click(page, "#add");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#add-error"));
-    t.expect(ShopSupport$WeftShop.text(page, "#add-error")).toBe("Not enough left of p1-9.");
-    t.expect(ShopSupport$WeftShop.text(page, "#cart-button")).toBe("Cart (3)");
-    WeftTesting.click(page, "#cart-button");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("#cart-drawer")));
-    t.expect(Stdlib_Option.map(ShopSupport$WeftShop.Doc.find("#drawer-p1-9"), prim => prim.textContent)).toEqual("Trail Runner (Size 9) × 3: $387.00");
-    t.expect(Stdlib_Option.map(ShopSupport$WeftShop.Doc.find("#cart-drawer"), drawer => Primitive_object.equal(WeftTesting.query(page, "#cart-drawer"), Primitive_option.some(drawer)))).toEqual(false);
-    ShopSupport$WeftShop.clickAnywhere("#drawer-close");
+    WeftTesting.click(page, "[data-id=add]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=add-error]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=add-error]")).toBe("Not enough left of p1-9.");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=cart-button]")).toBe("Cart (3)");
+    WeftTesting.click(page, "[data-id=cart-button]");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=cart-drawer]")));
+    t.expect(Stdlib_Option.map(ShopSupport$WeftShop.Doc.find("[data-id=drawer-p1-9]"), prim => prim.textContent)).toEqual("Trail Runner (Size 9) × 3: $387.00");
+    t.expect(Stdlib_Option.map(ShopSupport$WeftShop.Doc.find("[data-id=cart-drawer]"), drawer => Primitive_object.equal(WeftTesting.query(page, "[data-id=cart-drawer]"), Primitive_option.some(drawer)))).toEqual(false);
+    ShopSupport$WeftShop.clickAnywhere("[data-id=drawer-close]");
     await WeftTesting.idle(page);
-    t.expect(ShopSupport$WeftShop.Doc.find("#cart-drawer")).toBe(undefined);
+    t.expect(ShopSupport$WeftShop.Doc.find("[data-id=cart-drawer]")).toBe(undefined);
     return ShopSupport$WeftShop.noWarnings(page);
   });
   Vitest.testAsync("can't add a variant that's sold out", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct("/p/canvas-low");
-    WeftTesting.click(page, "#variant-p3-11");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#stock") === "Size 11: sold out");
-    t.expect(ShopSupport$WeftShop.text(page, "#add")).toBe("Sold out");
-    return t.expect(ShopSupport$WeftShop.attribute(page, "#add", "disabled")).toBe("");
+    WeftTesting.click(page, "[data-id=variant-p3-11]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=stock]") === "Size 11: sold out");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=add]")).toBe("Sold out");
+    return t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=add]", "disabled")).toBe("");
   });
   Vitest.testAsync("sorts the reviews in a transition, and shows them all on request", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct(undefined);
@@ -138,35 +138,35 @@ Vitest.describe("a product's page", undefined, undefined, undefined, undefined, 
       "Linus",
       "Barbara"
     ]);
-    await ShopSupport$WeftShop.change(page, "#review-order", "highest");
+    await ShopSupport$WeftShop.change(page, "[data-id=review-order]", "highest");
     await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(reviewAuthors().at(0), "Linus"));
     t.expect(reviewAuthors()).toEqual([
       "Linus",
       "Frances",
       "Margaret"
     ]);
-    WeftTesting.click(page, "#all-reviews");
+    WeftTesting.click(page, "[data-id=all-reviews]");
     t.expect(reviewAuthors().length).toBe(8);
-    return t.expect(ShopSupport$WeftShop.has(page, "#all-reviews")).toBe(false);
+    return t.expect(ShopSupport$WeftShop.has(page, "[data-id=all-reviews]")).toBe(false);
   });
   Vitest.testAsync("shows the questions service failing in that block alone, and Retry gets them", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.fail(app(), "qa:p1", "the questions service is unavailable");
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/p/trail-runner");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#block-error-questions")) {
-        return ShopSupport$WeftShop.has(page, "#review-list");
+      if (ShopSupport$WeftShop.has(page, "[data-id=block-error-questions]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=review-list]");
       } else {
         return false;
       }
     });
     await WeftTesting.hydrated(page, undefined);
-    t.expect(ShopSupport$WeftShop.text(page, "#block-error-questions p")).toBe("Couldn't load this: the questions service is unavailable");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=block-error-questions] p")).toBe("Couldn't load this: the questions service is unavailable");
     await ShopSupport$WeftShop.heal(app(), "qa:p1");
     await ShopSupport$WeftShop.release(app(), "qa:p1");
-    WeftTesting.click(page, "#retry-questions");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#questions"));
-    t.expect(ShopSupport$WeftShop.has(page, "#block-error-questions")).toBe(false);
+    WeftTesting.click(page, "[data-id=retry-questions]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=questions]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=block-error-questions]")).toBe(false);
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/p/trail-runner",
       "/p/trail-runner/questions"
@@ -175,42 +175,42 @@ Vitest.describe("a product's page", undefined, undefined, undefined, undefined, 
   Vitest.testAsync("that doesn't exist is the server's 404 page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/p/no-such-thing");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#not-found"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=not-found]"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
-    return t.expect(ShopSupport$WeftShop.text(page, "#not-found")).toBe("Not found");
+    return t.expect(ShopSupport$WeftShop.text(page, "[data-id=not-found]")).toBe("Not found");
   });
 });
 
 Vitest.describe("the wishlist", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("asks a signed-out shopper to sign in, then saves at once, and on the server", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct(undefined);
-    WeftTesting.click(page, "#wishlist-p1");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("#signin-dialog")));
-    t.expect(ShopSupport$WeftShop.attribute(page, "#wishlist-p1", "aria-pressed")).toBe("false");
-    ShopSupport$WeftShop.press("#signin-dialog", "Escape");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isNone(ShopSupport$WeftShop.Doc.find("#signin-dialog")));
+    WeftTesting.click(page, "[data-id=wishlist-p1]");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")));
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=wishlist-p1]", "aria-pressed")).toBe("false");
+    ShopSupport$WeftShop.press("[data-id=signin-dialog]", "Escape");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isNone(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")));
     await ShopSupport$WeftShop.signIn(page, "Ada");
-    WeftTesting.click(page, "#wishlist-p1");
-    t.expect(ShopSupport$WeftShop.attribute(page, "#wishlist-p1", "aria-pressed")).toBe("true");
+    WeftTesting.click(page, "[data-id=wishlist-p1]");
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=wishlist-p1]", "aria-pressed")).toBe("true");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/wishlist.toggle"));
     await WeftTesting.settle(page);
     t.expect(await ShopSupport$WeftShop.wishlist(app(), "Ada")).toEqual(["p1"]);
     await WeftTesting.navigate(page, "/p/city-sneaker");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-also-bought #wishlist-p1"));
-    t.expect(ShopSupport$WeftShop.attribute(page, "#carousel-also-bought #wishlist-p1", "aria-pressed")).toBe("true");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-also-bought] [data-id=wishlist-p1]"));
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=carousel-also-bought] [data-id=wishlist-p1]", "aria-pressed")).toBe("true");
     await WeftTesting.navigate(page, "/account");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#wishlist #card-p1"));
-    t.expect(ShopSupport$WeftShop.text(page, "#account-title")).toBe("Ada's account");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=wishlist] [data-id=card-p1]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=account-title]")).toBe("Ada's account");
     return ShopSupport$WeftShop.noWarnings(page);
   });
   Vitest.testAsync("puts the heart back when the server says no", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct(undefined);
     await ShopSupport$WeftShop.signIn(page, "Ada");
     await WeftTesting.callServer(app(), ShopSupport$WeftShop.control, "reset", []);
-    WeftTesting.click(page, "#wishlist-p1");
-    t.expect(ShopSupport$WeftShop.attribute(page, "#wishlist-p1", "aria-pressed")).toBe("true");
-    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "#wishlist-p1", "aria-pressed"), "false"));
-    return t.expect(ShopSupport$WeftShop.text(page, "#toasts").includes("Sign in first.")).toBe(true);
+    WeftTesting.click(page, "[data-id=wishlist-p1]");
+    t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=wishlist-p1]", "aria-pressed")).toBe("true");
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "[data-id=wishlist-p1]", "aria-pressed"), "false"));
+    return t.expect(ShopSupport$WeftShop.text(page, "[data-id=toasts]").includes("Sign in first.")).toBe(true);
   });
 });
 

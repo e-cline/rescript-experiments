@@ -38,7 +38,7 @@ let make = () => {
   )
   online
     ? WeftDom.Jsx.null
-    : <p id="offline" className=Styles.offline role="alert">
+    : <p dataId="offline" className=Styles.offline role="alert">
         {WeftDom.Jsx.string("You're offline: prices and stock may be out of date.")}
       </p>
 }

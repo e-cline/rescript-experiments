@@ -53,8 +53,8 @@ function Tabs(props) {
   let tabId = index => id + `-tab-` + index.toString();
   let panelId = index => id + `-panel-` + index.toString();
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: id,
     className: tabs,
+    "data-id": id,
     children: [
       Jsx$WeftDom.Elements.jsx("div", {
         role: "tablist",

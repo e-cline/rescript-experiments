@@ -19,9 +19,9 @@ module Styles = {
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~children: Weft.Element.t) => {
   let comments = WeftServer.Navigation.useRefetchable(~src=`/notes/${noteId}/comments`, children)
-  <div id="comments-panel" className=Styles.panel>
+  <div dataId="comments-panel" className=Styles.panel>
     <button
-      id="reload-comments"
+      dataId="reload-comments"
       className=Styles.reload
       title={comments.isPending ? "pending" : "idle"}
       onClick={_ => comments.refetch()->ignore}

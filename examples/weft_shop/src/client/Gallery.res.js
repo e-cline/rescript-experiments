@@ -77,9 +77,9 @@ function Gallery(props) {
   let selected = match[0];
   let count = views.length;
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "gallery",
     tabIndex: 0,
     "aria-label": `Pictures of the ` + props.name,
+    "data-id": "gallery",
     onKeyDown: event => {
       let match = event.key;
       switch (match) {
@@ -93,25 +93,25 @@ function Gallery(props) {
     },
     children: [
       Jsx$WeftDom.Elements.jsx("div", {
-        id: "main-picture",
         className: Css$WeftCss.cx([
           Theme$WeftShop.picture,
           main
         ]),
         style: Theme$WeftShop.pictureVars(hue, selected),
+        "data-id": "main-picture",
         children: Jsx$WeftDom.Elements.jsx("span", {
-          id: "view-label",
+          "data-id": "view-label",
           children: views[selected]
         })
       }),
       Jsx$WeftDom.Elements.jsx("div", {
         className: thumbnails,
         children: views.map((view, index) => Jsx$WeftDom.Elements.jsxKeyed("button", {
-          id: `thumb-` + index.toString(),
           className: thumbnail,
           style: Theme$WeftShop.pictureVars(hue, index),
           "aria-label": view,
           "aria-pressed": index === selected ? "true" : "false",
+          "data-id": `thumb-` + index.toString(),
           onClick: param => setSelected(param => index)
         }, view, undefined))
       })

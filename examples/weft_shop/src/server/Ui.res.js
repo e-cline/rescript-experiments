@@ -246,8 +246,8 @@ function Ui$StockBadge(props) {
     await Latency$WeftShop.wait(`stock:` + id, signal);
     let stock = Db$WeftShop.productStock(id);
     return Jsx$WeftDom.Elements.jsx("span", {
-      id: `stock-` + id,
       className: stockClass(stock),
+      "data-id": `stock-` + id,
       children: stock !== 0 ? (
           stock <= 3 ? `Only ` + stock.toString() + ` left` : "In stock"
         ) : "Sold out"
@@ -262,8 +262,8 @@ let StockBadge = {
 function Ui$ProductCard(props) {
   let summary = props.summary;
   return Jsx$WeftDom.Elements.jsxs("article", {
-    id: `card-` + summary.id,
     className: card,
+    "data-id": `card-` + summary.id,
     children: [
       Jsx$WeftDom.jsxs(Link$WeftShop.make, {
         href: `/p/` + summary.slug,
@@ -294,12 +294,12 @@ function Ui$ProductCard(props) {
       }),
       Jsx$WeftDom.jsx(Suspense$Weft.make, {
         fallback: Jsx$WeftDom.Elements.jsx("span", {
-          id: `stock-loading-` + summary.id,
           className: Css$WeftCss.cx([
             stock,
             stockLoading
           ]),
           "aria-busy": "true",
+          "data-id": `stock-loading-` + summary.id,
           children: "Checking stock…"
         }),
         children: Jsx$WeftDom.jsx(Ui$StockBadge, {
@@ -339,23 +339,23 @@ function gridItems(summaries, request) {
 
 function Ui$Header(props) {
   return Jsx$WeftDom.Elements.jsxs("header", {
-    id: "header",
     className: header,
+    "data-id": "header",
     children: [
       Jsx$WeftDom.jsx(Link$WeftShop.make, {
         href: "/",
-        id: "logo",
+        dataId: "logo",
         className: logo,
         children: "Loom & Co."
       }),
       Jsx$WeftDom.Elements.jsx("nav", {
-        id: "nav",
         className: nav,
+        "data-id": "nav",
         children: Db$WeftShop.categories.map(param => {
           let slug = param[0];
           return Jsx$WeftDom.jsxKeyed(Link$WeftShop.make, {
             href: `/c/` + slug,
-            id: `nav-` + slug,
+            dataId: `nav-` + slug,
             children: param[1]
           }, slug, undefined);
         })
@@ -387,20 +387,20 @@ function Ui$Shell(props) {
     user: session.user,
     cart: Session$WeftShop.cart(session),
     children: Jsx$WeftDom.Elements.jsxs("div", {
-      id: "app",
       className: app,
+      "data-id": "app",
       children: [
         Jsx$WeftDom.jsx(Ui$Header, {
           query: request.query
         }),
         Jsx$WeftDom.Elements.jsx("main", {
-          id: "main",
           className: main,
+          "data-id": "main",
           children: props.children
         }),
         Jsx$WeftDom.Elements.jsx("footer", {
-          id: "footer",
           className: footer,
+          "data-id": "footer",
           children: "Loom & Co. — a Weft example. Nothing here is for sale."
         })
       ]
@@ -414,9 +414,9 @@ let Shell = {
 
 function loading(id, message) {
   return Jsx$WeftDom.Elements.jsx("p", {
-    id: id,
     className: Theme$WeftShop.placeholder,
     "aria-busy": "true",
+    "data-id": id,
     children: message
   });
 }

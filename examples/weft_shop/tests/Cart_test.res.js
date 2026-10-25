@@ -17,18 +17,18 @@ function entrypoint(name) {
 async function openCart(items) {
   await ShopSupport$WeftShop.releaseAll(app());
   let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/bags");
-  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#grid"));
+  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=grid]"));
   for (let i = 0, i_finish = items.length; i < i_finish; ++i) {
     let match = items[i];
     await ShopSupport$WeftShop.addToCart(app(), match[0], match[1]);
   }
   let page$1 = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/cart");
   await WeftTesting.waitFor(page$1, undefined, () => {
-    if (ShopSupport$WeftShop.has(page$1, "#summary")) {
+    if (ShopSupport$WeftShop.has(page$1, "[data-id=summary]")) {
       if (Primitive_object.equal(items, [])) {
         return true;
       } else {
-        return ShopSupport$WeftShop.has(page$1, "#cart-lines");
+        return ShopSupport$WeftShop.has(page$1, "[data-id=cart-lines]");
       }
     } else {
       return false;
@@ -39,7 +39,7 @@ async function openCart(items) {
 }
 
 function quantity(page, sku) {
-  return ShopSupport$WeftShop.text(page, `#quantity-` + sku);
+  return ShopSupport$WeftShop.text(page, `[data-id=quantity-` + sku + `]`);
 }
 
 function fill(page, fields) {
@@ -59,10 +59,10 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
       ]
     ]);
     t.expect(quantity(page, "p1-9")).toBe("2");
-    t.expect(ShopSupport$WeftShop.text(page, "#total-p1-9")).toBe("$258.00");
-    t.expect(ShopSupport$WeftShop.text(page, "#summary-subtotal")).toBe("$307.00");
-    t.expect(ShopSupport$WeftShop.text(page, "#summary-points")).toBe("307");
-    return t.expect(ShopSupport$WeftShop.text(page, "#cart-button")).toBe("Cart (3)");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=total-p1-9]")).toBe("$258.00");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=summary-subtotal]")).toBe("$307.00");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=summary-points]")).toBe("307");
+    return t.expect(ShopSupport$WeftShop.text(page, "[data-id=cart-button]")).toBe("Cart (3)");
   });
   Vitest.testAsync("changes a quantity at once, then takes the server's cart, and its totals follow by themselves", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCart([
@@ -76,13 +76,13 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
       ]
     ]);
     await ShopSupport$WeftShop.hold(app(), "block:summary");
-    WeftTesting.click(page, "#more-p19-one");
+    WeftTesting.click(page, "[data-id=more-p19-one]");
     t.expect(quantity(page, "p19-one")).toBe("2");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#cart-button") === "Cart (4)");
-    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "#summary-frame", "aria-busy"), "true"));
-    t.expect(ShopSupport$WeftShop.text(page, "#summary-subtotal")).toBe("$307.00");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=cart-button]") === "Cart (4)");
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(ShopSupport$WeftShop.attribute(page, "[data-id=summary-frame]", "aria-busy"), "true"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=summary-subtotal]")).toBe("$307.00");
     await ShopSupport$WeftShop.release(app(), "block:summary");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#summary-subtotal") === "$356.00");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=summary-subtotal]") === "$356.00");
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/cart",
       "/_weft/rpc/cart.setQuantity",
@@ -96,10 +96,10 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
         "p1-9",
         5
       ]]);
-    WeftTesting.click(page, "#more-p1-9");
+    WeftTesting.click(page, "[data-id=more-p1-9]");
     t.expect(quantity(page, "p1-9")).toBe("6");
     await WeftTesting.waitFor(page, undefined, () => quantity(page, "p1-9") === "5");
-    t.expect(ShopSupport$WeftShop.text(page, "#toasts")).toBe("Not enough left of p1-9.×");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=toasts]")).toBe("Not enough left of p1-9.×");
     return t.expect((await ShopSupport$WeftShop.session(app())).count).toBe(5);
   });
   Vitest.testAsync("empties, line by line, and there's then nothing to check out: checkout redirects to the cart", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -113,21 +113,21 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
         1
       ]
     ]);
-    WeftTesting.click(page, "#remove-p1-9");
-    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "#line-p1-9"));
-    WeftTesting.click(page, "#less-p19-one");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#cart-empty"));
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#cart-button") === "Cart (0)");
+    WeftTesting.click(page, "[data-id=remove-p1-9]");
+    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "[data-id=line-p1-9]"));
+    WeftTesting.click(page, "[data-id=less-p19-one]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-empty]"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=cart-button]") === "Cart (0)");
     let before = WeftTesting.pageRequests(page).length;
-    WeftTesting.click(page, "#checkout-link");
+    WeftTesting.click(page, "[data-id=checkout-link]");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).length === (before + 2 | 0));
     await WeftTesting.settle(page);
     t.expect(WeftTesting.pageRequests(page).slice(before)).toEqual([
       "/checkout",
       "/cart"
     ]);
-    t.expect(ShopSupport$WeftShop.has(page, "#cart-empty")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#checkout-title")).toBe(false);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=cart-empty]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=checkout-title]")).toBe(false);
     t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/cart");
     t.expect(ShopSupport$WeftShop.addressBar()).toBe("/cart");
     return t.expect((await ShopSupport$WeftShop.session(app())).count).toBe(0);
@@ -143,25 +143,25 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
         1
       ]
     ]);
-    WeftTesting.input(page, "#promo input", "   ");
-    ShopSupport$WeftShop.submitAnywhere("#promo");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#promo-message"));
-    t.expect(ShopSupport$WeftShop.text(page, "#promo-message")).toBe("That code isn't one of ours.");
+    WeftTesting.input(page, "[data-id=promo] input", "   ");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=promo]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=promo-message]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=promo-message]")).toBe("That code isn't one of ours.");
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/cart"]);
-    WeftTesting.input(page, "#promo input", "nope");
-    ShopSupport$WeftShop.submitAnywhere("#promo");
+    WeftTesting.input(page, "[data-id=promo] input", "nope");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=promo]");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/cart.applyPromo"));
     await WeftTesting.settle(page);
-    t.expect(ShopSupport$WeftShop.text(page, "#promo-message")).toBe("That code isn't one of ours.");
-    WeftTesting.input(page, "#promo input", "summer");
-    ShopSupport$WeftShop.submitAnywhere("#promo");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#promo-message") === "That code has expired.");
-    WeftTesting.input(page, "#promo input", " weft10 ");
-    ShopSupport$WeftShop.submitAnywhere("#promo");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#promo-message") === "Applied WEFT10");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#summary-discount"));
-    t.expect(ShopSupport$WeftShop.text(page, "#summary-discount")).toBe("-$30.70");
-    t.expect(ShopSupport$WeftShop.text(page, "#summary-total")).toBe("$276.30");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=promo-message]")).toBe("That code isn't one of ours.");
+    WeftTesting.input(page, "[data-id=promo] input", "summer");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=promo]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=promo-message]") === "That code has expired.");
+    WeftTesting.input(page, "[data-id=promo] input", " weft10 ");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=promo]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=promo-message]") === "Applied WEFT10");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=summary-discount]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=summary-discount]")).toBe("-$30.70");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=summary-total]")).toBe("$276.30");
     return t.expect((await ShopSupport$WeftShop.session(app())).promo).toBe("WEFT10");
   });
 });
@@ -178,11 +178,11 @@ Vitest.describe("checking out", undefined, undefined, undefined, undefined, unde
         1
       ]
     ]);
-    WeftTesting.click(page, "#checkout-link");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#address-step"));
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
+    WeftTesting.click(page, "[data-id=checkout-link]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=address-step]"));
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
     await WeftTesting.idle(page);
-    t.expect(ShopSupport$WeftShop.text(page, "#checkout-error")).toBe("Fill in the name.");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=checkout-error]")).toBe("Fill in the name.");
     fill(page, [
       [
         "name",
@@ -201,9 +201,9 @@ Vitest.describe("checking out", undefined, undefined, undefined, undefined, unde
         "1234"
       ]
     ]);
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
     await WeftTesting.idle(page);
-    t.expect(ShopSupport$WeftShop.text(page, "#checkout-error")).toBe("A postcode is five digits.");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=checkout-error]")).toBe("A postcode is five digits.");
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/cart",
       "/checkout"
@@ -224,8 +224,8 @@ Vitest.describe("checking out", undefined, undefined, undefined, undefined, unde
         1
       ]
     ]);
-    WeftTesting.click(page, "#checkout-link");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#address-step"));
+    WeftTesting.click(page, "[data-id=checkout-link]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=address-step]"));
     fill(page, [
       [
         "name",
@@ -244,31 +244,31 @@ Vitest.describe("checking out", undefined, undefined, undefined, undefined, unde
         "12345"
       ]
     ]);
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#delivery-step"));
-    WeftTesting.click(page, "#delivery-express");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=delivery-step]"));
+    WeftTesting.click(page, "[data-id=delivery-express]");
     WeftTesting.input(page, "#gift-note", "Happy birthday");
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#review-step"));
-    t.expect(ShopSupport$WeftShop.text(page, "#review-total")).toBe("Total: $322.00");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=review-step]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=review-total]")).toBe("Total: $322.00");
     await ShopSupport$WeftShop.hold(app(), "estimate:o1001");
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#order-title"));
-    t.expect(ShopSupport$WeftShop.text(page, "#order-title")).toBe("Order o1001");
-    t.expect(ShopSupport$WeftShop.text(page, "#order-total")).toBe("$322.00");
-    t.expect(ShopSupport$WeftShop.text(page, "#cart-button")).toBe("Cart (0)");
-    t.expect(ShopSupport$WeftShop.has(page, "#estimate-loading")).toBe(true);
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=order-title]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=order-title]")).toBe("Order o1001");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=order-total]")).toBe("$322.00");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=cart-button]")).toBe("Cart (0)");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=estimate-loading]")).toBe(true);
     let navigation = await WeftTesting.navigation(page);
     t.expect(Navigation$WeftServer.url(navigation)).toBe("/orders/o1001");
     await ShopSupport$WeftShop.release(app(), "estimate:o1001");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#estimate") === "Arriving in 3–5 days.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=estimate]") === "Arriving in 3–5 days.");
     await ShopSupport$WeftShop.advanceOrder(app(), "o1001");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#order-status") === "Status: Packed");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=order-status]") === "Status: Packed");
     await ShopSupport$WeftShop.advanceOrder(app(), "o1001");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#order-status") === "Status: Shipped");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#estimate") === "Arriving tomorrow.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=order-status]") === "Status: Shipped");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=estimate]") === "Arriving tomorrow.");
     await ShopSupport$WeftShop.advanceOrder(app(), "o1001");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#order-status") === "Status: Delivered");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=order-status]") === "Status: Delivered");
     await WeftTesting.settle(page);
     let requests = WeftTesting.pageRequests(page).length;
     await WeftTesting.idle(page);
@@ -290,8 +290,8 @@ Vitest.describe("checking out", undefined, undefined, undefined, undefined, unde
         1
       ]
     ]);
-    WeftTesting.click(page, "#checkout-link");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#address-step"));
+    WeftTesting.click(page, "[data-id=checkout-link]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=address-step]"));
     fill(page, [
       [
         "name",
@@ -310,15 +310,15 @@ Vitest.describe("checking out", undefined, undefined, undefined, undefined, unde
         "12345"
       ]
     ]);
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#delivery-step"));
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#review-step"));
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=delivery-step]"));
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=review-step]"));
     await ShopSupport$WeftShop.setStock(app(), "p1-7", 0);
-    ShopSupport$WeftShop.submitAnywhere("#checkout-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#checkout-error"));
-    t.expect(ShopSupport$WeftShop.text(page, "#checkout-error")).toBe("Not enough left of p1-7.");
-    t.expect(ShopSupport$WeftShop.has(page, "#review-step")).toBe(true);
+    ShopSupport$WeftShop.submitAnywhere("[data-id=checkout-form]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=checkout-error]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=checkout-error]")).toBe("Not enough left of p1-7.");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=review-step]")).toBe(true);
     t.expect(await ShopSupport$WeftShop.stock(app(), "p19-one")).toBe(5);
     return t.expect((await ShopSupport$WeftShop.session(app())).count).toBe(2);
   });
@@ -328,28 +328,28 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
   Vitest.testAsync("is a cookie the first response sets, which every request after sends", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#blocks-home"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
     let sid = ShopSupport$WeftShop.sid(app());
     t.expect(await ShopSupport$WeftShop.sessionCount(app())).toBe(1);
     let page$1 = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
-    await WeftTesting.waitFor(page$1, undefined, () => ShopSupport$WeftShop.has(page$1, "#grid"));
-    WeftTesting.click(page$1, "#load-more");
-    await WeftTesting.waitFor(page$1, undefined, () => !ShopSupport$WeftShop.has(page$1, "#load-more"));
+    await WeftTesting.waitFor(page$1, undefined, () => ShopSupport$WeftShop.has(page$1, "[data-id=grid]"));
+    WeftTesting.click(page$1, "[data-id=load-more]");
+    await WeftTesting.waitFor(page$1, undefined, () => !ShopSupport$WeftShop.has(page$1, "[data-id=load-more]"));
     t.expect(ShopSupport$WeftShop.sid(app())).toBe(sid);
     t.expect(await ShopSupport$WeftShop.sessionCount(app())).toBe(1);
     WeftTesting.clearCookies(app());
     let page$2 = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page$2, undefined, () => ShopSupport$WeftShop.has(page$2, "#blocks-home"));
+    await WeftTesting.waitFor(page$2, undefined, () => ShopSupport$WeftShop.has(page$2, "[data-id=blocks-home]"));
     t.expect(ShopSupport$WeftShop.sid(app()) !== sid).toBe(true);
     return t.expect(await ShopSupport$WeftShop.sessionCount(app())).toBe(2);
   });
   Vitest.testAsync("has one even for an RPC that's a visitor's first request", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#blocks-home"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
     await WeftTesting.hydrated(page, undefined);
     WeftTesting.clearCookies(app());
-    await ShopSupport$WeftShop.change(page, "#currency", "GBP");
+    await ShopSupport$WeftShop.change(page, "[data-id=currency]", "GBP");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/prefs.setCurrency"));
     await WeftTesting.settle(page);
     t.expect((await ShopSupport$WeftShop.session(app())).currency).toBe("GBP");
@@ -358,22 +358,22 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
   Vitest.testAsync("redirects a signed-out visitor to sign in for their account, then back to it, and out again", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/account");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#signin-page"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=signin-page]"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
-    t.expect(ShopSupport$WeftShop.text(page, "#signin-title")).toBe("Sign in");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=signin-title]")).toBe("Sign in");
     t.expect(WeftTesting.url(page)).toBe("/signin?next=/account");
     t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/signin?next=/account");
-    WeftTesting.input(page, "#signin-page input", "Grace");
-    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#account-title"));
-    t.expect(ShopSupport$WeftShop.text(page, "#account-title")).toBe("Grace's account");
-    t.expect(ShopSupport$WeftShop.text(page, "#account-menu")).toBe("Hi, GraceSign out");
-    t.expect(ShopSupport$WeftShop.has(page, "#no-orders")).toBe(true);
+    WeftTesting.input(page, "[data-id=signin-page] input", "Grace");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=account-title]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=account-title]")).toBe("Grace's account");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=account-menu]")).toBe("Hi, GraceSign out");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=no-orders]")).toBe(true);
     t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/account");
     t.expect(ShopSupport$WeftShop.addressBar()).toBe("/account");
-    WeftTesting.click(page, "#sign-out");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#sign-in"));
-    t.expect(ShopSupport$WeftShop.has(page, "#signin-page")).toBe(true);
+    WeftTesting.click(page, "[data-id=sign-out]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=sign-in]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=signin-page]")).toBe(true);
     t.expect((await ShopSupport$WeftShop.session(app())).user).toBe("");
     t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/signin?next=/account");
     t.expect(ShopSupport$WeftShop.addressBar()).toBe("/signin?next=/account");
@@ -390,24 +390,24 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
   Vitest.testAsync("refuses an empty name without asking the server, and a long one on both sides", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/signin?next=/cart");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#signin-page"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=signin-page]"));
     await WeftTesting.hydrated(page, undefined);
-    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#signin-page [role=\"alert\"]"));
-    t.expect(ShopSupport$WeftShop.text(page, "#signin-page [role=\"alert\"]")).toBe("Enter a name.");
-    WeftTesting.input(page, "#signin-page input", "x".repeat(41));
-    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#signin-page [role=\"alert\"]") === "That name is too long.");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=signin-page] [role=\"alert\"]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=signin-page] [role=\"alert\"]")).toBe("Enter a name.");
+    WeftTesting.input(page, "[data-id=signin-page] input", "x".repeat(41));
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [role=\"alert\"]") === "That name is too long.");
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/signin?next=/cart"]);
     WeftTesting.rewriteBodies(app(), "/_weft/rpc/auth.signIn", param => JSON.stringify("y".repeat(41)));
-    WeftTesting.input(page, "#signin-page input", "Grace");
-    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
+    WeftTesting.input(page, "[data-id=signin-page] input", "Grace");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/auth.signIn"));
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#signin-page [role=\"alert\"]") === "That name is too long.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [role=\"alert\"]") === "That name is too long.");
     WeftTesting.stopRewriting(app());
     t.expect((await ShopSupport$WeftShop.session(app())).user).toBe("");
-    ShopSupport$WeftShop.submitAnywhere("#signin-page form");
-    return await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#cart-title"));
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
+    return await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-title]"));
   });
 });
 

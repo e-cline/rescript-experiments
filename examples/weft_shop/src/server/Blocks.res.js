@@ -233,11 +233,11 @@ function Blocks$Body(props) {
         let match$1 = match.cta;
         await Latency$WeftShop.wait(`block:` + block.id, signal);
         return Jsx$WeftDom.Elements.jsxs("div", {
-          id: `hero-` + block.id,
           className: Css$WeftCss.cx([
             hero,
             match.tone === "cool" ? heroCool : ""
           ]),
+          "data-id": `hero-` + block.id,
           children: [
             Jsx$WeftDom.Elements.jsx("h1", {
               children: Ui$WeftShop.text(match.title)
@@ -280,7 +280,7 @@ function Blocks$Body(props) {
                 return Jsx$WeftDom.Elements.jsxKeyed("li", {
                   children: Jsx$WeftDom.jsx(Link$WeftShop.make, {
                     href: `/c/` + slug,
-                    id: `tile-` + slug,
+                    dataId: `tile-` + slug,
                     children: Ui$WeftShop.text(param[1] + ` (` + Db$WeftShop.inCategory(slug).length.toString() + `)`)
                   })
                 }, slug, undefined);
@@ -292,8 +292,8 @@ function Blocks$Body(props) {
         await Latency$WeftShop.wait(`block:` + block.id, signal);
         let now = Date.now();
         return Jsx$WeftDom.Elements.jsxs("div", {
-          id: `promo-` + block.id,
           className: promo,
+          "data-id": `promo-` + block.id,
           children: [
             Jsx$WeftDom.Elements.jsxs("p", {
               children: [
@@ -319,9 +319,9 @@ function Blocks$Body(props) {
               children: Ui$WeftShop.text(match.title)
             }),
             Jsx$WeftDom.Elements.jsx("ul", {
-              id: "live-list",
+              "data-id": "live-list",
               children: Db$WeftShop.deals().slice(0, 4).map(summary => Jsx$WeftDom.Elements.jsxsKeyed("li", {
-                id: `live-` + summary.id,
+                "data-id": `live-` + summary.id,
                 children: [
                   Jsx$WeftDom.jsx(Link$WeftShop.make, {
                     href: `/p/` + summary.slug,
@@ -333,7 +333,7 @@ function Blocks$Body(props) {
                     compareAt: summary.compareAt
                   }),
                   Jsx$WeftDom.Elements.jsx("span", {
-                    id: `left-` + summary.id,
+                    "data-id": `left-` + summary.id,
                     children: Ui$WeftShop.text(` ` + Db$WeftShop.productStock(summary.id).toString() + ` left`)
                   })
                 ]
@@ -344,7 +344,7 @@ function Blocks$Body(props) {
       case "Text" :
         let body = match.body;
         return Jsx$WeftDom.Elements.jsxs("div", {
-          id: `text-` + block.id,
+          "data-id": `text-` + block.id,
           children: [
             Jsx$WeftDom.Elements.jsx("h2", {
               children: Ui$WeftShop.text(match.title)
@@ -384,9 +384,9 @@ function skeleton(block) {
     tmp = `Loading ` + match.title.toLowerCase() + `…`;
   }
   return Jsx$WeftDom.Elements.jsx("div", {
-    id: `loading-` + block.id,
     className: Theme$WeftShop.placeholder,
     "aria-busy": "true",
+    "data-id": `loading-` + block.id,
     children: Ui$WeftShop.text(tmp)
   });
 }
@@ -423,8 +423,8 @@ function framed(_block, _keyOpt, page, request) {
           }, key, undefined);
         case "Columns" :
           return Jsx$WeftDom.Elements.jsxKeyed("div", {
-            id: `columns-` + block.id,
             className: columns,
+            "data-id": `columns-` + block.id,
             children: match.columns.map((blocks, index) => Jsx$WeftDom.Elements.jsxKeyed("div", {
               children: blockList(blocks, page, request)
             }, index.toString(), undefined))

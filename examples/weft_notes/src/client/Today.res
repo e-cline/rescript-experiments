@@ -6,7 +6,7 @@ development.
 
 @weft.component({kind: Entrypoint})
 let make = () =>
-  <span id="today" className=Theme.secondary>
+  <span dataId="today" className=Theme.secondary>
     {WeftDom.Jsx.string(
       Date.fromTime(Date.now())->Date.toISOString->String.slice(~start=0, ~end=10),
     )}

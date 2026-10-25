@@ -73,42 +73,42 @@ function ProductGrid(props) {
   let needle = deferred.trim().toLowerCase();
   let shown = needle === "" ? all : all.filter(item => item.name.toLowerCase().includes(needle));
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "grid-wrap",
+    "data-id": "grid-wrap",
     children: [
       Jsx$WeftDom.Elements.jsxs("div", {
         className: tools,
         children: [
           Jsx$WeftDom.Elements.jsx("input", {
-            id: "quick-filter",
             "aria-label": "Filter these results",
+            "data-id": "quick-filter",
             type: "search",
             value: filter,
             placeholder: "Filter these results",
             onInput: event => setFilter(param => Dom$WeftDom.Event.targetValue(event))
           }),
           Jsx$WeftDom.Elements.jsx("p", {
-            id: "result-count",
+            "data-id": "result-count",
             children: `Showing ` + shown.length.toString() + ` of ` + props.total.toString()
           })
         ]
       }),
       Jsx$WeftDom.Elements.jsx("ul", {
-        id: "grid",
         className: filter === deferred ? grid : Css$WeftCss.cx([
             grid,
             Theme$WeftShop.stale
           ]),
+        "data-id": "grid",
         children: shown.map(item => Jsx$WeftDom.Elements.jsxKeyed("li", {
           children: item.card
         }, item.key, undefined))
       }),
       Primitive_object.equal(shown, []) ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "no-results",
+          "data-id": "no-results",
           children: "Nothing matches."
         }) : Jsx$WeftDom.$$null,
       next !== undefined ? Jsx$WeftDom.Elements.jsx("button", {
-          id: "load-more",
           className: loadMore,
+          "data-id": "load-more",
           disabled: loading,
           onClick: param => {
             setLoading(param => true);

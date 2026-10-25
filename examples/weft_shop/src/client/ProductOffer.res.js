@@ -56,17 +56,17 @@ function ProductOffer(props) {
   let sku = match[0];
   let offer = Navigation$WeftServer.useRefetchable(`/p/` + slug + `/offer?sku=` + selected, props.children);
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "product-offer",
+    "data-id": "product-offer",
     children: [
       variants$1.length > 1 ? Jsx$WeftDom.Elements.jsx("div", {
-          id: "variants",
           className: variants,
           role: "group",
           "aria-label": "Variant",
+          "data-id": "variants",
           children: variants$1.map(variant$1 => Jsx$WeftDom.Elements.jsxKeyed("button", {
-            id: `variant-` + variant$1.sku,
             className: variant,
             "aria-pressed": variant$1.sku === sku ? "true" : "false",
+            "data-id": `variant-` + variant$1.sku,
             onClick: param => {
               setSku(param => variant$1.sku);
               offer.refetch(`/p/` + slug + `/offer?sku=` + variant$1.sku);
@@ -75,9 +75,9 @@ function ProductOffer(props) {
           }, variant$1.sku, undefined))
         }) : Jsx$WeftDom.$$null,
       Jsx$WeftDom.Elements.jsx("div", {
-        id: "offer",
         className: offer.isPending ? Theme$WeftShop.stale : "",
         "aria-busy": offer.isPending ? "true" : "false",
+        "data-id": "offer",
         children: offer.element
       })
     ]

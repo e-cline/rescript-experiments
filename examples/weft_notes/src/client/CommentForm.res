@@ -48,21 +48,21 @@ let make = (~noteId: string) => {
       }
     )()->ignore
   }
-  <form id="comment-form" className=Styles.form onSubmit=submit>
+  <form dataId="comment-form" className=Styles.form onSubmit=submit>
     <input
-      id="comment-author"
+      dataId="comment-author"
       ariaLabel="Name"
       value=author
       onInput={event => setAuthor(_ => WeftDom.Dom.Event.targetValue(event))}
     />
     <input
-      id="comment-text"
+      dataId="comment-text"
       ariaLabel="Comment"
       ariaDescribedby=hintId
       value=text
       onInput={event => setText(_ => WeftDom.Dom.Event.targetValue(event))}
     />
-    <button id="post-comment" className=Styles.post type_="submit">
+    <button dataId="post-comment" className=Styles.post type_="submit">
       {WeftDom.Jsx.string("Post")}
     </button>
     <p id=hintId className={Css.cx([Styles.note, Theme.secondary])}>
@@ -70,7 +70,7 @@ let make = (~noteId: string) => {
     </p>
     {switch error {
     | Some(message) =>
-      <p id="comment-error" className={Css.cx([Styles.note, Theme.error])} role="alert">
+      <p dataId="comment-error" className={Css.cx([Styles.note, Theme.error])} role="alert">
         {WeftDom.Jsx.string(message)}
       </p>
     | None => WeftDom.Jsx.null

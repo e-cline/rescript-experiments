@@ -3,13 +3,13 @@
 @weft.component({kind: Entrypoint})
 let make = (
   ~href: string,
-  ~id: option<string>=?,
+  ~dataId: option<string>=?,
   ~className: option<string>=?,
   ~children: Weft.Element.t,
 ) => {
   let navigation = WeftServer.Navigation.useNavigation()
   <a
-    ?id
+    ?dataId
     ?className
     href
     // A plain click navigates in place; one opening a new tab or window is left to the browser.

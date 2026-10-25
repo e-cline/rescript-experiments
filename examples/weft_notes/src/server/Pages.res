@@ -60,9 +60,9 @@ module Styles = {
 module Layout = {
   @weft.component({kind: Server})
   let make = (~children) =>
-    <div id="app" className=Styles.app>
+    <div dataId="app" className=Styles.app>
       <nav className=Styles.nav>
-        <Link id="home-link" className=Styles.homeLink href="/">
+        <Link dataId="home-link" className=Styles.homeLink href="/">
           {WeftDom.Jsx.string("All notes")}
         </Link>
         <Today />
@@ -75,12 +75,14 @@ module NoteList = {
   @weft.component({kind: Server})
   let make = () =>
     <Layout>
-      <h1 id="list-title" className=Styles.title> {WeftDom.Jsx.string("Notes")} </h1>
-      <ul id="notes" className=Theme.list>
+      <h1 dataId="list-title" className=Styles.title> {WeftDom.Jsx.string("Notes")} </h1>
+      <ul dataId="notes" className=Theme.list>
         {Db.all()
         ->Array.map(note =>
           <li key=note.id>
-            <Link id={`note-link-${note.id}`} className=Styles.noteLink href={`/notes/${note.id}`}>
+            <Link
+              dataId={`note-link-${note.id}`} className=Styles.noteLink href={`/notes/${note.id}`}
+            >
               {WeftDom.Jsx.string(note.title)}
             </Link>
           </li>
@@ -97,12 +99,12 @@ module NoteTitle = {
     switch Db.find(id) {
     | Some(note) =>
       <>
-        <h1 id="title"> {WeftDom.Jsx.string(note.title)} </h1>
-        <span id="saved-at" className={Css.cx([Styles.savedAt, Theme.secondary])}>
+        <h1 dataId="title"> {WeftDom.Jsx.string(note.title)} </h1>
+        <span dataId="saved-at" className={Css.cx([Styles.savedAt, Theme.secondary])}>
           {WeftDom.Jsx.string(`Saved: ${note.savedAt}`)}
         </span>
       </>
-    | None => <p id="not-found" className=Theme.error> {WeftDom.Jsx.string("No such note")} </p>
+    | None => <p dataId="not-found" className=Theme.error> {WeftDom.Jsx.string("No such note")} </p>
     }
 }
 
@@ -110,7 +112,7 @@ module NoteHeader = {
   /** The title, and the editor around it. */
   @weft.component({kind: Server})
   let make = (~id) =>
-    <header id="note-header" className=Styles.header>
+    <header dataId="note-header" className=Styles.header>
       <NoteEditor noteId=id title={Db.find(id)->Option.mapOr("", note => note.title)}>
         <NoteTitle id />
       </NoteEditor>
@@ -130,7 +132,7 @@ module NoteBody = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let body = await Db.body(id, ~signal)
-    <article id="note-body" className=Styles.body> {WeftDom.Jsx.string(body)} </article>
+    <article dataId="note-body" className=Styles.body> {WeftDom.Jsx.string(body)} </article>
   }
 }
 
@@ -144,11 +146,11 @@ module Related = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let notes = await Db.related(id, ~signal)
-    <ul id="related" className=Styles.related>
+    <ul dataId="related" className=Styles.related>
       {notes
       ->Array.map(note =>
         <li key=note.id>
-          <Link id={`related-${note.id}`} className=Styles.chip href={`/notes/${note.id}`}>
+          <Link dataId={`related-${note.id}`} className=Styles.chip href={`/notes/${note.id}`}>
             {WeftDom.Jsx.string(note.title)}
           </Link>
         </li>
@@ -164,7 +166,7 @@ module Broken = {
   let make = () => JsError.throwWithMessage("the recommendations service is down")
 }
 
-let loading = (id, text) => <p id className=Theme.loading> {WeftDom.Jsx.string(text)} </p>
+let loading = (id, text) => <p dataId=id className=Theme.loading> {WeftDom.Jsx.string(text)} </p>
 
 module NotePage = {
   @weft.component({kind: Server})
@@ -177,7 +179,7 @@ module NotePage = {
       <Weft.Suspense fallback={loading("body-loading", "Loading the note…")}>
         <NoteBody id signal />
       </Weft.Suspense>
-      <section id="comments-section" className=Styles.section>
+      <section dataId="comments-section" className=Styles.section>
         <h2> {WeftDom.Jsx.string("Comments")} </h2>
         <CommentsPanel noteId=id>
           <Comments id signal />

@@ -24,7 +24,7 @@ let make = (~id: string, ~labels: array<string>, ~panels: array<Weft.Element.t>)
   let selected = Math.Int.min(selected, Array.length(labels) - 1)
   let tabId = index => `${id}-tab-${Int.toString(index)}`
   let panelId = index => `${id}-panel-${Int.toString(index)}`
-  <div className={Styles.tabs} id>
+  <div className={Styles.tabs} dataId=id>
     <div role="tablist">
       {labels
       ->Array.mapWithIndex((label, index) =>

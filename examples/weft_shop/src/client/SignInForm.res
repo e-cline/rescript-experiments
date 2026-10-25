@@ -3,7 +3,7 @@
 @weft.component({kind: Entrypoint})
 let make = (~next: string) => {
   let navigation = WeftServer.Navigation.useNavigation()
-  <div id="signin-page">
+  <div dataId="signin-page">
     <SignInFields
       onSignedIn={name => {
         Store.toast(`Signed in as ${name}`)

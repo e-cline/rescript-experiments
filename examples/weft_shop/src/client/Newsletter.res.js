@@ -19,12 +19,12 @@ function Newsletter(props) {
   let subscribe = Rpc$WeftServer.use(Api$WeftShop.subscribe, undefined);
   if (typeof status !== "object" && status !== "sending" && status !== "idle") {
     return Jsx$WeftDom.Elements.jsx("p", {
-      id: "newsletter-done",
+      "data-id": "newsletter-done",
       children: "Thanks: check your inbox."
     });
   }
   return Jsx$WeftDom.Elements.jsxs("form", {
-    id: "newsletter",
+    "data-id": "newsletter",
     onSubmit: event => {
       event.preventDefault();
       setStatus(param => "sending");
@@ -54,14 +54,14 @@ function Newsletter(props) {
         onInput: event => setEmail(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "newsletter-submit",
+        "data-id": "newsletter-submit",
         type: "submit",
         disabled: status === "sending",
         children: "Subscribe"
       }),
       typeof status === "object" && status.NAME === "error" ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "newsletter-error",
           role: "alert",
+          "data-id": "newsletter-error",
           children: status.VAL
         }) : Jsx$WeftDom.$$null
     ]

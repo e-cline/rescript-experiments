@@ -52,7 +52,7 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
     }
   , (refreshEvery, src))
   <section
-    id={`block-${id}`}
+    dataId={`block-${id}`}
     className={Styles.block}
     ariaBusy={block.isPending ? "true" : "false"}
     title={block.isPending ? "pending" : "idle"}
@@ -60,10 +60,10 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
     <Weft.ErrorBoundary
       fallback={(~error, ~reset as resetBoundary) => {
         reset.current = resetBoundary
-        <div className={Styles.error} id={`block-error-${id}`} role="alert">
+        <div className={Styles.error} dataId={`block-error-${id}`} role="alert">
           <p> {WeftDom.Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))} </p>
           <button
-            id={`retry-${id}`}
+            dataId={`retry-${id}`}
             disabled=retrying
             onClick={_ => {
               setRetrying(_ => true)

@@ -17,7 +17,7 @@ module Styles = {
 let make = (~children: Weft.Element.t) =>
   <Weft.ErrorBoundary
     fallback={(~error, ~reset as _) =>
-      <p id="error-box" className=Styles.box>
+      <p dataId="error-box" className=Styles.box>
         {WeftDom.Jsx.string("Couldn't show this: " ++ Weft.ErrorBoundary.message(error))}
       </p>}
   >

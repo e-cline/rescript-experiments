@@ -35,7 +35,7 @@ function Price(props) {
   let match = ShopContext$WeftShop.use();
   let currency = match.currency;
   return Jsx$WeftDom.Elements.jsx("data", {
-    id: props.id,
+    "data-id": props.dataId,
     value: cents.toString(),
     children: compareAt !== undefined ? Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
         children: [

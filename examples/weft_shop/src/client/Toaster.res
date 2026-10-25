@@ -44,7 +44,7 @@ module Toast = {
 @weft.component
 let make = () => {
   let toasts = WeftSignals.SignalHooks.useSignal(Signals.Atom.toSignal(Store.toasts))
-  <ul id="toasts" className=Styles.toasts role="status" ariaLive="polite">
+  <ul dataId="toasts" className=Styles.toasts role="status" ariaLive="polite">
     {toasts->Array.map(toast => <Toast key={Int.toString(toast.id)} toast />)->WeftDom.Jsx.array}
   </ul>
 }

@@ -40,8 +40,8 @@ function Countdown(props) {
     };
   });
   return Jsx$WeftDom.Elements.jsx("span", {
-    id: props.id,
     className: countdown,
+    "data-id": props.id,
     children: endsAt <= now ? "Ended" : `Ends in ` + format(endsAt - now)
   });
 }

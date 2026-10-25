@@ -53,6 +53,9 @@ pnpm --filter @e-cline/weft_notes_example exec vp run start
 
 ## Tests
 
+The elements the tests find have a `data-id` (`dataId` in the JSX), not an `id`, which only those
+the page refers to have (the comment's hint, named by its input's `aria-describedby`).
+
 [`tests/Notes_test.res`](tests/Notes_test.res) runs the app's scenarios through the harness: the
 server in a worker thread (with the database's controls,
 [`tests/FakeDbControl.res`](tests/FakeDbControl.res), called there), each page in jsdom. They cover:

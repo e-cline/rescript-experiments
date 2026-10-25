@@ -23,7 +23,7 @@ function CurrencySelect(props) {
         children: "Currency"
       }),
       Jsx$WeftDom.Elements.jsx("select", {
-        id: "currency",
+        "data-id": "currency",
         value: Money$WeftShop.code(currency),
         onChange: event => {
           let next = Money$WeftShop.fromCode(Dom$WeftDom.Event.targetValue(event));

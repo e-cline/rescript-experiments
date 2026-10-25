@@ -86,26 +86,26 @@ function CommentForm(props) {
     })();
   };
   return Jsx$WeftDom.Elements.jsxs("form", {
-    id: "comment-form",
     className: form,
+    "data-id": "comment-form",
     onSubmit: submit,
     children: [
       Jsx$WeftDom.Elements.jsx("input", {
-        id: "comment-author",
         "aria-label": "Name",
+        "data-id": "comment-author",
         value: author,
         onInput: event => setAuthor(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("input", {
-        id: "comment-text",
         "aria-label": "Comment",
         "aria-describedby": hintId,
+        "data-id": "comment-text",
         value: text,
         onInput: event => setText(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "post-comment",
         className: post,
+        "data-id": "post-comment",
         type: "submit",
         children: "Post"
       }),
@@ -118,12 +118,12 @@ function CommentForm(props) {
         children: `At most ` + Api$WeftNotes.maxLength.toString() + ` characters.`
       }),
       error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "comment-error",
           className: Css$WeftCss.cx([
             note,
             Theme$WeftNotes.error
           ]),
           role: "alert",
+          "data-id": "comment-error",
           children: error
         }) : Jsx$WeftDom.$$null
     ]

@@ -39,6 +39,8 @@ type props = {
   @as("aria-modal") ariaModal?: string,
   @as("aria-busy") ariaBusy?: string,
   @as("data-testid") dataTestId?: string,
+  /** A name for tests to find the element by, where an `id` would be there only for them. */
+  @as("data-id") dataId?: string,
   // Links and media
   href?: string,
   target?: string,

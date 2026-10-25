@@ -23,7 +23,7 @@ let make = (~name: string, ~hue: int) => {
   let (selected, setSelected) = Weft.Hooks.useState(() => 0)
   let count = Array.length(views)
   <div
-    id="gallery"
+    dataId="gallery"
     tabIndex=0
     ariaLabel={`Pictures of the ${name}`}
     onKeyDown={event =>
@@ -34,18 +34,18 @@ let make = (~name: string, ~hue: int) => {
       }}
   >
     <div
-      id="main-picture"
+      dataId="main-picture"
       className={Css.cx([Theme.picture, Styles.main])}
       style={Theme.pictureVars(~hue, ~view=selected)}
     >
-      <span id="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
+      <span dataId="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
     </div>
     <div className={Styles.thumbnails}>
       {views
       ->Array.mapWithIndex((view, index) =>
         <button
           key=view
-          id={`thumb-${Int.toString(index)}`}
+          dataId={`thumb-${Int.toString(index)}`}
           className={Styles.thumbnail}
           ariaLabel=view
           ariaPressed={index == selected ? "true" : "false"}

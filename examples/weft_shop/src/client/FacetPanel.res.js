@@ -63,8 +63,8 @@ function FacetPanel$RangeFacet(props) {
   let fromId = Hooks$Weft.useId();
   let toId = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("fieldset", {
-    id: `facet-` + name,
     className: facet,
+    "data-id": `facet-` + name,
     children: [
       Jsx$WeftDom.Elements.jsx("legend", {
         children: props.label
@@ -94,7 +94,7 @@ function FacetPanel$RangeFacet(props) {
         onInput: event => setTo(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: `apply-` + name,
+        "data-id": `apply-` + name,
         onClick: param => apply(Stdlib_Option.getOr(Stdlib_Int.fromString(from, undefined), min), Stdlib_Option.getOr(Stdlib_Int.fromString(to, undefined), max)),
         children: "Apply"
       })
@@ -130,15 +130,15 @@ function FacetPanel(props) {
   };
   let sort = pending ? Stdlib_Option.getOr(Primitive_option.fromNullable(params.get("sort")), "featured") : props.sort;
   return Jsx$WeftDom.Elements.jsxs("aside", {
-    id: "facets",
     className: pending ? Theme$WeftShop.stale : "",
     "aria-busy": pending ? "true" : "false",
+    "data-id": "facets",
     children: [
       Jsx$WeftDom.Elements.jsxs("label", {
         children: [
           "Sort by ",
           Jsx$WeftDom.Elements.jsx("select", {
-            id: "sort",
+            "data-id": "sort",
             value: sort,
             onChange: event => {
               let value = Dom$WeftDom.Event.targetValue(event);
@@ -179,8 +179,8 @@ function FacetPanel(props) {
             let name = facet$1.name;
             let selected = pending ? params.getAll(name) : facet$1.selected;
             return Jsx$WeftDom.Elements.jsxsKeyed("fieldset", {
-              id: `facet-` + name,
               className: facet,
+              "data-id": `facet-` + name,
               children: [
                 Jsx$WeftDom.Elements.jsx("legend", {
                   children: facet$1.label
@@ -191,7 +191,7 @@ function FacetPanel(props) {
                     className: Theme$WeftShop.choice,
                     children: [
                       Jsx$WeftDom.Elements.jsx("input", {
-                        id: name + `-` + value,
+                        "data-id": name + `-` + value,
                         type: "checkbox",
                         checked: selected.includes(value),
                         onChange: param => go(changed(query, params => {
@@ -242,11 +242,11 @@ function FacetPanel(props) {
             let name$2 = facet$1.name;
             let on = pending ? Primitive_object.equal(Primitive_option.fromNullable(params.get(name$2)), "1") : facet$1.on;
             return Jsx$WeftDom.Elements.jsxsKeyed("label", {
-              id: `facet-` + name$2,
               className: facet,
+              "data-id": `facet-` + name$2,
               children: [
                 Jsx$WeftDom.Elements.jsx("input", {
-                  id: `toggle-` + name$2,
+                  "data-id": `toggle-` + name$2,
                   type: "checkbox",
                   checked: on,
                   onChange: param => go(changed(query, params => {
@@ -263,7 +263,7 @@ function FacetPanel(props) {
         }
       }),
       query === "" ? Jsx$WeftDom.$$null : Jsx$WeftDom.Elements.jsx("button", {
-          id: "clear-filters",
+          "data-id": "clear-filters",
           onClick: param => go(""),
           children: "Clear all"
         })

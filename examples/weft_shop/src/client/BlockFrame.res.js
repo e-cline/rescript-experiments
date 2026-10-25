@@ -86,23 +86,23 @@ function BlockFrame(props) {
     src
   ]);
   return Jsx$WeftDom.Elements.jsx("section", {
-    id: `block-` + id,
     className: block,
     title: block$1.isPending ? "pending" : "idle",
     "aria-busy": block$1.isPending ? "true" : "false",
+    "data-id": `block-` + id,
     children: Jsx$WeftDom.jsx(ErrorBoundary$Weft.make, {
       fallback: (error$1, resetBoundary) => {
         reset.current = resetBoundary;
         return Jsx$WeftDom.Elements.jsxs("div", {
-          id: `block-error-` + id,
           className: error,
           role: "alert",
+          "data-id": `block-error-` + id,
           children: [
             Jsx$WeftDom.Elements.jsx("p", {
               children: "Couldn't load this: " + ErrorBoundary$Weft.message(error$1)
             }),
             Jsx$WeftDom.Elements.jsx("button", {
-              id: `retry-` + id,
+              "data-id": `retry-` + id,
               disabled: retrying,
               onClick: param => {
                 setRetrying(param => true);

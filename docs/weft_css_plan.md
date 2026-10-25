@@ -705,9 +705,10 @@ which for client code is the right one (§ How it works).
   `@media` block became each class's `media`.
 - **No class names but `weft_css`'s.** The semantic ones were first kept beside the styles'
   (`Css.cx(["card", Styles.card])`), since the tests found elements by them. They were taken out
-  later, in `weft_notes` too, and the tests find elements by what the page already has: ids (some
-  added, as `#total-<sku>`), roles and ARIA attributes (`[role="listbox"]`, `[aria-busy="true"]`),
-  or elements in one with an id (`#signin-page form`, `#card-p1 h3`). A price is a `<data>` element,
+  later, in `weft_notes` too, and the tests find elements by names given for them (`data-id`, the
+  JSX's `dataId`, rather than an `id`, which is kept for what the page needs: a label's, an ARIA
+  reference's), roles and ARIA attributes (`[role="listbox"]`, `[aria-busy="true"]`), or elements in
+  a named one (`[data-id=signin-page] form`, `[data-id=card-p1] h3`). A price is a `<data>` element,
   its value in cents.
 - **`weft_css` gained `clip`**, the one property the store used that it didn't have.
 - **Tier 2** (`tests/Styles_test.res`): the home page's head links the theme's and the frame's

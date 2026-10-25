@@ -33,21 +33,21 @@ let make = (~noteId: string, ~title: string, ~children: Weft.Element.t) => {
       }
     )()->ignore
   }
-  <form id="editor" className=Styles.editor onSubmit=save>
+  <form dataId="editor" className=Styles.editor onSubmit=save>
     <div className=Styles.saved> {saved.element} </div>
     <input
-      id="title-input"
+      dataId="title-input"
       className=Styles.input
       ariaLabel="Title"
       value=draft
       onInput={event => setDraft(_ => WeftDom.Dom.Event.targetValue(event))}
     />
-    <button id="save" type_="submit">
+    <button dataId="save" type_="submit">
       {WeftDom.Jsx.string(saved.isPending ? "Saving…" : "Save")}
     </button>
     {switch error {
     | Some(message) =>
-      <p id="title-error" className=Theme.error role="alert"> {WeftDom.Jsx.string(message)} </p>
+      <p dataId="title-error" className=Theme.error role="alert"> {WeftDom.Jsx.string(message)} </p>
     | None => WeftDom.Jsx.null
     }}
   </form>

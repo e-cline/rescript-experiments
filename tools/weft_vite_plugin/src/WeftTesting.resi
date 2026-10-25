@@ -163,6 +163,27 @@ let releaseLoads: page => unit
 /** The entrypoint files loaded, in order. */
 let loads: page => array<string>
 
+/**
+The stylesheets the client (or a segment's swap) added, in order: those of what rendered after the
+shell, whose own are in the page's head (which the harness applies, loaded, as a browser shows
+nothing before them). jsdom loads none: the harness has each "load" a task after it's added.
+*/
+let stylesheets: page => array<string>
+
+/**
+Holds stylesheets (they don't load) until `releaseStylesheets`: those whose URL contains `matching`
+(every one, by default), so a test can see what waits for one, and that nothing shows without it.
+*/
+let holdStylesheets: (page, ~matching: string=?) => unit
+
+let releaseStylesheets: page => unit
+
+/**
+The elements on the page shown without their CSS: each with a `weft_css` class whose sheet hasn't
+loaded (`<tag class="...">`). It should always be empty: check it at every step.
+*/
+let unstyled: page => array<string>
+
 /** How many times the entrypoint `id` (`<file>#<module path>`) has rendered. */
 let renderCount: (page, string) => int
 
@@ -171,7 +192,10 @@ type snapshot
 
 let snapshot: page => snapshot
 
-/** The nodes in `snapshot` no longer under the container (`tag#id`, or quoted text). */
+/**
+The nodes in `snapshot` no longer under the container (`tag#id`, `tag[data-id=name]`, `tag`, or
+quoted text).
+*/
 let removedSince: (page, snapshot) => array<string>
 
 /**

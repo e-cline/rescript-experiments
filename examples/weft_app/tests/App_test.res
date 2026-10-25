@@ -77,7 +77,7 @@ describe("Todo app", () => {
     t->expect(toBool(Dom.getProperty(find(container, "#toggle-2"), "checked")))->Expect.toBe(true)
     t
     ->expect(Dom.getAttribute(find(container, "#todo-2"), "class"))
-    ->Expect.toEqual(Nullable.make("done"))
+    ->Expect.toEqual(Nullable.make(`${Styles.item} ${Styles.done}`))
     t->expect(remaining(container))->Expect.toBe("2 items left")
 
     click(container, "#filter-active")

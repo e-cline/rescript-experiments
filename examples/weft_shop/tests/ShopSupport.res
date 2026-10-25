@@ -235,14 +235,14 @@ let attribute = (page, selector, name) =>
   ->WeftTesting.query(selector)
   ->Option.flatMap(element => WeftDom.Dom.getAttribute(element, name)->Nullable.toOption)
 
-/** The `#main` element's children, as `removedSince` names nodes: what a page's main part is made of. */
+/** The `[data-id=main]` element's children, as `removedSince` names nodes: what a page's main part is made of. */
 let mainChildren: WeftTesting.page => array<string> = %raw(`page => {
-  const main = page.container.querySelector('#main');
+  const main = page.container.querySelector('[data-id=main]');
   if (main === null) return [];
   return [...main.childNodes].map((node) =>
     node.nodeType === 8 ? '<!--' + node.textContent + '-->'
       : node.nodeType === 3 ? JSON.stringify(node.textContent)
-      : node.tagName.toLowerCase() + (node.id ? '#' + node.id : ''));
+      : node.tagName.toLowerCase() + (node.dataset.id ? '[data-id=' + node.dataset.id + ']' : ''));
 }`)
 
 /**
@@ -273,9 +273,11 @@ let noWarnings = page =>
 
 /** Signs in as `name` through the header's dialog, and waits for the page to say so. */
 let signIn = async (page, name) => {
-  page->WeftTesting.click("#sign-in")
-  await page->WeftTesting.waitFor(() => Doc.find("#signin-dialog")->Option.isSome)
-  inputAnywhere(".signin-name", name)
-  submitAnywhere(".signin-form")
-  await page->WeftTesting.waitFor(() => text(page, "#account-menu")->String.includes(`Hi, ${name}`))
+  page->WeftTesting.click("[data-id=sign-in]")
+  await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+  inputAnywhere("[data-id=signin-dialog] input", name)
+  submitAnywhere("[data-id=signin-dialog] form")
+  await page->WeftTesting.waitFor(() =>
+    text(page, "[data-id=account-menu]")->String.includes(`Hi, ${name}`)
+  )
 }

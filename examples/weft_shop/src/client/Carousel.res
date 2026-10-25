@@ -2,6 +2,25 @@
 
 let pageSize = 4
 
+open WeftCss
+
+module Styles = {
+  /** How far the track is moved: a page (100%) for each page before the one shown. */
+  let offset = Css.var("0%")
+  let head = Css.class({display: Flex, justifyContent: SpaceBetween, alignItems: Center})
+  let controls = Css.class({display: Flex, gap: Px(8), alignItems: Center, color: Var(Theme.muted)})
+  let window = Css.class({overflow: Hidden})
+  let track = Css.class({
+    display: Grid,
+    gridAutoFlow: "column",
+    gridAutoColumns: "calc(25% - 12px)",
+    gap: Px(16),
+    transform: `translateX(${Theme.value(offset)})`,
+    transition: "transform .3s",
+    media: [Css.media(~query="(max-width: 720px)", {gridAutoColumns: "calc(50% - 8px)"})],
+  })
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t) => {
   let (page, setPage) = Weft.Hooks.useState(() => 0)
@@ -9,20 +28,20 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
   // The rail can shrink under the page it was on (a refetch with fewer cards).
   let page = Math.Int.min(page, pages - 1)
   let first = page * pageSize
-  <div className="carousel" id={`carousel-${id}`}>
-    <div className="carousel-head">
+  <div dataId={`carousel-${id}`}>
+    <div className={Styles.head}>
       <h2> {WeftDom.Jsx.string(title)} </h2>
       {pages > 1
-        ? <div className="carousel-controls">
+        ? <div className={Styles.controls}>
             <button
-              id={`prev-${id}`}
+              dataId={`prev-${id}`}
               ariaLabel="Previous"
               disabled={page == 0}
               onClick={_ => setPage(_ => page - 1)}
             >
               {WeftDom.Jsx.string("‹")}
             </button>
-            <span className="carousel-position" id={`position-${id}`}>
+            <span dataId={`position-${id}`}>
               {WeftDom.Jsx.string(
                 `${Int.toString(first + 1)}–${Int.toString(
                     Math.Int.min(count, first + pageSize),
@@ -30,7 +49,7 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
               )}
             </span>
             <button
-              id={`next-${id}`}
+              dataId={`next-${id}`}
               ariaLabel="Next"
               disabled={page == pages - 1}
               onClick={_ => setPage(_ => page + 1)}
@@ -40,10 +59,10 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
           </div>
         : WeftDom.Jsx.null}
     </div>
-    <div className="carousel-window">
+    <div className={Styles.window}>
       <div
-        className="carousel-track"
-        style={Dict.fromArray([("transform", `translateX(-${Int.toString(page * 100)}%)`)])}
+        className={Styles.track}
+        style={Css.vars([(Styles.offset, `-${Int.toString(page * 100)}%`)])}
       >
         children
       </div>

@@ -20,7 +20,7 @@ function PromoForm(props) {
   let apply = Rpc$WeftServer.use(Api$WeftShop.applyPromo, undefined);
   let inputId = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("form", {
-    id: "promo",
+    "data-id": "promo",
     onSubmit: event => {
       event.preventDefault();
       (async () => {
@@ -42,19 +42,18 @@ function PromoForm(props) {
       }),
       Jsx$WeftDom.Elements.jsx("input", {
         id: inputId,
-        className: "promo-code",
         value: code,
         placeholder: Stdlib_Option.getOr(props.applied, ""),
         onInput: event => setCode(param => Dom$WeftDom.Event.targetValue(event))
       }),
       Jsx$WeftDom.Elements.jsx("button", {
-        id: "apply-promo",
+        "data-id": "apply-promo",
         type: "submit",
         children: "Apply"
       }),
       message !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          id: "promo-message",
           role: "status",
+          "data-id": "promo-message",
           children: message
         }) : Jsx$WeftDom.$$null
     ]

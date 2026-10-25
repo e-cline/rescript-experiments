@@ -54,17 +54,19 @@ test('the first page streams: the shell and the first row, then each boundary as
 }) => {
   // Not waiting for `load`: the page is still streaming, so it hasn't loaded.
   await page.goto('/notes/1', {waitUntil: 'commit'});
-  await expect(page.locator('#title')).toHaveText('Groceries');
-  await expect(page.locator('#body-loading')).toBeVisible();
-  await expect(page.locator('#related-loading')).toBeVisible();
+  await expect(page.locator('[data-id=title]')).toHaveText('Groceries');
+  await expect(page.locator('[data-id=body-loading]')).toBeVisible();
+  await expect(page.locator('[data-id=related-loading]')).toBeVisible();
   await release(request, 'related:1');
-  await expect(page.locator('#related')).toBeVisible();
-  await expect(page.locator('#body-loading')).toBeVisible();
+  await expect(page.locator('[data-id=related]')).toBeVisible();
+  await expect(page.locator('[data-id=body-loading]')).toBeVisible();
   await release(request, 'body:1');
-  await expect(page.locator('#note-body')).toHaveText('Milk, eggs, bread.');
-  await expect(page.locator('#comment-list-loading')).toBeVisible();
+  await expect(page.locator('[data-id=note-body]')).toHaveText(
+    'Milk, eggs, bread.',
+  );
+  await expect(page.locator('[data-id=comment-list-loading]')).toBeVisible();
   await release(request, 'comments:1');
-  await expect(page.locator('#comment-list')).toContainText(
+  await expect(page.locator('[data-id=comment-list]')).toContainText(
     "Ada: Don't forget coffee.",
   );
 });
@@ -81,15 +83,15 @@ test("an entrypoint's chunk is requested once a page uses it, and only once", as
     }
   });
   await page.goto('/');
-  await expect(page.locator('#notes')).toBeVisible();
+  await expect(page.locator('[data-id=notes]')).toBeVisible();
   expect(likeChunks).toEqual([]);
-  await hydrated(page, '#note-link-1');
-  await page.locator('#note-link-1').click();
-  await expect(page.locator('#like')).toHaveText('3 likes');
+  await hydrated(page, '[data-id=note-link-1]');
+  await page.locator('[data-id=note-link-1]').click();
+  await expect(page.locator('[data-id=like]')).toHaveText('3 likes');
   expect(likeChunks).toHaveLength(1);
-  await page.locator('#related-2').click();
-  await expect(page.locator('#title')).toHaveText('Ideas');
-  await expect(page.locator('#like')).toHaveText('5 likes');
+  await page.locator('[data-id=related-2]').click();
+  await expect(page.locator('[data-id=title]')).toHaveText('Ideas');
+  await expect(page.locator('[data-id=like]')).toHaveText('5 likes');
   expect(likeChunks).toHaveLength(1);
 });
 
@@ -99,8 +101,8 @@ test("saving a title refetches the saved title, keeping the input's focus and se
 }) => {
   await openGates(request, '1');
   await page.goto('/notes/1');
-  await hydrated(page, '#title-input');
-  const input = page.locator('#title-input');
+  await hydrated(page, '[data-id=title-input]');
+  const input = page.locator('[data-id=title-input]');
   await input.fill('Groceries!');
   await input.evaluate((element: HTMLInputElement) => {
     (element as HTMLInputElement & {marked?: boolean}).marked = true;
@@ -108,8 +110,10 @@ test("saving a title refetches the saved title, keeping the input's focus and se
   });
   // Enter submits the form without moving the focus off the input.
   await input.press('Enter');
-  await expect(page.locator('#saved-at')).toHaveText('Saved: revision 1');
-  await expect(page.locator('#title')).toHaveText('Groceries!');
+  await expect(page.locator('[data-id=saved-at]')).toHaveText(
+    'Saved: revision 1',
+  );
+  await expect(page.locator('[data-id=title]')).toHaveText('Groceries!');
   expect(
     await input.evaluate((element: HTMLInputElement) => ({
       same: (element as HTMLInputElement & {marked?: boolean}).marked === true,
@@ -131,18 +135,24 @@ test("navigating between notes keeps the like button's state, and the back butto
 }) => {
   await openGates(request, '1', '2');
   await page.goto('/notes/1');
-  await hydrated(page, '#like');
-  await page.locator('#like').click();
-  await expect(page.locator('#like')).toHaveText('3 likes (you liked this)');
-  await page.locator('#related-2').click();
-  await expect(page.locator('#title')).toHaveText('Ideas');
+  await hydrated(page, '[data-id=like]');
+  await page.locator('[data-id=like]').click();
+  await expect(page.locator('[data-id=like]')).toHaveText(
+    '3 likes (you liked this)',
+  );
+  await page.locator('[data-id=related-2]').click();
+  await expect(page.locator('[data-id=title]')).toHaveText('Ideas');
   await expect(page).toHaveURL(/\/notes\/2$/);
-  await expect(page.locator('#like')).toHaveText('5 likes (you liked this)');
+  await expect(page.locator('[data-id=like]')).toHaveText(
+    '5 likes (you liked this)',
+  );
   await page.goBack();
   await expect(page).toHaveURL(/\/notes\/1$/);
-  await expect(page.locator('#title')).toHaveText('Groceries');
+  await expect(page.locator('[data-id=title]')).toHaveText('Groceries');
   // The like went to the server, and the button still knows it was liked here.
-  await expect(page.locator('#like')).toHaveText('4 likes (you liked this)');
+  await expect(page.locator('[data-id=like]')).toHaveText(
+    '4 likes (you liked this)',
+  );
 });
 
 test('a link clicked to open in a new tab opens one, and leaves this page as it was', async ({
@@ -152,16 +162,18 @@ test('a link clicked to open in a new tab opens one, and leaves this page as it 
 }) => {
   await openGates(request, '1', '2');
   await page.goto('/notes/1');
-  await hydrated(page, '#related-2');
+  await hydrated(page, '[data-id=related-2]');
   const opened = context.waitForEvent('page');
-  await page.locator('#related-2').click({modifiers: ['ControlOrMeta']});
+  await page
+    .locator('[data-id=related-2]')
+    .click({modifiers: ['ControlOrMeta']});
   const tab = await opened;
   await tab.waitForLoadState();
   await expect(tab).toHaveURL(/\/notes\/2$/);
-  await expect(tab.locator('#title')).toHaveText('Ideas');
+  await expect(tab.locator('[data-id=title]')).toHaveText('Ideas');
   await tab.close();
   await expect(page).toHaveURL(/\/notes\/1$/);
-  await expect(page.locator('#title')).toHaveText('Groceries');
+  await expect(page.locator('[data-id=title]')).toHaveText('Groceries');
 });
 
 test('a page whose payload fails to load is loaded the ordinary way instead', async ({
@@ -176,16 +188,16 @@ test('a page whose payload fails to load is loaded the ordinary way instead', as
       : route.continue(),
   );
   await page.goto('/notes/1');
-  await hydrated(page, '#related-2');
+  await hydrated(page, '[data-id=related-2]');
   const documentRequest = page.waitForRequest(
     (request) =>
       request.resourceType() === 'document' &&
       request.url().endsWith('/notes/2'),
   );
-  await page.locator('#related-2').click();
+  await page.locator('[data-id=related-2]').click();
   await documentRequest;
   await expect(page).toHaveURL(/\/notes\/2$/);
-  await expect(page.locator('#title')).toHaveText('Ideas');
+  await expect(page.locator('[data-id=title]')).toHaveText('Ideas');
   await page.goBack();
   await expect(page).toHaveURL(/\/notes\/1$/);
   // The failed request's own complaint is expected.
@@ -198,13 +210,13 @@ test('posting a comment goes through its RPC, as JSON with its header, and a ref
 }) => {
   await openGates(request, '1');
   await page.goto('/notes/1');
-  await hydrated(page, '#comment-text');
-  await page.locator('#comment-author').fill('Me');
-  await page.locator('#comment-text').fill('  From a browser  ');
+  await hydrated(page, '[data-id=comment-text]');
+  await page.locator('[data-id=comment-author]').fill('Me');
+  await page.locator('[data-id=comment-text]').fill('  From a browser  ');
   const posted = page.waitForRequest(
     (sent) => new URL(sent.url()).pathname === '/_weft/rpc/notes.addComment',
   );
-  await page.locator('#post-comment').click();
+  await page.locator('[data-id=post-comment]').click();
   const sent = await posted;
   expect(sent.method()).toBe('POST');
   expect(sent.headers()['content-type']).toBe('application/json');
@@ -218,10 +230,10 @@ test('posting a comment goes through its RPC, as JSON with its header, and a ref
   expect((await sent.response())?.status()).toBe(200);
   // The refresh's comments wait on their gate again.
   await release(request, 'comments:1');
-  await expect(page.locator('#comment-list')).toContainText(
+  await expect(page.locator('[data-id=comment-list]')).toContainText(
     'Me: From a browser',
   );
-  await expect(page.locator('#comment-text')).toHaveValue('');
+  await expect(page.locator('[data-id=comment-text]')).toHaveValue('');
 });
 
 test("a boundary's content is painted before the bootstrap has loaded, and hydrated once it has", async ({
@@ -238,21 +250,25 @@ test("a boundary's content is painted before the bootstrap has loaded, and hydra
     await route.continue();
   });
   await page.goto('/notes/1', {waitUntil: 'commit'});
-  await expect(page.locator('#title')).toHaveText('Groceries');
-  await expect(page.locator('#body-loading')).toBeVisible();
+  await expect(page.locator('[data-id=title]')).toHaveText('Groceries');
+  await expect(page.locator('[data-id=body-loading]')).toBeVisible();
   await release(request, 'body:1');
   // Swapped in by the page's own inline script.
-  await expect(page.locator('#note-body')).toHaveText('Milk, eggs, bread.');
+  await expect(page.locator('[data-id=note-body]')).toHaveText(
+    'Milk, eggs, bread.',
+  );
   expect(
     await page.evaluate(
-      () => '$$resFiberProps' in document.querySelector('#title')!,
+      () => '$$resFiberProps' in document.querySelector('[data-id=title]')!,
     ),
   ).toBe(false);
   releaseBootstrap();
-  await hydrated(page, '#note-body');
-  await hydrated(page, '#like');
-  await page.locator('#like').click();
-  await expect(page.locator('#like')).toHaveText('3 likes (you liked this)');
+  await hydrated(page, '[data-id=note-body]');
+  await hydrated(page, '[data-id=like]');
+  await page.locator('[data-id=like]').click();
+  await expect(page.locator('[data-id=like]')).toHaveText(
+    '3 likes (you liked this)',
+  );
 });
 
 test('what is clicked and typed before the bootstrap has loaded happens once it has', async ({
@@ -269,15 +285,17 @@ test('what is clicked and typed before the bootstrap has loaded happens once it 
     await route.continue();
   });
   await page.goto('/notes/1', {waitUntil: 'commit'});
-  await expect(page.locator('#like')).toHaveText('3 likes');
-  await page.locator('#like').click();
-  await page.locator('#title-input').fill('Typed early');
-  await expect(page.locator('#like')).toHaveText('3 likes');
+  await expect(page.locator('[data-id=like]')).toHaveText('3 likes');
+  await page.locator('[data-id=like]').click();
+  await page.locator('[data-id=title-input]').fill('Typed early');
+  await expect(page.locator('[data-id=like]')).toHaveText('3 likes');
   releaseBootstrap();
-  await expect(page.locator('#like')).toHaveText('3 likes (you liked this)');
+  await expect(page.locator('[data-id=like]')).toHaveText(
+    '3 likes (you liked this)',
+  );
   // The editor's draft is what was typed (its input event replayed), so that's what's saved.
-  await page.locator('#save').click();
-  await expect(page.locator('#title')).toHaveText('Typed early');
+  await page.locator('[data-id=save]').click();
+  await expect(page.locator('[data-id=title]')).toHaveText('Typed early');
 });
 
 test.describe('with JavaScript off', () => {
@@ -289,10 +307,17 @@ test.describe('with JavaScript off', () => {
   }) => {
     await openGates(request, '1');
     await page.goto('/notes/1');
-    await expect(page.locator('#title')).toHaveText('Groceries');
-    await expect(page.locator('#saved-at')).toHaveText('Saved: never');
-    await expect(page.locator('#title-input')).toHaveValue('Groceries');
-    await expect(page.locator('#comments-section h2')).toHaveText('Comments');
-    await expect(page.locator('#home-link')).toHaveAttribute('href', '/');
+    await expect(page.locator('[data-id=title]')).toHaveText('Groceries');
+    await expect(page.locator('[data-id=saved-at]')).toHaveText('Saved: never');
+    await expect(page.locator('[data-id=title-input]')).toHaveValue(
+      'Groceries',
+    );
+    await expect(page.locator('[data-id=comments-section] h2')).toHaveText(
+      'Comments',
+    );
+    await expect(page.locator('[data-id=home-link]')).toHaveAttribute(
+      'href',
+      '/',
+    );
   });
 });

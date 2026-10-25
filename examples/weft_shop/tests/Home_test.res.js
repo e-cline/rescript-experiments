@@ -13,7 +13,7 @@ function entrypoint(name) {
 }
 
 let blockIds = (page =>
-  [...page.container.querySelectorAll('#blocks-home > *')].map((node) => node.id));
+  [...page.container.querySelectorAll('[data-id=blocks-home] > *')].map((node) => node.dataset.id));
 
 let allBlocks = [
   "block-hero",
@@ -30,8 +30,8 @@ async function openHome() {
   await ShopSupport$WeftShop.releaseAll(app());
   let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
   await WeftTesting.waitFor(page, undefined, () => {
-    if (ShopSupport$WeftShop.has(page, "#hero-hero") && ShopSupport$WeftShop.has(page, "#carousel-tab-bags")) {
-      return ShopSupport$WeftShop.has(page, "#stock-p20");
+    if (ShopSupport$WeftShop.has(page, "[data-id=hero-hero]") && ShopSupport$WeftShop.has(page, "[data-id=carousel-tab-bags]")) {
+      return ShopSupport$WeftShop.has(page, "[data-id=stock-p20]");
     } else {
       return false;
     }
@@ -43,11 +43,11 @@ async function openHome() {
 Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("sends the shell, then the layout, then each block as its service answers, in any order", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#home-loading"));
-    t.expect(ShopSupport$WeftShop.text(page, "#cart-button")).toBe("Cart (0)");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=home-loading]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=cart-button]")).toBe("Cart (0)");
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     await ShopSupport$WeftShop.release(app(), "layout:home");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#blocks-home"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
     t.expect(blockIds(page)).toEqual(allBlocks);
     t.expect([
       "hero",
@@ -55,25 +55,25 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       "featured",
       "live",
       "categories"
-    ].every(id => ShopSupport$WeftShop.has(page, `#loading-` + id))).toBe(true);
+    ].every(id => ShopSupport$WeftShop.has(page, `[data-id=loading-` + id + `]`))).toBe(true);
     await ShopSupport$WeftShop.release(app(), "rail:featured");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-featured"));
-    t.expect(ShopSupport$WeftShop.has(page, "#loading-hero")).toBe(true);
-    t.expect(ShopSupport$WeftShop.text(page, "#stock-loading-p1")).toBe("Checking stock…");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-featured]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=loading-hero]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock-loading-p1]")).toBe("Checking stock…");
     await ShopSupport$WeftShop.release(app(), "stock:p1");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#stock-p1"));
-    t.expect(ShopSupport$WeftShop.text(page, "#stock-p1")).toBe("In stock");
-    t.expect(ShopSupport$WeftShop.has(page, "#stock-loading-p10")).toBe(true);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=stock-p1]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock-p1]")).toBe("In stock");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=stock-loading-p10]")).toBe(true);
     await ShopSupport$WeftShop.release(app(), "block:hero");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#hero-hero"));
-    t.expect(ShopSupport$WeftShop.text(page, "#hero-hero h1")).toBe("Made to last");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=hero-hero]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=hero-hero] h1")).toBe("Made to last");
     await ShopSupport$WeftShop.release(app(), "rail:tab-outerwear");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-tab-outerwear"));
-    t.expect(ShopSupport$WeftShop.has(page, "#loading-tab-shoes")).toBe(true);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-tab-outerwear]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=loading-tab-shoes]")).toBe(true);
     await ShopSupport$WeftShop.releaseAll(app());
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#stock-p20")) {
-        return ShopSupport$WeftShop.has(page, "#newsletter");
+      if (ShopSupport$WeftShop.has(page, "[data-id=stock-p20]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=newsletter]");
       } else {
         return false;
       }
@@ -88,8 +88,8 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       _0: 97
     }, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#stock-p20")) {
-        return ShopSupport$WeftShop.has(page, "#newsletter");
+      if (ShopSupport$WeftShop.has(page, "[data-id=stock-p20]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=newsletter]");
       } else {
         return false;
       }
@@ -97,19 +97,19 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     return t.expect(ShopSupport$WeftShop.mainChildren(page)).toEqual([
       "<!--$-->",
-      "div#blocks-home",
+      "div[data-id=blocks-home]",
       "<!--/$-->"
     ]);
   });
   Vitest.testAsync("hydrates a boundary whose content arrives while its entrypoints' chunks are still loading, rendering nothing twice", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
     WeftTesting.holdLoads(page, "Tabs");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#home-loading"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=home-loading]"));
     await WeftTesting.hydrated(page, undefined);
     await ShopSupport$WeftShop.releaseAll(app());
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#blocks-home")) {
-        return ShopSupport$WeftShop.has(page, "#stock-p20");
+      if (ShopSupport$WeftShop.has(page, "[data-id=blocks-home]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=stock-p20]");
       } else {
         return false;
       }
@@ -117,7 +117,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
     await WeftTesting.idle(page);
     t.expect(ShopSupport$WeftShop.mainChildren(page)).toEqual([
       "<!--$-->",
-      "div#blocks-home",
+      "div[data-id=blocks-home]",
       "<!--/$-->"
     ]);
     t.expect(WeftTesting.renderCount(page, `@e-cline/weft_shop_example/src/client/` + "Tabs" + `.res#`)).toBe(0);
@@ -125,10 +125,10 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
     t.expect(ShopSupport$WeftShop.mainChildren(page)).toEqual([
       "<!--$-->",
-      "div#blocks-home",
+      "div[data-id=blocks-home]",
       "<!--/$-->"
     ]);
-    t.expect(ShopSupport$WeftShop.count("#tabs-tabs")).toBe(1);
+    t.expect(ShopSupport$WeftShop.count("[data-id=tabs-tabs]")).toBe(1);
     WeftTesting.click(page, "#tabs-tabs-tab-2");
     return t.expect(ShopSupport$WeftShop.attribute(page, "#tabs-tabs-panel-2", "hidden")).toBe(undefined);
   });
@@ -139,13 +139,13 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
     await ShopSupport$WeftShop.releasePrefix(app(), "block:");
     await ShopSupport$WeftShop.releasePrefix(app(), "stock:");
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#grid"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=grid]"));
     await WeftTesting.hydrated(page, undefined);
-    WeftTesting.click(page, "#logo");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#blocks-home"));
-    t.expect(ShopSupport$WeftShop.has(page, "#loading-featured")).toBe(true);
-    WeftTesting.click(page, "#nav-bags");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#card-p17"));
+    WeftTesting.click(page, "[data-id=logo]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=loading-featured]")).toBe(true);
+    WeftTesting.click(page, "[data-id=nav-bags]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=card-p17]"));
     let abandonedRails = async tries => {
       let found = (await ShopSupport$WeftShop.abandoned(app())).filter(id => id.startsWith("rail:"));
       if (found.length >= 4 || tries === 0) {
@@ -160,7 +160,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
     t.expect(rails.some(id => id.startsWith("rail:tab-bags#"))).toBe(true);
     await ShopSupport$WeftShop.releaseAll(app());
     await WeftTesting.settle(page);
-    t.expect(ShopSupport$WeftShop.has(page, "#carousel-featured")).toBe(false);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=carousel-featured]")).toBe(false);
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/c/shoes",
       "/",
@@ -173,31 +173,31 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
 Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("work once hydrated: the countdown ticks, carousels page, tabs switch", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openHome();
-    let countdown = ShopSupport$WeftShop.text(page, "#countdown-promo-a");
+    let countdown = ShopSupport$WeftShop.text(page, "[data-id=countdown-promo-a]");
     t.expect(countdown.startsWith("Ends in 1h 29m")).toBe(true);
-    t.expect(ShopSupport$WeftShop.text(page, "#position-featured")).toBe("1–4 of 6");
-    WeftTesting.click(page, "#next-featured");
-    t.expect(ShopSupport$WeftShop.text(page, "#position-featured")).toBe("5–6 of 6");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=position-featured]")).toBe("1–4 of 6");
+    WeftTesting.click(page, "[data-id=next-featured]");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=position-featured]")).toBe("5–6 of 6");
     t.expect(ShopSupport$WeftShop.attribute(page, "#tabs-tabs-panel-1", "hidden")).toBe("");
     WeftTesting.click(page, "#tabs-tabs-tab-1");
     t.expect(ShopSupport$WeftShop.attribute(page, "#tabs-tabs-panel-1", "hidden")).toBe(undefined);
     t.expect(ShopSupport$WeftShop.attribute(page, "#tabs-tabs-panel-0", "hidden")).toBe("");
     t.expect(ShopSupport$WeftShop.attribute(page, "#tabs-tabs-tab-1", "aria-selected")).toBe("true");
-    return await WeftTesting.waitFor(page, 3000, () => ShopSupport$WeftShop.text(page, "#countdown-promo-a") !== countdown);
+    return await WeftTesting.waitFor(page, 3000, () => ShopSupport$WeftShop.text(page, "[data-id=countdown-promo-a]") !== countdown);
   });
   Vitest.testAsync("change with the server's layout on a refresh: moved, added and removed, each keeping its state", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openHome();
     WeftTesting.click(page, "#tabs-tabs-tab-1");
-    WeftTesting.click(page, "#next-featured");
-    let tabs = WeftTesting.query(page, "#tabs-tabs");
-    let featured = WeftTesting.query(page, "#carousel-featured");
+    WeftTesting.click(page, "[data-id=next-featured]");
+    let tabs = WeftTesting.query(page, "[data-id=tabs-tabs]");
+    let featured = WeftTesting.query(page, "[data-id=carousel-featured]");
     let tabsRenders = WeftTesting.renderCount(page, `@e-cline/weft_shop_example/src/client/` + "Tabs" + `.res#`);
     await ShopSupport$WeftShop.move(app(), "home", "tabs", 0);
     await ShopSupport$WeftShop.insertText(app(), "home", "notice", 2, "Free returns, always");
     await ShopSupport$WeftShop.removeBlock(app(), "home", "categories");
     await ShopSupport$WeftShop.setHeroTitle(app(), "home", "Built to last");
     await WeftTesting.refresh(page);
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#text-notice"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=text-notice]"));
     t.expect(blockIds(page)).toEqual([
       "tabs-tabs",
       "block-hero",
@@ -208,11 +208,11 @@ Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined,
       "columns-bottom",
       "block-recent"
     ]);
-    t.expect(ShopSupport$WeftShop.text(page, "#hero-hero h1")).toBe("Built to last");
-    t.expect(Primitive_object.equal(WeftTesting.query(page, "#tabs-tabs"), tabs)).toBe(true);
-    t.expect(Primitive_object.equal(WeftTesting.query(page, "#carousel-featured"), featured)).toBe(true);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=hero-hero] h1")).toBe("Built to last");
+    t.expect(Primitive_object.equal(WeftTesting.query(page, "[data-id=tabs-tabs]"), tabs)).toBe(true);
+    t.expect(Primitive_object.equal(WeftTesting.query(page, "[data-id=carousel-featured]"), featured)).toBe(true);
     t.expect(ShopSupport$WeftShop.attribute(page, "#tabs-tabs-tab-1", "aria-selected")).toBe("true");
-    t.expect(ShopSupport$WeftShop.text(page, "#position-featured")).toBe("5–6 of 6");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=position-featured]")).toBe("5–6 of 6");
     t.expect(WeftTesting.renderCount(page, `@e-cline/weft_shop_example/src/client/` + "Tabs" + `.res#`) > tabsRenders).toBe(true);
     t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/",
@@ -222,11 +222,11 @@ Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined,
   });
   Vitest.testAsync("show each half of the experiment its own promotion, in the same place", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openHome();
-    t.expect(ShopSupport$WeftShop.text(page, "#promo-promo-a .promo-text")).toBe("10% off everything with code WEFT10");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=promo-promo-a] > p")).toBe("10% off everything with code WEFT10");
     await ShopSupport$WeftShop.setBucket(app(), "b");
     await WeftTesting.refresh(page);
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#promo-promo-b"));
-    t.expect(ShopSupport$WeftShop.text(page, "#promo-promo-b .promo-text")).toBe("20% off orders over $100 with code LOOM20");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=promo-promo-b]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=promo-promo-b] > p")).toBe("20% off orders over $100 with code LOOM20");
     return t.expect(blockIds(page).at(1)).toEqual("block-promo-b");
   });
   Vitest.testAsync("fail by themselves: the rest of the page is shown, and Retry fetches the block again", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -234,25 +234,25 @@ Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined,
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#block-error-featured") && ShopSupport$WeftShop.has(page, "#hero-hero")) {
-        return ShopSupport$WeftShop.has(page, "#stock-p20");
+      if (ShopSupport$WeftShop.has(page, "[data-id=block-error-featured]") && ShopSupport$WeftShop.has(page, "[data-id=hero-hero]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=stock-p20]");
       } else {
         return false;
       }
     });
     await WeftTesting.hydrated(page, undefined);
-    t.expect(ShopSupport$WeftShop.text(page, "#block-error-featured p")).toBe("Couldn't load this: the catalogue service is down");
-    t.expect(ShopSupport$WeftShop.has(page, "#carousel-tab-shoes")).toBe(true);
-    WeftTesting.click(page, "#retry-featured");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=block-error-featured] p")).toBe("Couldn't load this: the catalogue service is down");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=carousel-tab-shoes]")).toBe(true);
+    WeftTesting.click(page, "[data-id=retry-featured]");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/blocks/home/featured"));
     await WeftTesting.settle(page);
-    t.expect(ShopSupport$WeftShop.has(page, "#block-error-featured")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=block-error-featured]")).toBe(true);
     await ShopSupport$WeftShop.heal(app(), "rail:featured");
     await ShopSupport$WeftShop.release(app(), "rail:featured");
-    WeftTesting.click(page, "#retry-featured");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-featured"));
-    t.expect(ShopSupport$WeftShop.has(page, "#block-error-featured")).toBe(false);
-    t.expect(ShopSupport$WeftShop.text(page, "#stock-p1")).toBe("In stock");
+    WeftTesting.click(page, "[data-id=retry-featured]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-featured]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=block-error-featured]")).toBe(false);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=stock-p1]")).toBe("In stock");
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/",
       "/blocks/home/featured",
@@ -262,9 +262,9 @@ Vitest.describe("blocks", undefined, undefined, undefined, undefined, undefined,
   Vitest.testAsync("that are live refetch themselves, and show the server's newer stock", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.setLiveEvery(app(), 1);
     let page = await openHome();
-    t.expect(ShopSupport$WeftShop.text(page, "#live-p3 .live-stock")).toBe(" 20 left");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=left-p3]")).toBe(" 20 left");
     await ShopSupport$WeftShop.setStock(app(), "p3-7", 0);
-    await WeftTesting.waitFor(page, 3000, () => ShopSupport$WeftShop.text(page, "#live-p3 .live-stock") === " 15 left");
+    await WeftTesting.waitFor(page, 3000, () => ShopSupport$WeftShop.text(page, "[data-id=left-p3]") === " 15 left");
     t.expect(WeftTesting.pageRequests(page).includes("/blocks/home/live")).toBe(true);
     return t.expect(WeftTesting.pageRequests(page).every(url => {
       if (url === "/") {
@@ -281,7 +281,7 @@ Vitest.describe("the harness", undefined, undefined, undefined, undefined, undef
   let first = await openHome();
   await WeftTesting.waitFor(first, 3000, () => WeftTesting.pageRequests(first).includes("/blocks/home/live"));
   let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
-  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#grid"));
+  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=grid]"));
   await new Promise((resolve, param) => {
     setTimeout(() => resolve(), 1500);
   });
@@ -292,29 +292,29 @@ Vitest.describe("personalised", undefined, undefined, undefined, undefined, unde
   Vitest.testAsync("for a shopper who signs in: welcomed, recommended to, and shown what they've looked at", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/p/canvas-low");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#product-name"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=product-name]"));
     await WeftTesting.hydrated(page, undefined);
-    WeftTesting.click(page, "#sign-in");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("#signin-dialog")));
-    ShopSupport$WeftShop.inputAnywhere(".signin-name", "Ada");
-    ShopSupport$WeftShop.submitAnywhere(".signin-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#account-menu").includes("Hi, Ada"));
-    t.expect(ShopSupport$WeftShop.Doc.find("#signin-dialog")).toBe(undefined);
+    WeftTesting.click(page, "[data-id=sign-in]");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")));
+    ShopSupport$WeftShop.inputAnywhere("[data-id=signin-dialog] input", "Ada");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-dialog] form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=account-menu]").includes("Hi, Ada"));
+    t.expect(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")).toBe(undefined);
     await WeftTesting.navigate(page, "/");
     await WeftTesting.waitFor(page, undefined, () => {
-      if (ShopSupport$WeftShop.has(page, "#hero-welcome")) {
-        return ShopSupport$WeftShop.has(page, "#carousel-recent");
+      if (ShopSupport$WeftShop.has(page, "[data-id=hero-welcome]")) {
+        return ShopSupport$WeftShop.has(page, "[data-id=carousel-recent]");
       } else {
         return false;
       }
     });
-    t.expect(ShopSupport$WeftShop.text(page, "#hero-welcome h1")).toBe("Welcome back, Ada");
-    t.expect(ShopSupport$WeftShop.has(page, "#hero-hero")).toBe(false);
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-for-you"));
-    t.expect(ShopSupport$WeftShop.has(page, "#card-p3")).toBe(true);
-    t.expect(ShopSupport$WeftShop.text(page, "#carousel-for-you").includes("Canvas Low")).toBe(false);
-    t.expect(ShopSupport$WeftShop.text(page, "#carousel-recent").includes("Canvas Low")).toBe(true);
-    t.expect(ShopSupport$WeftShop.has(page, "#carousel-buy-again")).toBe(false);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=hero-welcome] h1")).toBe("Welcome back, Ada");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=hero-hero]")).toBe(false);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-for-you]"));
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=card-p3]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=carousel-for-you]").includes("Canvas Low")).toBe(false);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=carousel-recent]").includes("Canvas Low")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=carousel-buy-again]")).toBe(false);
     let session = await ShopSupport$WeftShop.session(app());
     t.expect([
       session.user,
@@ -329,30 +329,30 @@ Vitest.describe("personalised", undefined, undefined, undefined, undefined, unde
     await ShopSupport$WeftShop.releaseAll(app());
     await ShopSupport$WeftShop.fail(app(), "recs:for-you", "the recommendations service timed out");
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#hero-hero"));
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=hero-hero]"));
     await WeftTesting.hydrated(page, undefined);
-    WeftTesting.click(page, "#sign-in");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("#signin-dialog")));
-    ShopSupport$WeftShop.inputAnywhere(".signin-name", "Grace");
-    ShopSupport$WeftShop.submitAnywhere(".signin-form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#block-error-for-you"));
-    t.expect(ShopSupport$WeftShop.text(page, "#block-error-for-you p")).toBe("Couldn't load this: the recommendations service timed out");
-    t.expect(ShopSupport$WeftShop.has(page, "#hero-welcome")).toBe(true);
+    WeftTesting.click(page, "[data-id=sign-in]");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")));
+    ShopSupport$WeftShop.inputAnywhere("[data-id=signin-dialog] input", "Grace");
+    ShopSupport$WeftShop.submitAnywhere("[data-id=signin-dialog] form");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=block-error-for-you]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=block-error-for-you] p")).toBe("Couldn't load this: the recommendations service timed out");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=hero-welcome]")).toBe(true);
     await ShopSupport$WeftShop.heal(app(), "recs:for-you");
     await ShopSupport$WeftShop.release(app(), "recs:for-you");
-    WeftTesting.click(page, "#retry-for-you");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "#carousel-for-you"));
+    WeftTesting.click(page, "[data-id=retry-for-you]");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=carousel-for-you]"));
     return ShopSupport$WeftShop.noWarnings(page);
   });
 });
 
 Vitest.describe("prices", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("change currency everywhere at once, with nothing fetched, and stay changed on the next page", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
   let page = await openHome();
-  t.expect(ShopSupport$WeftShop.text(page, "#card-p1 .price")).toBe("$129.00");
-  await ShopSupport$WeftShop.change(page, "#currency", "EUR");
-  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "#card-p1 .price") === "€118.68");
-  t.expect(ShopSupport$WeftShop.text(page, "#carousel-tab-bags #card-p17 .price")).toBe("€146.28");
-  t.expect(ShopSupport$WeftShop.text(page, "#live-p3 .price")).toBe("€67.85 €54.28");
+  t.expect(ShopSupport$WeftShop.text(page, "[data-id=card-p1] data")).toBe("$129.00");
+  await ShopSupport$WeftShop.change(page, "[data-id=currency]", "EUR");
+  await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=card-p1] data") === "€118.68");
+  t.expect(ShopSupport$WeftShop.text(page, "[data-id=carousel-tab-bags] [data-id=card-p17] data")).toBe("€146.28");
+  t.expect(ShopSupport$WeftShop.text(page, "[data-id=live-p3] data")).toBe("€67.85 €54.28");
   await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/prefs.setCurrency"));
   t.expect(WeftTesting.pageRequests(page)).toEqual([
     "/",
@@ -360,8 +360,8 @@ Vitest.describe("prices", undefined, undefined, undefined, undefined, undefined,
   ]);
   t.expect((await ShopSupport$WeftShop.session(app())).currency).toBe("EUR");
   let page$1 = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes");
-  await WeftTesting.waitFor(page$1, undefined, () => ShopSupport$WeftShop.has(page$1, "#card-p1"));
-  t.expect(ShopSupport$WeftShop.text(page$1, "#card-p1 .price")).toBe("€118.68");
+  await WeftTesting.waitFor(page$1, undefined, () => ShopSupport$WeftShop.has(page$1, "[data-id=card-p1]"));
+  t.expect(ShopSupport$WeftShop.text(page$1, "[data-id=card-p1] data")).toBe("€118.68");
   return await ShopSupport$WeftShop.hydratedAsServed(page$1, undefined);
 }));
 

@@ -328,12 +328,12 @@ function attribute(page, selector, name) {
 }
 
 let mainChildren = (page => {
-  const main = page.container.querySelector('#main');
+  const main = page.container.querySelector('[data-id=main]');
   if (main === null) return [];
   return [...main.childNodes].map((node) =>
     node.nodeType === 8 ? '<!--' + node.textContent + '-->'
       : node.nodeType === 3 ? JSON.stringify(node.textContent)
-      : node.tagName.toLowerCase() + (node.id ? '#' + node.id : ''));
+      : node.tagName.toLowerCase() + (node.dataset.id ? '[data-id=' + node.dataset.id + ']' : ''));
 });
 
 async function hydratedAsServed(page, replacedOpt) {
@@ -357,11 +357,11 @@ function noWarnings(page) {
 }
 
 async function signIn(page, name) {
-  WeftTesting.click(page, "#sign-in");
-  await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(Primitive_option.fromNullable(document.querySelector("#signin-dialog"))));
-  inputAnywhere(".signin-name", name);
-  submitAnywhere(".signin-form");
-  return await WeftTesting.waitFor(page, undefined, () => text(page, "#account-menu").includes(`Hi, ` + name));
+  WeftTesting.click(page, "[data-id=sign-in]");
+  await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(Primitive_option.fromNullable(document.querySelector("[data-id=signin-dialog]"))));
+  inputAnywhere("[data-id=signin-dialog] input", name);
+  submitAnywhere("[data-id=signin-dialog] form");
+  return await WeftTesting.waitFor(page, undefined, () => text(page, "[data-id=account-menu]").includes(`Hi, ` + name));
 }
 
 let has = WeftTesting.has;

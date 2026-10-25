@@ -8,10 +8,10 @@ Picks the currency prices are shown in: at once, for every price on the page (th
 let make = () => {
   let {currency, setCurrency} = ShopContext.use()
   let save = WeftServer.Rpc.use(Api.setCurrency)
-  <label className="currency">
-    <span className="visually-hidden"> {WeftDom.Jsx.string("Currency")} </span>
+  <label>
+    <span className={Theme.visuallyHidden}> {WeftDom.Jsx.string("Currency")} </span>
     <select
-      id="currency"
+      dataId="currency"
       value={Money.code(currency)}
       onChange={event =>
         switch Money.fromCode(WeftDom.Dom.Event.targetValue(event)) {

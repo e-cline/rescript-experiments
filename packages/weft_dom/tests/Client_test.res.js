@@ -130,6 +130,7 @@ Vitest.describe("Rendering", undefined, undefined, undefined, undefined, undefin
       className: "l",
       "aria-label": "name",
       "data-testid": "t",
+      "data-id": "d",
       htmlFor: "x",
       children: Jsx$WeftDom.Elements.jsx("input", {
         type: "checkbox"
@@ -141,12 +142,14 @@ Vitest.describe("Rendering", undefined, undefined, undefined, undefined, undefin
       "class",
       "for",
       "aria-label",
-      "data-testid"
+      "data-testid",
+      "data-id"
     ].map(name => Primitive_option.fromNullable(label.getAttribute(name)))).toEqual([
       "l",
       "x",
       "name",
-      "t"
+      "t",
+      "d"
     ]);
     t.expect(find(container, "input").getAttribute("type")).toEqual("checkbox");
   });

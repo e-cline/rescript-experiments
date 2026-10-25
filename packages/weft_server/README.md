@@ -170,6 +170,21 @@ switch await addComment({noteId, text}) {
   didn't read and `check` didn't accept. Every RPC it lists is public: authentication is the
   handler's (`~http`), or a middleware's.
 
+### Stylesheets
+
+An app's [`weft_css`](../weft_css) styles reach each page as it needs them, with nothing to write:
+the plugin's `virtual:weft/assets` lists the stylesheets (`sheets`, and each entrypoint file's,
+`entrypointSheets`), and with them:
+
+- **`Render`** sends, with each row, the sheets of what it rendered (the classes in host elements'
+  `className`s and in entrypoints' props, and entrypoints' own code's), each once, as a `C` row.
+- **`Page`** holds its head's end until the shell's ready, and links the shell's sheets there, so
+  the first paint has them; a boundary streamed in later is swapped in only once its own have loaded
+  (preloaded as soon as the server knew them).
+- **`Decoder`** loads a row's sheets (`WeftCss.Sheets`, by default) and decodes the row only once
+  they have, so a navigation or a refetch, rendered in a transition, keeps what's on screen until
+  then.
+
 ### The lower levels
 
 The lower levels are there too: `Render.toStream(element)` (the payload, as a `ReadableStream`), and

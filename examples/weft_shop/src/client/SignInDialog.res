@@ -7,6 +7,24 @@ or a click outside, closes it.
 Only ever open in the browser: the server renders it closed, so it never touches `document` there.
 */
 
+open WeftCss
+
+module Styles = {
+  let overlay = Css.class({
+    position: Fixed,
+    inset: Zero,
+    display: Grid,
+    placeItems: "center",
+    backgroundColor: Hex("0006"),
+  })
+  let dialog = Css.class({
+    width: Px(320),
+    padding: Px(20),
+    backgroundColor: Named("white"),
+    borderRadius: Px(12),
+  })
+}
+
 @weft.component
 let make = () => {
   let isOpen = WeftSignals.SignalHooks.useSignal(Signals.Atom.toSignal(Store.signInOpen))
@@ -15,7 +33,8 @@ let make = () => {
   if isOpen {
     WeftDom.Portal.create(
       <div
-        id="signin-overlay"
+        dataId="signin-overlay"
+        className=Styles.overlay
         onClick={event =>
           if WeftDom.Dom.Event.target(event) == WeftDom.Dom.Event.currentTarget(event) {
             Store.closeSignIn()
@@ -27,7 +46,13 @@ let make = () => {
             Store.closeSignIn()
           }}
       >
-        <div id="signin-dialog" role="dialog" ariaModal="true" ariaLabelledby=titleId>
+        <div
+          dataId="signin-dialog"
+          className=Styles.dialog
+          role="dialog"
+          ariaModal="true"
+          ariaLabelledby=titleId
+        >
           <h2 id=titleId> {WeftDom.Jsx.string("Sign in")} </h2>
           <SignInFields
             autoFocus=true
@@ -37,7 +62,7 @@ let make = () => {
               navigation->WeftServer.Navigation.refresh->ignore
             }}
           />
-          <button id="signin-close" onClick={_ => Store.closeSignIn()}>
+          <button dataId="signin-close" onClick={_ => Store.closeSignIn()}>
             {WeftDom.Jsx.string("Close")}
           </button>
         </div>

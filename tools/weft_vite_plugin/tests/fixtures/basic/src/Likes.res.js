@@ -3,10 +3,12 @@
 
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Theme$FixtureBasic from "./Theme.res.js";
 import * as Shared$FixtureBasic from "./Shared.res.js";
 
 function Likes(props) {
   return Jsx$WeftDom.Elements.jsx("span", {
+    className: Theme$FixtureBasic.badge,
     children: Shared$FixtureBasic.label("likes", props.count)
   });
 }

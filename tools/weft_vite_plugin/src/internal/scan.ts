@@ -1,6 +1,6 @@
 // Finding the files Weft cares about: every compiled file with a Weft directive in the app's
-// ReScript sources and its ReScript dependencies' (entrypoint files, server files, and the RPCs
-// files declare). `rescript build` has written them all before Vite starts, so this is a walk over
+// ReScript sources and its ReScript dependencies' (entrypoint files, server files, the RPCs files
+// declare, and files with styles). `rescript build` has written them all before Vite starts, so this is a walk over
 // directories, not a build.
 
 import {
@@ -43,6 +43,8 @@ export type CompiledFile = {
   kind: Kind;
   /** The IDs of the RPCs it declares. */
   rpcs: string[];
+  /** Its sheet id, if it has styles (`weft_css`): `WeftCss.SheetId.ofFileId(id)`. */
+  sheet?: string;
 };
 
 export class ScanError extends Error {}
@@ -150,6 +152,28 @@ export function markedFileIds(code: string): string[] {
   return [...ids];
 }
 
+/**
+ * A file's sheet id, from its id: `w`, then a 32-bit FNV-1a hash of its UTF-8 bytes, modulo 36⁶, in
+ * six base-36 digits. The same as `WeftCss.SheetId.ofFileId` and `ppx_weft`'s; `readCompiledFile`
+ * checks the PPX's against it.
+ */
+export function sheetId(fileId: string): string {
+  let hash = 0x811c9dc5;
+  for (const byte of new TextEncoder().encode(fileId)) {
+    hash = Math.imul(hash ^ byte, 0x01000193);
+  }
+  return 'w' + ((hash >>> 0) % 36 ** 6).toString(36).padStart(6, '0');
+}
+
+/** The names the style calls in a file with styles give (`Internal.class_("<name>", ...)`). */
+export function styleNames(code: string): string[] {
+  return [
+    ...code.matchAll(
+      /\.Internal\.(?:class|global|var|keyframes)_\(\s*"([^"]*)"/g,
+    ),
+  ].map((match) => match[1]!);
+}
+
 /** Reads `file`, if it has a Weft directive, as one of the files the plugin cares about. */
 export function readCompiledFile(
   pkg: Package,
@@ -172,7 +196,19 @@ export function readCompiledFile(
       }
     }
   }
-  return {id, file, kind: found.kind, rpcs: found.rpcs};
+  if (!found.css) return {id, file, kind: found.kind, rpcs: found.rpcs};
+  // Each name ends in the file's sheet id, which the server reads them by: as with entrypoints'
+  // ids, if the PPX and the plugin ever disagreed, fail here rather than send the wrong CSS.
+  const sheet = sheetId(id);
+  for (const name of styleNames(code)) {
+    if (!name.endsWith(`_${sheet}`)) {
+      throw new ScanError(
+        `[weft] ${file} has a style named ${name}, but its sheet id is ${sheet} (from its id, ${id}). ` +
+          'Was it compiled with a different rescript.json?',
+      );
+    }
+  }
+  return {id, file, kind: found.kind, rpcs: found.rpcs, sheet};
 }
 
 export type Scan = {
@@ -246,11 +282,36 @@ export function packageOf(scanned: Scan, file: string): Package | undefined {
   return found;
 }
 
+/** Sorts files by id, so generated code doesn't depend on the order of a walk. */
+const byId = (a: CompiledFile, b: CompiledFile) =>
+  a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+
+/**
+ * The files with styles, sorted by id. Two with the same sheet id (a hash collision, which is
+ * unlikely but possible) is an error, naming both: their rules would be sent as one.
+ */
+export function styleFiles(scanned: Scan): CompiledFile[] {
+  const files = [...scanned.files.values()]
+    .filter((file) => file.sheet !== undefined)
+    .sort(byId);
+  const seen = new Map<string, CompiledFile>();
+  for (const file of files) {
+    const other = seen.get(file.sheet!);
+    if (other !== undefined) {
+      throw new ScanError(
+        `[weft] ${other.id} and ${file.id} have the same sheet id, ${file.sheet}: rename one of them.`,
+      );
+    }
+    seen.set(file.sheet!, file);
+  }
+  return files;
+}
+
 /** The entrypoint files, sorted by id (so generated code doesn't depend on the order of a walk). */
 export function entrypoints(scanned: Scan): CompiledFile[] {
   return [...scanned.files.values()]
     .filter((file) => file.kind === 'entrypoint')
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    .sort(byId);
 }
 
 /** Whether the app's `rescript.json` runs `ppx_weft`, without which `@weft.component` does nothing. */

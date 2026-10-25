@@ -9,6 +9,7 @@ import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Deferred$Weft from "@e-cline/weft/src/shared/Deferred.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
+import * as Sheets$WeftCss from "@e-cline/weft_css/src/client/Sheets.res.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
@@ -54,10 +55,20 @@ async function webFetch(url, signal) {
   };
 }
 
-function make(loadModule, fetchOpt) {
+function documentSheet(href) {
+  if (Sheets$WeftCss.isLoaded(href)) {
+    return;
+  } else {
+    return Sheets$WeftCss.load(href);
+  }
+}
+
+function make(loadModule, fetchOpt, loadSheetOpt) {
   let fetch = fetchOpt !== undefined ? fetchOpt : webFetch;
+  let loadSheet = loadSheetOpt !== undefined ? loadSheetOpt : documentSheet;
   return {
     loadModule: loadModule,
+    loadSheet: loadSheet,
     fetch: fetch,
     modules: new Map(),
     components: new Map()
@@ -327,20 +338,22 @@ async function read(session, stream, signal) {
               let target = row(session, id);
               switch (row$1.tag) {
                 case "Model" :
+                  let match = Payload$WeftServer.sheetsOf(json);
+                  let json$1 = match[1];
                   let waitingFor = [];
-                  entrypointRows(json, waitingFor);
-                  let missing = waitingFor.filter(id => !session.entrypoints.has(id));
+                  entrypointRows(json$1, waitingFor);
+                  let missing = waitingFor.filter(id => !session.entrypoints.has(id)).concat(match[0].filter(id => !session.sheets.has(id)));
                   if (missing.length === 0) {
                     let value;
                     try {
-                      value = decode(session, json);
+                      value = decode(session, json$1);
                     } catch (raw_error) {
                       let error = Primitive_exceptions.internalToException(raw_error);
                       return target.reject(toJsError(error));
                     }
                     return target.resolve(value);
                   }
-                  Stdlib_Promise.$$catch(Promise.all(missing.map(id => row(session, id).promise)).then(param => target.resolve(decode(session, json))), error => {
+                  Stdlib_Promise.$$catch(Promise.all(missing.map(id => row(session, id).promise)).then(param => target.resolve(decode(session, json$1))), error => {
                     target.reject(toJsError(error));
                     return Promise.resolve();
                   });
@@ -357,6 +370,22 @@ async function read(session, stream, signal) {
                     return Promise.resolve();
                   });
                   return;
+                case "Stylesheet" :
+                  let loaded = () => {
+                    session.sheets.add(id);
+                    target.resolve($$undefined);
+                  };
+                  let href = Stdlib_Option.flatMap(Primitive_option.fromNullable(json["href"]), Stdlib_JSON.Decode.string);
+                  if (href === undefined) {
+                    return unexpected(JSON.stringify(json));
+                  }
+                  let loading = session.client.loadSheet(href);
+                  if (loading !== undefined) {
+                    loading.then(loaded);
+                    return;
+                  } else {
+                    return loaded();
+                  }
                 case "Error" :
                   return target.reject(errorOf(json));
               }
@@ -405,6 +434,7 @@ function valueFromStream(client, stream, signal) {
     rows: new Map(),
     arrived: new Set(),
     entrypoints: new Map(),
+    sheets: new Set(),
     ended: undefined
   };
   let root = row(session, 0);

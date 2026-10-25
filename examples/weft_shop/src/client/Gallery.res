@@ -2,22 +2,28 @@
 
 let views = ["Front", "Side", "Back", "Detail"]
 
-let picture = (~hue, ~index) =>
-  Dict.fromArray([
-    (
-      "background",
-      `linear-gradient(${Int.toString(135 + index * 40)}deg, hsl(${Int.toString(
-          hue,
-        )} 45% 70%), hsl(${Int.toString(hue + 30)} 35% 40%))`,
-    ),
-  ])
+open WeftCss
+
+module Styles = {
+  let main = Css.class({display: Flex, alignItems: End, padding: Px(10), color: Named("white")})
+  let thumbnails = Css.class({display: Flex, gap: Px(8), marginTop: Px(8)})
+  let thumbnail = Css.class({
+    ...Theme.gradient(),
+    width: Px(56),
+    height: Px(42),
+    borderRadius: Px(6),
+    selectors: [
+      ("&[aria-pressed=\"true\"]", Css.style({outline: `2px solid ${Theme.value(Theme.ink)}`})),
+    ],
+  })
+}
 
 @weft.component({kind: Entrypoint})
 let make = (~name: string, ~hue: int) => {
   let (selected, setSelected) = Weft.Hooks.useState(() => 0)
   let count = Array.length(views)
   <div
-    id="gallery"
+    dataId="gallery"
     tabIndex=0
     ariaLabel={`Pictures of the ${name}`}
     onKeyDown={event =>
@@ -27,19 +33,23 @@ let make = (~name: string, ~hue: int) => {
       | _ => ()
       }}
   >
-    <div id="main-picture" className="picture" style={picture(~hue, ~index=selected)}>
-      <span id="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
+    <div
+      dataId="main-picture"
+      className={Css.cx([Theme.picture, Styles.main])}
+      style={Theme.pictureVars(~hue, ~view=selected)}
+    >
+      <span dataId="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
     </div>
-    <div className="thumbnails">
+    <div className={Styles.thumbnails}>
       {views
       ->Array.mapWithIndex((view, index) =>
         <button
           key=view
-          id={`thumb-${Int.toString(index)}`}
-          className="thumbnail"
+          dataId={`thumb-${Int.toString(index)}`}
+          className={Styles.thumbnail}
           ariaLabel=view
           ariaPressed={index == selected ? "true" : "false"}
-          style={picture(~hue, ~index)}
+          style={Theme.pictureVars(~hue, ~view=index)}
           onClick={_ => setSelected(_ => index)}
         />
       )

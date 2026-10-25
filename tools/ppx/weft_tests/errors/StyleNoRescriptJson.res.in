@@ -1,0 +1,2 @@
+// Compiled from a temporary directory, with no rescript.json above it to name the styles by.
+let card = Css.class({padding: Px(20)})

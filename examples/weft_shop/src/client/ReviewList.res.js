@@ -6,6 +6,7 @@ import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
+import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 
 function ReviewList$Items(props) {
@@ -32,16 +33,16 @@ function ReviewList$Items(props) {
   let shown = all ? sorted : sorted.slice(0, 3);
   let average = Stdlib_Array.reduce(reviews, 0, (total, review) => total + review.stars | 0) / Math.max(1, reviews.length);
   return Jsx$WeftDom.Elements.jsxs("div", {
-    id: "reviews",
-    className: match$2[0] ? "pending" : "",
+    className: match$2[0] ? Theme$WeftShop.stale : "",
+    "data-id": "reviews",
     children: [
       Jsx$WeftDom.Elements.jsx("p", {
-        id: "review-summary",
+        "data-id": "review-summary",
         children: average.toFixed(1) + ` out of 5, from ` + reviews.length.toString() + ` reviews`
       }),
       Jsx$WeftDom.Elements.jsxs("select", {
-        id: "review-order",
         "aria-label": "Sort reviews",
+        "data-id": "review-order",
         value: order,
         onChange: event => {
           let value = Dom$WeftDom.Event.targetValue(event);
@@ -63,9 +64,9 @@ function ReviewList$Items(props) {
         ]
       }),
       Jsx$WeftDom.Elements.jsx("ul", {
-        id: "review-list",
+        "data-id": "review-list",
         children: shown.map(review => Jsx$WeftDom.Elements.jsxsKeyed("li", {
-          id: `review-` + review.id,
+          "data-id": `review-` + review.id,
           children: [
             Jsx$WeftDom.Elements.jsx("b", {
               children: "★".repeat(review.stars) + ` ` + review.author
@@ -75,7 +76,7 @@ function ReviewList$Items(props) {
         }, review.id, undefined))
       }),
       !all && reviews.length > 3 ? Jsx$WeftDom.Elements.jsx("button", {
-          id: "all-reviews",
+          "data-id": "all-reviews",
           onClick: param => setAll(param => true),
           children: `Show all ` + reviews.length.toString()
         }) : Jsx$WeftDom.$$null
@@ -90,7 +91,7 @@ let Items = {
 function ReviewList(props) {
   return Jsx$WeftDom.jsx(Suspense$Weft.make, {
     fallback: Jsx$WeftDom.Elements.jsx("p", {
-      id: "reviews-loading",
+      "data-id": "reviews-loading",
       children: "Loading reviews…"
     }),
     children: Jsx$WeftDom.jsx(ReviewList$Items, {

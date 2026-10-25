@@ -16,6 +16,7 @@
   "dependencies": [
     "@e-cline/servy",
     "@e-cline/weft",
+    "@e-cline/weft_css",
     "@e-cline/weft_dom",
     "@e-cline/weft_server",
     "@rescript/webapi"

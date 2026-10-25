@@ -7,10 +7,10 @@ let make = () => {
   let inputId = Weft.Hooks.useId()
   let subscribe = WeftServer.Rpc.use(Api.subscribe)
   switch status {
-  | #done => <p id="newsletter-done"> {WeftDom.Jsx.string("Thanks: check your inbox.")} </p>
+  | #done => <p dataId="newsletter-done"> {WeftDom.Jsx.string("Thanks: check your inbox.")} </p>
   | #idle | #sending | #error(_) =>
     <form
-      id="newsletter"
+      dataId="newsletter"
       onSubmit={event => {
         WeftDom.Dom.Event.preventDefault(event)
         setStatus(_ => #sending)
@@ -27,18 +27,18 @@ let make = () => {
       <label htmlFor=inputId> {WeftDom.Jsx.string("Get the newsletter")} </label>
       <input
         id=inputId
-        className="newsletter-email"
         type_="email"
         inputMode="email"
         autoComplete="email"
         value=email
         onInput={event => setEmail(_ => WeftDom.Dom.Event.targetValue(event))}
       />
-      <button id="newsletter-submit" type_="submit" disabled={status == #sending}>
+      <button dataId="newsletter-submit" type_="submit" disabled={status == #sending}>
         {WeftDom.Jsx.string("Subscribe")}
       </button>
       {switch status {
-      | #error(message) => <p id="newsletter-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+      | #error(message) =>
+        <p dataId="newsletter-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
       | _ => WeftDom.Jsx.null
       }}
     </form>

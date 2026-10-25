@@ -126,7 +126,7 @@ let errorBoxPart = [
   "<!--$-->",
   "<!--$!-->",
   "template",
-  "p#broken-loading",
+  "p[data-id=broken-loading]",
   `"…"`,
   "<!--/$-->",
   "<!--/$-->"

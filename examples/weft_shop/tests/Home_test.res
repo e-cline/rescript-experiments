@@ -13,7 +13,7 @@ let entrypoint = name => `@e-cline/weft_shop_example/src/client/${name}.res#`
 
 /** The ids of the home page's blocks, in order. */
 let blockIds: WeftTesting.page => array<string> = %raw(`page =>
-  [...page.container.querySelectorAll('#blocks-home > *')].map((node) => node.id)`)
+  [...page.container.querySelectorAll('[data-id=blocks-home] > *')].map((node) => node.dataset.id)`)
 
 let allBlocks = [
   "block-hero",
@@ -31,7 +31,9 @@ let openHome = async () => {
   await app()->releaseAll
   let page = app()->open_("/")
   await page->WeftTesting.waitFor(() =>
-    has(page, "#hero-hero") && has(page, "#carousel-tab-bags") && has(page, "#stock-p20")
+    has(page, "[data-id=hero-hero]") &&
+    has(page, "[data-id=carousel-tab-bags]") &&
+    has(page, "[data-id=stock-p20]")
   )
   await hydratedAsServed(page)
   page
@@ -42,38 +44,40 @@ describe("streaming", () => {
     "sends the shell, then the layout, then each block as its service answers, in any order",
     async t => {
       let page = app()->open_("/")
-      await page->WeftTesting.waitFor(() => has(page, "#home-loading"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=home-loading]"))
       // The header is in the shell, and works before anything else has come.
-      t->expect(text(page, "#cart-button"))->Expect.toBe("Cart (0)")
+      t->expect(text(page, "[data-id=cart-button]"))->Expect.toBe("Cart (0)")
       await hydratedAsServed(page)
       await app()->release("layout:home")
-      await page->WeftTesting.waitFor(() => has(page, "#blocks-home"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=blocks-home]"))
       t->expect(blockIds(page))->Expect.toEqual(allBlocks)
       t
       ->expect(
         ["hero", "promo-a", "featured", "live", "categories"]->Array.every(
-          id => has(page, `#loading-${id}`),
+          id => has(page, `[data-id=loading-${id}]`),
         ),
       )
       ->Expect.toBe(true)
       // The featured rail, before the hero above it, and its cards before their stock.
       await app()->release("rail:featured")
-      await page->WeftTesting.waitFor(() => has(page, "#carousel-featured"))
-      t->expect(has(page, "#loading-hero"))->Expect.toBe(true)
-      t->expect(text(page, "#stock-loading-p1"))->Expect.toBe("Checking stock…")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=carousel-featured]"))
+      t->expect(has(page, "[data-id=loading-hero]"))->Expect.toBe(true)
+      t->expect(text(page, "[data-id=stock-loading-p1]"))->Expect.toBe("Checking stock…")
       await app()->release("stock:p1")
-      await page->WeftTesting.waitFor(() => has(page, "#stock-p1"))
-      t->expect(text(page, "#stock-p1"))->Expect.toBe("In stock")
-      t->expect(has(page, "#stock-loading-p10"))->Expect.toBe(true)
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=stock-p1]"))
+      t->expect(text(page, "[data-id=stock-p1]"))->Expect.toBe("In stock")
+      t->expect(has(page, "[data-id=stock-loading-p10]"))->Expect.toBe(true)
       await app()->release("block:hero")
-      await page->WeftTesting.waitFor(() => has(page, "#hero-hero"))
-      t->expect(text(page, "#hero-hero h1"))->Expect.toBe("Made to last")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=hero-hero]"))
+      t->expect(text(page, "[data-id=hero-hero] h1"))->Expect.toBe("Made to last")
       // A tab's rail streams by itself, hidden or not.
       await app()->release("rail:tab-outerwear")
-      await page->WeftTesting.waitFor(() => has(page, "#carousel-tab-outerwear"))
-      t->expect(has(page, "#loading-tab-shoes"))->Expect.toBe(true)
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=carousel-tab-outerwear]"))
+      t->expect(has(page, "[data-id=loading-tab-shoes]"))->Expect.toBe(true)
       await app()->releaseAll
-      await page->WeftTesting.waitFor(() => has(page, "#stock-p20") && has(page, "#newsletter"))
+      await page->WeftTesting.waitFor(
+        () => has(page, "[data-id=stock-p20]") && has(page, "[data-id=newsletter]"),
+      )
       // One request: the page, and everything streamed into it.
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/"])
       noWarnings(page)
@@ -83,9 +87,13 @@ describe("streaming", () => {
   testAsync("hydrates every block's HTML, whatever size of chunks it comes in", async t => {
     await app()->releaseAll
     let page = app()->open_(~delivery=EveryBytes(97), "/")
-    await page->WeftTesting.waitFor(() => has(page, "#stock-p20") && has(page, "#newsletter"))
+    await page->WeftTesting.waitFor(
+      () => has(page, "[data-id=stock-p20]") && has(page, "[data-id=newsletter]"),
+    )
     await hydratedAsServed(page)
-    t->expect(mainChildren(page))->Expect.toEqual(["<!--$-->", "div#blocks-home", "<!--/$-->"])
+    t
+    ->expect(mainChildren(page))
+    ->Expect.toEqual(["<!--$-->", "div[data-id=blocks-home]", "<!--/$-->"])
   })
 
   testAsync(
@@ -94,18 +102,24 @@ describe("streaming", () => {
       // The tabs' chunk is slow: the blocks arrive, after the bootstrap, while it's loading.
       let page = app()->open_("/")
       page->WeftTesting.holdLoads(~matching="Tabs")
-      await page->WeftTesting.waitFor(() => has(page, "#home-loading"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=home-loading]"))
       await page->WeftTesting.hydrated
       await app()->releaseAll
-      await page->WeftTesting.waitFor(() => has(page, "#blocks-home") && has(page, "#stock-p20"))
+      await page->WeftTesting.waitFor(
+        () => has(page, "[data-id=blocks-home]") && has(page, "[data-id=stock-p20]"),
+      )
       await page->WeftTesting.idle
       // The server's blocks, still unhydrated: nothing of the client's beside them.
-      t->expect(mainChildren(page))->Expect.toEqual(["<!--$-->", "div#blocks-home", "<!--/$-->"])
+      t
+      ->expect(mainChildren(page))
+      ->Expect.toEqual(["<!--$-->", "div[data-id=blocks-home]", "<!--/$-->"])
       t->expect(page->WeftTesting.renderCount(entrypoint("Tabs")))->Expect.toBe(0)
       page->WeftTesting.releaseLoads
       await hydratedAsServed(page)
-      t->expect(mainChildren(page))->Expect.toEqual(["<!--$-->", "div#blocks-home", "<!--/$-->"])
-      t->expect(count("#tabs-tabs"))->Expect.toBe(1)
+      t
+      ->expect(mainChildren(page))
+      ->Expect.toEqual(["<!--$-->", "div[data-id=blocks-home]", "<!--/$-->"])
+      t->expect(count("[data-id=tabs-tabs]"))->Expect.toBe(1)
       // And the tabs work.
       page->WeftTesting.click("#tabs-tabs-tab-2")
       t->expect(attribute(page, "#tabs-tabs-panel-2", "hidden"))->Expect.toBe(None)
@@ -121,14 +135,14 @@ describe("streaming", () => {
       await app()->releasePrefix("block:")
       await app()->releasePrefix("stock:")
       let page = app()->open_("/c/shoes")
-      await page->WeftTesting.waitFor(() => has(page, "#grid"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=grid]"))
       await page->WeftTesting.hydrated
       // To the home page, whose rails are slow, then on to the bags before they've come.
-      page->WeftTesting.click("#logo")
-      await page->WeftTesting.waitFor(() => has(page, "#blocks-home"))
-      t->expect(has(page, "#loading-featured"))->Expect.toBe(true)
-      page->WeftTesting.click("#nav-bags")
-      await page->WeftTesting.waitFor(() => has(page, "#card-p17"))
+      page->WeftTesting.click("[data-id=logo]")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=blocks-home]"))
+      t->expect(has(page, "[data-id=loading-featured]"))->Expect.toBe(true)
+      page->WeftTesting.click("[data-id=nav-bags]")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=card-p17]"))
       // The server saw the home page's rails abandoned when the client went away.
       let rec abandonedRails = async tries => {
         let found = (await app()->abandoned)->Array.filter(id => id->String.startsWith("rail:"))
@@ -144,7 +158,7 @@ describe("streaming", () => {
       t->expect(rails->Array.some(id => id->String.startsWith("rail:tab-bags#")))->Expect.toBe(true)
       await app()->releaseAll
       await page->WeftTesting.settle
-      t->expect(has(page, "#carousel-featured"))->Expect.toBe(false)
+      t->expect(has(page, "[data-id=carousel-featured]"))->Expect.toBe(false)
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/c/shoes", "/", "/c/bags"])
       noWarnings(page)
     },
@@ -154,11 +168,11 @@ describe("streaming", () => {
 describe("blocks", () => {
   testAsync("work once hydrated: the countdown ticks, carousels page, tabs switch", async t => {
     let page = await openHome()
-    let countdown = text(page, "#countdown-promo-a")
+    let countdown = text(page, "[data-id=countdown-promo-a]")
     t->expect(countdown->String.startsWith("Ends in 1h 29m"))->Expect.toBe(true)
-    t->expect(text(page, "#position-featured"))->Expect.toBe("1–4 of 6")
-    page->WeftTesting.click("#next-featured")
-    t->expect(text(page, "#position-featured"))->Expect.toBe("5–6 of 6")
+    t->expect(text(page, "[data-id=position-featured]"))->Expect.toBe("1–4 of 6")
+    page->WeftTesting.click("[data-id=next-featured]")
+    t->expect(text(page, "[data-id=position-featured]"))->Expect.toBe("5–6 of 6")
     t->expect(attribute(page, "#tabs-tabs-panel-1", "hidden"))->Expect.toBe(Some(""))
     page->WeftTesting.click("#tabs-tabs-tab-1")
     t->expect(attribute(page, "#tabs-tabs-panel-1", "hidden"))->Expect.toBe(None)
@@ -166,7 +180,7 @@ describe("blocks", () => {
     t->expect(attribute(page, "#tabs-tabs-tab-1", "aria-selected"))->Expect.toBe(Some("true"))
     await page->WeftTesting.waitFor(
       ~timeout=3000,
-      () => text(page, "#countdown-promo-a") != countdown,
+      () => text(page, "[data-id=countdown-promo-a]") != countdown,
     )
   })
 
@@ -175,16 +189,16 @@ describe("blocks", () => {
     async t => {
       let page = await openHome()
       page->WeftTesting.click("#tabs-tabs-tab-1")
-      page->WeftTesting.click("#next-featured")
-      let tabs = page->WeftTesting.query("#tabs-tabs")
-      let featured = page->WeftTesting.query("#carousel-featured")
+      page->WeftTesting.click("[data-id=next-featured]")
+      let tabs = page->WeftTesting.query("[data-id=tabs-tabs]")
+      let featured = page->WeftTesting.query("[data-id=carousel-featured]")
       let tabsRenders = page->WeftTesting.renderCount(entrypoint("Tabs"))
       await app()->move(~page="home", "tabs", 0)
       await app()->insertText(~page="home", "notice", 2, "Free returns, always")
       await app()->removeBlock(~page="home", "categories")
       await app()->setHeroTitle(~page="home", "Built to last")
       await page->WeftTesting.refresh
-      await page->WeftTesting.waitFor(() => has(page, "#text-notice"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=text-notice]"))
       t
       ->expect(blockIds(page))
       ->Expect.toEqual([
@@ -197,12 +211,14 @@ describe("blocks", () => {
         "columns-bottom",
         "block-recent",
       ])
-      t->expect(text(page, "#hero-hero h1"))->Expect.toBe("Built to last")
+      t->expect(text(page, "[data-id=hero-hero] h1"))->Expect.toBe("Built to last")
       // The same tabs and rail, moved, not made again: their state is as it was.
-      t->expect(page->WeftTesting.query("#tabs-tabs") == tabs)->Expect.toBe(true)
-      t->expect(page->WeftTesting.query("#carousel-featured") == featured)->Expect.toBe(true)
+      t->expect(page->WeftTesting.query("[data-id=tabs-tabs]") == tabs)->Expect.toBe(true)
+      t
+      ->expect(page->WeftTesting.query("[data-id=carousel-featured]") == featured)
+      ->Expect.toBe(true)
       t->expect(attribute(page, "#tabs-tabs-tab-1", "aria-selected"))->Expect.toBe(Some("true"))
-      t->expect(text(page, "#position-featured"))->Expect.toBe("5–6 of 6")
+      t->expect(text(page, "[data-id=position-featured]"))->Expect.toBe("5–6 of 6")
       t->expect(page->WeftTesting.renderCount(entrypoint("Tabs")) > tabsRenders)->Expect.toBe(true)
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/", "/"])
       noWarnings(page)
@@ -212,13 +228,13 @@ describe("blocks", () => {
   testAsync("show each half of the experiment its own promotion, in the same place", async t => {
     let page = await openHome()
     t
-    ->expect(text(page, "#promo-promo-a .promo-text"))
+    ->expect(text(page, "[data-id=promo-promo-a] > p"))
     ->Expect.toBe("10% off everything with code WEFT10")
     await app()->setBucket("b")
     await page->WeftTesting.refresh
-    await page->WeftTesting.waitFor(() => has(page, "#promo-promo-b"))
+    await page->WeftTesting.waitFor(() => has(page, "[data-id=promo-promo-b]"))
     t
-    ->expect(text(page, "#promo-promo-b .promo-text"))
+    ->expect(text(page, "[data-id=promo-promo-b] > p"))
     ->Expect.toBe("20% off orders over $100 with code LOOM20")
     t->expect(blockIds(page)->Array.at(1))->Expect.toEqual(Some("block-promo-b"))
   })
@@ -231,29 +247,31 @@ describe("blocks", () => {
       let page = app()->open_("/")
       await page->WeftTesting.waitFor(
         () =>
-          has(page, "#block-error-featured") && has(page, "#hero-hero") && has(page, "#stock-p20"),
+          has(page, "[data-id=block-error-featured]") &&
+          has(page, "[data-id=hero-hero]") &&
+          has(page, "[data-id=stock-p20]"),
       )
       // The failed block's boundary is the client's to render (its error is thrown again there,
       // for the frame's error boundary to catch); the rest is the server's.
       await page->WeftTesting.hydrated
       t
-      ->expect(text(page, "#block-error-featured p"))
+      ->expect(text(page, "[data-id=block-error-featured] p"))
       ->Expect.toBe("Couldn't load this: the catalogue service is down")
-      t->expect(has(page, "#carousel-tab-shoes"))->Expect.toBe(true)
+      t->expect(has(page, "[data-id=carousel-tab-shoes]"))->Expect.toBe(true)
       // Still down: Retry shows the error again.
-      page->WeftTesting.click("#retry-featured")
+      page->WeftTesting.click("[data-id=retry-featured]")
       await page->WeftTesting.waitFor(
         () => page->WeftTesting.pageRequests->Array.includes("/blocks/home/featured"),
       )
       await page->WeftTesting.settle
-      t->expect(has(page, "#block-error-featured"))->Expect.toBe(true)
+      t->expect(has(page, "[data-id=block-error-featured]"))->Expect.toBe(true)
       // Back up.
       await app()->heal("rail:featured")
       await app()->release("rail:featured")
-      page->WeftTesting.click("#retry-featured")
-      await page->WeftTesting.waitFor(() => has(page, "#carousel-featured"))
-      t->expect(has(page, "#block-error-featured"))->Expect.toBe(false)
-      t->expect(text(page, "#stock-p1"))->Expect.toBe("In stock")
+      page->WeftTesting.click("[data-id=retry-featured]")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=carousel-featured]"))
+      t->expect(has(page, "[data-id=block-error-featured]"))->Expect.toBe(false)
+      t->expect(text(page, "[data-id=stock-p1]"))->Expect.toBe("In stock")
       t
       ->expect(page->WeftTesting.pageRequests)
       ->Expect.toEqual(["/", "/blocks/home/featured", "/blocks/home/featured"])
@@ -263,11 +281,11 @@ describe("blocks", () => {
   testAsync("that are live refetch themselves, and show the server's newer stock", async t => {
     await app()->setLiveEvery(1)
     let page = await openHome()
-    t->expect(text(page, "#live-p3 .live-stock"))->Expect.toBe(" 20 left")
+    t->expect(text(page, "[data-id=left-p3]"))->Expect.toBe(" 20 left")
     await app()->setStock("p3-7", 0)
     await page->WeftTesting.waitFor(
       ~timeout=3000,
-      () => text(page, "#live-p3 .live-stock") == " 15 left",
+      () => text(page, "[data-id=left-p3]") == " 15 left",
     )
     t
     ->expect(page->WeftTesting.pageRequests->Array.includes("/blocks/home/live"))
@@ -290,7 +308,7 @@ describe("the harness", () => {
       () => first->WeftTesting.pageRequests->Array.includes("/blocks/home/live"),
     )
     let page = app()->open_("/c/shoes")
-    await page->WeftTesting.waitFor(() => has(page, "#grid"))
+    await page->WeftTesting.waitFor(() => has(page, "[data-id=grid]"))
     await Promise.make((resolve, _) => setTimeout(() => resolve(), 1500)->ignore)
     t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/c/shoes"])
   })
@@ -302,28 +320,34 @@ describe("personalised", () => {
     async t => {
       await app()->releaseAll
       let page = app()->open_("/p/canvas-low")
-      await page->WeftTesting.waitFor(() => has(page, "#product-name"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=product-name]"))
       await page->WeftTesting.hydrated
       // Signing in, from the dialog.
-      page->WeftTesting.click("#sign-in")
-      await page->WeftTesting.waitFor(() => Doc.find("#signin-dialog")->Option.isSome)
-      inputAnywhere(".signin-name", "Ada")
-      submitAnywhere(".signin-form")
-      await page->WeftTesting.waitFor(() => text(page, "#account-menu")->String.includes("Hi, Ada"))
-      t->expect(Doc.find("#signin-dialog"))->Expect.toBe(None)
+      page->WeftTesting.click("[data-id=sign-in]")
+      await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+      inputAnywhere("[data-id=signin-dialog] input", "Ada")
+      submitAnywhere("[data-id=signin-dialog] form")
+      await page->WeftTesting.waitFor(
+        () => text(page, "[data-id=account-menu]")->String.includes("Hi, Ada"),
+      )
+      t->expect(Doc.find("[data-id=signin-dialog]"))->Expect.toBe(None)
       await page->WeftTesting.navigate("/")
       await page->WeftTesting.waitFor(
-        () => has(page, "#hero-welcome") && has(page, "#carousel-recent"),
+        () => has(page, "[data-id=hero-welcome]") && has(page, "[data-id=carousel-recent]"),
       )
-      t->expect(text(page, "#hero-welcome h1"))->Expect.toBe("Welcome back, Ada")
-      t->expect(has(page, "#hero-hero"))->Expect.toBe(false)
+      t->expect(text(page, "[data-id=hero-welcome] h1"))->Expect.toBe("Welcome back, Ada")
+      t->expect(has(page, "[data-id=hero-hero]"))->Expect.toBe(false)
       // Recommended: what's bought with what they looked at, but not that.
-      await page->WeftTesting.waitFor(() => has(page, "#carousel-for-you"))
-      t->expect(has(page, "#card-p3"))->Expect.toBe(true)
-      t->expect(text(page, "#carousel-for-you")->String.includes("Canvas Low"))->Expect.toBe(false)
-      t->expect(text(page, "#carousel-recent")->String.includes("Canvas Low"))->Expect.toBe(true)
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=carousel-for-you]"))
+      t->expect(has(page, "[data-id=card-p3]"))->Expect.toBe(true)
+      t
+      ->expect(text(page, "[data-id=carousel-for-you]")->String.includes("Canvas Low"))
+      ->Expect.toBe(false)
+      t
+      ->expect(text(page, "[data-id=carousel-recent]")->String.includes("Canvas Low"))
+      ->Expect.toBe(true)
       // Nothing bought yet: no rail to buy again.
-      t->expect(has(page, "#carousel-buy-again"))->Expect.toBe(false)
+      t->expect(has(page, "[data-id=carousel-buy-again]"))->Expect.toBe(false)
       let session = await app()->session
       t->expect((session.user, session.viewed))->Expect.toEqual(("Ada", ["p3"]))
       noWarnings(page)
@@ -336,21 +360,21 @@ describe("personalised", () => {
       await app()->releaseAll
       await app()->fail("recs:for-you", "the recommendations service timed out")
       let page = app()->open_("/")
-      await page->WeftTesting.waitFor(() => has(page, "#hero-hero"))
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=hero-hero]"))
       await page->WeftTesting.hydrated
-      page->WeftTesting.click("#sign-in")
-      await page->WeftTesting.waitFor(() => Doc.find("#signin-dialog")->Option.isSome)
-      inputAnywhere(".signin-name", "Grace")
-      submitAnywhere(".signin-form")
-      await page->WeftTesting.waitFor(() => has(page, "#block-error-for-you"))
+      page->WeftTesting.click("[data-id=sign-in]")
+      await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+      inputAnywhere("[data-id=signin-dialog] input", "Grace")
+      submitAnywhere("[data-id=signin-dialog] form")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=block-error-for-you]"))
       t
-      ->expect(text(page, "#block-error-for-you p"))
+      ->expect(text(page, "[data-id=block-error-for-you] p"))
       ->Expect.toBe("Couldn't load this: the recommendations service timed out")
-      t->expect(has(page, "#hero-welcome"))->Expect.toBe(true)
+      t->expect(has(page, "[data-id=hero-welcome]"))->Expect.toBe(true)
       await app()->heal("recs:for-you")
       await app()->release("recs:for-you")
-      page->WeftTesting.click("#retry-for-you")
-      await page->WeftTesting.waitFor(() => has(page, "#carousel-for-you"))
+      page->WeftTesting.click("[data-id=retry-for-you]")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=carousel-for-you]"))
       noWarnings(page)
     },
   )
@@ -361,12 +385,14 @@ describe("prices", () => {
     "change currency everywhere at once, with nothing fetched, and stay changed on the next page",
     async t => {
       let page = await openHome()
-      t->expect(text(page, "#card-p1 .price"))->Expect.toBe("$129.00")
-      await change(page, "#currency", "EUR")
-      await page->WeftTesting.waitFor(() => text(page, "#card-p1 .price") == "€118.68")
+      t->expect(text(page, "[data-id=card-p1] data"))->Expect.toBe("$129.00")
+      await change(page, "[data-id=currency]", "EUR")
+      await page->WeftTesting.waitFor(() => text(page, "[data-id=card-p1] data") == "€118.68")
       // Every price, in every block and tab, hidden or not.
-      t->expect(text(page, "#carousel-tab-bags #card-p17 .price"))->Expect.toBe("€146.28")
-      t->expect(text(page, "#live-p3 .price"))->Expect.toBe("€67.85 €54.28")
+      t
+      ->expect(text(page, "[data-id=carousel-tab-bags] [data-id=card-p17] data"))
+      ->Expect.toBe("€146.28")
+      t->expect(text(page, "[data-id=live-p3] data"))->Expect.toBe("€67.85 €54.28")
       await page->WeftTesting.waitFor(
         () => page->WeftTesting.pageRequests->Array.includes("/_weft/rpc/prefs.setCurrency"),
       )
@@ -376,8 +402,8 @@ describe("prices", () => {
       t->expect((await app()->session).currency)->Expect.toBe("EUR")
       // A new page load: the server renders it in euros.
       let page = app()->open_("/c/shoes")
-      await page->WeftTesting.waitFor(() => has(page, "#card-p1"))
-      t->expect(text(page, "#card-p1 .price"))->Expect.toBe("€118.68")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=card-p1]"))
+      t->expect(text(page, "[data-id=card-p1] data"))->Expect.toBe("€118.68")
       await hydratedAsServed(page)
     },
   )

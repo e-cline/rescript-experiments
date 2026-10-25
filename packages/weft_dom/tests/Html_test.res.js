@@ -425,7 +425,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           promise: match[0]
         })
       })
-    }), undefined, undefined, undefined);
+    }), undefined, undefined, undefined, undefined);
     t.expect(await Html$WeftDom.shell(rendering)).toBe(`<div><!--$?--><template id="wb:0"></template><i>loading</i><!--/$--></div>`);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("done");
@@ -449,7 +449,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           })
         })
       ]
-    }), undefined, undefined, undefined);
+    }), undefined, undefined, undefined, undefined);
     t.expect(await Html$WeftDom.shell(rendering)).toBe(`<!--$?--><template id="wb:0"></template>outer loading<!--/$-->`);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match$1[1]("inner");
@@ -471,7 +471,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           })
         })
       ]
-    }), undefined, undefined, undefined);
+    }), undefined, undefined, undefined, undefined);
     await Html$WeftDom.shell(rendering$1);
     let rest$1 = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering$1));
     match$2[1]("outer");
@@ -491,7 +491,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       children: Jsx$WeftDom.jsx(Html_test, {
         promise: match[0]
       })
-    }), param => "d2", undefined, undefined);
+    }), param => "d2", undefined, undefined, undefined);
     await Html$WeftDom.shell(rendering);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("waiting");
@@ -502,7 +502,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       children: Jsx$WeftDom.jsx(Html_test$Fails, {
         message: "shell"
       })
-    }), param => {}, undefined, undefined);
+    }), param => {}, undefined, undefined, undefined);
     t.expect(await rejection(() => Html$WeftDom.shell(rendering))).toEqual("shell");
     return t.expect(await DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering))).toEqual([]);
   });
@@ -514,7 +514,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
       children: Jsx$WeftDom.jsx(Html_test$Waits, {
         promise: match[0]
       })
-    }), undefined, Primitive_option.some(controller.signal), undefined);
+    }), undefined, Primitive_option.some(controller.signal), undefined, undefined);
     await Html$WeftDom.shell(rendering);
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     controller.abort();
@@ -530,7 +530,7 @@ Vitest.describe("streaming", undefined, undefined, undefined, undefined, undefin
           promise: match[0]
         })
       })
-    }), undefined, undefined, undefined);
+    }), undefined, undefined, undefined, undefined);
     let all = DomSupport$WeftDom.chunks(stream);
     await tick();
     match[1]("done");
@@ -561,7 +561,7 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
         }),
         "after"
       ]
-    }), undefined, undefined, undefined);
+    }), undefined, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let retried = {
       contents: false
@@ -610,7 +610,7 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
           })
         ]
       })
-    }), undefined, undefined, undefined);
+    }), undefined, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match$1[1]("two");
@@ -630,7 +630,7 @@ Vitest.describe("the runtime", undefined, undefined, undefined, undefined, undef
       children: Jsx$WeftDom.jsx(Html_test, {
         promise: match[0]
       })
-    }), param => "d3", undefined, undefined);
+    }), param => "d3", undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let retried = {
       contents: false

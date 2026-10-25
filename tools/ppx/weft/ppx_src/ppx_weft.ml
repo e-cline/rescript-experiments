@@ -83,6 +83,30 @@
    no use); `@@weft.server` anywhere but at the top level, or in a file with
    entrypoints.
 
+   And `weft_css`'s styles (docs/weft_css_plan.md, section 2):
+
+   {[
+     module Styles = {
+       let button = Css.class({display: Flex})
+     }
+     // becomes
+     module Styles = {
+       let button = Css.Internal.class_("Button-Styles-button_wk3f9a2", () => {display: Flex})
+     }
+   ]}
+
+   `Css.class`, `Css.var`, `Css.keyframes` and `Css.global` (with any
+   prefix: `WeftCss.Css.class` keeps it) in a `let` at a module's top level,
+   or a `Css.global(...)` statement there, get a name and their definition in
+   a function, called only when the Vite plugin extracts the file's CSS. The
+   name is readable (the file's module, the modules inside it and the
+   binding; `global<n>` for globals) and ends in the file's sheet id, `w` and
+   six base-36 digits of a hash of its id, as `WeftCss.SheetId.ofFileId`
+   computes it. A variable's name starts with `--`. The file gets
+   `'use weft css'`, beside any other directive. Anywhere else (in a
+   function, or a module inside one), a style call is an error: styles are
+   static.
+
    A note on the AST. bsc hands a PPX a frozen, OCaml 4.06-shaped version of
    its parsetree (`Parsetree0` in the compiler's sources), with ReScript-only
    constructs encoded: a function `(a, b) => body` is `fun a -> fun b -> body`
@@ -295,7 +319,7 @@ let package_name ~loc config_path =
 
 (* `<package name>/<path from the package root>`, for the file being
    compiled, from the nearest `rescript.json` above it. *)
-let file_id ~loc =
+let file_id ?(what = "the entrypoint") ?(by = "@" ^ name) ~loc () =
   let file = loc.loc_start.pos_fname in
   let file =
     if Filename.is_relative file then Filename.concat (Sys.getcwd ()) file else file
@@ -306,7 +330,8 @@ let file_id ~loc =
     else
       let parent = Filename.dirname dir in
       if parent = dir then
-        fail ~loc "found no rescript.json above %s, to name the entrypoint by" file
+        Location.raise_errorf ~loc "%s: found no rescript.json above %s, to name %s by" by
+          file what
       else find parent (Filename.basename dir ^ "/" ^ rel)
   in
   find (Filename.dirname file) (Filename.basename file)
@@ -397,6 +422,67 @@ let rec add_rpc_id ~loc id expr =
         "goes on a `let` whose value is `WeftServer.Rpc.make(...)` (or \
          `WeftServer.Rpc.makePrepared(...)`)"
 
+
+(* -- Styles ---------------------------------------------------------------- *)
+
+let style_registrations = [ "class"; "global"; "var"; "keyframes" ]
+
+(* A call of `Css.class` and the others (with any prefix): the module path
+   up to `Css`, the function, and the arguments. *)
+let style_call expr =
+  match expr.pexp_desc with
+  | Pexp_apply ({ pexp_desc = Pexp_ident { txt = Ldot (path, f); _ }; _ }, args)
+    when List.mem f style_registrations
+         && (match path with Lident "Css" | Ldot (_, "Css") -> true | _ -> false) ->
+      Some (path, f, args)
+  | _ -> None
+
+(* 32-bit FNV-1a over the id's bytes (UTF-8, as ReScript source is), modulo
+   36^6, in six base-36 digits after a `w`: `WeftCss.SheetId.ofFileId`. *)
+let sheet_id file_id =
+  let hash = ref 0x811c9dc5 in
+  String.iter
+    (fun c -> hash := (!hash lxor Char.code c) * 0x01000193 land 0xffffffff)
+    file_id;
+  let digits = "0123456789abcdefghijklmnopqrstuvwxyz" in
+  let out = Bytes.make 6 '0' in
+  let n = ref (!hash mod 2176782336) in
+  for i = 5 downto 0 do
+    Bytes.set out i digits.[!n mod 36];
+    n := !n / 36
+  done;
+  "w" ^ Bytes.to_string out
+
+(* `() => body`, as ReScript encodes it. *)
+let thunk ~loc body =
+  {
+    (pexp_construct ~loc { txt = Lident "Function$"; loc }
+       (Some (pexp_fun ~loc Nolabel None (punit ~loc) body)))
+    with
+    pexp_attributes = [ arity_attribute ~loc 1 ];
+  }
+
+let fail_style ~loc f fmt = Location.raise_errorf ~loc ("Css.%s: " ^^ fmt) f
+
+let not_static ~loc f =
+  fail_style ~loc f
+    "styles are static, so this goes in a `let` at a module's top level. For \
+     a value that changes, use a CSS variable (Css.vars), a data attribute \
+     and a `selectors` rule, or a class per variant."
+
+(* A style call inside a definition (`hover: Css.class(...)`, where
+   `Css.style` was meant), found before anything else is checked. *)
+let check_definition =
+  object
+    inherit Ast_traverse.iter as super
+
+    method! expression expr =
+      (match style_call expr with
+      | Some (_, f, _) -> not_static ~loc:expr.pexp_loc f
+      | None -> ());
+      super#expression expr
+  end
+
 (* -- The rewrite ---------------------------------------------------------- *)
 
 (* What a file has, so far: the first server component and the first
@@ -409,6 +495,9 @@ type file = {
   mutable server_only : location option;
   (* Each RPC declared, in order, and where. *)
   mutable rpcs : (string * location) list;
+  (* Whether it has styles, and how many globals so far (they're numbered). *)
+  mutable styles : bool;
+  mutable globals : int;
 }
 
 let note_kind file ~loc = function
@@ -437,20 +526,84 @@ let note_kind file ~loc = function
             other.loc_start.pos_lnum
       | None -> if file.entrypoint = None then file.entrypoint <- Some loc)
 
-let file_id_once file ~loc =
+let file_id_once ?what ?by file ~loc =
   match file.id with
   | Some id -> id
   | None ->
-      let id = file_id ~loc in
+      let id = file_id ?what ?by ~loc () in
       file.id <- Some id;
       id
 
 let rewriter () =
   let file =
-    { server = None; entrypoint = None; id = None; server_only = None; rpcs = [] }
+    {
+      server = None;
+      entrypoint = None;
+      id = None;
+      server_only = None;
+      rpcs = [];
+      styles = false;
+      globals = 0;
+    }
   in
   (* The modules the traversal is inside, innermost first. *)
   let modules = ref [] in
+  (* How many expressions the traversal is inside: a structure seen inside
+     one (a module in a function) isn't a module's top level. *)
+  let depth = ref 0 in
+  (* A style call, as the top of a `let` binding's value (`binding`) or a
+     statement: rewritten, if it's at a module's top level. *)
+  let rewrite_style ~binding expr =
+    match style_call expr with
+    | None -> None
+    | Some (path, f, args) ->
+        let loc = expr.pexp_loc in
+        if !depth > 0 then
+          fail_style ~loc f
+            "styles are static, so this goes at a module's top level, not in \
+             a module inside a function";
+        let labelled, unlabelled =
+          List.partition (fun (label, _) -> label <> Nolabel) args
+        in
+        let definition =
+          match unlabelled with
+          | [ (_, definition) ] -> definition
+          | _ -> fail_style ~loc f "takes one argument besides its labelled ones"
+        in
+        check_definition#expression definition;
+        let local =
+          match f, binding with
+          | "global", _ ->
+              let n = file.globals in
+              file.globals <- n + 1;
+              "global" ^ string_of_int n
+          | _, Some name -> name
+          | _, None ->
+              fail_style ~loc f
+                "goes in a `let` binding with a name (`let button = \
+                 Css.%s(...)`), which names it"
+                f
+        in
+        let id = file_id_once ~what:"its styles" ~by:("Css." ^ f) file ~loc in
+        file.styles <- true;
+        let module_name =
+          String.capitalize_ascii
+            (Filename.remove_extension
+               (Filename.basename loc.loc_start.pos_fname))
+        in
+        let name =
+          String.concat "-" ((module_name :: List.rev !modules) @ [ local ])
+          ^ "_" ^ sheet_id id
+        in
+        let name = if f = "var" then "--" ^ name else name in
+        let gloc = { loc with loc_ghost = true } in
+        Some
+          (pexp_apply ~loc
+             (pexp_ident ~loc:gloc
+                { txt = Ldot (Ldot (path, "Internal"), f ^ "_"); loc = gloc })
+             (((Nolabel, str ~loc:gloc name) :: labelled)
+             @ [ (Nolabel, thunk ~loc:gloc definition) ]))
+  in
   (* Rewrites one binding, returning it and, for an entrypoint, the
      statement that marks it. *)
   let rewrite_rpc binding =
@@ -472,6 +625,11 @@ let rewriter () =
         }
   in
   let rewrite_binding binding =
+    let binding =
+      match rewrite_style ~binding:(binding_name binding) binding.pvb_expr with
+      | Some expr -> { binding with pvb_expr = expr }
+      | None -> binding
+    in
     let binding = rewrite_rpc binding in
     match rewrite_attributes binding.pvb_attributes with
     | None -> (binding, None)
@@ -542,6 +700,16 @@ let rewriter () =
                 }
               in
               item :: List.filter_map snd rewritten
+          | Pstr_eval (expr, attributes) -> (
+              match rewrite_style ~binding:None expr with
+              | Some expr ->
+                  [
+                    {
+                      item with
+                      pstr_desc = Pstr_eval (super#expression expr, attributes);
+                    };
+                  ]
+              | None -> [ self#structure_item item ])
           | Pstr_attribute attribute when is_named server_name attribute ->
               if !modules <> [] then
                 Location.raise_errorf ~loc:attribute.attr_loc
@@ -558,6 +726,18 @@ let rewriter () =
               []
           | _ -> [ self#structure_item item ])
         items
+
+    (* Every style call in a place handled above has been rewritten before
+       the traversal gets here, so any it still finds is somewhere that runs
+       at another time than the module's top level. *)
+    method! expression expr =
+      match style_call expr with
+      | Some (_, f, _) -> not_static ~loc:expr.pexp_loc f
+      | None ->
+          incr depth;
+          let expr = super#expression expr in
+          decr depth;
+          expr
 
     method! value_description description =
       match rewrite_attributes description.pval_attributes with
@@ -609,10 +789,11 @@ let rewriter () =
       let rpcs =
         List.map (fun (id, _) -> directive ~loc ("use weft rpc " ^ id)) file.rpcs
       in
+      let css = if file.styles then [ directive ~loc "use weft css" ] else [] in
       match server, file.entrypoint with
-      | Some _, _ -> directive ~loc "use weft server" :: items
-      | _, Some _ -> (directive ~loc "use weft entrypoint" :: rpcs) @ items
-      | None, None -> rpcs @ items
+      | Some _, _ -> (directive ~loc "use weft server" :: css) @ items
+      | _, Some _ -> (directive ~loc "use weft entrypoint" :: rpcs) @ css @ items
+      | None, None -> rpcs @ css @ items
   end
 
 let () =

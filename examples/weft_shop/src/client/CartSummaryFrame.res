@@ -4,6 +4,12 @@ free shipping are the server's to work out), fetched again by themselves (`useRe
 the cart changes: the version in `ShopContext` going up, from any entrypoint's RPC.
 */
 
+open WeftCss
+
+module Styles = {
+  let frame = Css.class({selectors: [("&[aria-busy=\"true\"]", Css.style({opacity: 0.6}))]})
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~children: Weft.Element.t) => {
   let {cart} = ShopContext.use()
@@ -18,5 +24,9 @@ let make = (~children: Weft.Element.t) => {
     }
     None
   }, [cart.version])
-  <div id="summary-frame" ariaBusy={summary.isPending ? "true" : "false"}> {summary.element} </div>
+  <div
+    dataId="summary-frame" className=Styles.frame ariaBusy={summary.isPending ? "true" : "false"}
+  >
+    {summary.element}
+  </div>
 }

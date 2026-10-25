@@ -55,9 +55,17 @@ data the server decides on for each request, and each part of them streams in by
   [`src/server/ApiServer.res`](src/server/ApiServer.res)): eleven, with object, variant, option and
   custom codecs, `prepare` steps that send nothing for an empty promo code or name, `check`s on both
   sides, and errors the shopper is told about.
+- **Styles** ([`weft_css`](../../packages/weft_css)): each component's beside it (the theme's
+  colours, as CSS variables, and the page's own rules in
+  [`src/shared/Theme.res`](src/shared/Theme.res)), and no other class names. The tests find elements
+  by role, ARIA attribute or `data-id` (`dataId`): an element has an `id` only when the page needs
+  it (a label's, an ARIA reference's). Each page is sent the stylesheets of what it renders: the
+  shell's linked in its head, a block's with it as it streams in (its swap waiting for them), a page
+  navigated to with its payload (shown once they've loaded). Server components' styles (the frame,
+  the blocks, the pages) never reach the client as code, only as CSS. What changes at run time (a
+  product's hue, a carousel's page) is a CSS variable its class uses, set with `Css.vars`.
 - **The rest**: an offline banner (`useSyncExternalStore` with a server snapshot), a countdown that
-  renders the server's time first so hydration matches, toasts, and a stylesheet in each page's
-  head.
+  renders the server's time first so hydration matches, and toasts.
 
 The "database" ([`src/server/Db.res`](src/server/Db.res)) is in memory and the same every time.
 Every slow call waits on [`src/server/Latency.res`](src/server/Latency.res): in `vp dev` and
@@ -109,6 +117,9 @@ opens them in the order it's about:
   even for an RPC that's a visitor's first request; the account page redirecting to sign in, and
   back after, and out again; an empty cart's checkout redirecting to the cart; names refused on both
   sides.
+- [`Styles_test.res`](tests/Styles_test.res): each page's stylesheets (the home page's head linking
+  only what it renders, the cart's sent when it's opened), nothing shown without its CSS as the page
+  streams or the shopper navigates, and the old page kept while the new one's sheets load.
 
 [`e2e/`](e2e) checks, in Chromium against the build, what only a browser can, served twice:
 
@@ -118,6 +129,10 @@ opens them in the order it's about:
   dialog's focus and Escape; links to pages that redirect, landing at the redirect's URL; the
   currency kept across a reload; the back and forward buttons through filtered pages; a failed block
   retried; and the pages readable with JavaScript off.
+- [`styles.e2e.ts`](e2e/styles.e2e.ts), gated too, with every stylesheet slowed down: a probe on
+  every frame finds nothing shown without its CSS, from the home page streaming to a navigation, a
+  product, the cart's drawer and page, and a quantity changed (its totals refetched); and, as a
+  control, that it does find a page shown before its stylesheet. In Firefox and WebKit too.
 - [`random.e2e.ts`](e2e/random.e2e.ts), with seeded random latency and failures, as `vp run start`
   serves it: every page streaming in completely, once, and hydrating; navigating quickly through
   pages still streaming; and a purchase, retrying whatever fails.

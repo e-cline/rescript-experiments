@@ -10,6 +10,7 @@
     "@e-cline/signals_benchmarks",
     "@e-cline/signal_maps",
     "@e-cline/signal_maps_benchmarks",
+    "@e-cline/weft_css",
     "@e-cline/weft_dom",
     "@e-cline/weft_signals",
     "@e-cline/weft_server",
@@ -26,6 +27,7 @@
     "@e-cline/weft_vite_plugin",
     "@e-cline/weft_vite_plugin_fixture_basic",
     "@e-cline/weft_vite_plugin_fixture_client_imports_server",
+    "@e-cline/weft_vite_plugin_fixture_styled",
     "@e-cline/weft_vite_plugin_fixture_widgets",
     "@e-cline/servy"
   ],

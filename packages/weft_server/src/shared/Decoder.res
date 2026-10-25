@@ -4,6 +4,7 @@ module Deferred = Weft.Deferred
 type stream = Streams.t
 type signal = Streams.Signal.t
 type loadModule = string => promise<unknown>
+type loadSheet = string => option<promise<unit>>
 type fetched = {stream: stream, url?: string}
 type fetch = (string, ~signal: signal) => promise<fetched>
 
@@ -44,6 +45,7 @@ let webFetch = async (url, ~signal) => {
 
 type t = {
   loadModule: loadModule,
+  loadSheet: loadSheet,
   fetch: fetch,
   /** Each entrypoint file's module, by file id. */
   modules: Map.t<string, promise<unknown>>,
@@ -51,8 +53,12 @@ type t = {
   components: Map.t<string, promise<unknown>>,
 }
 
-let make = (~loadModule, ~fetch=webFetch) => {
+/** The document's: `None` for a sheet that has loaded (and, without a document, every sheet). */
+let documentSheet = href => WeftCss.Sheets.isLoaded(href) ? None : Some(WeftCss.Sheets.load(href))
+
+let make = (~loadModule, ~fetch=webFetch, ~loadSheet=documentSheet) => {
   loadModule,
+  loadSheet,
   fetch,
   modules: Map.make(),
   components: Map.make(),
@@ -112,6 +118,8 @@ type session = {
   arrived: Set.t<int>,
   /** Each loaded entrypoint's component, by its `E` row. */
   entrypoints: Map.t<int, unknown>,
+  /** The `C` rows whose sheets have loaded. */
+  sheets: Set.t<int>,
   /**
   Once the stream has ended: what a row that never arrived fails with. A row first referred to after
   that (by a row decoded late, once its entrypoints loaded) fails at once.
@@ -279,10 +287,32 @@ let handleRow = (session, {id, tag, json}: Payload.row) => {
       Promise.resolve()
     })
     ->ignore
+  | Stylesheet =>
+    // Loaded now, so it's ready by the time the rows needing it (which come after it) arrive. One
+    // that has loaded already (the shell's, in the page's head, or an earlier payload's) is ready
+    // at once, so a row needing only those never waits.
+    let loaded = () => {
+      session.sheets->Set.add(id)
+      target.resolve(undefined)
+    }
+    switch jsonField(json, "href")->Nullable.toOption->Option.flatMap(JSON.Decode.string) {
+    | Some(href) =>
+      switch session.client.loadSheet(href) {
+      | None => loaded()
+      | Some(loading) => loading->Promise.thenResolve(loaded)->ignore
+      }
+    | None => unexpected(JSON.stringify(json))
+    }
   | Model =>
+    // Its sheets and its entrypoints first, as Flight's "blocked" rows: so what it decodes to can
+    // show with its CSS, and its components are the real ones.
+    let (sheets, json) = Payload.sheetsOf(json)
     let waitingFor = []
     entrypointRows(json, waitingFor)
-    let missing = waitingFor->Array.filter(id => !(session.entrypoints->Map.has(id)))
+    let missing =
+      waitingFor
+      ->Array.filter(id => !(session.entrypoints->Map.has(id)))
+      ->Array.concat(sheets->Array.filter(id => !(session.sheets->Set.has(id))))
     if Array.length(missing) == 0 {
       switch decode(session, json) {
       | value => target.resolve(value)
@@ -370,6 +400,7 @@ let valueFromStream = (client, stream, ~signal=?) => {
     rows: Map.make(),
     arrived: Set.make(),
     entrypoints: Map.make(),
+    sheets: Set.make(),
     ended: None,
   }
   let root = row(session, 0)

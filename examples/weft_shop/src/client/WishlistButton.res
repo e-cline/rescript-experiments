@@ -4,6 +4,17 @@ says no. Signed out, it opens the sign-in dialog instead. The server's answer (w
 another page) wins over what was shown.
 */
 
+open WeftCss
+
+module Styles = {
+  let wishlist = Css.class({
+    border: "none",
+    fontSize: Px(18),
+    color: Var(Theme.sale),
+    background: "none",
+  })
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~productId: string, ~saved as serverSaved: bool) => {
   let {user} = ShopContext.use()
@@ -14,8 +25,8 @@ let make = (~productId: string, ~saved as serverSaved: bool) => {
   }, [serverSaved])
   let toggle = WeftServer.Rpc.use(Api.toggleWishlist)
   <button
-    className="wishlist"
-    id={`wishlist-${productId}`}
+    className={Styles.wishlist}
+    dataId={`wishlist-${productId}`}
     ariaPressed={saved ? "true" : "false"}
     ariaLabel={saved ? "Remove from wishlist" : "Save to wishlist"}
     onClick={event => {

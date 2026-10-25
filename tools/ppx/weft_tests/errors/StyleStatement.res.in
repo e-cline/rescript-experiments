@@ -1,0 +1,2 @@
+// A class with nothing to name it by.
+Css.class({padding: Px(20)})

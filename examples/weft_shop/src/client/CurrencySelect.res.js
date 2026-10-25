@@ -7,6 +7,7 @@ import * as Api$WeftShop from "../shared/Api.res.js";
 import * as Money$WeftShop from "../shared/Money.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Store$WeftShop from "./Store.res.js";
+import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 import * as ShopContext$WeftShop from "./ShopContext.res.js";
 
@@ -16,14 +17,13 @@ function CurrencySelect(props) {
   let currency = match.currency;
   let save = Rpc$WeftServer.use(Api$WeftShop.setCurrency, undefined);
   return Jsx$WeftDom.Elements.jsxs("label", {
-    className: "currency",
     children: [
       Jsx$WeftDom.Elements.jsx("span", {
-        className: "visually-hidden",
+        className: Theme$WeftShop.visuallyHidden,
         children: "Currency"
       }),
       Jsx$WeftDom.Elements.jsx("select", {
-        id: "currency",
+        "data-id": "currency",
         value: Money$WeftShop.code(currency),
         onChange: event => {
           let next = Money$WeftShop.fromCode(Dom$WeftDom.Event.targetValue(event));

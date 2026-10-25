@@ -1,0 +1,10 @@
+
+  We've found a bug for you!
+  StyleInFunction.res:2:25-52
+
+  1 │ // A style made when a function runs: styles are static.
+  2 │ let pick = big => big ? Css.class({padding: Px(20)}) : ""
+  3 │ 
+
+  Css.class: styles are static, so this goes in a `let` at a module's top level. For a value that changes, use a CSS variable (Css.vars), a data attribute and a `selectors` rule, or a class per variant.
+

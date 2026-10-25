@@ -60,11 +60,36 @@ let reducer = (state, action) =>
   | Failed(error) => {...state, placing: false, error: Some(error)}
   }
 
+open WeftCss
+
+module Styles = {
+  let steps = Css.class({
+    display: Flex,
+    gap: Px(16),
+    padding: Zero,
+    listStyle: None,
+    color: Var(Theme.muted),
+    selectors: [("[aria-current=\"step\"]", Css.style({color: Var(Theme.ink), fontWeight: 600}))],
+  })
+  let field = Css.class({
+    display: Grid,
+    gap: Px(2),
+    marginBottom: Px(10),
+    maxWidth: Px(360),
+    selectors: [
+      (
+        "input",
+        Css.style({padding: Pair(Px(6), Px(8)), border: Theme.hairline(), borderRadius: Px(6)}),
+      ),
+    ],
+  })
+}
+
 module Field = {
   @weft.component
   let make = (~label: string, ~name: string, ~value: string, ~autoComplete: string, ~onEdit) => {
     let id = Weft.Hooks.useId()
-    <div className="field">
+    <div className={Styles.field}>
       <label htmlFor=id> {WeftDom.Jsx.string(label)} </label>
       <input
         id name value autoComplete onInput={event => onEdit(WeftDom.Dom.Event.targetValue(event))}
@@ -107,8 +132,8 @@ let make = (~total: cents, ~count: int) => {
         }
     )()->ignore
   }
-  <div id="checkout">
-    <ol id="checkout-steps">
+  <div dataId="checkout">
+    <ol dataId="checkout-steps" className=Styles.steps>
       {[(Address, "Address"), (Delivery, "Delivery"), (Review, "Review")]
       ->Array.map(((step, label)) =>
         <li key=label ariaCurrent={step == state.step ? "step" : "false"}>
@@ -118,7 +143,7 @@ let make = (~total: cents, ~count: int) => {
       ->WeftDom.Jsx.array}
     </ol>
     <form
-      id="checkout-form"
+      dataId="checkout-form"
       onSubmit={event => {
         WeftDom.Dom.Event.preventDefault(event)
         state.step == Review ? place() : dispatch(Next)
@@ -126,7 +151,7 @@ let make = (~total: cents, ~count: int) => {
     >
       {switch state.step {
       | Address =>
-        <fieldset id="address-step">
+        <fieldset dataId="address-step">
           <legend> {WeftDom.Jsx.string("Where to?")} </legend>
           <Field
             label="Name" name="name" value=details.name autoComplete="name" onEdit={edit(Name, ...)}
@@ -154,16 +179,16 @@ let make = (~total: cents, ~count: int) => {
           />
         </fieldset>
       | Delivery =>
-        <fieldset id="delivery-step">
+        <fieldset dataId="delivery-step">
           <legend> {WeftDom.Jsx.string("How fast?")} </legend>
           {[(Standard, "Standard (3–5 days)"), (Express, "Express (next day)")]
           ->Array.map(((delivery, label)) => {
             let value = delivery == Standard ? "standard" : "express"
-            <label key=value className="choice">
+            <label key=value className={Theme.choice}>
               <input
                 type_="radio"
                 name="delivery"
-                id={`delivery-${value}`}
+                dataId={`delivery-${value}`}
                 value
                 checked={details.delivery == delivery}
                 onChange={_ => dispatch(Choose(delivery))}
@@ -185,14 +210,14 @@ let make = (~total: cents, ~count: int) => {
           />
         </fieldset>
       | Review =>
-        <div id="review-step">
-          <p id="review-address">
+        <div dataId="review-step">
+          <p dataId="review-address">
             {WeftDom.Jsx.string(
               `${details.name}, ${details.street}, ${details.city} ${details.postcode}`,
             )}
           </p>
-          <p id="review-items"> {WeftDom.Jsx.string(`${Int.toString(count)} items`)} </p>
-          <p id="review-total">
+          <p dataId="review-items"> {WeftDom.Jsx.string(`${Int.toString(count)} items`)} </p>
+          <p dataId="review-total">
             {WeftDom.Jsx.string(
               `Total: ${Money.format(total + deliveryCost(details.delivery), currency)}`,
             )}
@@ -200,16 +225,16 @@ let make = (~total: cents, ~count: int) => {
         </div>
       }}
       {switch state.error {
-      | Some(message) => <p id="checkout-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+      | Some(message) => <p dataId="checkout-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
       | None => WeftDom.Jsx.null
       }}
-      <div className="checkout-buttons">
+      <div>
         {state.step == Address
           ? WeftDom.Jsx.null
-          : <button id="checkout-back" type_="button" onClick={_ => dispatch(Back)}>
+          : <button dataId="checkout-back" type_="button" onClick={_ => dispatch(Back)}>
               {WeftDom.Jsx.string("Back")}
             </button>}
-        <button id="checkout-next" type_="submit" disabled=state.placing>
+        <button dataId="checkout-next" type_="submit" disabled=state.placing>
           {WeftDom.Jsx.string(
             switch state.step {
             | Review => state.placing ? "Placing…" : "Place order"

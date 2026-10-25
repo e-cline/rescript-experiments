@@ -1,6 +1,7 @@
 type tag =
   | Model
   | EntrypointRef
+  | Stylesheet
   | Error
 
 type row = {id: int, tag: tag, json: JSON.t}
@@ -9,6 +10,7 @@ let tagLetter = tag =>
   switch tag {
   | Model => "J"
   | EntrypointRef => "E"
+  | Stylesheet => "C"
   | Error => "X"
   }
 
@@ -29,6 +31,7 @@ let parseRow = (line: string): row => {
   let tag = switch line->String.charAt(colon + 1) {
   | "J" => Some(Model)
   | "E" => Some(EntrypointRef)
+  | "C" => Some(Stylesheet)
   | "X" => Some(Error)
   | _ => None
   }
@@ -154,6 +157,24 @@ let asElement = items =>
     }
     Some((elementType, key, props))
   | _ => None
+  }
+
+let withSheets = (rows, json) =>
+  Array.length(rows) == 0
+    ? json
+    : JSON.Encode.array([
+        JSON.String("$C"),
+        JSON.Encode.array(rows->Array.map(row => JSON.Encode.int(row))),
+        json,
+      ])
+
+let sheetsOf = json =>
+  switch json {
+  | JSON.Array([JSON.String("$C"), JSON.Array(rows), inner]) => (
+      rows->Array.filterMap(row => row->JSON.Decode.float->Option.map(Float.toInt)),
+      inner,
+    )
+  | _ => ([], json)
   }
 
 let contentType = "text/x-weft-payload"

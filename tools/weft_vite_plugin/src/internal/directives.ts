@@ -1,14 +1,14 @@
 // The directives `ppx_weft` writes at the top of a compiled file: `'use weft server'` in a server
 // file (one with server components, or `@@weft.server`), `'use weft entrypoint'` in one with
-// entrypoints, and `'use weft rpc <id>'` for each RPC a file declares (beside an entrypoint one, or
-// alone in a shared file).
+// entrypoints, `'use weft rpc <id>'` for each RPC a file declares (beside an entrypoint one, or
+// alone in a shared file), and `'use weft css'` in one with `weft_css` styles (beside any other).
 
 /** What a file is, from its directives: a shared file declaring RPCs has no other directive. */
 export type Kind = 'server' | 'entrypoint' | 'shared';
 
 export type Directive = {
-  /** `rpc` for an RPC's declaration, whose ID is `rpc`. */
-  kind: 'server' | 'entrypoint' | 'rpc';
+  /** `rpc` for an RPC's declaration, whose ID is `rpc`; `css` for styles. */
+  kind: 'server' | 'entrypoint' | 'rpc' | 'css';
   rpc?: string;
   /** Where the directive's statement is, its `;` included if it has one. */
   start: number;
@@ -20,12 +20,15 @@ export type Directives = {
   kind: Kind;
   /** The IDs of the RPCs it declares, in order. */
   rpcs: string[];
+  /** Whether it has styles. */
+  css: boolean;
   directives: Directive[];
 };
 
-const kinds: Record<string, 'server' | 'entrypoint'> = {
+const kinds: Record<string, 'server' | 'entrypoint' | 'css'> = {
   'use weft server': 'server',
   'use weft entrypoint': 'entrypoint',
+  'use weft css': 'css',
 };
 
 const rpcPrefix = 'use weft rpc ';
@@ -121,6 +124,7 @@ export function findDirectives(code: string): Directives | undefined {
         ? 'entrypoint'
         : 'shared',
     rpcs: directives.flatMap(({rpc}) => (rpc === undefined ? [] : [rpc])),
+    css: has('css'),
     directives,
   };
 }

@@ -35,7 +35,7 @@ function scriptString(text) {
   return JSON.stringify(text).replaceAll("<", "\\u003c").replaceAll(lineSeparator, "\\u2028").replaceAll(paragraphSeparator, "\\u2029");
 }
 
-let runtime = `$weftSwap=function(n){var a=document.getElementById("wb:"+n),t=document.getElementById("ws:"+n);if(!a||!t)return;var m=a.previousSibling,p=a.parentNode,e=a.nextSibling,d=0;while(e){if(e.nodeType===8){if(e.data==="/$"){if(d===0)break;d--}else if(e.data[0]==="$")d++}var x=e.nextSibling;p.removeChild(e);e=x}p.insertBefore(t.content,e);p.removeChild(a);t.parentNode.removeChild(t);m.data="$";if(m.$weftRetry)m.$weftRetry()};$weftFail=function(n,g,s){var a=document.getElementById("wb:"+n);if(!a)return;var m=a.previousSibling;a.removeAttribute("id");if(g!=null)a.setAttribute("data-digest",g);if(s!=null)a.setAttribute("data-message",s);m.data="$!";if(m.$weftRetry)m.$weftRetry()};`;
+let runtime = `$weftLate=[];$weftCss=function(h){var c=self.__weftCss||(self.__weftCss={}),s=c[h];if(s)return s;var l,k=document.querySelectorAll('link[rel="stylesheet"]');for(var i=0;k[i];i++)if(k[i].getAttribute("href")===h){l=k[i];break}if(!l){l=document.createElement("link");l.rel="stylesheet";l.setAttribute("href",h);document.head.appendChild(l)}s={loaded:!!(l.sheet||l.weftSettled),promise:Promise.resolve()};if(!s.loaded)s.promise=new Promise(function(r){function f(){s.loaded=true;r()}l.addEventListener("load",f,{once:true});l.addEventListener("error",f,{once:true})});return c[h]=s};$weftSwap=function(n,h){if(h){var w=[];for(var i=0;i!==h.length;i++){var s=$weftCss(h[i]);if(!s.loaded)w.push(s.promise)}if(w.length){Promise.all(w).then(function(){$weftSwap(n)});return}}var a=document.getElementById("wb:"+n),t=document.getElementById("ws:"+n);if(!a||!t){if(t)$weftLate.push(function(){$weftSwap(n)});return}var m=a.previousSibling,p=a.parentNode,e=a.nextSibling,d=0;while(e){if(e.nodeType===8){if(e.data==="/$"){if(d===0)break;d--}else if(e.data[0]==="$")d++}var x=e.nextSibling;p.removeChild(e);e=x}p.insertBefore(t.content,e);p.removeChild(a);t.parentNode.removeChild(t);m.data="$";var q=$weftLate;$weftLate=[];for(var j=0;j!==q.length;j++)q[j]();if(m.$weftRetry)m.$weftRetry()};$weftFail=function(n,g,s){var a=document.getElementById("wb:"+n);if(!a){$weftLate.push(function(){$weftFail(n,g,s)});return}var m=a.previousSibling;a.removeAttribute("id");if(g!=null)a.setAttribute("data-digest",g);if(s!=null)a.setAttribute("data-message",s);m.data="$!";if(m.$weftRetry)m.$weftRetry()};`;
 
 let voidElements = [
   "area",
@@ -647,9 +647,10 @@ function defaultOnError(error) {
   console.error(error);
 }
 
-function render(element, onErrorOpt, signal, idPrefixOpt) {
+function render(element, onErrorOpt, signal, idPrefixOpt, stylesheetsOfOpt) {
   let onError = onErrorOpt !== undefined ? onErrorOpt : defaultOnError;
   let idPrefix = idPrefixOpt !== undefined ? idPrefixOpt : "w";
+  let stylesheetsOf = stylesheetsOfOpt !== undefined ? stylesheetsOfOpt : param => [];
   let request = {
     onError: onError,
     idPrefix: idPrefix,
@@ -728,7 +729,9 @@ function render(element, onErrorOpt, signal, idPrefixOpt) {
         }
         if (exit === 1) {
           let content = html(request, attempt);
-          emit(`<template id="ws:` + id + `">` + content + `</template><script>$weftSwap(` + id + `)</script>`);
+          let hrefs = stylesheetsOf(content);
+          let swap = hrefs.length !== 0 ? `$weftSwap(` + id + `,[` + hrefs.map(scriptString).join(",") + `])` : `$weftSwap(` + id + `)`;
+          emit(`<template id="ws:` + id + `">` + content + `</template><script>` + swap + `</script>`);
           start(attempt.spawns);
         }
         running.contents = running.contents - 1 | 0;
@@ -799,8 +802,8 @@ async function renderToString(element, onErrorOpt, idPrefixOpt) {
   return html(request, await renderUntilReady(request, rootContext, element));
 }
 
-function renderToStream(element, onError, signal, idPrefix) {
-  let rendering = render(element, onError, signal, idPrefix);
+function renderToStream(element, onError, signal, idPrefix, stylesheetsOf) {
+  let rendering = render(element, onError, signal, idPrefix, stylesheetsOf);
   let encoder = new TextEncoder();
   return new ReadableStream({
     start: controller => {

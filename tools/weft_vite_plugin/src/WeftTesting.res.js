@@ -209,6 +209,22 @@ function loads(prim) {
   return prim.loads;
 }
 
+function stylesheets(prim) {
+  return prim.stylesheets;
+}
+
+function holdStylesheets(prim0, prim1) {
+  prim0.holdStylesheets(prim1 !== undefined ? Primitive_option.valFromOption(prim1) : undefined);
+}
+
+function releaseStylesheets(prim) {
+  prim.releaseStylesheets();
+}
+
+function unstyled(prim) {
+  return prim.unstyled();
+}
+
 function renderCount(prim0, prim1) {
   return prim0.renderCount(prim1);
 }
@@ -253,6 +269,10 @@ export {
   holdLoads,
   releaseLoads,
   loads,
+  stylesheets,
+  holdStylesheets,
+  releaseStylesheets,
+  unstyled,
   renderCount,
   snapshot,
   removedSince,

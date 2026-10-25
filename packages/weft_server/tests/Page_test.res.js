@@ -65,7 +65,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     let payload = await Testing$WeftServer.readAll(Render$WeftServer.toStream(TestJsx$Weft.Elements.jsx("p", {
       id: "x",
       children: Support$WeftServer.text("hello")
-    }), undefined, undefined));
+    }), undefined, undefined, undefined));
     return t.expect(pushedRows(html)).toEqual([
       payload,
       undefined
@@ -80,7 +80,7 @@ Vitest.describe("Page.toStream", undefined, undefined, undefined, undefined, und
     let scripts = html.split("</script>").length - 1 | 0;
     t.expect(scripts).toBe(assets_scripts.length + 2 | 0);
     t.expect(html.includes(" ")).toBe(false);
-    let payload = await Testing$WeftServer.readAll(Render$WeftServer.toStream(element, undefined, undefined));
+    let payload = await Testing$WeftServer.readAll(Render$WeftServer.toStream(element, undefined, undefined, undefined));
     return t.expect(pushedRows(html)).toEqual([
       payload,
       undefined
@@ -153,7 +153,7 @@ Vitest.describe("Page.respond", undefined, undefined, undefined, undefined, unde
     t.expect(header(payloadResponse, "content-type")).toEqual(Payload$WeftServer.contentType);
     t.expect(header(payloadResponse, "vary")).toEqual("Accept");
     t.expect(header(payloadResponse, "cache-control")).toEqual(Payload$WeftServer.cacheControl);
-    t.expect(await payloadResponse.text()).toBe(await Testing$WeftServer.readAll(Render$WeftServer.toStream(element, undefined, undefined)));
+    t.expect(await payloadResponse.text()).toBe(await Testing$WeftServer.readAll(Render$WeftServer.toStream(element, undefined, undefined, undefined)));
     let page = Page$WeftServer.respond(new Request("http://localhost/x", {
       headers: {
         accept: "text/html"

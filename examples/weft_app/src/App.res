@@ -36,6 +36,7 @@ module NewTodo = {
     <form id="new-todo-form" onSubmit=submit>
       <input
         id="new-todo"
+        className=Styles.newTodo
         ref=input
         placeholder="What needs doing?"
         ariaLabel="New todo"
@@ -50,7 +51,7 @@ module TodoItem = {
   @weft.component
   let make = Weft.Memo.memo((~todo: Todo.todo, ~dispatch: Todo.action => unit) => {
     let id = Int.toString(todo.id)
-    <li id={`todo-${id}`} className={todo.done ? "done" : ""}>
+    <li id={`todo-${id}`} className={WeftCss.Css.cx([Styles.item, todo.done ? Styles.done : ""])}>
       <input
         id={`toggle-${id}`}
         type_="checkbox"
@@ -69,7 +70,7 @@ module TodoList = {
   @weft.component
   let make = (~todos: array<Todo.todo>, ~dispatch: Todo.action => unit) => {
     let filter = useContext(FilterContext.context)
-    <ul id="todo-list">
+    <ul id="todo-list" className=Styles.list>
       {Todo.visible(todos, filter)
       ->Array.map(todo => <TodoItem key={Int.toString(todo.id)} todo dispatch />)
       ->Jsx.array}
@@ -80,7 +81,7 @@ module TodoList = {
 module Filters = {
   @weft.component
   let make = (~filter: Todo.filter, ~setFilter: (Todo.filter => Todo.filter) => unit) =>
-    <nav>
+    <nav className=Styles.filters>
       {[Todo.All, Active, Completed]
       ->Array.map(option => {
         let name = Todo.filterName(option)
@@ -113,7 +114,7 @@ let make = (~storageKey: string="weft-todos") => {
     <FilterContext.Provider value=filter>
       <TodoList todos dispatch />
     </FilterContext.Provider>
-    <footer>
+    <footer className=Styles.footer>
       <span id="remaining">
         {Jsx.string(`${Int.toString(remaining)} ${remaining == 1 ? "item" : "items"} left`)}
       </span>

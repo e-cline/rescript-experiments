@@ -8,8 +8,10 @@ let element = await client->WeftServer.Decoder.fetchElement("/notes/1")
 root->WeftDom.Client.render(element)
 ```
 
-The promise resolves once the root row is in and every entrypoint it refers to has loaded; the rest
-of the payload keeps streaming in after that. Each part that wasn't ready when the server wrote the
+The promise resolves once the root row is in and every entrypoint and stylesheet it needs has
+loaded; the rest of the payload keeps streaming in after that, each row decoded once its own
+entrypoints and stylesheets have (so nothing shows before its CSS: rendered in a transition, as
+navigation and refetching are, the screen keeps what it had until then). Each part that wasn't ready when the server wrote the
 root arrives as a `Weft.Lazy` element, which renders as soon as its row does (and suspends to
 its `Suspense` boundary until then). A row that has arrived is readable at once (see
 `Weft.Deferred`), so rendering a payload that has fully arrived never suspends.
@@ -32,6 +34,13 @@ Loads an entrypoint's file: given its id (`<package>/<path>`, the part of an ent
 type loadModule = string => promise<unknown>
 
 /**
+Loads a stylesheet a payload needs, given its URL: `None` if it has loaded already (so nothing waits
+for it), or a promise that settles once it has (or failed: what waits for it then shows unstyled).
+The default is the document's (`WeftCss.Sheets`), which on the server has every sheet loaded.
+*/
+type loadSheet = string => option<promise<unit>>
+
+/**
 A fetched payload: its `stream`, and the `url` it came from, if that isn't the one asked for (the
 server redirected the request, and the fetch followed it there).
 */
@@ -42,8 +51,11 @@ type fetch = (string, ~signal: signal) => promise<fetched>
 
 type t
 
-/** A client, loading entrypoints with `loadModule`, and fetching payloads with `fetch`. */
-let make: (~loadModule: loadModule, ~fetch: fetch=?) => t
+/**
+A client, loading entrypoints with `loadModule`, stylesheets with `loadSheet`, and fetching
+payloads with `fetch`.
+*/
+let make: (~loadModule: loadModule, ~fetch: fetch=?, ~loadSheet: loadSheet=?) => t
 
 /**
 The root element of the payload `stream`. Rejects if the root row is an error, or the stream ends

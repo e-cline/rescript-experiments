@@ -11,13 +11,16 @@ import {
   type ViteDevServer,
 } from 'vite';
 
+import {cssPlugin} from './internal/cssPlugin.js';
 import {findDirectives, stripDirectives} from './internal/directives.js';
+import {entrypointSheets} from './internal/imports.js';
 import {
   entrypoints,
   hasPpx,
   packageOf,
   readCompiledFile,
   scan,
+  styleFiles,
   type Scan,
 } from './internal/scan.js';
 import {
@@ -33,6 +36,8 @@ import {
   devAssets,
   ssrReferencesCode,
   refreshEvent,
+  sheetsCode,
+  sheetsId,
   ssrReferencesId,
   type Manifest,
 } from './internal/virtualModules.js';
@@ -74,7 +79,8 @@ function displayId(root: string, id: string): string {
 /**
  * Weft's server components: an `rsc` environment the server entry runs in, the client's, with every
  * entrypoint file a chunk of its own, the boundary between the two enforced, a dev server that
- * answers requests with the server entry, and a build of both.
+ * answers requests with the server entry, and a build of both. And `weft_css`'s styles, as
+ * `weftCss()` has them, except that the client's modules don't import their sheets.
  */
 export function weft(options: Options): Plugin[] {
   let config: ResolvedConfig;
@@ -88,6 +94,20 @@ export function weft(options: Options): Plugin[] {
   const rescan = () => {
     scanned = scan(config.root);
   };
+
+  /** Drops the server's assets, in development, so the next request's page has the current ones. */
+  const invalidateAssets = () => {
+    const graph = devServer?.environments[serverEnvironment]?.moduleGraph;
+    const node = graph?.getModuleById(resolvedId(assetsId));
+    if (node !== undefined) graph!.invalidateModule(node);
+  };
+
+  const css = cssPlugin({
+    importSheets: false,
+    scanned: () => scanned,
+    rescan,
+    onChange: invalidateAssets,
+  });
 
   /** Who imports `id`, in the current environment: in a build from Rolldown, in dev from the graph. */
   function importersOf(
@@ -230,6 +250,20 @@ export function weft(options: Options): Plugin[] {
     buildStart() {
       // A build is run after `rescript build`, which may have changed what's an entrypoint.
       if (this.environment.mode === 'build') rescan();
+      // The client build emits every stylesheet, for the server's assets to link.
+      if (
+        this.environment.mode === 'build' &&
+        this.environment.name === clientEnvironment &&
+        styleFiles(scanned).length > 0
+      ) {
+        // Its exports kept (nothing imports it), and with them the sheets' `?url` imports.
+        this.emitFile({
+          type: 'chunk',
+          id: sheetsId,
+          name: 'sheets',
+          preserveSignature: 'strict',
+        });
+      }
     },
 
     resolveId(id) {
@@ -238,7 +272,8 @@ export function weft(options: Options): Plugin[] {
         id === clientId ||
         id === bootstrapId ||
         id === assetsId ||
-        id === ssrReferencesId
+        id === ssrReferencesId ||
+        id === sheetsId
       ) {
         // Anything but the server's environment is a client: the browser's, and a test's.
         const isClient = this.environment.name !== serverEnvironment;
@@ -254,7 +289,7 @@ export function weft(options: Options): Plugin[] {
       return undefined;
     },
 
-    load(id) {
+    async load(id) {
       if (id === resolvedId(clientReferencesId)) {
         return clientReferencesCode(entrypoints(scanned));
       } else if (id === resolvedId(ssrReferencesId)) {
@@ -263,10 +298,23 @@ export function weft(options: Options): Plugin[] {
         return clientCode();
       } else if (id === resolvedId(bootstrapId)) {
         return bootstrapCode();
+      } else if (id === resolvedId(sheetsId)) {
+        return sheetsCode(styleFiles(scanned).map(({sheet}) => sheet!));
       } else if (id === resolvedId(assetsId)) {
         const files = entrypoints(scanned);
+        const sheets = await css.sheets();
+        const sheetsOf = entrypointSheets(scanned);
         if (this.environment.mode === 'dev') {
-          return assetsCode(devAssets(config.root, config.base, client, files));
+          return assetsCode(
+            devAssets(
+              config.root,
+              config.base,
+              client,
+              files,
+              sheets,
+              sheetsOf,
+            ),
+          );
         }
         if (manifest === undefined) {
           const clientOutDir = resolve(
@@ -286,7 +334,15 @@ export function weft(options: Options): Plugin[] {
           }
         }
         return assetsCode(
-          buildAssets(manifest!, config.root, config.base, client, files),
+          buildAssets(
+            manifest!,
+            config.root,
+            config.base,
+            client,
+            files,
+            sheets,
+            sheetsOf,
+          ),
         );
       }
       return undefined;
@@ -388,7 +444,8 @@ export function weft(options: Options): Plugin[] {
           const after = now?.kind;
           if (
             before !== after ||
-            (was?.rpcs ?? []).join() !== (now?.rpcs ?? []).join()
+            (was?.rpcs ?? []).join() !== (now?.rpcs ?? []).join() ||
+            was?.sheet !== now?.sheet
           ) {
             // Fails (an error in the terminal) if an RPC ID is now declared twice.
             rescan();
@@ -432,7 +489,17 @@ export function weft(options: Options): Plugin[] {
     },
   };
 
-  return [main];
+  // First, so its transform sees `'use weft css'` before `main`'s blanks every directive.
+  return [css.plugin, main];
+}
+
+/**
+ * `weft_css`'s styles, for an app without a server (`weft()` includes them): each file with styles
+ * has its sheet extracted (by running the file in Node), its definitions stripped from what's
+ * bundled, and its sheet imported by the module, so Vite loads it with the module's chunk.
+ */
+export function weftCss(): Plugin {
+  return cssPlugin({importSheets: true}).plugin;
 }
 
 export default weft;

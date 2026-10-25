@@ -1,7 +1,7 @@
 /***
 Files that mustn't compile, each with the error it should give, compiled with `bsc` directly:
 
-- `errors/`, through the PPX: each misuse of `@weft.component`.
+- `errors/`, through the PPX: each misuse of what it handles.
 - `canaries/`, without it: compiler behaviours the PPX's design depends on (see "What was verified
   before writing this" in docs/weft_server_components_plan.md). If a ReScript upgrade changes one,
   its test fails here, by name.
@@ -61,5 +61,7 @@ let suite = (~dir, ~withPpx) =>
     })
   })
 
-describe("misuses of @weft.component", () => suite(~dir="errors", ~withPpx=true))
+describe("misuses of @weft.component, @weft.rpc, @@weft.server and Css.*", () =>
+  suite(~dir="errors", ~withPpx=true)
+)
 describe("compiler canaries", () => suite(~dir="canaries", ~withPpx=false))

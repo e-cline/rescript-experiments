@@ -1,0 +1,2 @@
+// A style made when a function runs: styles are static.
+let pick = big => big ? Css.class({padding: Px(20)}) : ""

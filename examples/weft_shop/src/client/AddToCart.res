@@ -13,11 +13,10 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
   let most = Math.Int.min(stock, 10)
   let quantity = Math.Int.max(1, Math.Int.min(quantity, most))
   let quantityId = Weft.Hooks.useId()
-  <div id="add-to-cart">
+  <div dataId="add-to-cart">
     <label htmlFor=quantityId> {WeftDom.Jsx.string("Quantity")} </label>
     <select
       id=quantityId
-      className="quantity"
       disabled={stock == 0}
       value={Int.toString(quantity)}
       onChange={event => {
@@ -34,7 +33,7 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
       ->WeftDom.Jsx.array}
     </select>
     <button
-      id="add"
+      dataId="add"
       disabled={stock == 0 || busy}
       onClick={_ => {
         setBusy(_ => true)
@@ -56,7 +55,7 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
       {WeftDom.Jsx.string(stock == 0 ? "Sold out" : busy ? "Adding…" : "Add to cart")}
     </button>
     {switch error {
-    | Some(message) => <p id="add-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+    | Some(message) => <p dataId="add-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
     | None => WeftDom.Jsx.null
     }}
   </div>

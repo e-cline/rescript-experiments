@@ -4,13 +4,27 @@ panel stays mounted, hidden but for the selected one, so switching shows one tha
 and a panel's own state (a carousel's page) survives switching away and back.
 */
 
+open WeftCss
+
+module Styles = {
+  let tabs = Css.class({
+    selectors: [
+      ("[role=\"tablist\"]", Css.style({display: Flex, gap: Px(6), marginBottom: Px(10)})),
+      (
+        "[aria-selected=\"true\"]",
+        Css.style({backgroundColor: Var(Theme.ink), color: Named("white")}),
+      ),
+    ],
+  })
+}
+
 @weft.component({kind: Entrypoint})
 let make = (~id: string, ~labels: array<string>, ~panels: array<Weft.Element.t>) => {
   let (selected, setSelected) = Weft.Hooks.useState(() => 0)
   let selected = Math.Int.min(selected, Array.length(labels) - 1)
   let tabId = index => `${id}-tab-${Int.toString(index)}`
   let panelId = index => `${id}-panel-${Int.toString(index)}`
-  <div className="tabs" id>
+  <div className={Styles.tabs} dataId=id>
     <div role="tablist">
       {labels
       ->Array.mapWithIndex((label, index) =>

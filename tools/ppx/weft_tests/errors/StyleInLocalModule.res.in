@@ -1,0 +1,7 @@
+// A module inside a function isn't a module's top level.
+let make = () => {
+  module Local = {
+    let button = Css.class({padding: Px(20)})
+  }
+  Local.button
+}

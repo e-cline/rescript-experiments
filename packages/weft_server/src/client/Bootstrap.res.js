@@ -40,7 +40,7 @@ function rows(target) {
 }
 
 async function start(loadModule, fetch, container, url, onRefresh, signal, param) {
-  let client = Decoder$WeftServer.make(loadModule, fetch);
+  let client = Decoder$WeftServer.make(loadModule, fetch, undefined);
   let container$1;
   if (container !== undefined) {
     container$1 = Primitive_option.valFromOption(container);

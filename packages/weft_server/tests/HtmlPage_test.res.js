@@ -100,7 +100,7 @@ Vitest.describe("a page with its HTML", undefined, undefined, undefined, undefin
     let html = await Testing$WeftServer.readAll(Page$WeftServer.toStream(Jsx$WeftDom.Elements.jsx("div", {
       children: Jsx$WeftDom.jsx(PageSupport$WeftServer.Throws.make, {})
     }), PageSupport$WeftServer.assets(), undefined, undefined, undefined, undefined, match[1], undefined));
-    t.expect(html.includes(`<body><link rel="modulepreload" href="/assets/Dom.js"><div id="root"></div><script>`)).toBe(true);
+    t.expect(html.includes(`<link rel="modulepreload" href="/assets/Dom.js"></head><body><div id="root"></div><script>`)).toBe(true);
     return t.expect(match[0]).toEqual(["the entrypoint failed"]);
   });
   Vitest.testAsync("falls back when the root row fails, reporting the error once", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {

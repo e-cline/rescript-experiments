@@ -13,7 +13,6 @@ import * as Respond$Servy from "@e-cline/servy/src/Respond.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Pages$WeftShop from "./Pages.res.js";
 import * as Page$WeftServer from "@e-cline/weft_server/src/server/Page.res.js";
-import * as Styles$WeftShop from "./Styles.res.js";
 import * as Control$WeftShop from "./Control.res.js";
 import * as Latency$WeftShop from "./Latency.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
@@ -41,7 +40,7 @@ function requestOf(ctx) {
 }
 
 function respond(ctx, title, element) {
-  return Page$WeftServer.respond(ctx.request, element, Assets, undefined, title, Styles$WeftShop.head, onError);
+  return Page$WeftServer.respond(ctx.request, element, Assets, undefined, title, undefined, onError);
 }
 
 function page(title, render) {

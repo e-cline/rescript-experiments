@@ -7,6 +7,7 @@
   "dependencies": {
     "@e-cline/servy": "workspace:*",
     "@e-cline/weft": "workspace:*",
+    "@e-cline/weft_css": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
     "@e-cline/weft_server": "workspace:*",
     "@rescript/runtime": "catalog:",

@@ -11,6 +11,9 @@ import {
   markedFileIds,
   readCompiledFile,
   scan,
+  sheetId,
+  styleFiles,
+  styleNames,
 } from '../src/internal/scan.js';
 import {copyFixture, fixtureName, fixtures, removeCopies} from './support.js';
 
@@ -69,7 +72,8 @@ describe('scan', () => {
     const own = [...scanned.files.values()].filter(
       ({id}) => id.startsWith(basic) || id.startsWith(widgets),
     );
-    expect(own).toHaveLength(7);
+    // (Theme, with styles and no other directive, is one.)
+    expect(own).toHaveLength(8);
     // And weft_server's own server-only modules, which an app's client mustn't import either.
     expect(
       [...scanned.files.values()]
@@ -172,6 +176,54 @@ describe('the scan', () => {
     changeRescriptJson(root, {dependencies: ['@e-cline/missing']});
     expect(() => scan(root)).toThrow(
       /couldn't find @e-cline\/missing, a dependency in/,
+    );
+  });
+});
+
+describe('style files', () => {
+  test("have the sheet id the PPX's names end in, the app's and the dependency's", () => {
+    const root = copyFixture('basic');
+    const scanned = scan(root);
+    expect(styleFiles(scanned).map(({id, sheet}) => [id, sheet])).toEqual(
+      [
+        `${basic}/src/Notes.res`,
+        `${basic}/src/Theme.res`,
+        `${widgets}/src/Widget.res`,
+      ].map((id) => [id, sheetId(id)]),
+    );
+    const theme = readFileSync(join(root, 'src/Theme.res.js'), 'utf8');
+    const sheet = sheetId(`${basic}/src/Theme.res`);
+    expect(styleNames(theme)).toEqual([
+      `--Theme-ink_${sheet}`,
+      `Theme-global0_${sheet}`,
+      `Theme-badge_${sheet}`,
+    ]);
+  });
+
+  test('sheet ids are the same hash as weft_css and ppx_weft', () => {
+    // As pinned in weft_css's SheetId tests (and the PPX's, through its fixtures).
+    expect(sheetId('spike-res/src/Button.res')).toBe('wnscs2w');
+    expect(sheetId('a/src/Ä.res')).toBe('wh00nt5');
+  });
+
+  test('whose names have another sheet id are an error', () => {
+    const root = copyFixture('basic');
+    const file = join(root, 'src/Theme.res.js');
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8').replace('Theme-badge_w', 'Theme-badge_x'),
+    );
+    expect(() => scan(root)).toThrow(
+      /has a style named Theme-badge_x\w+, but its sheet id is w\w+ \(from its id, .*src\/Theme\.res\)/,
+    );
+  });
+
+  test('with the same sheet id are an error, naming both', () => {
+    const scanned = scan(copyFixture('basic'));
+    const [first, second] = styleFiles(scanned);
+    scanned.files.set(second!.file, {...second!, sheet: first!.sheet});
+    expect(() => styleFiles(scanned)).toThrow(
+      `[weft] ${first!.id} and ${second!.id} have the same sheet id, ${first!.sheet}: rename one of them.`,
     );
   });
 });

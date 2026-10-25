@@ -144,7 +144,7 @@ function invalid(message) {
   return payloadResponse(400, Render$WeftServer.valueToStream({
     kind: RpcCore$WeftServer.kindInvalid,
     message: message
-  }, undefined, undefined));
+  }, undefined, undefined, undefined));
 }
 
 function header(request, name) {
@@ -277,7 +277,7 @@ async function respond(router, request, id) {
         return payloadResponse(500, failure(router, error));
       }
       if (exit$2 === 3) {
-        return payloadResponse(val[0], Render$WeftServer.valueToStream(val[1], router.onError, Primitive_option.some(request.signal)));
+        return payloadResponse(val[0], Render$WeftServer.valueToStream(val[1], router.onError, Primitive_option.some(request.signal), undefined));
       }
     }
   }

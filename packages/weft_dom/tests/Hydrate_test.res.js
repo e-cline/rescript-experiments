@@ -336,7 +336,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
         })
       ]
     });
-    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined);
+    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let segments = [];
     let reader = async () => {
@@ -374,7 +374,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
         id: "w"
       })
     });
-    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined);
+    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     match[1]("early");
@@ -402,7 +402,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
       children: Jsx$WeftDom.jsx(Hydrate_test$FailsAfter, {
         promise: promise
       })
-    }), param => "d", undefined, undefined);
+    }), param => "d", undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let rest = DomSupport$WeftDom.chunks(Html$WeftDom.rest(rendering));
     hydrate(container, element);
@@ -434,7 +434,7 @@ Vitest.describe("hydrating the server's HTML", undefined, undefined, undefined, 
     let html = await Html$WeftDom.shell(Html$WeftDom.render(Jsx$WeftDom.Elements.jsx("p", {
       style: style,
       children: "x"
-    }), undefined, undefined, undefined));
+    }), undefined, undefined, undefined, undefined));
     let container = DomSupport$WeftDom.page(html);
     let match = await logging(async () => hydrate(container, Jsx$WeftDom.Elements.jsx("p", {
       style: style,
@@ -610,7 +610,7 @@ Vitest.describe("hydrating, fuzzed", undefined, undefined, undefined, undefined,
     let element = Jsx$WeftDom.Elements.jsx("div", {
       children: randomChildren(random, 4, waits, false)
     });
-    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined);
+    let rendering = Html$WeftDom.render(element, undefined, undefined, undefined, undefined);
     let container = DomSupport$WeftDom.page(await Html$WeftDom.shell(rendering));
     let fromHtml = new Set(Dom$WeftDom.querySelectorAll(container, "*"));
     let segments = [];

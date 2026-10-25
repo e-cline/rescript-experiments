@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@e-cline/ppx_weft": "workspace:*",
+    "@e-cline/weft_css": "workspace:*",
     "@rescript/runtime": "catalog:",
     "jsdom": "catalog:",
     "rescript": "catalog:",

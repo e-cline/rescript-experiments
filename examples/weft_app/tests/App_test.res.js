@@ -7,6 +7,7 @@ import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Client$WeftDom from "@e-cline/weft_dom/src/client/Client.res.js";
 import * as App$WeftAppExample from "../src/App.res.js";
+import * as Styles$WeftAppExample from "../src/Styles.res.js";
 
 function mount(storageKey) {
   let container = document.createElement("div");
@@ -94,7 +95,7 @@ Vitest.describe("Todo app", undefined, undefined, undefined, undefined, undefine
     ].forEach(__x => add(container, __x));
     click(container, "#toggle-2");
     t.expect(find(container, "#toggle-2")["checked"]).toBe(true);
-    t.expect(find(container, "#todo-2").getAttribute("class")).toEqual("done");
+    t.expect(find(container, "#todo-2").getAttribute("class")).toEqual(Styles$WeftAppExample.item + ` ` + Styles$WeftAppExample.done);
     t.expect(find(container, "#remaining").textContent).toBe("2 items left");
     click(container, "#filter-active");
     t.expect(titles(container)).toEqual([

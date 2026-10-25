@@ -40,6 +40,13 @@ and a pending boundary's segment, once its content is ready:
 ```html
 <template id="ws:3">content</template><script>$weftSwap(3)</script>
 ```
+
+or, if its markup needs stylesheets (`stylesheetsOf`), one that waits for them before swapping it
+in, so it never shows without its CSS (and a slow sheet holds up only its own boundary):
+
+```html
+<template id="ws:3">content</template><script>$weftSwap(3,["/assets/wk3f9a2-1c2d.css"])</script>
+```
 */
 
 /** A `ReadableStream` of bytes. */
@@ -57,13 +64,15 @@ error: one that fails a boundary, or the shell. It returns the digest to write w
 if any; the message is written in development builds only. Aborting `signal` stops whatever is
 pending. `idPrefix` (`"w"` by default) starts the IDs `Hooks.useId` gives: the root that hydrates
 the HTML has to be given the same (`Client.hydrateRoot(~idPrefix)`), and two roots on one page need
-different ones.
+different ones. `stylesheetsOf` gives the URLs of the stylesheets a segment's markup needs (none,
+by default), which its swap waits for.
 */
 let render: (
   Weft.Element.t,
   ~onError: exn => option<string>=?,
   ~signal: signal=?,
   ~idPrefix: string=?,
+  ~stylesheetsOf: string => array<string>=?,
 ) => t
 
 /**
@@ -84,6 +93,7 @@ let renderToStream: (
   ~onError: exn => option<string>=?,
   ~signal: signal=?,
   ~idPrefix: string=?,
+  ~stylesheetsOf: string => array<string>=?,
 ) => stream
 
 /**
@@ -96,7 +106,10 @@ let renderToString: (
   ~idPrefix: string=?,
 ) => promise<string>
 
-/** The inline runtime's source (`$weftSwap`, `$weftFail`), written once before the first segment. */
+/**
+The inline runtime's source (`$weftSwap`, `$weftFail`, `$weftCss`), written once before the first
+segment.
+*/
 let runtime: string
 
 /**

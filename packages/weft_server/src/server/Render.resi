@@ -31,6 +31,12 @@ It walks the tree with no fibers:
   root. `onError` sees each, and may return a digest to send with it. The message itself is sent
   only in development builds.
 
+With `styles` (the app's stylesheets, from the Vite plugin's manifest), each row says which sheets
+it needs, after a `C` row for each the first time (see `Payload`): those of the class names in host
+elements' `className`s, of any strings in an entrypoint's props (classes a server component hands
+it), of the entrypoint's own code (what it renders on the client), and the sheets those depend on.
+So a page is sent the CSS of what it rendered, and no other.
+
 The stream ends once every row is written. Cancelling it (the client went away), or aborting
 `signal`, stops whatever is pending: nothing more is written, and components waiting on promises
 aren't called again.
@@ -42,14 +48,35 @@ type signal = Streams.Signal.t
 /** A `ReadableStream` of bytes. */
 type stream = Streams.t
 
+/** A stylesheet: its URL, and the sheets its rules name (their variables or animations), by id. */
+type sheet = {href: string, dependencies: array<string>}
+
+/** The app's stylesheets, as the Vite plugin's manifest has them. */
+type styles = {
+  /** Each sheet, by sheet id. */
+  sheets: dict<sheet>,
+  /** Each entrypoint file's sheets (those its code imports), by file id. */
+  entrypoints: dict<array<string>>,
+}
+
 /**
 The payload for `element`. `onError` (by default, logging with `Console.error`) is called with each
 error, and returns the digest to send with it, if any.
 */
-let toStream: (Weft.Element.t, ~onError: exn => option<string>=?, ~signal: signal=?) => stream
+let toStream: (
+  Weft.Element.t,
+  ~onError: exn => option<string>=?,
+  ~signal: signal=?,
+  ~styles: styles=?,
+) => stream
 
 /**
 The payload for any value the encoder can send, not just an element (an RPC's response: its
 result, which can contain elements and promises). The client reads it with `Decoder.valueFromStream`.
 */
-let valueToStream: (unknown, ~onError: exn => option<string>=?, ~signal: signal=?) => stream
+let valueToStream: (
+  unknown,
+  ~onError: exn => option<string>=?,
+  ~signal: signal=?,
+  ~styles: styles=?,
+) => stream

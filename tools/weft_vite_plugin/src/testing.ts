@@ -634,6 +634,8 @@ export type Piece =
   | {type: 'root'; attributes: [string, string][]; html: string}
   /** An inline script: a row, the swap runtime, or a swap. */
   | {type: 'script'; code: string}
+  /** A stylesheet the head links (the shell's): loaded before anything shows, as in a browser. */
+  | {type: 'stylesheet'; href: string}
   /** Anything else: a preload, a boundary's segment, the end of the body. */
   | {type: 'markup'; html: string};
 
@@ -732,6 +734,16 @@ function toPiece(node: string): Piece {
 const rowScript =
   /<script>\(self\.__weft\|\|=\[\]\)\.push\((?:"(?:[^"\\]|\\.)*"|null)\)<\/script>/g;
 
+/** An attribute's value as the page escapes it (`WeftServer.Page`'s `escape`), unescaped. */
+function unescapeAttribute(value: string): string {
+  return value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+}
+
 /**
  * Reads a page's HTML as it arrives, as a streaming parser would: `onPiece` gets the head's inline
  * scripts, then each top-level node of the body once it has all arrived (`#root` with the shell in
@@ -749,9 +761,22 @@ export async function readPage(
   let inBody = false;
   const take = () => {
     while (!inBody) {
-      // The head: its inline scripts run (the event runtime), the rest is the test's own document's.
+      // The head: its inline scripts run (the event runtime), and its stylesheets apply; the rest is
+      // the test's own document's.
       const body = /<body(?:[^>"']|"[^"]*"|'[^']*')*>/.exec(text);
       const script = text.indexOf('<script>');
+      const stylesheet = /<link rel="stylesheet" href="([^"]*)"[^>]*>/.exec(
+        text,
+      );
+      if (
+        stylesheet !== null &&
+        (body === null || stylesheet.index < body.index) &&
+        (script === -1 || stylesheet.index < script)
+      ) {
+        onPiece({type: 'stylesheet', href: unescapeAttribute(stylesheet[1]!)});
+        text = text.slice(stylesheet.index + stylesheet[0].length);
+        continue;
+      }
       if (script !== -1 && (body === null || script < body.index)) {
         const end = text.indexOf('</script>', script);
         if (end === -1) return;
@@ -845,14 +870,18 @@ const isPlain = (value: unknown): value is Record<string, unknown> =>
   value !== null &&
   [Object.prototype, null].includes(Object.getPrototypeOf(value));
 
-/** A node, as a test reads it in a list of what changed. */
+/**
+ * A node, as a test reads it in a list of what changed: `tag#id`, `tag[data-id=name]` (the name an
+ * app gives an element for its tests), `tag`, quoted text, or a comment.
+ */
 function describeNode(node: Node): string {
   if (node.nodeType === 3) return JSON.stringify(node.textContent);
   if (node.nodeType === 8) return `<!--${node.textContent}-->`;
   const element = node as Element;
-  return element.id === ''
-    ? element.tagName.toLowerCase()
-    : `${element.tagName.toLowerCase()}#${element.id}`;
+  const tag = element.tagName.toLowerCase();
+  if (element.id !== '') return `${tag}#${element.id}`;
+  const name = element.getAttribute('data-id');
+  return name === null ? tag : `${tag}[data-id=${name}]`;
 }
 
 export class Page {
@@ -881,6 +910,16 @@ export class Page {
   readonly renders = new Map<string, number>();
   /** The entrypoint files loaded, in order (`source` mode). */
   readonly loads: string[] = [];
+  /**
+   * The stylesheets the client (or a segment's swap) added, in order, which the harness loads (jsdom
+   * loads none: see `loadStylesheets`). The head's aren't among them: those it applies, as loaded.
+   */
+  readonly stylesheets: string[] = [];
+  /** The stylesheets that have loaded: the head's, and the others', once they do. */
+  private readonly loadedStylesheets = new Set<string>();
+  private heldStylesheets: (() => void)[] | undefined;
+  /** Which stylesheets `holdStylesheets` holds: those whose URL contains this. */
+  private holdingStylesheets = '';
   private readonly act: (f: () => void) => void;
   /** Where the app's requests had got to when the page opened. */
   private readonly firstRequest: number;
@@ -945,17 +984,8 @@ export class Page {
       case 'script': {
         // As an inline script runs: in the global scope. What it changes under the container (a
         // swap: nothing renders while it runs) is the HTML's doing.
-        const before = this.rootArrived ? this.snapshot() : [];
-        (0, eval)(piece.code);
-        if (this.rootArrived) {
-          const after = this.snapshot();
-          const kept = new Set(after);
-          const was = new Set(before);
-          this.htmlNodes = [
-            ...this.htmlNodes.filter((node) => kept.has(node)),
-            ...after.filter((node) => !was.has(node)),
-          ];
-        }
+        this.asTheHtml(() => (0, eval)(piece.code));
+        this.watchSwaps();
         break;
       }
       case 'markup': {
@@ -964,7 +994,105 @@ export class Page {
         document.body.append(holder.content);
         break;
       }
+      case 'stylesheet': {
+        // Render-blocking, in a browser: nothing of the body shows before it has loaded.
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.setAttribute('href', piece.href);
+        Object.defineProperty(link, 'sheet', {value: {}});
+        this.loadedStylesheets.add(piece.href);
+        document.head.append(link);
+        break;
+      }
     }
+  }
+
+  /** Runs `change`, taking what it does under the container to be the HTML's (a swap's). */
+  private asTheHtml(change: () => void) {
+    const before = this.rootArrived ? this.snapshot() : [];
+    change();
+    if (this.rootArrived) {
+      const after = this.snapshot();
+      const kept = new Set(after);
+      const was = new Set(before);
+      this.htmlNodes = [
+        ...this.htmlNodes.filter((node) => kept.has(node)),
+        ...after.filter((node) => !was.has(node)),
+      ];
+    }
+  }
+
+  /**
+   * Has every swap count as the HTML's doing, whenever it happens: one waiting for its stylesheets
+   * swaps a task (or more) after its script ran, from the runtime's own promise.
+   */
+  private watchSwaps() {
+    const self = globalThis as {
+      $weftSwap?: ((...args: unknown[]) => void) & {weftHarness?: true};
+    };
+    const swap = self.$weftSwap;
+    if (swap === undefined || swap.weftHarness) return;
+    const watched = Object.assign(
+      (...args: unknown[]) => this.asTheHtml(() => swap(...args)),
+      {weftHarness: true as const},
+    );
+    self.$weftSwap = watched;
+  }
+
+  /** A stylesheet link added to the head (by the client, or a segment's swap): loaded, or held. */
+  addedStylesheet(link: HTMLLinkElement) {
+    if (link.sheet !== null) return;
+    const href = link.getAttribute('href') ?? '';
+    this.stylesheets.push(href);
+    const load = () =>
+      setTimeout(() => {
+        this.loadedStylesheets.add(href);
+        link.dispatchEvent(new link.ownerDocument.defaultView!.Event('load'));
+      }, 0);
+    if (
+      this.heldStylesheets !== undefined &&
+      href.includes(this.holdingStylesheets)
+    ) {
+      this.heldStylesheets.push(load);
+    } else {
+      load();
+    }
+  }
+
+  /** Holds stylesheets (they don't load) until `releaseStylesheets`: those whose URL contains `matching`. */
+  holdStylesheets(matching = '') {
+    this.heldStylesheets ??= [];
+    this.holdingStylesheets = matching;
+  }
+
+  releaseStylesheets() {
+    const held = this.heldStylesheets ?? [];
+    this.heldStylesheets = undefined;
+    for (const load of held) load();
+  }
+
+  /**
+   * The elements on the page that show without their CSS: each with a `weft_css` class (a name
+   * ending in a sheet id) whose sheet hasn't loaded, as `<tag class="...">`. Nothing should ever be.
+   */
+  unstyled(): string[] {
+    const loaded = new Set(
+      [...this.loadedStylesheets].flatMap(
+        (href) =>
+          /(w[0-9a-z]{6})(?:-[^/]*)?\.css(?:\?.*)?$/.exec(href)?.[1] ?? [],
+      ),
+    );
+    return [...this.container.querySelectorAll('[class]')].flatMap(
+      (element) => {
+        const missing = (element.getAttribute('class') ?? '')
+          .split(/\s+/)
+          .flatMap((name) => /_(w[0-9a-z]{6})$/.exec(name)?.[1] ?? [])
+          .filter((id) => !loaded.has(id));
+        return missing.length === 0
+          ? []
+          : [`<${element.localName} class="${element.getAttribute('class')}">`];
+      },
+    );
   }
 
   private bootstrapIfWanted() {
@@ -1177,6 +1305,47 @@ export class Page {
 
 let builtBootstrapImported = false;
 
+/** The documents `loadStylesheets` watches, and who to tell about each stylesheet link. */
+const watchedHeads = new WeakMap<
+  Document,
+  {onAdd: (link: HTMLLinkElement) => void}
+>();
+
+/**
+ * Tells `onAdd` of each `<link rel="stylesheet">` added to `document`'s head: jsdom loads no
+ * stylesheets, so the page open in it does (`Page.addedStylesheet`: a task later, or when a test
+ * releases it), or what waits for one (the client's rows, through `WeftCss.Sheets`, or a segment's
+ * swap) would wait forever. The latest call's `onAdd` is the one told.
+ */
+export function loadStylesheets(
+  document: Document,
+  onAdd: (link: HTMLLinkElement) => void,
+): void {
+  const watched = watchedHeads.get(document);
+  if (watched !== undefined) {
+    watched.onAdd = onAdd;
+    return;
+  }
+  const state = {onAdd};
+  watchedHeads.set(document, state);
+  const window = document.defaultView as unknown as {
+    MutationObserver: typeof MutationObserver;
+    HTMLLinkElement: typeof HTMLLinkElement;
+  };
+  new window.MutationObserver((records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (
+          node instanceof window.HTMLLinkElement &&
+          node.rel === 'stylesheet'
+        ) {
+          state.onAdd(node);
+        }
+      }
+    }
+  }).observe(document.head, {childList: true});
+}
+
 /** The page opened last, which opening another closes. */
 let openedLast: Page | undefined;
 
@@ -1192,8 +1361,15 @@ let openedLast: Page | undefined;
 export function openPage(app: App, options: OpenOptions): Page {
   openedLast?.close();
   app.delivery = options.delivery ?? {type: 'immediate'};
-  const self = globalThis as {__weft?: unknown};
+  const self = globalThis as {__weft?: unknown; __weftCss?: unknown};
   delete self.__weft;
+  // A new page load: no stylesheet loaded yet (but those its head links, which it applies).
+  delete self.__weftCss;
+  for (const link of options.container.ownerDocument.head.querySelectorAll(
+    'link[rel="stylesheet"]',
+  )) {
+    link.remove();
+  }
   const container = options.container;
   container.removeAttribute('data-weft-html');
   container.innerHTML = '';
@@ -1230,6 +1406,9 @@ export function openPage(app: App, options: OpenOptions): Page {
     );
     collecting = page.warnings;
     openedLast = page;
+    loadStylesheets(container.ownerDocument, (link) =>
+      page.addedStylesheet(link),
+    );
     return page;
   };
   if (app.mode === 'source') {

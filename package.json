@@ -63,6 +63,7 @@
     "@types/node": "catalog:",
     "jsdom": "catalog:",
     "rescript": "catalog:",
+    "terser": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"

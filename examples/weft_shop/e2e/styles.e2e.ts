@@ -1,8 +1,8 @@
 // The store's styles in a browser, against the build, with the latency gated and every stylesheet
 // slowed down: nothing is ever on screen without its CSS. A probe (every frame, and every task) looks
 // at each element with a `weft_css` class (a name ending in a sheet id) and checks the sheet it's in
-// has been applied (its link has fired `load`, or `error`), while the page streams in, block by
-// block, and as the shopper navigates, adds to the cart and changes a quantity.
+// has been applied (its link has its `sheet`), while the page streams in, block by block, and as
+// the shopper navigates, adds to the cart and changes a quantity.
 
 import {
   expect,
@@ -25,12 +25,13 @@ const hydrated = (page: Page, selector: string) =>
   }, selector);
 
 /**
- * Records each element shown with a class whose sheet hasn't been applied (a link's sheet is applied
- * once it fires `load`, or `error`: each is watched from when it's added). It looks every animation
- * frame and, from the first (once the head's stylesheets, which block rendering, have loaded), after
- * every task too: headless WebKit on Linux runs animation frames rarely, and what's in the document
- * after a task is what the next frame would show. It counts its looks: one that never looked would
- * see nothing.
+ * Records each element shown with a class whose sheet hasn't been applied: a link's sheet is applied
+ * once it's set (the browser has parsed it; its `load` event comes a task later) or the link has
+ * fired `load` or `error` (each link is watched from when it's added: one that fails has no sheet).
+ * It looks every animation frame and, from the first (once the head's stylesheets, which block
+ * rendering, have loaded), after every task too: headless WebKit on Linux runs animation frames
+ * rarely, and what's in the document after a task is what the next frame would show. It counts its
+ * looks: one that never looked would see nothing.
  */
 function probe() {
   const seen: string[] = [];
@@ -60,7 +61,8 @@ function probe() {
   const applied = (id: string) =>
     [...document.querySelectorAll('link[rel="stylesheet"]')].some(
       (link) =>
-        (link.getAttribute('href') ?? '').includes(id) && settled.has(link),
+        (link.getAttribute('href') ?? '').includes(id) &&
+        ((link as HTMLLinkElement).sheet !== null || settled.has(link)),
     );
   const look = () => {
     state.__looks++;

@@ -78,8 +78,12 @@ export default defineConfig({plugins: [weftCss()]});
 - **Serving them**: a sheet is the CSS module `virtual:weft/css/<sheet id>.css`, resolved to a path
   under `node_modules/.weft-css` (nothing is written there), so Vite's CSS pipeline processes it.
   With `weftCss()`, each style file imports its own sheet in the client, so the sheet loads with the
-  module's chunk. With `weft()` nothing imports them yet: sending each page the sheets it uses is
-  the plan's next phases.
+  module's chunk.
+- **Sending them, with `weft()`**: `virtual:weft/assets` lists every sheet (`sheets`: its URL and
+  the sheets it depends on) and each entrypoint file's (`entrypointSheets`: those its code imports,
+  from the compiled files' static imports). A build emits each sheet as an asset of its own, from a
+  chunk (`virtual:weft/sheets`) nothing loads. `WeftServer.Page` passes them to `Render`, which
+  sends each page the sheets of what it rendered, and links the shell's in the page's head.
 
 ## Virtual modules
 

@@ -327,20 +327,22 @@ async function read(session, stream, signal) {
               let target = row(session, id);
               switch (row$1.tag) {
                 case "Model" :
+                  let match = Payload$WeftServer.sheetsOf(json);
+                  let json$1 = match[1];
                   let waitingFor = [];
-                  entrypointRows(json, waitingFor);
+                  entrypointRows(json$1, waitingFor);
                   let missing = waitingFor.filter(id => !session.entrypoints.has(id));
                   if (missing.length === 0) {
                     let value;
                     try {
-                      value = decode(session, json);
+                      value = decode(session, json$1);
                     } catch (raw_error) {
                       let error = Primitive_exceptions.internalToException(raw_error);
                       return target.reject(toJsError(error));
                     }
                     return target.resolve(value);
                   }
-                  Stdlib_Promise.$$catch(Promise.all(missing.map(id => row(session, id).promise)).then(param => target.resolve(decode(session, json))), error => {
+                  Stdlib_Promise.$$catch(Promise.all(missing.map(id => row(session, id).promise)).then(param => target.resolve(decode(session, json$1))), error => {
                     target.reject(toJsError(error));
                     return Promise.resolve();
                   });
@@ -357,6 +359,8 @@ async function read(session, stream, signal) {
                     return Promise.resolve();
                   });
                   return;
+                case "Stylesheet" :
+                  return target.resolve(json["href"]);
                 case "Error" :
                   return target.reject(errorOf(json));
               }

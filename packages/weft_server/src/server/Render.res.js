@@ -6,8 +6,10 @@ import * as Env$Common from "@e-cline/common/src/Env.res.js";
 import * as Stdlib_List from "@rescript/runtime/lib/es6/Stdlib_List.js";
 import * as Element$Weft from "@e-cline/weft/src/shared/Element.res.js";
 import * as JsxCore$Weft from "@e-cline/weft/src/shared/JsxCore.res.js";
+import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as SheetId$WeftCss from "@e-cline/weft_css/src/shared/SheetId.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Errors$WeftServer from "../shared/internal/Errors.res.js";
 import * as ServerRender$Weft from "@e-cline/weft/src/shared/ServerRender.res.js";
@@ -92,14 +94,80 @@ function errorJson(request, error) {
   return fields;
 }
 
+function useSheet(context, visitingOpt, id) {
+  let visiting = visitingOpt !== undefined ? visitingOpt : new Set();
+  let match = context.request.styles;
+  if (match === undefined) {
+    return;
+  }
+  if (context.rowSheets.has(id) || visiting.has(id)) {
+    return;
+  }
+  let match$1 = match.sheets[id];
+  if (match$1 !== undefined) {
+    visiting.add(id);
+    match$1.dependencies.forEach(dependency => useSheet(context, visiting, dependency));
+    context.rowSheets.add(id);
+    return;
+  }
+}
+
+function useClasses(context, text) {
+  if (Stdlib_Option.isSome(context.request.styles) && text.includes("_w")) {
+    SheetId$WeftCss.ofClassList(text).forEach(id => useSheet(context, undefined, id));
+    return;
+  }
+}
+
+function sheetRows(request, sheets) {
+  return Stdlib_Array.filterMap(sheets.values().toArray(), id => {
+    let match = request.sheetRows.get(id);
+    let match$1 = request.styles;
+    if (match !== undefined) {
+      return match;
+    } else if (match$1 !== undefined) {
+      return Stdlib_Option.map(match$1.sheets[id], param => {
+        let row = allocate(request);
+        request.sheetRows.set(id, row);
+        write(request, {
+          id: row,
+          tag: "Stylesheet",
+          json: {
+            id: id,
+            href: param.href
+          }
+        });
+        finish(request);
+        return row;
+      });
+    } else {
+      return;
+    }
+  });
+}
+
 function spawn(context, id, work) {
   let request = context.request;
+  let context_request = context.request;
+  let context_inSuspense = context.inSuspense;
+  let context_path = context.path;
+  let context_ancestors = context.ancestors;
+  let context_rowSheets = new Set();
+  let context_inEntrypointProps = context.inEntrypointProps;
+  let context$1 = {
+    request: context_request,
+    inSuspense: context_inSuspense,
+    path: context_path,
+    ancestors: context_ancestors,
+    rowSheets: context_rowSheets,
+    inEntrypointProps: context_inEntrypointProps
+  };
   let run = async () => {
     let row;
     let exit = 0;
     let json;
     try {
-      json = await work();
+      json = await work(context$1);
       exit = 1;
     } catch (raw_error) {
       let error = Primitive_exceptions.internalToException(raw_error);
@@ -113,7 +181,7 @@ function spawn(context, id, work) {
       row = {
         id: id,
         tag: "Model",
-        json: json
+        json: Payload$WeftServer.withSheets(sheetRows(request, context_rowSheets), json)
       };
     }
     write(request, row);
@@ -143,7 +211,9 @@ function enter(context, segment) {
       hd: segment,
       tl: context.path
     },
-    ancestors: context.ancestors
+    ancestors: context.ancestors,
+    rowSheets: context.rowSheets,
+    inEntrypointProps: context.inEntrypointProps
   };
 }
 
@@ -158,7 +228,9 @@ function enterObject(context, value) {
     ancestors: {
       hd: value,
       tl: context.ancestors
-    }
+    },
+    rowSheets: context.rowSheets,
+    inEntrypointProps: context.inEntrypointProps
   };
 }
 
@@ -203,6 +275,9 @@ async function encodeValue(context, value) {
     return value;
   }
   if (match === "string") {
+    if (context.inEntrypointProps) {
+      useClasses(context, value);
+    }
     return Payload$WeftServer.string(value);
   }
   if (match === "function") {
@@ -236,13 +311,10 @@ async function encodeValue(context, value) {
       request: context.request,
       inSuspense: true,
       path: context.path,
-      ancestors: context.ancestors
-    }, id, async () => await encodeValue({
-      request: context.request,
-      inSuspense: true,
-      path: context.path,
-      ancestors: context.ancestors
-    }, await value));
+      ancestors: context.ancestors,
+      rowSheets: context.rowSheets,
+      inEntrypointProps: context.inEntrypointProps
+    }, id, async context => await encodeValue(context, await value));
     return Payload$WeftServer.promiseRow(id);
   }
   if (Values$WeftServer.isDate(value)) {
@@ -279,6 +351,9 @@ async function encodeNode(context, node) {
           return encodeValue(context, value);
         }
       });
+      if (typeof node.props["className"] === "string") {
+        useClasses(context$1, node.props["className"]);
+      }
       return Payload$WeftServer.element(Payload$WeftServer.string(tag), node.key, props);
     case "Fragment" :
       return Payload$WeftServer.element(Payload$WeftServer.fragmentType, node.key, {
@@ -300,11 +375,15 @@ async function encodeNode(context, node) {
       let childrenContext_request = init.request;
       let childrenContext_path = init.path;
       let childrenContext_ancestors = init.ancestors;
+      let childrenContext_rowSheets = init.rowSheets;
+      let childrenContext_inEntrypointProps = init.inEntrypointProps;
       let childrenContext = {
         request: childrenContext_request,
         inSuspense: true,
         path: childrenContext_path,
-        ancestors: childrenContext_ancestors
+        ancestors: childrenContext_ancestors,
+        rowSheets: childrenContext_rowSheets,
+        inEntrypointProps: childrenContext_inEntrypointProps
       };
       let encodeChildren = async () => {
         try {
@@ -340,7 +419,19 @@ async function encodeNode(context, node) {
   let id = Entrypoint$Weft.idOf(make);
   if (id !== undefined) {
     let row = entrypointRow(context$3, id);
-    return Payload$WeftServer.element(Payload$WeftServer.entrypointType(row), node.key, await encodeValue(context$3, node.props));
+    let match$2 = context$3.request.styles;
+    if (match$2 !== undefined) {
+      let file = id.split("#")[0];
+      Stdlib_Option.getOr(match$2.entrypoints[file], []).forEach(id => useSheet(context$3, undefined, id));
+    }
+    return Payload$WeftServer.element(Payload$WeftServer.entrypointType(row), node.key, await encodeValue({
+      request: context$3.request,
+      inSuspense: context$3.inSuspense,
+      path: context$3.path,
+      ancestors: context$3.ancestors,
+      rowSheets: context$3.rowSheets,
+      inEntrypointProps: true
+    }, node.props));
   }
   let encode = async () => {
     let output = await renderComponent(context$3, make, node.props);
@@ -424,7 +515,7 @@ async function pending(context, wait) {
     return await encodeValue(context, await wait());
   }
   let id = allocate(context.request);
-  spawn(context, id, async () => await encodeValue(context, await wait()));
+  spawn(context, id, async context => await encodeValue(context, await wait()));
   return Payload$WeftServer.lazyRow(id);
 }
 
@@ -463,7 +554,7 @@ function defaultOnError(error) {
   console.error(error);
 }
 
-function valueToStream(value, onErrorOpt, signal) {
+function valueToStream(value, onErrorOpt, signal, styles) {
   let onError = onErrorOpt !== undefined ? onErrorOpt : defaultOnError;
   let request = {
     contents: undefined
@@ -480,6 +571,8 @@ function valueToStream(value, onErrorOpt, signal) {
         buffer: [],
         flushScheduled: false,
         entrypoints: new Map(),
+        styles: styles,
+        sheetRows: new Map(),
         onError: onError
       };
       request.contents = current;
@@ -493,14 +586,17 @@ function valueToStream(value, onErrorOpt, signal) {
           });
         }
       }
+      let context_rowSheets = new Set();
       let context = {
         request: current,
         inSuspense: false,
         path: /* [] */0,
-        ancestors: /* [] */0
+        ancestors: /* [] */0,
+        rowSheets: context_rowSheets,
+        inEntrypointProps: false
       };
       let root = allocate(current);
-      spawn(context, root, () => encodeValue(context, value));
+      spawn(context, root, context => encodeValue(context, value));
     },
     cancel: param => Stdlib_Option.forEach(request.contents, abort)
   });

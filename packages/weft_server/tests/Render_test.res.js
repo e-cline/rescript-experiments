@@ -14,7 +14,7 @@ import * as Support$WeftServer from "./Support.res.js";
 import * as Testing$WeftServer from "../src/testing/Testing.res.js";
 
 function start(onError, signal, element) {
-  return Testing$WeftServer.pipe(Render$WeftServer.toStream(element, onError, signal), undefined, undefined);
+  return Testing$WeftServer.pipe(Render$WeftServer.toStream(element, onError, signal, undefined), undefined, undefined);
 }
 
 function written(pipe) {
@@ -359,7 +359,7 @@ Vitest.describe("Render: aborting", undefined, undefined, undefined, undefined, 
       children: TestJsx$Weft.jsx(Render_test, {
         promise: data.promise
       })
-    }), undefined, undefined);
+    }), undefined, undefined, undefined);
     let reader = stream.getReader();
     await reader.cancel();
     data.resolve("too late");

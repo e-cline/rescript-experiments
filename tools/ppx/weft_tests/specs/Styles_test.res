@@ -72,7 +72,8 @@ describe("extracting the fixtures", () => {
     ->Expect.toEqual([
       {
         id: stylesId,
-        css: `@layer weft.base {
+        css: `@layer weft.base, weft.components;
+@layer weft.base {
   :root {
     --Styles-ink_${stylesId}: #1d1b19;
   }

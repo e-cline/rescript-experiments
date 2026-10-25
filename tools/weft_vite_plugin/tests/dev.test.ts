@@ -20,6 +20,7 @@ import {
 } from 'vite-plus/test';
 
 import {clientEnvironment, serverEnvironment} from '../src/index.js';
+import {sheetId} from '../src/internal/scan.js';
 import {
   config,
   copyFixture,
@@ -143,6 +144,23 @@ describe('the dev server', () => {
         `/@fs${join(fixtures, 'widgets/src/Widget.res.js')}`,
       ],
     });
+  });
+
+  test('lists each sheet in the assets, at a URL the dev server serves it as CSS from', async () => {
+    const assets = await (await fetch(`${base}/assets.json`)).json();
+    const notes = sheetId(`${basic}/src/Notes.res`);
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    expect(assets.sheets[notes]).toEqual({
+      href: `/node_modules/.weft-css/${notes}.css`,
+      dependencies: [theme],
+    });
+    expect(assets.entrypointSheets[`${basic}/src/Likes.res`]).toEqual([theme]);
+    // As a page's <link> asks for it.
+    const response = await fetch(`${base}${assets.sheets[notes].href}`, {
+      headers: {Accept: 'text/css,*/*;q=0.1'},
+    });
+    expect(response.headers.get('content-type')).toMatch(/^text\/css/);
+    expect(await response.text()).toContain(`.Notes-heading_${notes} {`);
   });
 
   test('runs the server with the development export conditions', async () => {

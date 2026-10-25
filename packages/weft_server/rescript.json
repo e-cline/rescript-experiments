@@ -1,8 +1,15 @@
 {
   "name": "@e-cline/weft_server",
   "sources": [
-    {"dir": "src", "subdirs": true},
-    {"dir": "tests", "subdirs": true, "type": "dev"}
+    {
+      "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "tests",
+      "subdirs": true,
+      "type": "dev"
+    }
   ],
   "package-specs": [
     {
@@ -16,6 +23,7 @@
   "dependencies": [
     "@e-cline/common",
     "@e-cline/weft",
+    "@e-cline/weft_css",
     "@e-cline/weft_dom",
     "@rescript/webapi"
   ],

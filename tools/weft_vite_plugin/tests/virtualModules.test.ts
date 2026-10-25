@@ -12,6 +12,7 @@ import {
   ssrReferencesCode,
   devAssets,
   devUrl,
+  sheetsCode,
   type Manifest,
 } from '../src/internal/virtualModules.js';
 
@@ -107,6 +108,8 @@ describe('virtual:weft/assets', () => {
         'app/src/Likes.res': ['/src/Likes.res.js'],
         'lib/src/Widget.res': ['/@fs/lib/src/Widget.res.js'],
       },
+      sheets: {},
+      entrypointSheets: {},
     });
     expect(devUrl('/app', '/base/', '/app/src/X.res.js')).toBe(
       '/base/src/X.res.js',
@@ -147,7 +150,72 @@ describe('virtual:weft/assets', () => {
         ],
         'lib/src/Widget.res': ['/assets/Widget-e5.js'],
       },
+      sheets: {},
+      entrypointSheets: {},
     });
+  });
+
+  test('with stylesheets: each sheet by the URL the dev server serves it at', () => {
+    const assets = devAssets(
+      '/app',
+      '/',
+      '/app/src/Client.res.js',
+      [],
+      [{id: 'wabc123', css: '', dependencies: ['wdef456']}],
+      {'app/src/Likes.res': ['wabc123']},
+    );
+    expect([assets.sheets, assets.entrypointSheets]).toEqual([
+      {
+        wabc123: {
+          href: '/node_modules/.weft-css/wabc123.css',
+          dependencies: ['wdef456'],
+        },
+      },
+      {'app/src/Likes.res': ['wabc123']},
+    ]);
+  });
+
+  test('with stylesheets, in a build: each sheet by the file it was emitted as', () => {
+    const manifest: Manifest = {
+      'src/Client.res.js': {file: 'assets/client-a1.js', isEntry: true},
+      '../node_modules/.weft-css/wabc123.css': {
+        file: 'assets/wabc123-f6.css',
+        src: '../node_modules/.weft-css/wabc123.css',
+      },
+    };
+    const sheet = {id: 'wabc123', css: '', dependencies: []};
+    expect(
+      buildAssets(
+        manifest,
+        '/app',
+        '/base/',
+        '/app/src/Client.res.js',
+        [],
+        [sheet],
+      ).sheets,
+    ).toEqual({
+      wabc123: {href: '/base/assets/wabc123-f6.css', dependencies: []},
+    });
+    expect(() =>
+      buildAssets(
+        manifest,
+        '/app',
+        '/',
+        '/app/src/Client.res.js',
+        [],
+        [{...sheet, id: 'wzzzzzz'}],
+      ),
+    ).toThrow('[weft] the client build has no stylesheet wzzzzzz');
+  });
+
+  test('the sheets entry imports every sheet as a URL', () => {
+    expect(sheetsCode(['wabc123', 'wdef456'])).toBe(
+      `import sheet0 from "virtual:weft/css/wabc123.css?url";
+import sheet1 from "virtual:weft/css/wdef456.css?url";
+
+export default {"wabc123": sheet0, "wdef456": sheet1};
+`,
+    );
   });
 
   test('a file missing from the manifest is an error', () => {

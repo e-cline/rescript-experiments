@@ -123,7 +123,7 @@ describe("a page with its HTML", () => {
       )
       t
       ->expect(
-        html->String.includes(`<body><link rel="modulepreload" href="/assets/Dom.js"><div id="root"></div><script>`),
+        html->String.includes(`<link rel="modulepreload" href="/assets/Dom.js"></head><body><div id="root"></div><script>`),
       )
       ->Expect.toBe(true)
       t->expect(reported)->Expect.toEqual(["the entrypoint failed"])

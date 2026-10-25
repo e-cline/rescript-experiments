@@ -2,6 +2,8 @@
 
 import * as Env$Common from "@e-cline/common/src/Env.res.js";
 import * as Stdlib_Int from "@rescript/runtime/lib/es6/Stdlib_Int.js";
+import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
+import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Errors$WeftServer from "./internal/Errors.res.js";
 
@@ -11,6 +13,8 @@ function tagLetter(tag) {
       return "J";
     case "EntrypointRef" :
       return "E";
+    case "Stylesheet" :
+      return "C";
     case "Error" :
       return "X";
   }
@@ -30,6 +34,9 @@ function parseRow(line) {
   let match = line.charAt(colon + 1 | 0);
   let tag;
   switch (match) {
+    case "C" :
+      tag = "Stylesheet";
+      break;
     case "E" :
       tag = "EntrypointRef";
       break;
@@ -259,6 +266,58 @@ function asElement(items) {
   ];
 }
 
+function withSheets(rows, json) {
+  if (rows.length === 0) {
+    return json;
+  } else {
+    return [
+      "$C",
+      rows.map(row => row),
+      json
+    ];
+  }
+}
+
+function sheetsOf(json) {
+  if (!Array.isArray(json)) {
+    return [
+      [],
+      json
+    ];
+  }
+  if (json.length !== 3) {
+    return [
+      [],
+      json
+    ];
+  }
+  let match = json[0];
+  if (typeof match !== "string") {
+    return [
+      [],
+      json
+    ];
+  }
+  if (match !== "$C") {
+    return [
+      [],
+      json
+    ];
+  }
+  let rows = json[1];
+  if (!Array.isArray(rows)) {
+    return [
+      [],
+      json
+    ];
+  }
+  let inner = json[2];
+  return [
+    Stdlib_Array.filterMap(rows, row => Stdlib_Option.map(Stdlib_JSON.Decode.float(row), prim => prim | 0)),
+    inner
+  ];
+}
+
 let $$undefined = "$u";
 
 let suspenseType = "$S";
@@ -285,6 +344,8 @@ export {
   fragmentType,
   element,
   asElement,
+  withSheets,
+  sheetsOf,
   contentType,
   cacheControl,
 }

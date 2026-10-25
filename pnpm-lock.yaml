@@ -958,6 +958,9 @@ importers:
       '@e-cline/weft':
         specifier: workspace:^
         version: link:../weft
+      '@e-cline/weft_css':
+        specifier: workspace:^
+        version: link:../weft_css
       '@e-cline/weft_dom':
         specifier: workspace:^
         version: link:../weft_dom

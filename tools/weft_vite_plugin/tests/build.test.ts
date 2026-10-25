@@ -7,11 +7,17 @@ import {
 } from 'node:fs';
 import type {AddressInfo} from 'node:net';
 import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
 
 import {createBuilder} from 'vite';
 import {afterAll, beforeAll, describe, expect, test} from 'vite-plus/test';
 
-import {manifestKey, type Manifest} from '../src/internal/virtualModules.js';
+import {sheetId} from '../src/internal/scan.js';
+import {
+  manifestKey,
+  type Assets,
+  type Manifest,
+} from '../src/internal/virtualModules.js';
 import {serve} from '../src/node.js';
 import {
   config,
@@ -82,9 +88,13 @@ describe('a build of the basic fixture', () => {
       expect(manifest[key]?.isDynamicEntry, key).toBe(true);
     const chunks = entrypointFiles.map((key) => manifest[key]!.file);
     expect(new Set(chunks).size).toBe(entrypointFiles.length);
+    // And the sheets' entry, which only emits them (nothing loads it).
     expect(
-      Object.values(manifest).filter((chunk) => chunk.isEntry),
-    ).toHaveLength(1);
+      Object.values(manifest)
+        .filter((chunk) => chunk.isEntry)
+        .map((chunk) => chunk.name ?? '')
+        .sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['client', 'sheets']);
   });
 
   test("puts the shared module in a chunk the entrypoints import, not in either's", () => {
@@ -119,12 +129,12 @@ describe('a build of the basic fixture', () => {
     }
   });
 
-  test("has no style's definition in either build, only its name", () => {
+  test("has no style's definition in either build's JavaScript, only its name", () => {
     const server = join(root, 'dist/server');
     for (const [dir, file] of [
       ...filesUnder(clientDir).map((file) => [clientDir, file] as const),
       ...filesUnder(server).map((file) => [server, file] as const),
-    ]) {
+    ].filter(([, file]) => file.endsWith('.js'))) {
       const code = readFileSync(join(dir, file), 'utf8');
       expect(code, file).not.toContain('DEFINITION_SENTINEL_THEME');
       expect(code, file).not.toContain('DEFINITION_SENTINEL_NOTES');
@@ -136,6 +146,36 @@ describe('a build of the basic fixture', () => {
         readFileSync(join(clientDir, file), 'utf8').includes('"Theme-badge_w'),
       ),
     ).toBe(true);
+  });
+
+  test("emits each style file's sheet, and has the server link them", async () => {
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    const notes = sheetId(`${basic}/src/Notes.res`);
+    const widget = sheetId(`${widgets}/src/Widget.res`);
+    // The fixture's server answers `/assets.json` with its `virtual:weft/assets`.
+    const server = await import(
+      pathToFileURL(join(root, 'dist/server/index.js')).href
+    );
+    const response: Response = await server.default(
+      new Request('http://x/assets.json'),
+    );
+    const assets = (await response.json()) as Assets;
+    expect(Object.keys(assets.sheets).sort()).toEqual(
+      [theme, notes, widget].sort(),
+    );
+    // Notes' rules use Theme's variable.
+    expect(assets.sheets[notes]!.dependencies).toEqual([theme]);
+    const css = readFileSync(
+      join(clientDir, assets.sheets[notes]!.href.slice(1)),
+      'utf8',
+    );
+    expect(css).toContain('DEFINITION_SENTINEL_NOTES');
+    expect(css).toMatch(/^@layer weft\.base,\s*weft\.components;/);
+    // Each entrypoint file's sheets: what its code imports (Likes imports Theme).
+    expect(assets.entrypointSheets).toEqual({
+      [`${basic}/src/Likes.res`]: [theme],
+      [`${widgets}/src/Widget.res`]: [widget],
+    });
   });
 
   test('keeps the export names the client walks to, `$$Error` included', () => {

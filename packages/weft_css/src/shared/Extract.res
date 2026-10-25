@@ -6,6 +6,7 @@ type sheet = {
 
 let baseLayer = "weft.base"
 let componentsLayer = "weft.components"
+let layerOrder = `@layer ${baseLayer}, ${componentsLayer};`
 
 let fail = message => JsError.throwWithMessage(`weft_css: ${message}`)
 
@@ -61,6 +62,9 @@ let sheet = (id, registrations: array<Css.Internal.registration>) => {
       }
     )
     ->Array.join("")
+  // Which sheet a page loads first isn't fixed, and the first to name a layer fixes its order: each
+  // sheet says it, so whichever it is, the base layer comes first.
+  let css = css === "" ? "" : `${layerOrder}\n${css}`
   {id, css, dependencies: SheetId.inText(css)->Array.filter(other => other !== id)}
 }
 

@@ -44,7 +44,8 @@ describe("recording", () => {
     ->Expect.toEqual([
       {
         id: "waaaaaa",
-        css: `@layer weft.base {
+        css: `@layer weft.base, weft.components;
+@layer weft.base {
   :root {
     --Theme-ink_waaaaaa: #1d1b19;
     --Theme-line_waaaaaa: #e6e0d8;
@@ -59,7 +60,8 @@ describe("recording", () => {
       },
       {
         id: "wbbbbbb",
-        css: `@layer weft.components {
+        css: `@layer weft.base, weft.components;
+@layer weft.components {
   @keyframes Card-fade_wbbbbbb {
     from {
       opacity: 0;

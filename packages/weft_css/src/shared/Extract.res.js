@@ -13,6 +13,8 @@ let baseLayer = "weft.base";
 
 let componentsLayer = "weft.components";
 
+let layerOrder = `@layer ` + baseLayer + `, ` + componentsLayer + `;`;
+
 function fail(message) {
   return Stdlib_JsError.throwWithMessage(`weft_css: ` + message);
 }
@@ -102,10 +104,11 @@ function sheets(registrations) {
         return Serialize$WeftCss.layer(param[0], text);
       }
     }).join("");
+    let css$1 = css === "" ? "" : layerOrder + `\n` + css;
     return {
       id: id,
-      css: css,
-      dependencies: SheetId$WeftCss.inText(css).filter(other => other !== id)
+      css: css$1,
+      dependencies: SheetId$WeftCss.inText(css$1).filter(other => other !== id)
     };
   });
 }
@@ -122,5 +125,6 @@ export {
   sheets,
   baseLayer,
   componentsLayer,
+  layerOrder,
 }
 /* Stdlib_JsExn Not a pure module */

@@ -58,7 +58,9 @@ Reviewed: the recommended decisions are taken (Decisions). Phase 0's spikes are 
 below is corrected by what they found ("Phase 0: what the spikes found", after Phases), in Chromium,
 Firefox and WebKit. Phase 1 is done (`packages/weft_css`, and the PPX's rewrite), with notes on what
 it settled under "As built (phase 1)", after §2. Phase 2 is done too (the plugin's extraction,
-`weftCss()` and `weft_app` on it), under "As built (phase 2)", after §3. Phase 3 is next.
+`weftCss()` and `weft_app` on it), under "As built (phase 2)", after §3. And phase 3 (the server's
+half of sending sheets: the manifest, `Render`'s `C` rows, the page's head), under "As built (phase
+3)", after §4. Phase 4 is next.
 
 ## What was checked before writing this
 
@@ -437,6 +439,49 @@ sheet when it's evaluated (`Sheets.use(href)`), which inserts the link if the se
 For an entrypoint that's a no-op (its `E` row brought its sheets); it's what covers code loaded some
 other way (a `Weft.Lazy` around an `import()` in a client-only app), and development.
 
+**As built (phase 3).** The server's half: what to send, and the first page's head. The client's
+(loading the sheets, rows waiting for them) is phase 4.
+
+- **`Render`'s scan moved here from phase 4**: the head can only link the shell's sheets if the
+  server knows them, which is the scan. `Render.toStream(~styles)` takes the manifest's sheets
+  (`Render.styles`: each sheet's `href` and `dependencies`, and each entrypoint file's sheets); each
+  row collects what it needs (host `className`s, strings in entrypoint props, an entrypoint's own
+  sheets, and dependencies, before what needs them, with cycles allowed), writes a `C` row for each
+  the first time, and wraps its value as `["$C", [rows], value]`. Without `styles` nothing changes,
+  so every payload test from before still holds.
+- **An `E` row doesn't list its sheets**, as first planned: the `J` row with the entrypoint lists
+  them, as it does its classes'. One rule for the decoder to follow (a row waits for the `C` rows it
+  names), rather than two.
+- **The decoder** settles a `C` row with its URL and unwraps `$C`; it doesn't wait yet (phase 4).
+- **`Page`** writes the head at once but for its end (`headStart`), and, once the shell's ready, the
+  stylesheet links for the `C` rows written so far, the entrypoints' `modulepreload`s (which used to
+  be at the start of the body), and `</head><body>`. Payload responses (navigation) get `C` rows
+  too. A page without HTML (`html=false`) closes its head at once, as before: its sheets are the
+  client's to load. RPC responses (`RpcServer`) don't send sheets yet: an element an RPC returns is
+  styled only by what's already loaded (phase 4).
+- **The layer order is in every sheet**, `@layer weft.base, weft.components;` first
+  (`Extract.layerOrder`), not in the page's head: the first stylesheet to name a layer fixes its
+  place, whichever that is, and `weftCss()` apps, with no page of Weft's, need it as much.
+- **The manifest** (`virtual:weft/assets`) gains `sheets` (id → `{href, dependencies}`) and
+  `entrypointSheets` (file id → sheet ids). A build emits every sheet from a chunk of its own,
+  `virtual:weft/sheets`, importing each with `?url` (emitted with `preserveSignature: 'strict'`, or
+  its unused export, and with it every `?url` import, is dropped); only an app with style files has
+  it. Each sheet's file is found in the client manifest by its path's end (its key is a relative
+  path outside the root). In development, `href` is the dev server's URL for the sheet, which it
+  serves as `text/css` to a `<link>`.
+- **Entrypoint sheets come from the compiled files' static imports** (`imports.ts`), walked from
+  each entrypoint file through the scanned packages (`./X.res.js`, `<package>/...`), not from the
+  bundle: the same in development and builds, and known before either has built anything. Dynamic
+  imports aren't followed.
+- **Checked end to end** on `weft_split`, with a style added for the check (not committed): `/`
+  linked the home page's sheet and `Counter`'s (an entrypoint on it) in its head, before the shell;
+  `/other`'s payload sent only `Counter`'s, the home page's motto not being on it.
+- **Tests**: `weft_server`'s `Sheets_test` (the rows for classes rendered, dependencies first and
+  once; a branch not rendered isn't sent; entrypoint props and code; a boundary's row; the wrapper;
+  decoding the same elements with sheets as without; the page's head held, then the shell's links);
+  the plugin's (`imports.test.ts`; the manifest in development, with the sheet served as CSS, and in
+  a build, with the sheets emitted and the server's assets naming them).
+
 ### 5. Order
 
 One sheet per file, loaded in the order the page first needs them, means **the order of rules from
@@ -448,10 +493,11 @@ on the same element is then a coin toss. The rules:
   `registerProperty` rules is a _base_ sheet; `Sheets` inserts base sheets before every component
   sheet in the head, as React does for a lower `precedence`, and the server's links are written
   base-first too.
-- **Everything is in cascade layers**, by default `@layer weft.base, weft.components`, declared once
-  in the page's head (before any sheet). An app's own unlayered CSS then overrides `weft_css`'s,
-  which is what a hand-written stylesheet usually wants; `~layer=` puts a rule in another layer, and
-  `Css.layerOrder` declares more (rescript-css's API).
+- **Everything is in cascade layers**, by default `@layer weft.base, weft.components`, declared at
+  the top of every sheet (as built: see phase 3's notes), so whichever loads first, the order holds.
+  An app's own unlayered CSS then overrides `weft_css`'s, which is what a hand-written stylesheet
+  usually wants; `~layer=` puts a rule in another layer, and `Css.layerOrder` declares more
+  (rescript-css's API).
 - **Within a layer, across files, there's no order**: compose in one class
   (`Css.class({...Base.button, color: ...})`, a record spread of a `Css.style` fragment) rather than
   stacking two classes that conflict. A development-build check for it, at extraction (two classes,
@@ -571,8 +617,8 @@ otherwise.
 | 0     | Spikes (below); this plan corrected by what they found                                  |
 | 1     | `weft_css`: the API and serializer for `weft_shop`'s properties; `ppx_weft`'s rewrite   |
 | 2     | The plugin: scan, CSS runner, stripping, one sheet per file; `weftCss()` and `weft_app` |
-| 3     | Sheets in the manifest; `Page`'s head held open, the shell's links; entrypoint sheets   |
-| 4     | `C` rows, `Render`'s scan, `Decoder` waiting, `Sheets`; navigation and refetch          |
+| 3     | Sheets in the manifest, entrypoint sheets; `C` rows, `Render`'s scan; `Page`'s head     |
+| 4     | `Decoder` waiting, `Sheets`; navigation and refetch                                     |
 | 5     | Streaming: preloads, `$weftSwap` waiting, the shared registry, hydration; tier 2 checks |
 | 6     | Development: re-extraction and the `weft:css` HMR swap                                  |
 | 7     | `weft_shop` on `weft_css`; the tier 3 flash test; docs and READMEs                      |

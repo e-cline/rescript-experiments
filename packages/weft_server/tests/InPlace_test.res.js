@@ -300,7 +300,7 @@ Vitest.describe("refetching over placeholders", undefined, undefined, undefined,
         })
       })
     });
-    let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(tree, undefined, undefined), undefined, undefined);
+    let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(tree, undefined, undefined, undefined), undefined, undefined);
     let element = Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(pipe), undefined);
     await Testing$WeftServer.finished(pipe);
     await Testing$WeftServer.tick();
@@ -392,7 +392,7 @@ Vitest.describe("refetching, with errors", undefined, undefined, undefined, unde
     Support$WeftServer.bump("a");
     let render = Render$WeftServer.toStream(tree(TestJsx$Weft.jsx(Support$WeftServer.Fails.make, {
       message: "broken"
-    })), param => {}, undefined);
+    })), param => {}, undefined, undefined);
     let element = await Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(render, undefined, undefined)), undefined);
     Transition$Weft.start(() => TestRenderer$Weft.scheduleRender(renderer, element));
     await Support$WeftServer.settle();
@@ -411,7 +411,7 @@ Vitest.describe("refetching, with errors", undefined, undefined, undefined, unde
       children: TestJsx$Weft.jsx(Support$WeftServer.Fails.make, {
         message: "no page"
       })
-    }), param => {}, undefined);
+    }), param => {}, undefined, undefined);
     let failed;
     try {
       await Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(render, undefined, undefined)), undefined);
@@ -434,7 +434,7 @@ Vitest.describe("refetching, in order", undefined, undefined, undefined, undefin
     let pipes = {};
     let fetch = (url, signal) => {
       let page = pages[url];
-      let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(page(), undefined, Primitive_option.some(signal)), "Manual", undefined);
+      let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(page(), undefined, Primitive_option.some(signal), undefined), "Manual", undefined);
       pipes[url] = pipe;
       return Promise.resolve({
         stream: Testing$WeftServer.stream(pipe)

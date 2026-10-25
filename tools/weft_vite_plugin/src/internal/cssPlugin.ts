@@ -8,6 +8,7 @@ import {parseAst, type Plugin, type ResolvedConfig} from 'vite';
 
 import {
   Extractor,
+  type Sheet,
   resolveSheet,
   sheetOfPath,
   sheetPath,
@@ -37,6 +38,15 @@ export type CssPluginOptions = {
   scanned?: () => Scan;
   /** Scans again, if another plugin keeps the scan. */
   rescan?: () => void;
+  /** Called in development when a sheet came, went, or changed what it depends on. */
+  onChange?: () => void;
+};
+
+/** The plugin, and the sheets it extracted, for `weft()`'s assets. */
+export type CssPlugin = {
+  plugin: Plugin;
+  /** Every style file's sheet, once extracted. */
+  sheets: () => Promise<Sheet[]>;
 };
 
 /** Blanks out a file's `'use weft css'` directive, leaving any others for `weft()`. */
@@ -52,7 +62,7 @@ function blankCssDirective(code: string): string {
   return blanked;
 }
 
-export function cssPlugin(options: CssPluginOptions): Plugin {
+export function cssPlugin(options: CssPluginOptions): CssPlugin {
   let config: ResolvedConfig;
   let ownScan: Scan | undefined;
   let extractor: Extractor | undefined;
@@ -80,7 +90,7 @@ export function cssPlugin(options: CssPluginOptions): Plugin {
     return extracted;
   };
 
-  return {
+  const plugin: Plugin = {
     name: 'weft:css',
 
     configResolved(resolved) {
@@ -162,10 +172,15 @@ export function cssPlugin(options: CssPluginOptions): Plugin {
       }
       if (was?.sheet !== undefined && now?.sheet === undefined) {
         extractor.forget(was.sheet);
+        options.onChange?.();
       }
       if (now?.sheet === undefined) return;
       await extractAll();
+      const before = extractor.sheets.get(now.sheet)?.dependencies.join();
       await extractor.extract([now]);
+      if (extractor.sheets.get(now.sheet)?.dependencies.join() !== before) {
+        options.onChange?.();
+      }
       // The sheet's module loads again, with the new CSS, when the page does (a change to a
       // ReScript module reloads it).
       const graph = this.environment.moduleGraph;
@@ -179,6 +194,16 @@ export function cssPlugin(options: CssPluginOptions): Plugin {
     async closeBundle() {
       // In development, when the server closes.
       if (config.command === 'serve') await extractor?.close();
+    },
+  };
+
+  return {
+    plugin,
+    sheets: async () => {
+      await extractAll();
+      return [...(extractor?.sheets.values() ?? [])].sort((a, b) =>
+        a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+      );
     },
   };
 }

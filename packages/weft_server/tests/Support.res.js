@@ -323,7 +323,7 @@ function makeClient(modulesOpt) {
 
 function roundTrip(clientOpt, chunking, element) {
   let client = clientOpt !== undefined ? Primitive_option.valFromOption(clientOpt) : makeClient(undefined);
-  return Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(Render$WeftServer.toStream(element, undefined, undefined), undefined, chunking)), undefined);
+  return Decoder$WeftServer.fromStream(client, Testing$WeftServer.stream(Testing$WeftServer.pipe(Render$WeftServer.toStream(element, undefined, undefined, undefined), undefined, chunking)), undefined);
 }
 
 function renderDirectly(element) {
@@ -344,7 +344,7 @@ function serve(deliveryOpt, route) {
   let delivery = deliveryOpt !== undefined ? deliveryOpt : param => "Immediate";
   let served = [];
   let fetch = (url, signal) => {
-    let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(route(url), undefined, Primitive_option.some(signal)), delivery(url), undefined);
+    let pipe = Testing$WeftServer.pipe(Render$WeftServer.toStream(route(url), undefined, Primitive_option.some(signal), undefined), delivery(url), undefined);
     served.push({
       url: url,
       pipe: pipe

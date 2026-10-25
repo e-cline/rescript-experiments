@@ -9,7 +9,8 @@ let sheets = Extract.finish()
 
 One sheet per file, named by its sheet id (`SheetId`): its variables, on `:root`, and its globals in
 the layer `weft.base` (unless given another), then its classes and keyframes in `weft.components`,
-each layer's rules in the order the file declares them.
+each layer's rules in the order the file declares them. Each sheet starts with the layers' order,
+`layerOrder`: whichever sheet a page loads first, the base layer comes before the components'.
 */
 
 type sheet = {
@@ -34,3 +35,6 @@ let sheets: array<Css.Internal.registration> => array<sheet>
 
 let baseLayer: string
 let componentsLayer: string
+
+/** `@layer weft.base, weft.components;` */
+let layerOrder: string

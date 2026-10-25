@@ -6,6 +6,9 @@ A payload is a sequence of rows, each one line: `<id>:<tag><json>\n`. Row 0 is t
 - `J`, a model: an element tree, or a value a promise resolved to.
 - `E`, an entrypoint reference: `{"id": "<package>/<path>#<Module.Path>"}`. Written once per id per
   payload, before the first row that uses it.
+- `C`, a stylesheet: `{"id": "<sheet id>", "href": "<its URL>"}`. Written once per sheet per payload,
+  before the first row that needs it. A `J` row that needs sheets (its classes are in them) says
+  which: its value is `["$C", [<C rows>], value]` (see `withSheets`).
 - `X`, an error: `{"digest": ..., "message": ...}` (the message only in development builds), in place
   of a row that failed.
 
@@ -32,6 +35,8 @@ type tag =
   | Model
   /** `E`: an entrypoint reference. */
   | EntrypointRef
+  /** `C`: a stylesheet. */
+  | Stylesheet
   /** `X`: an error. */
   | Error
 
@@ -85,6 +90,12 @@ let element: (~elementType: JSON.t, ~key: Nullable.t<string>, ~props: JSON.t) =>
 
 /** The parts of an element, if `items` (a model's array) is one. */
 let asElement: array<JSON.t> => option<(JSON.t, Nullable.t<string>, JSON.t)>
+
+/** A `J` row's value, saying it needs the stylesheets in `rows` (`C` rows): as it is, if none. */
+let withSheets: (array<int>, JSON.t) => JSON.t
+
+/** The stylesheets a `J` row's value needs (its `C` rows), and the value itself. */
+let sheetsOf: JSON.t => (array<int>, JSON.t)
 
 /** The content type a bare payload is sent with. */
 let contentType: string

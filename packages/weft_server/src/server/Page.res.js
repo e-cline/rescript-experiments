@@ -3,6 +3,7 @@
 
 import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
 import * as Html$WeftDom from "@e-cline/weft_dom/src/server/Html.res.js";
+import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
@@ -10,6 +11,13 @@ import * as Render$WeftServer from "./Render.res.js";
 import * as Decoder$WeftServer from "../shared/Decoder.res.js";
 import * as Payload$WeftServer from "../shared/Payload.res.js";
 import * as Navigation$WeftServer from "../shared/Navigation.res.js";
+
+function stylesOf(assets) {
+  return Stdlib_Option.map(assets.sheets, sheets => ({
+    sheets: sheets,
+    entrypoints: Stdlib_Option.getOr(assets.entrypointSheets, {})
+  }));
+}
 
 function escape(text) {
   return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll(`"`, "&quot;").replaceAll("'", "&#39;");
@@ -20,12 +28,26 @@ function rowScript(row) {
   return `<script>(self.__weft||=[]).push(` + argument + `)</script>`;
 }
 
-function head(assets, title, head$1, recordEventsOpt) {
+function tags(urls, tag) {
+  return urls.map(tag).join("");
+}
+
+function headStart(assets, title, head, recordEventsOpt) {
   let recordEvents = recordEventsOpt !== undefined ? recordEventsOpt : false;
-  let tags = (urls, tag) => urls.map(tag).join("");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">` + (
     recordEvents ? `<script>` + Html$WeftDom.eventRuntime + `</script>` : ""
-  ) + `<meta name="viewport" content="width=device-width, initial-scale=1">` + Stdlib_Option.mapOr(title, "", title => `<title>` + escape(title) + `</title>`) + tags(assets.styles, url => `<link rel="stylesheet" href="` + escape(url) + `">`) + tags(assets.preloads, url => `<link rel="modulepreload" href="` + escape(url) + `">`) + tags(assets.scripts, url => `<script type="module" async src="` + escape(url) + `"></script>`) + Stdlib_Option.getOr(head$1, "") + `</head><body>`;
+  ) + `<meta name="viewport" content="width=device-width, initial-scale=1">` + Stdlib_Option.mapOr(title, "", title => `<title>` + escape(title) + `</title>`) + tags(assets.styles, url => `<link rel="stylesheet" href="` + escape(url) + `">`) + tags(assets.preloads, url => `<link rel="modulepreload" href="` + escape(url) + `">`) + tags(assets.scripts, url => `<script type="module" async src="` + escape(url) + `"></script>`) + Stdlib_Option.getOr(head, "");
+}
+
+let headEnd = `</head><body>`;
+
+function sheetLinks(rows) {
+  return Stdlib_Array.filterMap(rows, row => {
+    let match = row.tag;
+    if (match === "Stylesheet") {
+      return Stdlib_Option.map(Stdlib_Option.flatMap(Primitive_option.fromNullable(row.json["href"]), Stdlib_JSON.Decode.string), href => `<link rel="stylesheet" href="` + escape(href) + `">`);
+    }
+  }).join("");
 }
 
 function root(shell) {
@@ -40,12 +62,8 @@ let tail = rowScript(undefined) + "</body></html>";
 
 function entrypointFile(row) {
   let match = row.tag;
-  switch (match) {
-    case "EntrypointRef" :
-      return Stdlib_Option.map(Stdlib_Option.flatMap(Primitive_option.fromNullable(row.json["id"]), Stdlib_JSON.Decode.string), id => id.split("#")[0]);
-    case "Model" :
-    case "Error" :
-      return;
+  if (match === "EntrypointRef") {
+    return Stdlib_Option.map(Stdlib_Option.flatMap(Primitive_option.fromNullable(row.json["id"]), Stdlib_JSON.Decode.string), id => id.split("#")[0]);
   }
 }
 
@@ -63,7 +81,7 @@ function defaultOnError(error) {
   console.error(error);
 }
 
-function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, signal) {
+function toStream(element, assets, urlOpt, htmlOpt, title, head, onError, signal) {
   let url = urlOpt !== undefined ? urlOpt : "/";
   let html = htmlOpt !== undefined ? htmlOpt : true;
   let match = assets.loadModule;
@@ -77,7 +95,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
         return onError$1(error);
       }
     };
-    let match$1 = Render$WeftServer.toStream(element, onError$1, signal).tee();
+    let match$1 = Render$WeftServer.toStream(element, onError$1, signal, stylesOf(assets)).tee();
     let forHtml = match$1[1];
     let forPage = match$1[0];
     let decoder = Decoder$WeftServer.make(match, undefined);
@@ -122,9 +140,9 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
         return;
       }
       held.contents = undefined;
-      let links = rows.map(row => preloads(assets, preloaded, row)).join("");
+      let links = sheetLinks(rows) + rows.map(row => preloads(assets, preloaded, row)).join("");
       let rest = rows.map(row => rowScript(Payload$WeftServer.rowToString(row))).join("");
-      write(links + root(shell) + rest);
+      write(links + headEnd + root(shell) + rest);
     };
     let pumpRows = async () => {
       let reader = forPage.getReader();
@@ -223,7 +241,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
     return new ReadableStream({
       start: controller => {
         output.contents = Primitive_option.some(controller);
-        write(head(assets, title, head$1, true));
+        write(headStart(assets, title, head, true));
         pumpRows();
         pumpHtml();
       },
@@ -232,7 +250,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
       }
     });
   }
-  let payload = Render$WeftServer.toStream(element, onError, signal);
+  let payload = Render$WeftServer.toStream(element, onError, signal, stylesOf(assets));
   let reader = payload.getReader();
   let decoder$1 = new TextDecoder();
   let encoder$1 = new TextEncoder();
@@ -241,7 +259,7 @@ function toStream(element, assets, urlOpt, htmlOpt, title, head$1, onError, sign
   let html$1 = row => preloads(assets, preloaded$1, row) + rowScript(Payload$WeftServer.rowToString(row));
   return new ReadableStream({
     start: controller => {
-      controller.enqueue(encoder$1.encode(head(assets, title, head$1, undefined) + root(undefined)));
+      controller.enqueue(encoder$1.encode(headStart(assets, title, head, undefined) + headEnd + root(undefined)));
     },
     pull: async controller => {
       let exit = 0;
@@ -309,7 +327,7 @@ function respond(request, element, assets, html, title, head, onError) {
   let match = wantsPayload(Primitive_option.fromNull(request.headers.get("accept"))) ? [
       Payload$WeftServer.contentType,
       Payload$WeftServer.cacheControl,
-      Render$WeftServer.toStream(element, onError, Primitive_option.some(signal))
+      Render$WeftServer.toStream(element, onError, Primitive_option.some(signal), stylesOf(assets))
     ] : [
       "text/html; charset=utf-8",
       "no-store",

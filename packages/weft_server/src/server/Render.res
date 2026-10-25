@@ -5,6 +5,9 @@ module Element = Weft.Element
 type signal = Streams.Signal.t
 type stream = Streams.t
 
+type sheet = {href: string, dependencies: array<string>}
+type styles = {sheets: dict<sheet>, entrypoints: dict<array<string>>}
+
 /** One payload being written. */
 type request = {
   controller: Streams.controller,
@@ -18,6 +21,10 @@ type request = {
   mutable flushScheduled: bool,
   /** The `E` row written for each entrypoint id. */
   entrypoints: Map.t<string, int>,
+  /** The app's stylesheets, if it has any (the plugin's manifest). */
+  styles: option<styles>,
+  /** The `C` row written for each sheet id. */
+  sheetRows: Map.t<string, int>,
   onError: exn => option<string>,
 }
 
@@ -30,6 +37,10 @@ type context = {
   path: list<string>,
   /** The arrays and objects being encoded, to find cycles. */
   ancestors: list<unknown>,
+  /** The sheets the row being encoded needs, dependencies before what needs them. */
+  rowSheets: Set.t<string>,
+  /** Whether this is (in) an entrypoint's props: their strings may be class names it renders. */
+  inEntrypointProps: bool,
 }
 
 // Writing rows
@@ -99,12 +110,76 @@ let errorJson = (request, error: exn): JSON.t => {
   JSON.Encode.object(fields)
 }
 
-/** Writes row `id` once `work` has its model, or an error row if it fails. */
-let spawn = (context, id, work: unit => promise<JSON.t>) => {
+// Stylesheets
+
+/**
+Notes that the row being encoded needs sheet `id` (if the app has it), and the sheets it depends on,
+before it, so their `C` rows (and links) come first. Two sheets may depend on each other.
+*/
+let rec useSheet = (context, ~visiting=Set.make(), id) =>
+  switch context.request.styles {
+  | Some({sheets}) if !(context.rowSheets->Set.has(id)) && !(visiting->Set.has(id)) =>
+    switch sheets->Dict.get(id) {
+    | Some({dependencies}) =>
+      visiting->Set.add(id)
+      dependencies->Array.forEach(dependency => useSheet(context, ~visiting, dependency))
+      context.rowSheets->Set.add(id)
+    | None => ()
+    }
+  | _ => ()
+  }
+
+/** Notes the sheets of the class names in `text` (a class list, or any string a class may be in). */
+let useClasses = (context, text) =>
+  if Option.isSome(context.request.styles) && text->String.includes("_w") {
+    WeftCss.SheetId.ofClassList(text)->Array.forEach(id => useSheet(context, id))
+  }
+
+/** The `C` rows of `sheets`, writing those not yet written. */
+let sheetRows = (request, sheets: Set.t<string>) =>
+  sheets
+  ->Set.values
+  ->Iterator.toArray
+  ->Array.filterMap(id =>
+    switch (request.sheetRows->Map.get(id), request.styles) {
+    | (Some(row), _) => Some(row)
+    | (None, Some({sheets})) =>
+      sheets
+      ->Dict.get(id)
+      ->Option.map(({href}) => {
+        let row = allocate(request)
+        request.sheetRows->Map.set(id, row)
+        write(
+          request,
+          {
+            id: row,
+            tag: Stylesheet,
+            json: JSON.Encode.object(
+              dict{"id": JSON.Encode.string(id), "href": JSON.Encode.string(href)},
+            ),
+          },
+        )
+        finish(request)
+        row
+      })
+    | (None, None) => None
+    }
+  )
+
+/**
+Writes row `id` once `work` has its model (with the sheets it needs, after their `C` rows), or an
+error row if it fails. `work` encodes with the context it's given, which collects the row's sheets.
+*/
+let spawn = (context, id, work: context => promise<JSON.t>) => {
   let request = context.request
+  let context = {...context, rowSheets: Set.make()}
   let run = async () => {
-    let row: Payload.row = switch await work() {
-    | json => {id, tag: Model, json}
+    let row: Payload.row = switch await work(context) {
+    | json => {
+        id,
+        tag: Model,
+        json: Payload.withSheets(sheetRows(request, context.rowSheets), json),
+      }
     | exception error => {id, tag: Error, json: errorJson(request, error)}
     }
     write(request, row)
@@ -180,7 +255,11 @@ let rec encodeValue = async (context, value: unknown): JSON.t =>
   | #undefined => Payload.undefined
   | #boolean => JSON.Encode.bool(Values.fromUnknown(value))
   | #number => Payload.number(Values.fromUnknown(value))
-  | #string => Payload.string(Values.fromUnknown(value))
+  | #string =>
+    if context.inEntrypointProps {
+      useClasses(context, Values.fromUnknown(value))
+    }
+    Payload.string(Values.fromUnknown(value))
   | #bigint => Payload.bigint(Values.fromUnknown(value))
   | #function =>
     fail(
@@ -240,8 +319,8 @@ and encodeFields = async (context, value, ~field) => {
 and encodePromise = (context, promise: promise<unknown>): JSON.t => {
   let id = allocate(context.request)
   // What it resolves to may itself have parts that aren't ready: they stream, like a boundary's.
-  spawn({...context, inSuspense: true}, id, async () =>
-    await encodeValue({...context, inSuspense: true}, await promise)
+  spawn({...context, inSuspense: true}, id, async context =>
+    await encodeValue(context, await promise)
   )
   Payload.promiseRow(id)
 }
@@ -268,6 +347,9 @@ and encodeNode = async (context, node: Element.node): JSON.t =>
         encodeValue(context, value)
       }
     )
+    if Type.typeof(Values.get(node.props, "className")) == #string {
+      useClasses(context, Values.fromUnknown(Values.get(node.props, "className")))
+    }
     Payload.element(~elementType=Payload.string(tag), ~key=node.key, ~props)
   | Component | Memo =>
     let make = toComponent(node.elementType)
@@ -275,10 +357,17 @@ and encodeNode = async (context, node: Element.node): JSON.t =>
     switch Weft.Entrypoint.idOf(make) {
     | Some(id) =>
       let row = entrypointRow(context, id)
+      // Its code's own sheets: whatever it renders on the client, its CSS is loaded with it.
+      switch context.request.styles {
+      | Some({entrypoints}) =>
+        let file = id->String.split("#")->Array.getUnsafe(0)
+        entrypoints->Dict.get(file)->Option.getOr([])->Array.forEach(id => useSheet(context, id))
+      | None => ()
+      }
       Payload.element(
         ~elementType=Payload.entrypointType(row),
         ~key=node.key,
-        ~props=await encodeValue(context, node.props),
+        ~props=await encodeValue({...context, inEntrypointProps: true}, node.props),
       )
     | None =>
       let encode = async () => {
@@ -416,7 +505,7 @@ with the content in a row of its own once `wait` has it.
 and pending = async (context, wait: unit => promise<Element.t>): JSON.t =>
   if context.inSuspense {
     let id = allocate(context.request)
-    spawn(context, id, async () => await encodeValue(context, Values.toUnknown(await wait())))
+    spawn(context, id, async context => await encodeValue(context, Values.toUnknown(await wait())))
     Payload.lazyRow(id)
   } else {
     await encodeValue(context, Values.toUnknown(await wait()))
@@ -453,7 +542,7 @@ let defaultOnError = error => {
   None
 }
 
-let valueToStream = (value: unknown, ~onError=defaultOnError, ~signal=?) => {
+let valueToStream = (value: unknown, ~onError=defaultOnError, ~signal=?, ~styles=?) => {
   let request = ref(None)
   Streams.make({
     start: controller => {
@@ -467,6 +556,8 @@ let valueToStream = (value: unknown, ~onError=defaultOnError, ~signal=?) => {
         buffer: [],
         flushScheduled: false,
         entrypoints: Map.make(),
+        styles,
+        sheetRows: Map.make(),
         onError,
       }
       request := Some(current)
@@ -475,13 +566,20 @@ let valueToStream = (value: unknown, ~onError=defaultOnError, ~signal=?) => {
       | Some(signal) => signal->Streams.Signal.onAbort(() => abort(current), {once: true})
       | None => ()
       }
-      let context = {request: current, inSuspense: false, path: list{}, ancestors: list{}}
+      let context = {
+        request: current,
+        inSuspense: false,
+        path: list{},
+        ancestors: list{},
+        rowSheets: Set.make(),
+        inEntrypointProps: false,
+      }
       let root = allocate(current)
-      spawn(context, root, () => encodeValue(context, value))
+      spawn(context, root, context => encodeValue(context, value))
     },
     cancel: _ => request.contents->Option.forEach(abort),
   })
 }
 
-let toStream = (element: Element.t, ~onError=?, ~signal=?) =>
-  valueToStream(Values.toUnknown(element), ~onError?, ~signal?)
+let toStream = (element: Element.t, ~onError=?, ~signal=?, ~styles=?) =>
+  valueToStream(Values.toUnknown(element), ~onError?, ~signal?, ~styles?)

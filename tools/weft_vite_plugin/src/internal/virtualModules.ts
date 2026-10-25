@@ -2,6 +2,7 @@
 
 import {relative, sep} from 'node:path';
 
+import {sheetPath, sheetPrefix, type Sheet} from './css.js';
 import type {CompiledFile} from './scan.js';
 
 export const clientReferencesId = 'virtual:weft/client-references';
@@ -9,6 +10,7 @@ export const clientId = 'virtual:weft/client';
 export const bootstrapId = 'virtual:weft/bootstrap';
 export const assetsId = 'virtual:weft/assets';
 export const ssrReferencesId = 'virtual:weft/ssr-references';
+export const sheetsId = 'virtual:weft/sheets';
 
 /** The custom HMR event that tells the client to refetch the page (a server-only file changed). */
 export const refreshEvent = 'weft:refresh';
@@ -117,7 +119,27 @@ export type Assets = {
   styles: string[];
   /** For each entrypoint file, by id: its chunk, then the chunks it imports. */
   entrypoints: Record<string, string[]>;
+  /** Each stylesheet (`weft_css`'s), by sheet id: its URL, and the sheets its rules name. */
+  sheets: Record<string, {href: string; dependencies: string[]}>;
+  /** Each entrypoint file's stylesheets (those its code imports), by id. */
+  entrypointSheets: Record<string, string[]>;
 };
+
+/**
+ * `virtual:weft/sheets`, an entry of the client build of its own: it imports every sheet with
+ * `?url`, so each is emitted as an asset of its own (processed by Vite's CSS pipeline), whose URL
+ * the server's assets then read from the manifest. Nothing loads it.
+ */
+export function sheetsCode(sheets: string[]): string {
+  const imports = sheets.map(
+    (id, index) =>
+      `import sheet${index} from ${JSON.stringify(`${sheetPrefix}${id}.css?url`)};`,
+  );
+  return `${imports.join('\n')}
+
+export default {${sheets.map((id, index) => `${JSON.stringify(id)}: sheet${index}`).join(', ')}};
+`;
+}
 
 /**
  * `virtual:weft/assets`: the assets, and the server's `loadModule` (from
@@ -147,6 +169,8 @@ export function devAssets(
   base: string,
   bootstrap: string,
   files: CompiledFile[],
+  sheets: Sheet[] = [],
+  entrypointSheets: Record<string, string[]> = {},
 ): Assets {
   return {
     scripts: [`${base}@vite/client`, devUrl(root, base, bootstrap)],
@@ -155,12 +179,21 @@ export function devAssets(
     entrypoints: Object.fromEntries(
       files.map(({id, file}) => [id, [devUrl(root, base, file)]]),
     ),
+    sheets: Object.fromEntries(
+      sheets.map(({id, dependencies}) => [
+        id,
+        {href: devUrl(root, base, sheetPath(root, id)), dependencies},
+      ]),
+    ),
+    entrypointSheets,
   };
 }
 
 /** A chunk in a client build's `.vite/manifest.json`, as much as is used here. */
 export type ManifestChunk = {
   file: string;
+  name?: string;
+  src?: string;
   imports?: string[];
   css?: string[];
   isEntry?: boolean;
@@ -202,16 +235,34 @@ function closure(
   return {files, css: [...css]};
 }
 
+/** The file a sheet was emitted as, from the client build's manifest. */
+function sheetFile(manifest: Manifest, id: string): string {
+  const suffix = `.weft-css/${id}.css`;
+  for (const [key, chunk] of Object.entries(manifest)) {
+    if (key.endsWith(suffix) || chunk.src?.endsWith(suffix)) return chunk.file;
+  }
+  throw new ManifestError(`[weft] the client build has no stylesheet ${id}`);
+}
+
 export function buildAssets(
   manifest: Manifest,
   root: string,
   base: string,
   bootstrap: string,
   files: CompiledFile[],
+  sheets: Sheet[] = [],
+  entrypointSheets: Record<string, string[]> = {},
 ): Assets {
   const url = (file: string) => base + file;
   const client = closure(manifest, manifestKey(root, bootstrap));
   return {
+    sheets: Object.fromEntries(
+      sheets.map(({id, dependencies}) => [
+        id,
+        {href: url(sheetFile(manifest, id)), dependencies},
+      ]),
+    ),
+    entrypointSheets,
     scripts: [url(client.files[0]!)],
     preloads: client.files.slice(1).map(url),
     styles: client.css.map(url),

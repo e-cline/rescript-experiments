@@ -279,7 +279,12 @@ let handleRow = (session, {id, tag, json}: Payload.row) => {
       Promise.resolve()
     })
     ->ignore
+  | Stylesheet =>
+    // Its URL. (Loading it, and holding back the rows that need it until it has, is the client's
+    // part, still to come: the plan's phase 4.)
+    target.resolve(toUnknown(jsonField(json, "href")))
   | Model =>
+    let (_sheets, json) = Payload.sheetsOf(json)
     let waitingFor = []
     entrypointRows(json, waitingFor)
     let missing = waitingFor->Array.filter(id => !(session.entrypoints->Map.has(id)))

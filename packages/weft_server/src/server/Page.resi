@@ -13,10 +13,11 @@ The HTML is one streamed response, the page rendered as HTML for the browser to 
 JavaScript runs, and the payload for the client to hydrate it with:
 
 1. the document's head (the bootstrap's script, `async` so it runs as soon as it's loaded, and its
-   preloads and stylesheets), at once;
-2. once the shell is ready (everything outside `Suspense` boundaries that are still pending),
-   `<div id="root" data-weft-html>` with the shell's HTML in it, after preloads for the chunks of
-   the entrypoints it uses;
+   preloads and stylesheets), at once, but for its end;
+2. once the shell is ready (everything outside `Suspense` boundaries that are still pending), the
+   rest of the head: links to the stylesheets the rows so far need (the CSS of what the shell
+   rendered, which the browser then shows it with, never without) and preloads for the chunks of
+   the entrypoints it uses; then `<div id="root" data-weft-html>` with the shell's HTML in it;
 3. each row of the payload as an inline script (the ones that came before the shell, then each as
    the server writes it), and each pending boundary's content as `WeftDom.Html` has it ready, with
    the inline runtime that swaps it in.
@@ -48,6 +49,13 @@ type assets = {
   `virtual:weft/ssr-references`). Without it, a page is the rows alone.
   */
   loadModule?: Decoder.loadModule,
+  /**
+  The app's stylesheets (`weft_css`'s), by sheet id: `Render` sends the ones a page uses (see its
+  `styles`), and the page links the shell's. Without them, no stylesheets are sent.
+  */
+  sheets?: dict<Render.sheet>,
+  /** Each entrypoint file's stylesheets (those its code imports), by file id. */
+  entrypointSheets?: dict<array<string>>,
 }
 
 /**

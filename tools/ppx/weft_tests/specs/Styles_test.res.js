@@ -56,7 +56,8 @@ Vitest.describe("extracting the fixtures", undefined, undefined, undefined, unde
   t.expect(prefixed).toBe(`Styles-prefixed_` + stylesId);
   return t.expect(sheets).toEqual([{
       id: stylesId,
-      css: `@layer weft.base {
+      css: `@layer weft.base, weft.components;
+@layer weft.base {
   :root {
     --Styles-ink_` + stylesId + `: #1d1b19;
   }

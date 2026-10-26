@@ -16,7 +16,8 @@ writing a compiled file again, taking one away, or putting it back.
   file with the directive (neither of which the scan may pick up), and an entrypoint in a ReScript
   dependency, `widgets/`. `Theme` has styles (a variable, a global, a class), used by the server
   file and an entrypoint, each of whose definitions has a sentinel no bundle may contain; its
-  variable's value is from `Colors`, which has no styles.
+  variable's value is from `Colors`, which has no styles. `Popover` has styles too (using `Theme`'s
+  variable), and `Likes` only imports it dynamically.
 - `widgets/`: that dependency, with a style of its own.
 - `styled/`: an app without a server, for `weftCss()`: a theme (variables and a global), a component
   with classes, an animation and a fragment, a module its entry loads lazily (whose sheet goes with

@@ -164,6 +164,31 @@ describe('the dev server', () => {
     expect(await response.text()).toContain(`.Notes-heading_${notes} {`);
   });
 
+  test("has the client's import() of a style module wait for its sheets too; not the server's", async () => {
+    const assets = await (await fetch(`${base}/assets.json`)).json();
+    const popover = sheetId(`${basic}/src/Popover.res`);
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    const likes =
+      await server.environments[clientEnvironment]!.transformRequest(
+        '/src/Likes.res.js',
+      );
+    // Popover's sheet, and the one it depends on (Theme's variable) first, at the URLs the server
+    // sends: the import resolves once they've loaded.
+    expect(likes?.code).toContain(
+      `__weftImport(import("/src/Popover.res.js"), [${JSON.stringify(assets.sheets[theme].href)}, ${JSON.stringify(assets.sheets[popover].href)}])`,
+    );
+    // Popover itself runs as it is.
+    const popoverCode = await server.environments[
+      clientEnvironment
+    ]!.transformRequest('/src/Popover.res.js');
+    expect(popoverCode?.code).not.toContain('__weft');
+    const onServer =
+      await server.environments[serverEnvironment]!.transformRequest(
+        '/src/Likes.res.js',
+      );
+    expect(onServer?.code).not.toContain('__weftImport');
+  });
+
   test('runs the server with the development export conditions', async () => {
     expect(await (await fetch(`${base}/env`)).json()).toEqual({isDev: true});
   });

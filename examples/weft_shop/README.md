@@ -29,8 +29,9 @@ data the server decides on for each request, and each part of them streams in by
   so each query cancels the one before it), results on Enter, and the box in the header keeping what
   was typed as the shopper navigates.
 - **A product's page**: variants whose offer (price, stock, the add to cart button) is fetched again
-  by itself (`ProductOffer`), keeping the quantity chosen; a gallery; reviews sorted in a
-  transition.
+  by itself (`ProductOffer`), keeping the quantity chosen; a size guide (`SizeGuide`), code loaded
+  with `import()` the first time it's opened, and shown once its stylesheet is in; a gallery;
+  reviews sorted in a transition.
 - **The cart, client and server** ([`src/client/Store.res`](src/client/Store.res),
   [`src/client/ShopContext.res`](src/client/ShopContext.res)): the cart an RPC answers with goes to
   a `signals` atom, which `ShopShell` (the entrypoint around every page, providing the page's
@@ -125,7 +126,8 @@ opens them in the order it's about:
   sides.
 - [`Styles_test.res`](tests/Styles_test.res): each page's stylesheets (the home page's head linking
   only what it renders, the cart's sent when it's opened), nothing shown without its CSS as the page
-  streams or the shopper navigates, and the old page kept while the new one's sheets load.
+  streams or the shopper navigates, the old page kept while the new one's sheets load, "Load more"
+  cards shown once theirs load, and the size guide's fallback kept until its sheet loads.
 
 [`e2e/`](e2e) checks, in Chromium against the build, what only a browser can, served twice:
 
@@ -137,8 +139,9 @@ opens them in the order it's about:
   retried; and the pages readable with JavaScript off.
 - [`styles.e2e.ts`](e2e/styles.e2e.ts), gated too, with every stylesheet slowed down: a probe on
   every frame finds nothing shown without its CSS, from the home page streaming to a navigation, a
-  product, the cart's drawer and page, and a quantity changed (its totals refetched); and, as a
-  control, that it does find a page shown before its stylesheet. In Firefox and WebKit too.
+  product and its size guide, the cart's drawer and page, and a quantity changed (its totals
+  refetched); and, as a control, that it does find a page shown before its stylesheet. In Firefox
+  and WebKit too.
 - [`a11y.e2e.ts`](e2e/a11y.e2e.ts), gated: [axe](https://github.com/dequelabs/axe-core-npm) (WCAG
   2.1, A and AA) on every page, on each overlay while it's open (the drawer, the search's
   suggestions, the sign-in dialog, the account menu), on each step of the checkout, and on forms

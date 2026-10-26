@@ -123,6 +123,7 @@ describe('on what ppx_weft wrote', () => {
     'basic/src/Likes.res.js': 'entrypoint',
     'basic/src/Notes.res.js': 'server',
     'basic/src/Panels.res.js': 'entrypoint',
+    'basic/src/Popover.res.js': 'shared',
     'basic/src/Theme.res.js': 'shared',
     'basic/src/nested/Deep.res.js': 'entrypoint',
     'basic/tests/Fake.res.js': 'entrypoint',
@@ -135,6 +136,7 @@ describe('on what ppx_weft wrote', () => {
 
   const styled = new Set([
     'basic/src/Notes.res.js',
+    'basic/src/Popover.res.js',
     'basic/src/Theme.res.js',
     'styled/src/Card.res.js',
     'styled/src/Later.res.js',

@@ -23,6 +23,7 @@ import {
   stripStyles,
 } from './css.js';
 import {findDirectives} from './directives.js';
+import {dynamicImports, sheetWalker} from './imports.js';
 import {
   hasPpx,
   packageOf,
@@ -55,6 +56,12 @@ export type CssPluginOptions = {
    * itself, so its client modules don't.
    */
   importSheets: boolean;
+  /**
+   * The environment the app's server runs in, if it has one (`weft()`'s): every other one runs
+   * client code (the browser's, the server-side render's of client components, a test's). Without
+   * it, a client environment is one whose consumer is the client.
+   */
+  serverEnvironment?: string;
   /** The app's scan, if another plugin keeps it (`weft()`); otherwise this one scans. */
   scanned?: () => Scan;
   /** Scans again, if another plugin keeps the scan. */
@@ -69,6 +76,9 @@ export type CssPlugin = {
   /** Every style file's sheet, once extracted. */
   sheets: () => Promise<Sheet[]>;
 };
+
+/** `WeftCss.Sheets`, as an app imports it. */
+const sheetsModule = '@e-cline/weft_css/src/client/Sheets.res.js';
 
 /** Blanks out a file's `'use weft css'` directive, leaving any others for `weft()`. */
 function blankCssDirective(code: string): string {
@@ -220,6 +230,73 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
     return change;
   };
 
+  /**
+   * `code` (the app's compiled `file`, for a client environment that doesn't import sheets:
+   * `weft()`'s) with each `import()` of one of its compiled files resolving once that file's sheets
+   * have loaded too: those of every style file it imports (at any depth), and the sheets those
+   * depend on. So whatever renders the code it loads is styled. (An entrypoint's sheets come with
+   * the rows that use it instead, and Weft's own `import()`s of entrypoints aren't the app's code.)
+   * `undefined` if there's none to wait for. The sheets' URLs are the server's: in development
+   * written in (a `?url` import of one is empty outside the browser's environment, in a test's), in
+   * a build imported (`?url`, for the hashed file). Those imports, and the helper, are at the end, so
+   * no line moves.
+   */
+  const waitingForSheets = async (
+    code: string,
+    file: string,
+  ): Promise<string | undefined> => {
+    const imports = dynamicImports(scanned(), file, code);
+    if (imports.length === 0) return undefined;
+    await extractAll();
+    const walk = sheetWalker(scanned());
+    const urls: string[] = [];
+    let rewritten = '';
+    let at = 0;
+    for (const {start, end, file: target} of imports.sort(
+      (a, b) => a.start - b.start,
+    )) {
+      // Those a sheet depends on before it (two may depend on each other).
+      const sheets: string[] = [];
+      const seen = new Set<string>();
+      const add = (id: string) => {
+        if (seen.has(id)) return;
+        seen.add(id);
+        for (const dependency of extractor?.sheets.get(id)?.dependencies ??
+          []) {
+          add(dependency);
+        }
+        sheets.push(id);
+      };
+      for (const id of walk(target)) add(id);
+      if (sheets.length === 0) continue;
+      // In development, each sheet's URL as the server has it; in a build, the asset's (hashed).
+      const names = sheets.map((id) => {
+        if (config.command === 'serve') {
+          return JSON.stringify(
+            devUrl(config.root, config.base, sheetPath(config.root, id)),
+          );
+        }
+        if (!urls.includes(id)) urls.push(id);
+        return `__weftSheet${urls.indexOf(id)}`;
+      });
+      rewritten +=
+        code.slice(at, start) +
+        `__weftImport(${code.slice(start, end)}, [${names.join(', ')}])`;
+      at = end;
+    }
+    if (at === 0) return undefined;
+    const tail =
+      urls
+        .map(
+          (id, index) =>
+            `import __weftSheet${index} from ${JSON.stringify(`${sheetPrefix}${id}.css?url`)};`,
+        )
+        .join('') +
+      `import {load as __weftLoadSheet} from ${JSON.stringify(sheetsModule)};` +
+      'function __weftImport(module, sheets) { return Promise.all([module, ...sheets.map(__weftLoadSheet)]).then((loaded) => loaded[0]); }';
+    return `${rewritten}${code.slice(at)}\n${tail}\n`;
+  };
+
   const plugin: Plugin = {
     name: 'weft:css',
 
@@ -269,21 +346,33 @@ export function cssPlugin(options: CssPluginOptions): CssPlugin {
     },
 
     transform: {
-      filter: {code: 'use weft css'},
-      handler(code, id) {
-        if (findDirectives(code)?.css !== true) return undefined;
-        let stripped = blankCssDirective(stripStyles(code, parseAst));
-        lastNames.set(id.split('?')[0]!, namesOnly(code, parseAst));
-        const sheet = scanned().files.get(id.split('?')[0]!)?.sheet;
-        if (
-          options.importSheets &&
-          sheet !== undefined &&
-          this.environment.config.consumer === 'client'
-        ) {
-          // On the first line, which was the directive: every other line stays where it was.
-          stripped = `import ${JSON.stringify(`${sheetPrefix}${sheet}.css`)};${stripped}`;
+      filter: {code: ['use weft css', 'import(']},
+      async handler(code, id) {
+        const file = id.split('?')[0]!;
+        const client =
+          options.serverEnvironment === undefined
+            ? this.environment.config.consumer === 'client'
+            : this.environment.name !== options.serverEnvironment;
+        let result: string | undefined;
+        if (findDirectives(code)?.css === true) {
+          result = blankCssDirective(stripStyles(code, parseAst));
+          lastNames.set(file, namesOnly(code, parseAst));
+          const sheet = scanned().files.get(file)?.sheet;
+          if (options.importSheets && sheet !== undefined && client) {
+            // On the first line, which was the directive: every other line stays where it was.
+            result = `import ${JSON.stringify(`${sheetPrefix}${sheet}.css`)};${result}`;
+          }
         }
-        return {code: stripped, map: null};
+        const current = scanned();
+        if (
+          !options.importSheets &&
+          client &&
+          file.endsWith(current.suffix) &&
+          current.dirs.has(dirname(file))
+        ) {
+          result = (await waitingForSheets(result ?? code, file)) ?? result;
+        }
+        return result === undefined ? undefined : {code: result, map: null};
       },
     },
 

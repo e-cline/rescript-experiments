@@ -1,4 +1,9 @@
-/*** A file-level entrypoint, using the shared module, and a class of `Theme`'s. */
+/***
+A file-level entrypoint, using the shared module, and a class of `Theme`'s. `Popover` is loaded only
+through `import()`, so it's in a chunk of its own.
+*/
+
+let popover = () => import(Popover.view)
 
 @weft.component({kind: Entrypoint})
 let make = (~count: int) =>

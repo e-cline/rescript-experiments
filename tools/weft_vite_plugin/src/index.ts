@@ -104,6 +104,7 @@ export function weft(options: Options): Plugin[] {
 
   const css = cssPlugin({
     importSheets: false,
+    serverEnvironment,
     scanned: () => scanned,
     rescan,
     onChange: invalidateAssets,

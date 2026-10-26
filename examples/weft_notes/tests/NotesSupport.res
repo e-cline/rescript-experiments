@@ -103,6 +103,28 @@ let waiterFor = async (app, gate) =>
   ->Option.getOrThrow(~message=`nothing is waiting on ${gate}`)
 
 let text = (page, selector) => page->WeftTesting.textOf(selector)->Option.getOr("")
+
+/**
+The error a field's control is invalid with, as assistive technology finds it: the last of the
+elements its `aria-describedby` names, once it's `aria-invalid` (`None` while it isn't).
+*/
+let fieldError = (page, selector) =>
+  page
+  ->WeftTesting.query(selector)
+  ->Option.flatMap(control => {
+    let attribute = name => WeftDom.Dom.getAttribute(control, name)->Nullable.toOption
+    switch (attribute("aria-invalid"), attribute("aria-describedby")) {
+    | (Some("true"), Some(ids)) =>
+      ids
+      ->String.split(" ")
+      ->Array.at(-1)
+      ->Option.flatMap(id => page->WeftTesting.textOf(`[id="${id}"]`))
+    | _ => None
+    }
+  })
+
+/** A form's own error, at its top (an alert): what isn't about one of its fields. */
+let formError = (page, form) => page->WeftTesting.textOf(`[data-id=${form}] > [role=alert]`)
 let has = WeftTesting.has
 let likes = (app, ~noteId) =>
   app

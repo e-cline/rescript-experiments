@@ -6,8 +6,8 @@ development.
 
 @weft.component({kind: Entrypoint})
 let make = () =>
-  <span dataId="today" className=Theme.secondary>
+  <WeftUi.Text as_=#span tone=#muted size=#sm dataId="today">
     {WeftDom.Jsx.string(
       Date.fromTime(Date.now())->Date.toISOString->String.slice(~start=0, ~end=10),
     )}
-  </span>
+  </WeftUi.Text>

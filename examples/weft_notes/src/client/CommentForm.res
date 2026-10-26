@@ -1,41 +1,24 @@
 /***
 Posts a comment (the `notes.addComment` RPC), then fetches the page again to show it. The author
-stays filled in; the text is cleared. If the RPC says no (an empty comment, which never leaves the
-browser, or one the server refuses), it says why. The comment's input is described by a hint, linked
-by an ID from `useId` (the same in the server's HTML as once hydrated).
+stays filled in; the text is cleared. If the RPC says no, it says why: about the comment (empty,
+which never leaves the browser, or too long, which the server checks again) on the comment's field,
+anything else (the note's gone) at the form's top. The comment's hint describes its input, linked by
+an ID from `useId` (the same in the server's HTML as once hydrated).
 */
 
-open WeftCss
+module Ui = WeftUi
 
-module Styles = {
-  let form = Css.class({
-    display: Grid,
-    gridTemplateColumns: "minmax(8rem, 1fr) 3fr auto",
-    gap: Px(8),
-    alignItems: Center,
-    media: [Css.media(~query="(max-width: 560px)", {gridTemplateColumns: "1fr"})],
-  })
-  /** The hint and the error: under the fields, across the row. */
-  let note = Css.class({gridColumn: "1 / -1", margin: Zero})
-  let post = Css.class({
-    backgroundColor: Var(Theme.accent),
-    borderColor: Var(Theme.accent),
-    color: Named("white"),
-    hover: Css.style({opacity: 0.9}),
-  })
-}
+/** What the RPC said no with: about the comment itself, or about the form as a whole. */
+type error = Comment(string) | Form(string)
 
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string) => {
   let (author, setAuthor) = Weft.Hooks.useState(() => "")
   let (text, setText) = Weft.Hooks.useState(() => "")
   let (error, setError) = Weft.Hooks.useState(() => None)
-  let hintId = Weft.Hooks.useId()
   let navigation = WeftServer.Navigation.useNavigation()
   let addComment = WeftServer.Rpc.use(Api.addComment)
-  let submit = event => {
-    WeftDom.Dom.Event.preventDefault(event)
-
+  let submit = () =>
     (
       async () => {
         switch await addComment({noteId, author, text}) {
@@ -43,37 +26,48 @@ let make = (~noteId: string) => {
           setError(_ => None)
           setText(_ => "")
           await navigation->WeftServer.Navigation.refresh
-        | Error(error) => setError(_ => Some(Api.describe(error)))
+        | Error(Rejected(EmptyComment | TooLong) as error) =>
+          setError(_ => Some(Comment(Api.describe(error))))
+        | Error(error) => setError(_ => Some(Form(Api.describe(error))))
         }
       }
     )()->ignore
-  }
-  <form dataId="comment-form" className=Styles.form onSubmit=submit>
-    <input
-      dataId="comment-author"
-      ariaLabel="Name"
-      value=author
-      onInput={event => setAuthor(_ => WeftDom.Dom.Event.targetValue(event))}
-    />
-    <input
-      dataId="comment-text"
-      ariaLabel="Comment"
-      ariaDescribedby=hintId
-      value=text
-      onInput={event => setText(_ => WeftDom.Dom.Event.targetValue(event))}
-    />
-    <button dataId="post-comment" className=Styles.post type_="submit">
-      {WeftDom.Jsx.string("Post")}
-    </button>
-    <p id=hintId className={Css.cx([Styles.note, Theme.secondary])}>
-      {WeftDom.Jsx.string(`At most ${Int.toString(Api.maxLength)} characters.`)}
-    </p>
-    {switch error {
-    | Some(message) =>
-      <p dataId="comment-error" className={Css.cx([Styles.note, Theme.error])} role="alert">
-        {WeftDom.Jsx.string(message)}
-      </p>
-    | None => WeftDom.Jsx.null
+  <Ui.Form
+    dataId="comment-form"
+    onSubmit=submit
+    error=?{switch error {
+    | Some(Form(message)) => Some(message)
+    | _ => None
     }}
-  </form>
+  >
+    <Ui.Grid template="minmax(8rem, 1fr) 3fr" stackBelow=#sm>
+      <Ui.Field label="Name">
+        <Ui.Input
+          dataId="comment-author"
+          value=author
+          autoComplete="name"
+          onInput={event => setAuthor(_ => WeftDom.Dom.Event.targetValue(event))}
+        />
+      </Ui.Field>
+      <Ui.Field
+        label="Comment"
+        description={`At most ${Int.toString(Api.maxLength)} characters.`}
+        error=?{switch error {
+        | Some(Comment(message)) => Some(message)
+        | _ => None
+        }}
+      >
+        <Ui.Input
+          dataId="comment-text"
+          value=text
+          onInput={event => setText(_ => WeftDom.Dom.Event.targetValue(event))}
+        />
+      </Ui.Field>
+    </Ui.Grid>
+    <Ui.Stack direction=#row>
+      <Ui.Button dataId="post-comment" variant=#primary type_=#submit>
+        {WeftDom.Jsx.string("Post")}
+      </Ui.Button>
+    </Ui.Stack>
+  </Ui.Form>
 }

@@ -5,28 +5,25 @@
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
+import * as Form$WeftUi from "@e-cline/weft_ui/src/Form.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Input$WeftUi from "@e-cline/weft_ui/src/Input.res.js";
 import * as Api$WeftNotes from "../shared/Api.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
-import * as Theme$WeftNotes from "../shared/Theme.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigation.res.js";
 
-let editor = Css$WeftCss.Internal.class_("NoteEditor-Styles-editor_winrdc3", undefined, () => ({
+let row = Css$WeftCss.Internal.class_("NoteEditor-Styles-row_winrdc3", undefined, () => ({
   display: "flex",
   gap: {
     TAG: "Px",
     _0: 8
   },
   flexWrap: "wrap",
-  alignItems: "center"
-}));
-
-let saved = Css$WeftCss.Internal.class_("NoteEditor-Styles-saved_winrdc3", undefined, () => ({
-  flexBasis: {
-    TAG: "Pct",
-    _0: 100
-  }
+  alignItems: "end"
 }));
 
 let input = Css$WeftCss.Internal.class_("NoteEditor-Styles-input_winrdc3", undefined, () => ({
@@ -34,8 +31,7 @@ let input = Css$WeftCss.Internal.class_("NoteEditor-Styles-input_winrdc3", undef
 }));
 
 let Styles = {
-  editor: editor,
-  saved: saved,
+  row: row,
   input: input
 };
 
@@ -48,10 +44,9 @@ function NoteEditor(props) {
   let match$1 = Hooks$Weft.useState(() => {});
   let setError = match$1[1];
   let error = match$1[0];
-  let saved$1 = Navigation$WeftServer.useRefetchable(`/notes/` + noteId + `/title`, props.children);
+  let saved = Navigation$WeftServer.useRefetchable(`/notes/` + noteId + `/title`, props.children);
   let saveTitle = Rpc$WeftServer.use(Api$WeftNotes.saveTitle, undefined);
-  let save = event => {
-    event.preventDefault();
+  let save = () => {
     (async () => {
       let error = await saveTitle({
         noteId: noteId,
@@ -59,49 +54,86 @@ function NoteEditor(props) {
       });
       if (error.TAG === "Ok") {
         setError(param => {});
-        return await saved$1.refetch(undefined);
+        return await saved.refetch(undefined);
       }
       let error$1 = error._0;
-      return setError(param => Api$WeftNotes.describe(error$1));
+      switch (error$1.TAG) {
+        case "Rejected" :
+          let exit = 0;
+          switch (error$1._0) {
+            case "EmptyTitle" :
+            case "TooLong" :
+              exit = 2;
+              break;
+            case "EmptyComment" :
+            case "NoSuchNote" :
+              break;
+          }
+          if (exit === 2) {
+            return setError(param => ({
+              TAG: "Title",
+              _0: Api$WeftNotes.describe(error$1)
+            }));
+          }
+          break;
+        case "Invalid" :
+        case "Failed" :
+          break;
+      }
+      return setError(param => ({
+        TAG: "Form",
+        _0: Api$WeftNotes.describe(error$1)
+      }));
     })();
   };
-  return Jsx$WeftDom.Elements.jsxs("form", {
-    className: editor,
-    "data-id": "editor",
+  let tmp;
+  tmp = error !== undefined && error.TAG !== "Title" ? error._0 : undefined;
+  let tmp$1;
+  tmp$1 = error !== undefined && error.TAG === "Title" ? error._0 : undefined;
+  return Jsx$WeftDom.jsxs(Form$WeftUi.make, {
     onSubmit: save,
+    error: tmp,
+    dataId: "editor",
     children: [
       Jsx$WeftDom.Elements.jsx("div", {
-        className: saved,
-        children: saved$1.element
+        "aria-busy": saved.isPending ? "true" : "false",
+        children: saved.element
       }),
-      Jsx$WeftDom.Elements.jsx("input", {
-        className: input,
-        "aria-label": "Title",
-        "data-id": "title-input",
-        value: draft,
-        onInput: event => setDraft(param => Dom$WeftDom.Event.targetValue(event))
-      }),
-      Jsx$WeftDom.Elements.jsx("button", {
-        "data-id": "save",
-        type: "submit",
-        children: saved$1.isPending ? "Saving…" : "Save"
-      }),
-      error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          className: Theme$WeftNotes.error,
-          role: "alert",
-          "data-id": "title-error",
-          children: error
-        }) : Jsx$WeftDom.$$null
+      Jsx$WeftDom.Elements.jsxs("div", {
+        className: row,
+        children: [
+          Jsx$WeftDom.jsx(Field$WeftUi.make, {
+            label: "Title",
+            hideLabel: true,
+            error: tmp$1,
+            className: input,
+            children: Jsx$WeftDom.jsx(Input$WeftUi.make, {
+              value: draft,
+              onInput: event => setDraft(param => Dom$WeftDom.Event.targetValue(event)),
+              dataId: "title-input"
+            })
+          }),
+          Jsx$WeftDom.jsx(Button$WeftUi.make, {
+            type_: "submit",
+            busy: saved.isPending,
+            dataId: "save",
+            children: Primitive_option.some(saved.isPending ? "Saving…" : "Save")
+          })
+        ]
+      })
     ]
   });
 }
 
 Entrypoint$Weft.mark(NoteEditor, "@e-cline/weft_notes_example/src/client/NoteEditor.res#");
 
+let Ui;
+
 let make = NoteEditor;
 
 export {
+  Ui,
   Styles,
   make,
 }
-/* editor Not a pure module */
+/* row Not a pure module */

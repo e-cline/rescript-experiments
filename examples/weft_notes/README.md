@@ -27,10 +27,15 @@ things only a browser can show, in Chromium.
   links that `navigate` in place.
 - `Today`, an entrypoint showing the date by the clock where it renders: the server's in the HTML,
   then the browser's (a mismatch, if they disagree, that hydration patches).
-- Styles with [`weft_css`](../../packages/weft_css): the colours, as CSS variables, the page's own
-  rules and shared looks in [`src/shared/Theme.res`](src/shared/Theme.res), and each component's
-  beside it. Each page is sent the stylesheets of what it renders (the list's in its head, a note's
-  comment form's when it's opened); the pages' styles, server-only, reach the client only as CSS.
+- Its look is [`weft_ui`](../../packages/weft_ui)'s components (a container, stacks, headings,
+  lists, a form whose fields label and describe their inputs, buttons, an alert for the error box,
+  chips for related notes), in the notes' colours: [`src/shared/Theme.res`](src/shared/Theme.res)
+  sets weft_ui's tokens on the page's outermost element. What's left of the notes' own styles (the
+  page's frame, the note's body) is in [`weft_css`](../../packages/weft_css), beside the components.
+  Each page is sent the stylesheets of what it renders (the list's in its head, a note's comment
+  form's when it's opened); the pages' styles, server-only, reach the client only as CSS.
+- A refused comment or title says why on its own field (an empty or too long one), linked to its
+  input as its error, or at the form's top (anything else: the note's gone).
 
 Every page is rendered on the server first, and hydrated in the browser.
 

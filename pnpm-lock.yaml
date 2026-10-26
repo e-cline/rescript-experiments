@@ -537,6 +537,9 @@ importers:
       '@e-cline/weft_server':
         specifier: workspace:*
         version: link:../../packages/weft_server
+      '@e-cline/weft_ui':
+        specifier: workspace:*
+        version: link:../../packages/weft_ui
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1

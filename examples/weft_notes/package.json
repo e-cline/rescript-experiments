@@ -10,6 +10,7 @@
     "@e-cline/weft_css": "workspace:*",
     "@e-cline/weft_dom": "workspace:*",
     "@e-cline/weft_server": "workspace:*",
+    "@e-cline/weft_ui": "workspace:*",
     "@rescript/runtime": "catalog:",
     "@rescript/webapi": "catalog:"
   },

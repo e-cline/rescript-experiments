@@ -1,10 +1,10 @@
 # @e-cline/weft_ui
 
-Accessible, styled UI components for [Weft](../weft): layout, text, cards, tables, buttons, and (as
-the [plan](../../docs/weft_ui_plan.md)'s phases land) forms, dialogs, menus, tabs, toasts and a
-combobox. They're styled with [`weft_css`](../weft_css), so a page is sent only the stylesheets of
-the components it renders, and each can be restyled through theme tokens, variant props, `className`
-and state attributes.
+Accessible, styled UI components for [Weft](../weft): layout, text, cards, tables, buttons, forms
+and toggles, and (as the [plan](../../docs/weft_ui_plan.md)'s phases land) dialogs, menus, tabs,
+toasts and a combobox. They're styled with [`weft_css`](../weft_css), so a page is sent only the
+stylesheets of the components it renders, and each can be restyled through theme tokens, variant
+props, `className` and state attributes.
 
 ```rescript
 module Ui = WeftUi
@@ -37,9 +37,12 @@ sent like your own.
   Container, Separator, Heading, Text, Link, VisuallyHidden, Card, Alert, Badge, EmptyState, Table,
   List, DescriptionList, Breadcrumbs, Steps, Spinner, Skeleton, Button and IconButton. Event
   handlers (`onClick`) are optional, and work once they're inside an entrypoint.
-- **Interactive** components (forms, overlays, tabs, the combobox; later phases) keep state, so they
-  render inside an entrypoint's tree. A few also come as ready-made entrypoints, for a server
-  component to use as they are.
+- **Interactive** components keep state, or read a context, so they render inside an entrypoint's
+  tree: Field, Fieldset, Form, Input, Textarea, Select, Checkbox, RadioGroup, Switch, NumberField,
+  Toggle and ToggleGroup (and, in later phases, the overlays, tabs and the combobox). Their state is
+  controlled (`value` and `onValueChange`, `checked` and `onCheckedChange`, ...) or, without it,
+  their own (from `defaultValue`). A few also come as ready-made entrypoints, for a server component
+  to use as they are.
 
 Each module's doc comment says which it is.
 

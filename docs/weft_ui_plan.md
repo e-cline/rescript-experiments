@@ -26,10 +26,10 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phases 0 and 1 are done, on the branch
-`claude/weft-base-ui-components-c99930`. Phase 0's findings are under "Phase 0: what the spikes
-found", and phase 1's notes under "Phase 1: as built", both after Phases. The design below is
-already corrected by them. Phase 2 (forms) is next.
+Reviewed. The questions are settled (Decisions). Phases 0 to 2 are done, on the branch
+`claude/weft-base-ui-components-c99930`. Phase 0's findings and the notes on phases 1 and 2 ("as
+built") are after Phases. The design below is already corrected by them. Phase 3 (`weft_notes`
+migrated) is next.
 
 ## What was checked before writing this
 
@@ -644,6 +644,50 @@ A commit each:
     drew a line under its last item.
   - **Code samples** beside the examples are phase 7's.
 - The whole workspace's tests pass, and `pnpm check` is clean.
+
+### Phase 2: as built
+
+A commit each:
+
+- **`weft_dom`: `noValidate`** (c9e44ea), so a `Form` shows its page's own errors rather than the
+  browser's bubbles.
+- **`weft_dom`: controlled radio buttons** (68eade2). Clicking a radio button unchecks the others in
+  its group with no event of their own. So a controlled group whose state ignored the click ended
+  with nothing checked: only the clicked button's `checked` was put back. Now, after an event, the
+  others with its name in its form get theirs back too, as React does. `RadioGroup`'s tests found
+  it, and a `weft_dom` test fails without the fix.
+- **`weft_css`: the logical corners' radii** (dfebba0), for `NumberField`'s buttons and input joined
+  into one control, right in either direction.
+- **`weft_ui`: the forms and toggles** (c51041c). The design followed §4 and §6; what it settled:
+  - **`Field` takes its label, description and error as props** (`label`, `description`, `error`),
+    not as parts. So it knows, as it renders, which of them exist for the control's
+    `aria-describedby`, on the server as on the client, with nothing registered after mounting.
+  - **An error makes the control invalid.** `error` set means `aria-invalid`, and its region (a
+    polite live region, always there and empty without an error) is added to the control's
+    `aria-describedby`.
+  - **The controls read the field from a context** (`internal/FieldContext`): its `id`, what
+    describes it, invalid, required, disabled. A control's own props win over the field's.
+  - **`Checkbox`, `Switch` and `RadioGroup` are the platform's inputs.** The checkbox and radios are
+    in the accent colour (`accent-color`). The switch is a checkbox with `role="switch"`, its track
+    the input itself and its thumb a background that slides. Their `dataId` is the input's.
+  - **The control and its label line up.** These controls take the label's font, so they sit centred
+    on the first line of their label (inputs default to a smaller font, which put them off by a
+    pixel or two: seen in the screenshots).
+  - **`NumberField` commits on blur or Enter.** What's typed is a draft until then; a number is kept
+    in bounds, and anything else is put back. The −/+ buttons are out of the tab order (the arrow
+    keys do the same) and disabled at the ends.
+  - **`Fieldset` has no `aria-invalid`**, which isn't allowed on a group. Its error describes it.
+    Its items are in a box of their own, so an empty error region adds no gap.
+  - **`ToggleGroup` is one Tab stop**: the pressed item, or the one focused last. While nothing's
+    pressed or focused, every item is one. The arrow keys move through the enabled items
+    (`internal/Roving`, which tabs and menus will share), and Home and End go to the ends.
+  - **Controlled or uncontrolled state** comes from `internal/Controllable`.
+  - **Tests**: 25 more, in jsdom.
+- **`weft_ui_gallery`: the forms page** (6719ef2): a sign-up form that checks itself, every control
+  in its states, and its harness test filling the form in after submitting it empty. Checked by eye
+  in Chromium. That found the choices' alignment, a gap under a fieldset, and a two-field grid
+  leaving a column empty.
+- The whole workspace's tests pass. `pnpm check` has only the plugin's three earlier warnings.
 
 ## Decisions
 

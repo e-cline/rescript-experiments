@@ -26,10 +26,10 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phases 0 to 4 are done, on the branch
-`claude/weft-base-ui-components-c99930`. Phase 0's findings and the notes on phases 1 to 4 ("as
-built") are after Phases. The design below is already corrected by them. Phase 5 (tabs, accordion,
-collapsible, combobox) is next.
+Reviewed. The questions are settled (Decisions). Phases 0 to 5 are done, on the branch
+`claude/weft-base-ui-components-c99930`: every v1 component is built. Phase 0's findings and the
+notes on phases 1 to 5 ("as built") are after Phases. The design below is already corrected by them.
+Phase 6 (`weft_shop` migrated, axe in the e2e suites) is next.
 
 ## What was checked before writing this
 
@@ -783,6 +783,49 @@ A commit each:
   - Nothing logged.
 - The whole workspace's tests pass, and `pnpm check` is clean but for the plugin's three earlier
   warnings.
+
+### Phase 5: as built
+
+A commit each:
+
+- **Tabs, Accordion, Collapsible, Combobox and `TabsEntry`** (e3f6500):
+  - **`Tabs`** follows the ARIA tabs pattern, with `Roving` for the keyboard and every panel kept
+    mounted (`hidden`), as the shop's tabs need. Its `activation` is `#automatic` (the arrows
+    select) or `#manual`, and its look is `#underline` or `#pills`. A tab's `value` is its button's
+    `value` attribute, so the keyboard handler can read which tab it moved to.
+  - **Without a `defaultValue`, `Tabs` selects the first tab once it's in the page**, in a layout
+    effect, so the server's HTML shows no panel. The docs say to give a `defaultValue`. `TabsEntry`
+    always does.
+  - **`Accordion` and `Collapsible` are static**, on `<details>` and `<summary>`. That means an
+    accordion's exclusivity can't come from a context: it's the browser's own (items sharing a
+    `name`), and each item takes the `name`. They aren't controlled yet (Not in v1).
+  - **`Combobox` leaves the text and the suggestions to the app**, which renders its `Popup` only
+    while there's something to show (suggestions, or an `Empty`). The popup says so as it mounts, so
+    the input's `aria-expanded` is true only while there's a popup to see.
+  - **The combobox's keyboard:** the highlighted option is the input's `aria-activedescendant` (and
+    its `aria-selected`). Enter chooses by clicking it, so the item's `onSelect` and the root's both
+    run. With nothing highlighted, Enter is left to the form. A press in the popup doesn't take the
+    focus from the input.
+  - **Not done:**
+    - The combobox's popup isn't as wide as its input (`anchor-size()` is too new to rely on).
+    - Escape doesn't clear the input's text (it's the app's).
+    - There's no inline autocompletion (`aria-autocomplete="both"`).
+  - **jsdom has no `scrollIntoView`**, which the combobox calls on the option it highlights, so the
+    shim makes it do nothing.
+  - **Tests**: 11 more, in jsdom (77 in all).
+- **The gallery's disclosure and search pages** (bfb5776). `TabsEntry`, an accordion and a
+  collapsible are rendered by the page's server component; vertical manual tabs and a fruit combobox
+  are gallery entrypoints. Its harness tests switch the server's tabs and choose from the combobox
+  (16 in all).
+- **Checked in Chromium, Firefox and WebKit:**
+  - **Tabs**: the arrows move and select, End goes to the last tab, and Tab goes into the panel.
+  - **Manual tabs**: the arrows only move (past the disabled tab), and Enter selects.
+  - **Accordion**: opening one item closes the open one.
+  - **Combobox**: its popup is 4px under the input, the arrows highlight with the focus kept in the
+    input, Enter chooses (filling the input, and closing), its `Empty` shows, Escape closes, and a
+    click chooses.
+  - Nothing logged.
+- The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
 
 ## Decisions
 

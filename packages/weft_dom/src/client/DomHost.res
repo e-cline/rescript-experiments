@@ -61,8 +61,21 @@ let tableOf = (element, get, set) =>
 
 let isNothing = (value: unknown) => Nullable.isNullable(unknownToNullable(value))
 
-/** Puts back a controlled `value` or `checked` an event changed but the component didn't. */
-let restoreControlledState = (element: Dom.element) =>
+/**
+The other radio buttons in `radio`'s group (the same `name`, in the same form, or in no form in the
+same document): checking one unchecks them, with no event of their own.
+*/
+let otherRadios: Dom.element => array<Dom.element> = %raw(`radio => {
+  if (radio.localName !== "input" || radio.type !== "radio" || !radio.name) return [];
+  const scope = radio.form ?? radio.getRootNode();
+  if (!scope.querySelectorAll) return [];
+  return [...scope.querySelectorAll('input[type="radio"]')].filter(
+    other => other !== radio && other.name === radio.name && other.form === radio.form,
+  );
+}`)
+
+/** Puts back `element`'s own controlled `value` or `checked`, if an event changed it. */
+let restoreOwnState = (element: Dom.element) =>
   switch Nullable.toOption(storedProps(element)) {
   | Some(props) =>
     switch props.value {
@@ -77,6 +90,13 @@ let restoreControlledState = (element: Dom.element) =>
     }
   | None => ()
   }
+
+/** Puts back a controlled `value` or `checked` an event changed but the component didn't. */
+let restoreControlledState = (element: Dom.element) => {
+  restoreOwnState(element)
+  // Checking a radio button unchecked the one its group's state says is checked: put that back too.
+  otherRadios(element)->Array.forEach(restoreOwnState)
+}
 
 let isEventProp = DomProps.isEventProp
 let eventName = DomProps.eventName

@@ -227,6 +227,36 @@ describe("Events", () => {
       ->Jsx.array}
     </select>
 
+  test("controlled radio buttons keep the one their state checks, whichever is clicked", t => {
+    let clicked = ref(None)
+    let (container, _) = mount(
+      <div>
+        {["a", "b", "c"]
+        ->Array.map(
+          value =>
+            <input
+              key=value
+              id=value
+              type_="radio"
+              name="choice"
+              checked={value == "b"}
+              onChange={_ => clicked := Some(value)}
+            />,
+        )
+        ->Jsx.array}
+      </div>,
+    )
+    Dom.click(find(container, "#a"))
+    t->expect(clicked.contents)->Expect.toEqual(Some("a"))
+    t
+    ->expect(
+      ["a", "b", "c"]->Array.map(
+        id => toBool(Dom.getProperty(find(container, `#${id}`), "checked")),
+      ),
+    )
+    ->Expect.toEqual([false, true, false])
+  })
+
   test("a select's value picks its option once the option is there", t => {
     let (container, root) = mount(select(~value="b", ["b"]))
     // The value changes first, to an option that isn't there yet...

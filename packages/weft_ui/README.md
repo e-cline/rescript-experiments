@@ -44,7 +44,7 @@ sent like your own.
   or, without it, their own (from `defaultValue`, `defaultOpen`).
 - **Ready-made entrypoints**, for a server component to render as they are, with data props and
   state of their own: `TabsEntry`, `DialogEntry`, `DrawerEntry`, `PopoverEntry` and `ToastViewport`
-  (render it once; client code calls `Toast.add`).
+  (render it once; client code calls `Toast.add`, and tests `Toast.clear` between them).
 
 Each module's doc comment says which it is.
 

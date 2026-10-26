@@ -87,6 +87,9 @@ let add = (
 let dismiss = (~manager=defaultManager, id) =>
   update(manager, manager.toasts->Array.filter(toast => toast.id != id))
 
+/** Takes every toast away (a page's own toasts, between tests). */
+let clear = (~manager=defaultManager, ()) => update(manager, [])
+
 /** The toasts `manager` has now, in a component (rendering again when they change). */
 let useToasts = manager =>
   Weft.Hooks.useSyncExternalStore(

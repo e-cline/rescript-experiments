@@ -62,6 +62,11 @@ function dismiss(managerOpt, id) {
   update(manager, manager.toasts.filter(toast => toast.id !== id));
 }
 
+function clear(managerOpt, param) {
+  let manager = managerOpt !== undefined ? managerOpt : defaultManager;
+  update(manager, []);
+}
+
 function useToasts(manager) {
   return Hooks$Weft.useSyncExternalStore(manager.subscribe, () => manager.toasts, () => []);
 }
@@ -393,6 +398,7 @@ export {
   update,
   add,
   dismiss,
+  clear,
   useToasts,
   Styles,
   Item,

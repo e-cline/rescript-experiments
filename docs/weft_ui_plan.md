@@ -26,10 +26,11 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phases 0 to 6 are done, on the branch
-`claude/weft-base-ui-components-c99930`: every v1 component is built, and both demo apps are on
-them. Phase 0's findings and the notes on phases 1 to 6 ("as built") are after Phases. The design
-below is already corrected by them. Phase 7 (READMEs, changesets, the gallery finished) is next.
+Reviewed. The questions are settled (Decisions). Every phase (0 to 7) is done, on the branch
+`claude/weft-base-ui-components-c99930`: every v1 component is built, both demo apps are on them,
+and the READMEs, changesets and gallery are finished. Phase 0's findings and the notes on phases 1
+to 7 ("as built") are after Phases. The design below is already corrected by them. What's left is
+the PR (the branch is to be brought up to date with `main` first, which has had PR #16 since).
 
 ## What was checked before writing this
 
@@ -878,8 +879,36 @@ A commit each:
   - **A check that axe checks:** run against a page with an unlabelled button and pale text, it
     reported `button-name` and `color-contrast`.
   - axe found nothing on any page once they were waited for.
-  - **Counts** of each whole browser suite, in Chromium, Firefox and WebKit: the shop 26, the notes
-    12, the gallery 57.
+  - **Counts** of each whole browser suite: the shop 26 and the notes 12 (their axe tests in
+    Chromium), the gallery 57 (all of it in Chromium, Firefox and WebKit).
+- The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
+
+### Phase 7: as built
+
+A commit each:
+
+- **weft_ui's README and changeset** (eb13cc4). The README gains the tokens, and a reference to
+  every component: its kind (static, interactive or ready-made entrypoint), its parts and their
+  props with their defaults, and the keyboard for each composite widget (toggle groups, number
+  fields, dialogs, popovers, menus, tooltips, toasts, tabs, the combobox). The changeset
+  (`.changeset/weft-ui.md`) introduces the package. The framework's changes already had theirs
+  (`weft-css-ui-properties`, `weft-dom-widget-props`, `weft-dom-controlled-radios`).
+- **The other READMEs** (0be27e5): weft_ui in the root's package list, the shop's on weft_ui (its
+  drawer and dialog no longer portals), and both apps' axe tests.
+- **The gallery finished** (60df3bf):
+  - **Code samples:** each of its 51 examples shows the gist of its code under its frame, with the
+    gallery's own helpers and data left out. They're written by hand, so a change to an example
+    needs its sample changed too.
+  - **The theme switcher**, a `ToggleGroup` in the header: weft_ui's defaults, weft_notes' palette
+    or weft_shop's. Each palette is a class setting the tokens, in the same file as the class every
+    page renders, so every page is sent them (§5). Picking one puts its class on the outermost
+    element at once and sets a cookie, from which the server renders the next page, navigated to or
+    reloaded, so there's no flash of the default.
+  - **Tests:** a harness test (17 in all) for the switcher; in the browsers (78), the switcher kept
+    across a navigation and a reload, and axe on the surfaces, forms and actions pages in each app's
+    palette, which found nothing.
+  - **A flaky check:** the menu's test read the focus once, just after the menu showed, and the
+    focus can move a frame later. The gallery's focus checks now retry (`expect.poll`).
 - The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
 
 ## Decisions

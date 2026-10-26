@@ -24,5 +24,12 @@ export default makeRescriptLibConfig({
       dependsOn: ['build'],
       cache: false,
     },
+    // The browser tests (`e2e/`), against the build: they need Chromium, Firefox and WebKit
+    // (`playwright install`).
+    e2e: {
+      command: 'playwright test -c e2e/playwright.config.ts',
+      dependsOn: ['build'],
+      cache: false,
+    },
   },
 });

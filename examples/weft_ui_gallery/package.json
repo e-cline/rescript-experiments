@@ -15,8 +15,10 @@
     "@rescript/webapi": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@e-cline/ppx_weft": "workspace:*",
     "@e-cline/weft_vite_plugin": "workspace:*",
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "jsdom": "catalog:",
     "rescript": "catalog:",

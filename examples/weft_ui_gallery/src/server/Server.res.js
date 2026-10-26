@@ -12,6 +12,7 @@ import * as RequestContext$Servy from "@e-cline/servy/src/RequestContext.res.js"
 import * as DataPage$WeftUiGallery from "./DataPage.res.js";
 import * as HomePage$WeftUiGallery from "./HomePage.res.js";
 import * as TextPage$WeftUiGallery from "./TextPage.res.js";
+import * as FormsPage$WeftUiGallery from "./FormsPage.res.js";
 import * as LayoutPage$WeftUiGallery from "./LayoutPage.res.js";
 import * as ActionsPage$WeftUiGallery from "./ActionsPage.res.js";
 import * as SurfacesPage$WeftUiGallery from "./SurfacesPage.res.js";
@@ -25,6 +26,10 @@ function groupPage(group) {
   switch (match) {
     case "data" :
       return Jsx$WeftDom.jsx(DataPage$WeftUiGallery.make, {
+        group: group
+      });
+    case "forms" :
+      return Jsx$WeftDom.jsx(FormsPage$WeftUiGallery.make, {
         group: group
       });
     case "layout" :

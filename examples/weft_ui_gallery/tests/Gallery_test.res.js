@@ -42,6 +42,10 @@ let pages = [
     "Data"
   ],
   [
+    "/forms",
+    "Forms"
+  ],
+  [
     "/actions",
     "Actions and status"
   ]
@@ -80,6 +84,21 @@ Vitest.describe("the gallery", undefined, undefined, undefined, undefined, undef
     await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=save-demo]") === "Saving…");
     t.expect(Stdlib_Option.flatMap(WeftTesting.query(page, "[data-id=save-demo]"), button => Primitive_option.fromNullable(button.getAttribute("aria-disabled")))).toEqual("true");
     return await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=save-demo-status]") === "Saved");
+  });
+  Vitest.testAsync("the sign-up form shows each field's error, then signs up once they're fixed", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = WeftTesting.open_(app$1(), GallerySupport$WeftUiGallery.rootElement(), undefined, undefined, "/forms");
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.has(page, "[data-id=signup]"));
+    await WeftTesting.hydrated(page, undefined);
+    WeftTesting.click(page, "[data-id=signup-submit]");
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.has(page, "[data-id=signup] [role=alert]"));
+    let invalid = Stdlib_Option.flatMap(WeftTesting.query(page, "[data-id=signup-email]"), input => Primitive_option.fromNullable(input.getAttribute("aria-invalid")));
+    t.expect(invalid).toEqual("true");
+    t.expect(WeftTesting.html(page).includes("Enter your name.")).toBe(true);
+    WeftTesting.input(page, "[data-id=signup-name]", "Ada");
+    WeftTesting.input(page, "[data-id=signup-email]", "ada@example.com");
+    WeftTesting.click(page, "[data-id=signup-terms]");
+    WeftTesting.click(page, "[data-id=signup-submit]");
+    return await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=signup-done]").includes("Welcome, Ada"));
   });
 });
 

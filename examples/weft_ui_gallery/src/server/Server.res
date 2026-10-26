@@ -20,6 +20,7 @@ let groupPage = (group: Groups.group) =>
   | "text" => <TextPage group />
   | "surfaces" => <SurfacesPage group />
   | "data" => <DataPage group />
+  | "forms" => <FormsPage group />
   | _ => <ActionsPage group />
   }
 

@@ -18,6 +18,7 @@ let pages = [
   ("/text", "Text"),
   ("/surfaces", "Surfaces"),
   ("/data", "Data"),
+  ("/forms", "Forms"),
   ("/actions", "Actions and status"),
 ]
 
@@ -63,4 +64,30 @@ describe("the gallery", () => {
     ->Expect.toEqual(Some("true"))
     await page->WeftTesting.waitFor(() => text(page, "[data-id=save-demo-status]") == "Saved")
   })
+
+  testAsync(
+    "the sign-up form shows each field's error, then signs up once they're fixed",
+    async t => {
+      let page = app()->WeftTesting.open_(~container=rootElement(), "/forms")
+      await page->WeftTesting.waitFor(() => page->WeftTesting.has("[data-id=signup]"))
+      await page->WeftTesting.hydrated
+      page->WeftTesting.click("[data-id=signup-submit]")
+      await page->WeftTesting.waitFor(() => page->WeftTesting.has("[data-id=signup] [role=alert]"))
+      let invalid =
+        page
+        ->WeftTesting.query("[data-id=signup-email]")
+        ->Option.flatMap(
+          input => WeftDom.Dom.getAttribute(input, "aria-invalid")->Nullable.toOption,
+        )
+      t->expect(invalid)->Expect.toEqual(Some("true"))
+      t->expect(page->WeftTesting.html->String.includes("Enter your name."))->Expect.toBe(true)
+      page->WeftTesting.input("[data-id=signup-name]", "Ada")
+      page->WeftTesting.input("[data-id=signup-email]", "ada@example.com")
+      page->WeftTesting.click("[data-id=signup-terms]")
+      page->WeftTesting.click("[data-id=signup-submit]")
+      await page->WeftTesting.waitFor(
+        () => text(page, "[data-id=signup-done]")->String.includes("Welcome, Ada"),
+      )
+    },
+  )
 })

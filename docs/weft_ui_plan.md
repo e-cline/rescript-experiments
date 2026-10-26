@@ -978,7 +978,8 @@ What was decided not to build now, and might be wanted later, most likely first:
 1. **Dark mode.** A second set of token values under `prefers-color-scheme: dark`, and a
    `data-theme` attribute to force either. The tokens are named for it (§5), so it needs no
    component changes. It does need a contrast check of every tone in both themes, and the demo apps'
-   palettes in dark versions. The gallery's theme switcher is where it would show first.
+   palettes in dark versions. The gallery's theme switcher is where it would show first. Its plan:
+   [weft_ui_dark_mode_plan.md](weft_ui_dark_mode_plan.md).
 2. **`useId` and `useContext` in server renders** (`weft_server`). Interactive components could then
    render their initial HTML from server components, which would remove most of the need for
    ready-made entrypoints.

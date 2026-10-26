@@ -13,6 +13,9 @@ let make = (~group: Groups.group) =>
     >
       <Specimen.Example
         caption="DialogEntry, rendered by this server component, its content the server's"
+        code={`<DialogEntry trigger={text("Size guide")} title="Sizes" description="Measured flat.">
+  <SizeTable />
+</DialogEntry>`}
       >
         <Ui.DialogEntry
           trigger={text("Size guide")}
@@ -45,14 +48,31 @@ let make = (~group: Groups.group) =>
       name="AlertDialog"
       summary="A decision that matters: a click outside doesn't close it, and the focus starts on the safe choice."
     >
-      <Specimen.Example caption="Cancel first; deleting adds a toast">
+      <Specimen.Example
+        caption="Cancel first; deleting adds a toast"
+        code={`<AlertDialog.Root>
+  <AlertDialog.Trigger variant=#danger> {text("Delete")} </AlertDialog.Trigger>
+  <AlertDialog.Popup>
+    <AlertDialog.Title> {text("Delete this note?")} </AlertDialog.Title>
+    <AlertDialog.Description> {text("It can't be undone.")} </AlertDialog.Description>
+    <Dialog.Footer>
+      <AlertDialog.Cancel> {text("Keep it")} </AlertDialog.Cancel>
+      <AlertDialog.Action variant=#danger onClick=delete> {text("Delete")} </AlertDialog.Action>
+    </Dialog.Footer>
+  </AlertDialog.Popup>
+</AlertDialog.Root>`}
+      >
         <OverlayDemos.ConfirmDelete />
       </Specimen.Example>
     </Specimen.Section>
     <Specimen.Section
       name="Drawer" summary="A dialog pinned to a side of the window, its full height."
     >
-      <Specimen.Example caption="DrawerEntry, at the end and at the start">
+      <Specimen.Example
+        caption="DrawerEntry, at the end and at the start"
+        code={`<DrawerEntry trigger={text("Open cart")} title="Your cart"> <CartLines /> </DrawerEntry>
+<DrawerEntry trigger={text("Open filters")} title="Filters" side=#start> ... </DrawerEntry>`}
+      >
         <Ui.Stack direction=#row gap=#sm>
           <Ui.DrawerEntry trigger={text("Open cart")} title="Your cart" dataId="drawer-end">
             <Ui.EmptyState.Root>
@@ -69,7 +89,11 @@ let make = (~group: Groups.group) =>
       name="Popover"
       summary="More beside what opened it: in the top layer, placed against its trigger, flipped when there's no room."
     >
-      <Specimen.Example caption="PopoverEntry, below and to the end">
+      <Specimen.Example
+        caption="PopoverEntry, below and to the end"
+        code={`<PopoverEntry trigger={text("Delivery details")} title="Delivery"> ... </PopoverEntry>
+<PopoverEntry trigger={text("To the end")} side=#end align=#center> ... </PopoverEntry>`}
+      >
         <Ui.Stack direction=#row gap=#sm>
           <Ui.PopoverEntry
             trigger={text("Delivery details")} title="Delivery" dataId="popover-open"
@@ -88,7 +112,21 @@ let make = (~group: Groups.group) =>
       name="Menu"
       summary="Actions and links behind a button: the arrow keys, Home and End, a letter to jump, Escape and Tab to leave."
     >
-      <Specimen.Example caption="Links, actions, a group, a disabled item">
+      <Specimen.Example
+        caption="Links, actions, a group, a disabled item"
+        code={`<Menu.Root>
+  <Menu.Trigger> {text("Account")} </Menu.Trigger>
+  <Menu.Popup>
+    <Menu.LinkItem href="/account" onClick=followLink> {text("Your account")} </Menu.LinkItem>
+    <Menu.Group label="Theme">
+      <Menu.Item onSelect=light> {text("Light")} </Menu.Item>
+      <Menu.Item disabled=true> {text("Dark")} </Menu.Item>
+    </Menu.Group>
+    <Menu.Separator />
+    <Menu.Item onSelect=signOut tone=#danger> {text("Sign out")} </Menu.Item>
+  </Menu.Popup>
+</Menu.Root>`}
+      >
         <OverlayDemos.AccountMenu />
       </Specimen.Example>
     </Specimen.Section>
@@ -96,7 +134,15 @@ let make = (~group: Groups.group) =>
       name="Tooltip"
       summary="A short label on hover or focus: an icon button's name, shown; or a description of a button with text."
     >
-      <Specimen.Example caption="Hover or tab to them">
+      <Specimen.Example
+        caption="Hover or tab to them"
+        code={`<Tooltip.Root content="Save to wishlist">
+  <Tooltip.Trigger label="Save to wishlist" variant=#ghost> {text("♡")} </Tooltip.Trigger>
+</Tooltip.Root>
+<Tooltip.Root content="Saves a copy">
+  <Tooltip.Trigger> {text("Duplicate")} </Tooltip.Trigger>
+</Tooltip.Root>`}
+      >
         <OverlayDemos.Tooltips />
       </Specimen.Example>
     </Specimen.Section>
@@ -106,6 +152,11 @@ let make = (~group: Groups.group) =>
     >
       <Specimen.Example
         caption="Each tone, and one with an action (the viewport is ToastViewport, in the page's frame)"
+        code={`// Once, in the layout:
+<ToastViewport />
+// In client code:
+Toast.add(~title="Added to your cart", ~tone=#success, ())
+Toast.add(~title="Note deleted", ~action=("Undo", undo), ())`}
       >
         <OverlayDemos.Toasts />
       </Specimen.Example>

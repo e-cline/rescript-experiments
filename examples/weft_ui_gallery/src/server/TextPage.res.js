@@ -25,6 +25,8 @@ function TextPage(props) {
         summary: "A heading: its level is its element, its size how big it looks.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Each level, at its own size",
+          code: `<Heading level=#h1> {text("A page's title")} </Heading>
+<Heading level=#h3 size=#xl> {text("An h3 that looks like an h2")} </Heading>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             gap: "sm",
             children: [
@@ -64,6 +66,8 @@ function TextPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Tones",
+            code: `<Text tone=#muted> {text("Muted")} </Text>
+<Text tone=#danger> {text("Danger")} </Text>`,
             children: Jsx$WeftDom.jsx(Stack$WeftUi.make, {
               gap: "xs",
               children: Primitive_option.some([
@@ -81,6 +85,10 @@ function TextPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Sizes, weights and the rest",
+            code: `<Text size=#sm weight=#semibold> ... </Text>
+<Text numeric=true> {text("1,111.11")} </Text>
+<Text truncate=true> ... </Text>
+<Text as_=#span italic=true> ... </Text>`,
             children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
               gap: "xs",
               children: [
@@ -131,6 +139,9 @@ function TextPage(props) {
         summary: "A link, in a tone and with its underline always, on hover, or never. An app's navigating links wear Link.className().",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Tones and underlines",
+          code: `<Link href> {text("Accent")} </Link>
+<Link href tone=#muted underline=#hover> {text("Muted, on hover")} </Link>
+<Link href external_=true> {text("External")} </Link>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             direction: "row",
             gap: "lg",
@@ -166,6 +177,9 @@ function TextPage(props) {
         summary: "Text for assistive technology only, or shown while it has focus.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "A hidden label beside a symbol, and a skip link (tab to it)",
+          code: `<span ariaHidden="true"> {text("★★★★☆")} </span>
+<VisuallyHidden> {text("4 out of 5 stars")} </VisuallyHidden>
+<VisuallyHidden focusable=true> <Link href="#main"> {text("Skip to content")} </Link> </VisuallyHidden>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             direction: "row",
             gap: "lg",

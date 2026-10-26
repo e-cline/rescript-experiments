@@ -14,6 +14,14 @@ module Route = Servy.Route
 let respond = (ctx: RequestContext.t, ~title, element) =>
   WeftServer.Page.respond(ctx.request, element, ~assets, ~title=`${title} · weft_ui`)
 
+/** The theme the request's cookie names (the switcher's), or the default. */
+let theme = (ctx: RequestContext.t) =>
+  ctx.request.headers
+  ->Headers.get("cookie")
+  ->Null.toOption
+  ->Option.flatMap(cookie => Servy.Cookie.parse(cookie)->Map.get(Theme.cookieName))
+  ->Option.mapOr("default", Theme.parse)
+
 let groupPage = (group: Groups.group) =>
   switch group.slug {
   | "layout" => <LayoutPage group />
@@ -32,7 +40,7 @@ let app = App.build()->App.router([
     respond(
       ctx,
       ~title="Components",
-      <Shell>
+      <Shell theme={theme(ctx)}>
         <HomePage />
       </Shell>,
     )
@@ -40,8 +48,17 @@ let app = App.build()->App.router([
   Route.get(list{":group"}, async ctx =>
     switch Groups.find(ctx->RequestContext.paramOrThrow("group")) {
     | Some(group) =>
-      respond(ctx, ~title=group.title, <Shell current=group.slug> {groupPage(group)} </Shell>)
-    | None => respond(ctx, ~title="Not found", <Shell> {WeftDom.Jsx.string("Not found")} </Shell>)
+      respond(
+        ctx,
+        ~title=group.title,
+        <Shell current=group.slug theme={theme(ctx)}> {groupPage(group)} </Shell>,
+      )
+    | None =>
+      respond(
+        ctx,
+        ~title="Not found",
+        <Shell theme={theme(ctx)}> {WeftDom.Jsx.string("Not found")} </Shell>,
+      )
     }
   ),
 ])

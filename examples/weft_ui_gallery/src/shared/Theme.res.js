@@ -25,13 +25,220 @@ let root = Css$WeftCss.Internal.class_("Theme-root_we71xfj", undefined, () => ({
   minHeight: {
     TAG: "Vh",
     _0: 100
+  },
+  color: {
+    TAG: "Var",
+    _0: Tokens$WeftUi.fg
+  },
+  backgroundColor: {
+    TAG: "Var",
+    _0: Tokens$WeftUi.bg
   }
 }));
 
+let notes = Css$WeftCss.Internal.class_("Theme-notes_we71xfj", undefined, () => ({
+  vars: [
+    [
+      Tokens$WeftUi.fg,
+      "#22201d"
+    ],
+    [
+      Tokens$WeftUi.fgMuted,
+      "#6f6a63"
+    ],
+    [
+      Tokens$WeftUi.border,
+      "#e4e0d9"
+    ],
+    [
+      Tokens$WeftUi.borderStrong,
+      "#8a847b"
+    ],
+    [
+      Tokens$WeftUi.bg,
+      "#fcfbf8"
+    ],
+    [
+      Tokens$WeftUi.surface,
+      "#ffffff"
+    ],
+    [
+      Tokens$WeftUi.surfaceMuted,
+      "#f3f1ec"
+    ],
+    [
+      Tokens$WeftUi.accent,
+      "#2f5d8a"
+    ],
+    [
+      Tokens$WeftUi.accentHover,
+      "#254a6e"
+    ],
+    [
+      Tokens$WeftUi.accentSoft,
+      "#eef3f8"
+    ],
+    [
+      Tokens$WeftUi.accentSoftFg,
+      "#244867"
+    ],
+    [
+      Tokens$WeftUi.focusRing,
+      "#2f5d8a"
+    ],
+    [
+      Tokens$WeftUi.danger,
+      "#a12a2a"
+    ],
+    [
+      Tokens$WeftUi.dangerSoft,
+      "#fbf1f0"
+    ],
+    [
+      Tokens$WeftUi.dangerSoftFg,
+      "#8a2323"
+    ]
+  ]
+}));
+
+let shop = Css$WeftCss.Internal.class_("Theme-shop_we71xfj", undefined, () => ({
+  vars: [
+    [
+      Tokens$WeftUi.fg,
+      "#1d1b19"
+    ],
+    [
+      Tokens$WeftUi.fgMuted,
+      "#6b645c"
+    ],
+    [
+      Tokens$WeftUi.border,
+      "#e6e0d8"
+    ],
+    [
+      Tokens$WeftUi.borderStrong,
+      "#8c847a"
+    ],
+    [
+      Tokens$WeftUi.bg,
+      "#fbf8f4"
+    ],
+    [
+      Tokens$WeftUi.surface,
+      "#ffffff"
+    ],
+    [
+      Tokens$WeftUi.surfaceMuted,
+      "#f3eee7"
+    ],
+    [
+      Tokens$WeftUi.accent,
+      "#9a4b22"
+    ],
+    [
+      Tokens$WeftUi.accentHover,
+      "#7f3d1b"
+    ],
+    [
+      Tokens$WeftUi.accentSoft,
+      "#f8ece4"
+    ],
+    [
+      Tokens$WeftUi.accentSoftFg,
+      "#7a3a18"
+    ],
+    [
+      Tokens$WeftUi.focusRing,
+      "#9a4b22"
+    ],
+    [
+      Tokens$WeftUi.danger,
+      "#b3261e"
+    ],
+    [
+      Tokens$WeftUi.dangerHover,
+      "#951f19"
+    ],
+    [
+      Tokens$WeftUi.dangerSoft,
+      "#fdf1f0"
+    ],
+    [
+      Tokens$WeftUi.dangerSoftFg,
+      "#8f1e18"
+    ],
+    [
+      Tokens$WeftUi.success,
+      "#2f6b3a"
+    ],
+    [
+      Tokens$WeftUi.successSoft,
+      "#eef6ef"
+    ],
+    [
+      Tokens$WeftUi.successSoftFg,
+      "#285c32"
+    ],
+    [
+      Tokens$WeftUi.radiusLg,
+      "10px"
+    ]
+  ]
+}));
+
+let themes = [
+  [
+    "default",
+    "weft_ui"
+  ],
+  [
+    "notes",
+    "Notes"
+  ],
+  [
+    "shop",
+    "Shop"
+  ]
+];
+
+function parse(name) {
+  if (themes.some(param => param[0] === name)) {
+    return name;
+  } else {
+    return "default";
+  }
+}
+
+function rootClass(theme) {
+  let tmp;
+  switch (theme) {
+    case "notes" :
+      tmp = notes;
+      break;
+    case "shop" :
+      tmp = shop;
+      break;
+    default:
+      tmp = "";
+  }
+  return Css$WeftCss.cx([
+    root,
+    tmp
+  ]);
+}
+
 let Tokens;
+
+let cookieName = "gallery-theme";
 
 export {
   Tokens,
   root,
+  notes,
+  shop,
+  themes,
+  cookieName,
+  parse,
+  rootClass,
 }
 /*  Not a pure module */

@@ -96,6 +96,7 @@ function LayoutPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "A column (the default), gap=#md",
+            code: `<Stack> <One /> <Two /> <Three /> </Stack>`,
             children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
               children: [
                 box$1(undefined, "One"),
@@ -106,6 +107,7 @@ function LayoutPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "A row, aligned to the centre, spaced between, wrapping",
+            code: `<Stack direction=#row align=#center justify=#between wrap=true> ... </Stack>`,
             children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
               direction: "row",
               align: "center",
@@ -120,6 +122,8 @@ function LayoutPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Every gap, from #none to #xxl",
+            code: `<Stack direction=#row gap=#xs> ... </Stack>
+<Stack direction=#row gap=#xxl> ... </Stack>`,
             children: Jsx$WeftDom.jsx(Stack$WeftUi.make, {
               gap: "lg",
               children: Primitive_option.some([
@@ -156,6 +160,7 @@ function LayoutPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "columns=3",
+            code: `<Grid columns=3> ... </Grid>`,
             children: Jsx$WeftDom.jsxs(Grid$WeftUi.make, {
               columns: 3,
               children: [
@@ -169,6 +174,7 @@ function LayoutPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "minItemWidth=\"140px\": as many as fit",
+            code: `<Grid minItemWidth="140px"> ... </Grid>`,
             children: Jsx$WeftDom.jsx(Grid$WeftUi.make, {
               minItemWidth: "140px",
               children: Primitive_option.some(Stdlib_Array.fromInitializer(7, index => Jsx$WeftDom.Elements.jsxKeyed("div", {
@@ -178,6 +184,7 @@ function LayoutPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "template=\"200px 1fr\", stackBelow=#md",
+            code: `<Grid template="200px 1fr" stackBelow=#md> <Sidebar /> <Content /> </Grid>`,
             children: Jsx$WeftDom.jsxs(Grid$WeftUi.make, {
               template: "200px 1fr",
               stackBelow: "md",
@@ -194,6 +201,7 @@ function LayoutPage(props) {
         summary: "The page's column: centred, at most a width, with a gutter.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "size=#sm, in a band the width of the frame",
+          code: `<Container size=#sm> ... </Container>`,
           children: Jsx$WeftDom.Elements.jsx("div", {
             className: band,
             children: Jsx$WeftDom.jsx(Container$WeftUi.make, {
@@ -208,6 +216,12 @@ function LayoutPage(props) {
         summary: "A line between things: a separator, or decorative.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Horizontal, and vertical in a row",
+          code: `<Separator />
+<Stack direction=#row align=#stretch>
+  <Text> {text("Left")} </Text>
+  <Separator orientation=#vertical />
+  <Text> {text("Right")} </Text>
+</Stack>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             children: [
               Jsx$WeftDom.jsx(Text$WeftUi.make, {

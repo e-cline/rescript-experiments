@@ -64,6 +64,22 @@ function DataPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "A captioned table in a scrolling region, numbers at the end",
+            code: `<Table.Root scrollLabel="Orders">
+  <Table.Caption> {text("Your orders")} </Table.Caption>
+  <Table.Head>
+    <Table.Row>
+      <Table.HeaderCell> {text("Order")} </Table.HeaderCell>
+      <Table.HeaderCell numeric=true> {text("Total")} </Table.HeaderCell>
+    </Table.Row>
+  </Table.Head>
+  <Table.Body>
+    <Table.Row>
+      <Table.HeaderCell scope=#row> {text("#1042")} </Table.HeaderCell>
+      <Table.Cell numeric=true> {text("$48.00")} </Table.Cell>
+    </Table.Row>
+  </Table.Body>
+  <Table.Foot> ... </Table.Foot>
+</Table.Root>`,
             children: Jsx$WeftDom.jsxs(Table$WeftUi.Root.make, {
               scrollLabel: "Orders",
               children: [
@@ -136,6 +152,10 @@ function DataPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "density=#compact, striped=true, a row selected",
+            code: `<Table.Root density=#compact striped=true ariaLabel="Sizes">
+  ...
+  <Table.Row selected=true> ... </Table.Row>
+</Table.Root>`,
             children: Jsx$WeftDom.jsxs(Table$WeftUi.Root.make, {
               density: "compact",
               striped: true,
@@ -203,6 +223,10 @@ function DataPage(props) {
           children: [
             Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
               caption: "divided=true",
+              code: `<List.Root divided=true>
+  <List.Item> {text("Shopping list")} </List.Item>
+  <List.Item> {text("Ideas for the weekend")} </List.Item>
+</List.Root>`,
               children: Jsx$WeftDom.jsxs(List$WeftUi.Root.make, {
                 divided: true,
                 children: [
@@ -220,6 +244,10 @@ function DataPage(props) {
             }),
             Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
               caption: "markers=true, as_=#ol",
+              code: `<List.Root as_=#ol markers=true gap=#xs>
+  <List.Item> {text("Preheat the oven")} </List.Item>
+  <List.Item> {text("Mix the dough")} </List.Item>
+</List.Root>`,
               children: Jsx$WeftDom.jsxs(List$WeftUi.Root.make, {
                 as_: "ol",
                 gap: "xs",
@@ -249,6 +277,10 @@ function DataPage(props) {
           children: [
             Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
               caption: "A summary, details at the end",
+              code: `<DescriptionList.Root detailsAlign=#end>
+  <DescriptionList.Term> {text("Subtotal")} </DescriptionList.Term>
+  <DescriptionList.Details> {text("$199.50")} </DescriptionList.Details>
+</DescriptionList.Root>`,
               children: Jsx$WeftDom.jsxs(DescriptionList$WeftUi.Root.make, {
                 detailsAlign: "end",
                 children: [
@@ -275,6 +307,10 @@ function DataPage(props) {
             }),
             Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
               caption: "layout=#stacked",
+              code: `<DescriptionList.Root layout=#stacked>
+  <DescriptionList.Term> {text("Material")} </DescriptionList.Term>
+  <DescriptionList.Details> {text("Merino wool")} </DescriptionList.Details>
+</DescriptionList.Root>`,
               children: Jsx$WeftDom.jsxs(DescriptionList$WeftUi.Root.make, {
                 layout: "stacked",
                 children: [
@@ -301,6 +337,11 @@ function DataPage(props) {
         summary: "The trail of pages above this one.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Two links, then the page",
+          code: `<Breadcrumbs.Root>
+  <Breadcrumbs.Item> <a href="/"> {text("Home")} </a> </Breadcrumbs.Item>
+  <Breadcrumbs.Item> <a href="/c/scarves"> {text("Scarves")} </a> </Breadcrumbs.Item>
+  <Breadcrumbs.Current> {text("Wool scarf")} </Breadcrumbs.Current>
+</Breadcrumbs.Root>`,
           children: Jsx$WeftDom.jsxs(Breadcrumbs$WeftUi.Root.make, {
             children: [
               Jsx$WeftDom.jsx(Breadcrumbs$WeftUi.Item.make, {
@@ -328,6 +369,11 @@ function DataPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Horizontal",
+            code: `<Steps.Root ariaLabel="Checkout">
+  <Steps.Step status=#complete> {text("Address")} </Steps.Step>
+  <Steps.Step status=#current> {text("Delivery")} </Steps.Step>
+  <Steps.Step status=#upcoming> {text("Review")} </Steps.Step>
+</Steps.Root>`,
             children: Jsx$WeftDom.jsxs(Steps$WeftUi.Root.make, {
               ariaLabel: "Checkout",
               children: [
@@ -348,6 +394,7 @@ function DataPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "orientation=#vertical",
+            code: `<Steps.Root ariaLabel="Delivery" orientation=#vertical> ... </Steps.Root>`,
             children: Jsx$WeftDom.jsxs(Steps$WeftUi.Root.make, {
               orientation: "vertical",
               ariaLabel: "Delivery",

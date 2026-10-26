@@ -161,4 +161,25 @@ describe("the gallery", () => {
       )
     },
   )
+
+  testAsync("the theme switcher puts a palette's class on the outermost element", async t => {
+    let page = app()->WeftTesting.open_(~container=rootElement(), "/surfaces")
+    await page->WeftTesting.waitFor(() => page->WeftTesting.has("[data-id=theme-notes]"))
+    await page->WeftTesting.hydrated
+    let attribute = (selector, name) =>
+      page
+      ->WeftTesting.query(selector)
+      ->Option.flatMap(element => WeftDom.Dom.getAttribute(element, name)->Nullable.toOption)
+    t
+    ->expect(attribute("[data-id=gallery]", "class"))
+    ->Expect.toEqual(Some(Theme.rootClass("default")))
+    page->WeftTesting.click("[data-id=theme-notes]")
+    await page->WeftTesting.waitFor(
+      () => attribute("[data-id=theme-notes]", "aria-pressed") == Some("true"),
+    )
+    t
+    ->expect(attribute("[data-id=gallery]", "class"))
+    ->Expect.toEqual(Some(Theme.rootClass("notes")))
+    t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+  })
 })

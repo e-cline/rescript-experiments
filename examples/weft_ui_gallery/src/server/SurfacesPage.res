@@ -10,7 +10,17 @@ let make = (~group: Groups.group) =>
     <Specimen.Section
       name="Card" summary="A surface for one thing, with a header, content and a footer."
     >
-      <Specimen.Example caption="Each variant">
+      <Specimen.Example
+        caption="Each variant"
+        code={`<Card.Root as_=#article variant=#elevated>
+  <Card.Header>
+    <Card.Title> {text("Wool scarf")} </Card.Title>
+    <Card.Description> {text("Merino, hand-dyed")} </Card.Description>
+  </Card.Header>
+  <Card.Content> ... </Card.Content>
+  <Card.Footer> <Badge tone=#success> {text("In stock")} </Badge> </Card.Footer>
+</Card.Root>`}
+      >
         <Ui.Grid minItemWidth="220px" gap=#lg>
           {[#outline, #elevated, #ghost]
           ->Array.map(variant =>
@@ -40,7 +50,17 @@ let make = (~group: Groups.group) =>
       name="Alert"
       summary="A message in a box. Danger and warning are alerts, announced at once; the rest are statuses."
     >
-      <Specimen.Example caption="Each tone, one with an action">
+      <Specimen.Example
+        caption="Each tone, one with an action"
+        code={`<Alert.Root tone=#success>
+  <Alert.Title> {text("Saved")} </Alert.Title>
+</Alert.Root>
+<Alert.Root tone=#danger>
+  <Alert.Title> {text("Couldn't load this")} </Alert.Title>
+  <Alert.Description> {text("The reviews service is down.")} </Alert.Description>
+  <Alert.Action> <Button size=#sm onClick=retry> {text("Retry")} </Button> </Alert.Action>
+</Alert.Root>`}
+      >
         <Ui.Stack gap=#sm>
           <Ui.Alert.Root tone=#info role=#none>
             <Ui.Alert.Title> {text("Heads up")} </Ui.Alert.Title>
@@ -74,7 +94,12 @@ let make = (~group: Groups.group) =>
       name="Badge"
       summary="A small label, in a tone and variant; Badge.className() makes a link a chip."
     >
-      <Specimen.Example caption="Each tone, in each variant">
+      <Specimen.Example
+        caption="Each tone, in each variant"
+        code={`<Badge tone=#success> {text("In stock")} </Badge>
+<Badge tone=#danger variant=#solid> {text("Sale")} </Badge>
+<Badge tone=#accent variant=#outline> {text("New")} </Badge>`}
+      >
         <Ui.Stack gap=#sm>
           {[#soft, #solid, #outline]
           ->Array.map(variant =>
@@ -91,7 +116,11 @@ let make = (~group: Groups.group) =>
           ->WeftDom.Jsx.array}
         </Ui.Stack>
       </Specimen.Example>
-      <Specimen.Example caption="Small and rounded, and links as chips">
+      <Specimen.Example
+        caption="Small and rounded, and links as chips"
+        code={`<Badge size=#sm shape=#rounded tone=#accent> {text("New")} </Badge>
+<a href className={Badge.className(~variant=#outline, ~link=true, ())}> {text("Merino")} </a>`}
+      >
         <Ui.Stack direction=#row gap=#sm wrap=true align=#center>
           <Ui.Badge size=#sm shape=#rounded tone=#accent> {text("New")} </Ui.Badge>
           <Ui.Badge size=#sm tone=#danger variant=#solid> {text("3")} </Ui.Badge>
@@ -107,7 +136,16 @@ let make = (~group: Groups.group) =>
     <Specimen.Section
       name="EmptyState" summary="What a place shows when there's nothing in it yet."
     >
-      <Specimen.Example caption="bordered=true, with an action">
+      <Specimen.Example
+        caption="bordered=true, with an action"
+        code={`<EmptyState.Root bordered=true>
+  <EmptyState.Title> {text("Your cart is empty")} </EmptyState.Title>
+  <EmptyState.Description> {text("Anything you add shows up here.")} </EmptyState.Description>
+  <EmptyState.Action>
+    <a href="/" className={Button.className(~variant=#primary, ())}> {text("Keep shopping")} </a>
+  </EmptyState.Action>
+</EmptyState.Root>`}
+      >
         <Ui.EmptyState.Root bordered=true>
           <Ui.EmptyState.Title> {text("Your cart is empty")} </Ui.EmptyState.Title>
           <Ui.EmptyState.Description>

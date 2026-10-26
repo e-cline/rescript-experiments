@@ -2,7 +2,8 @@
 
 /***
 A component on show: its name, what it's for, and examples of it, each in a frame of its own, with
-a caption saying what it shows.
+a caption saying what it shows and the code it comes from (the gist of it, with `module Ui = WeftUi`
+opened: the gallery's own helpers and data left out).
 */
 
 open WeftCss
@@ -16,6 +17,16 @@ module Styles = {
     border: `1px solid ${Ui.Tokens.value(Ui.Tokens.border)}`,
     borderRadius: Var(Ui.Tokens.radiusLg),
     backgroundColor: Var(Ui.Tokens.surface),
+    overflowX: Auto,
+  })
+  let code = Css.class({
+    margin: Zero,
+    padding: Pair(Var(Ui.Tokens.spaceSm), Var(Ui.Tokens.spaceMd)),
+    borderRadius: Var(Ui.Tokens.radiusMd),
+    backgroundColor: Var(Ui.Tokens.surfaceMuted),
+    color: Var(Ui.Tokens.fg),
+    fontSize: Var(Ui.Tokens.textSm),
+    lineHeight: 1.5,
     overflowX: Auto,
   })
 }
@@ -38,12 +49,15 @@ module Section = {
 }
 
 module Example = {
-  /** One example: what it shows, then it, in a frame. */
+  /** One example: what it shows, then it, in a frame, then its code. */
   @weft.component({kind: Server})
-  let make = (~caption: string, ~children) =>
+  let make = (~caption: string, ~code: string, ~children) =>
     <Ui.Stack gap=#sm>
       <Ui.Text as_=#p size=#sm weight=#medium> {text(caption)} </Ui.Text>
       <div className=Styles.frame> children </div>
+      <pre className=Styles.code tabIndex=0 ariaLabel={`Code: ${caption}`}>
+        <code> {text(code)} </code>
+      </pre>
     </Ui.Stack>
 }
 

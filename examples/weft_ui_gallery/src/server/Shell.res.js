@@ -7,7 +7,6 @@ import * as Grid$WeftUi from "@e-cline/weft_ui/src/Grid.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Link$WeftUi from "@e-cline/weft_ui/src/Link.res.js";
 import * as List$WeftUi from "@e-cline/weft_ui/src/List.res.js";
-import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
 import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
 import * as Tokens$WeftUi from "@e-cline/weft_ui/src/Tokens.res.js";
 import * as Container$WeftUi from "@e-cline/weft_ui/src/Container.res.js";
@@ -17,6 +16,7 @@ import * as Theme$WeftUiGallery from "../shared/Theme.res.js";
 import * as Groups$WeftUiGallery from "./Groups.res.js";
 import * as ToastViewport$WeftUi from "@e-cline/weft_ui/src/entrypoints/ToastViewport.res.js";
 import * as NavLink$WeftUiGallery from "../client/NavLink.res.js";
+import * as ThemeSwitcher$WeftUiGallery from "../client/ThemeSwitcher.res.js";
 
 function text(prim) {
   return prim;
@@ -66,9 +66,12 @@ let Styles = {
 };
 
 function Shell(props) {
+  let __theme = props.theme;
   let current = props.current;
+  let __theme_value = __theme !== undefined ? __theme : "default";
   return Jsx$WeftDom.Elements.jsxs("div", {
-    className: Theme$WeftUiGallery.root,
+    className: Theme$WeftUiGallery.rootClass(__theme_value),
+    "data-id": "gallery",
     children: [
       Jsx$WeftDom.Elements.jsx("header", {
         className: header,
@@ -88,10 +91,8 @@ function Shell(props) {
                   children: "weft_ui"
                 })
               }),
-              Jsx$WeftDom.jsx(Text$WeftUi.make, {
-                tone: "muted",
-                size: "sm",
-                children: "Components for Weft"
+              Jsx$WeftDom.jsx(ThemeSwitcher$WeftUiGallery.make, {
+                current: __theme_value
               })
             ]
           }))

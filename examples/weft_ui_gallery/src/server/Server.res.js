@@ -4,8 +4,12 @@
 import * as App$Servy from "@e-cline/servy/src/App.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Route$Servy from "@e-cline/servy/src/Route.res.js";
+import * as Cookie$Servy from "@e-cline/servy/src/Cookie.res.js";
+import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Page$WeftServer from "@e-cline/weft_server/src/server/Page.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Shell$WeftUiGallery from "./Shell.res.js";
+import * as Theme$WeftUiGallery from "../shared/Theme.res.js";
 import Assets from "virtual:weft/assets";
 import * as Groups$WeftUiGallery from "./Groups.res.js";
 import * as RequestContext$Servy from "@e-cline/servy/src/RequestContext.res.js";
@@ -22,6 +26,10 @@ import * as DisclosurePage$WeftUiGallery from "./DisclosurePage.res.js";
 
 function respond(ctx, title, element) {
   return Page$WeftServer.respond(ctx.request, element, Assets, undefined, title + ` · weft_ui`, undefined, undefined);
+}
+
+function theme(ctx) {
+  return Stdlib_Option.mapOr(Stdlib_Option.flatMap(Primitive_option.fromNull(ctx.request.headers.get("cookie")), cookie => Cookie$Servy.parse(cookie).get(Theme$WeftUiGallery.cookieName)), "default", Theme$WeftUiGallery.parse);
 }
 
 function groupPage(group) {
@@ -68,6 +76,7 @@ function groupPage(group) {
 
 let app = App$Servy.router(App$Servy.build(undefined), [
   Route$Servy.get(/* [] */0, async ctx => respond(ctx, "Components", Jsx$WeftDom.jsx(Shell$WeftUiGallery.make, {
+    theme: theme(ctx),
     children: Jsx$WeftDom.jsx(HomePage$WeftUiGallery.make, {})
   }))),
   Route$Servy.get({
@@ -78,10 +87,12 @@ let app = App$Servy.router(App$Servy.build(undefined), [
     if (group !== undefined) {
       return respond(ctx, group.title, Jsx$WeftDom.jsx(Shell$WeftUiGallery.make, {
         current: group.slug,
+        theme: theme(ctx),
         children: groupPage(group)
       }));
     } else {
       return respond(ctx, "Not found", Jsx$WeftDom.jsx(Shell$WeftUiGallery.make, {
+        theme: theme(ctx),
         children: "Not found"
       }));
     }
@@ -101,6 +112,7 @@ export {
   RequestContext,
   Route,
   respond,
+  theme,
   groupPage,
   app,
   $$default as default,

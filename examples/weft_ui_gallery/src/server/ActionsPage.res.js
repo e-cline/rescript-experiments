@@ -37,6 +37,12 @@ function ActionsPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Each variant",
+            code: `<Button variant=#primary> {text("Primary")} </Button>
+<Button> {text("Secondary")} </Button>
+<Button variant=#outline> {text("Outline")} </Button>
+<Button variant=#ghost> {text("Ghost")} </Button>
+<Button variant=#danger> {text("Danger")} </Button>
+<Button variant=#link> {text("Link")} </Button>`,
             children: Jsx$WeftDom.jsx(Stack$WeftUi.make, {
               direction: "row",
               gap: "sm",
@@ -50,6 +56,11 @@ function ActionsPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Sizes, a pill, disabled, busy",
+            code: `<Button size=#sm> {text("Small")} </Button>
+<Button size=#lg> {text("Large")} </Button>
+<Button shape=#pill variant=#outline> {text("Pill")} </Button>
+<Button disabled=true> {text("Disabled")} </Button>
+<Button variant=#primary busy=true> {text("Busy")} </Button>`,
             children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
               direction: "row",
               gap: "sm",
@@ -86,10 +97,15 @@ function ActionsPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Pressed, in an entrypoint: busy for a moment",
+            code: `<Button variant=#primary busy={state == #saving} onClick={_ => setState(_ => #saving)}>
+  {text(state == #saving ? "Saving…" : "Save")}
+</Button>`,
             children: Jsx$WeftDom.jsx(SaveDemo$WeftUiGallery.make, {})
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "fullWidth=true, and a link wearing Button.className()",
+            code: `<Button variant=#primary fullWidth=true> {text("Place order")} </Button>
+<a href className={Button.className(~variant=#outline, ())}> {text("A link")} </a>`,
             children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
               gap: "sm",
               children: [
@@ -113,6 +129,11 @@ function ActionsPage(props) {
         summary: "A square button with an icon and no text: its label, which is required, names it.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Sizes and variants",
+          code: `<IconButton label="Next" variant=#secondary> {text("›")} </IconButton>
+<IconButton label="Dismiss"> {text("×")} </IconButton>
+<IconButton label="Save for later" size=#lg shape=#pill variant=#outline>
+  {text("♡")}
+</IconButton>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             direction: "row",
             gap: "sm",
@@ -154,6 +175,9 @@ function ActionsPage(props) {
         summary: "Something's working, said to assistive technology unless it's said already.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Sizes, and in a sentence",
+          code: `<Spinner size=#sm />
+<Spinner size=#lg label="Loading the reviews" />
+<Text tone=#muted> <Spinner size=#sm announce=false /> {text(" Checking stock…")} </Text>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             direction: "row",
             gap: "lg",
@@ -186,6 +210,11 @@ function ActionsPage(props) {
         summary: "A placeholder in the shape of what's coming.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Lines, a picture and an avatar",
+          code: `<Skeleton shape=#circle width="48px" height="48px" />
+<div ariaBusy="true">
+  <Skeleton shape=#rect height="120px" />
+  <Skeleton lines=3 />
+</div>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             direction: "row",
             gap: "lg",

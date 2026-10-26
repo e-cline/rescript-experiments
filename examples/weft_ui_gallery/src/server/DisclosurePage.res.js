@@ -41,6 +41,11 @@ function DisclosurePage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "TabsEntry, rendered by this server component, its panels the server's",
+            code: `<TabsEntry
+  label="Product"
+  labels=["Details", "Materials", "Reviews"]
+  panels=[<Details />, <Materials />, <Reviews />]
+/>`,
             children: Jsx$WeftDom.jsx(TabsEntry$WeftUi.make, {
               labels: [
                 "Details",
@@ -64,6 +69,14 @@ function DisclosurePage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Vertical pills, activated by Enter or Space (manual), one disabled",
+            code: `<Tabs.Root defaultValue="profile" orientation=#vertical variant=#pills activation=#manual>
+  <Tabs.List label="Settings">
+    <Tabs.Tab value="profile"> {text("Profile")} </Tabs.Tab>
+    <Tabs.Tab value="billing" disabled=true> {text("Billing")} </Tabs.Tab>
+  </Tabs.List>
+  <Tabs.Panel value="profile"> ... </Tabs.Panel>
+  <Tabs.Panel value="billing"> ... </Tabs.Panel>
+</Tabs.Root>`,
             children: Jsx$WeftDom.jsx(DisclosureDemos$WeftUiGallery.Settings.make, {})
           })
         ]
@@ -73,6 +86,13 @@ function DisclosurePage(props) {
         summary: "Sections that open and close, divided: the browser's details, so they work before (or without) JavaScript.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "One open at a time (the items share a name), the first open",
+          code: `<Accordion.Root>
+  <Accordion.Item name="faq" defaultOpen=true>
+    <Accordion.Trigger> {text("Is it true to size?")} </Accordion.Trigger>
+    <Accordion.Panel> {text("Yes: most take their usual size.")} </Accordion.Panel>
+  </Accordion.Item>
+  <Accordion.Item name="faq"> ... </Accordion.Item>
+</Accordion.Root>`,
           children: Jsx$WeftDom.jsx(Accordion$WeftUi.Root.make, {
             dataId: "faq",
             children: Primitive_option.some(questions.map((param, index) => {
@@ -98,6 +118,10 @@ function DisclosurePage(props) {
         summary: "One section that opens and closes.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Closed at first",
+          code: `<Collapsible.Root>
+  <Collapsible.Trigger> {text("Shipping and returns")} </Collapsible.Trigger>
+  <Collapsible.Panel> {text("Free over $50.")} </Collapsible.Panel>
+</Collapsible.Root>`,
           children: Jsx$WeftDom.jsxs(Collapsible$WeftUi.Root.make, {
             children: [
               Jsx$WeftDom.jsx(Collapsible$WeftUi.Trigger.make, {

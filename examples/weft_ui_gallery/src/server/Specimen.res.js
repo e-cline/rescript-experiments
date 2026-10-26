@@ -31,8 +31,42 @@ let frame = Css$WeftCss.Internal.class_("Specimen-Styles-frame_wa4acr2", undefin
   }
 }));
 
+let code = Css$WeftCss.Internal.class_("Specimen-Styles-code_wa4acr2", undefined, () => ({
+  overflowX: "auto",
+  margin: "Zero",
+  padding: {
+    TAG: "Pair",
+    _0: {
+      TAG: "Var",
+      _0: Tokens$WeftUi.spaceSm
+    },
+    _1: {
+      TAG: "Var",
+      _0: Tokens$WeftUi.spaceMd
+    }
+  },
+  fontSize: {
+    TAG: "Var",
+    _0: Tokens$WeftUi.textSm
+  },
+  lineHeight: 1.5,
+  color: {
+    TAG: "Var",
+    _0: Tokens$WeftUi.fg
+  },
+  backgroundColor: {
+    TAG: "Var",
+    _0: Tokens$WeftUi.surfaceMuted
+  },
+  borderRadius: {
+    TAG: "Var",
+    _0: Tokens$WeftUi.radiusMd
+  }
+}));
+
 let Styles = {
-  frame: frame
+  frame: frame,
+  code: code
 };
 
 function slug(name) {
@@ -72,6 +106,7 @@ let Section = {
 };
 
 function Specimen$Example(props) {
+  let caption = props.caption;
   return Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
     gap: "sm",
     children: [
@@ -79,11 +114,19 @@ function Specimen$Example(props) {
         as_: "p",
         size: "sm",
         weight: "medium",
-        children: Primitive_option.some(props.caption)
+        children: Primitive_option.some(caption)
       }),
       Jsx$WeftDom.Elements.jsx("div", {
         className: frame,
         children: props.children
+      }),
+      Jsx$WeftDom.Elements.jsx("pre", {
+        className: code,
+        tabIndex: 0,
+        "aria-label": `Code: ` + caption,
+        children: Jsx$WeftDom.Elements.jsx("code", {
+          children: props.code
+        })
       })
     ]
   });

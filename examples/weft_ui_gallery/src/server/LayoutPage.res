@@ -31,21 +31,31 @@ let make = (~group: Groups.group) =>
     <Specimen.Section
       name="Stack" summary="Children in a column or a row, a gap apart from the space scale."
     >
-      <Specimen.Example caption="A column (the default), gap=#md">
+      <Specimen.Example
+        caption="A column (the default), gap=#md"
+        code={`<Stack> <One /> <Two /> <Three /> </Stack>`}
+      >
         <Ui.Stack>
           {box("One")}
           {box("Two")}
           {box("Three")}
         </Ui.Stack>
       </Specimen.Example>
-      <Specimen.Example caption="A row, aligned to the centre, spaced between, wrapping">
+      <Specimen.Example
+        caption="A row, aligned to the centre, spaced between, wrapping"
+        code={`<Stack direction=#row align=#center justify=#between wrap=true> ... </Stack>`}
+      >
         <Ui.Stack direction=#row align=#center justify=#between wrap=true>
           {box("Short")}
           {box(~tall=true, "Tall")}
           {box("Short")}
         </Ui.Stack>
       </Specimen.Example>
-      <Specimen.Example caption="Every gap, from #none to #xxl">
+      <Specimen.Example
+        caption="Every gap, from #none to #xxl"
+        code={`<Stack direction=#row gap=#xs> ... </Stack>
+<Stack direction=#row gap=#xxl> ... </Stack>`}
+      >
         <Ui.Stack gap=#lg>
           {([#none, #xs, #sm, #md, #lg, #xl, #xxl]: array<Ui.Variants.space>)
           ->Array.map(gap =>
@@ -64,7 +74,7 @@ let make = (~group: Groups.group) =>
       name="Grid"
       summary="Equal columns, columns at least so wide (as many as fit), or a template; one column on a narrow screen with stackBelow."
     >
-      <Specimen.Example caption="columns=3">
+      <Specimen.Example caption="columns=3" code={`<Grid columns=3> ... </Grid>`}>
         <Ui.Grid columns=3>
           {box("1")}
           {box("2")}
@@ -73,14 +83,20 @@ let make = (~group: Groups.group) =>
           {box("5")}
         </Ui.Grid>
       </Specimen.Example>
-      <Specimen.Example caption="minItemWidth=\"140px\": as many as fit">
+      <Specimen.Example
+        caption="minItemWidth=\"140px\": as many as fit"
+        code={`<Grid minItemWidth="140px"> ... </Grid>`}
+      >
         <Ui.Grid minItemWidth="140px">
           {Array.fromInitializer(~length=7, index =>
             <div key={Int.toString(index)}> {box(Int.toString(index + 1))} </div>
           )->WeftDom.Jsx.array}
         </Ui.Grid>
       </Specimen.Example>
-      <Specimen.Example caption="template=\"200px 1fr\", stackBelow=#md">
+      <Specimen.Example
+        caption="template=\"200px 1fr\", stackBelow=#md"
+        code={`<Grid template="200px 1fr" stackBelow=#md> <Sidebar /> <Content /> </Grid>`}
+      >
         <Ui.Grid template="200px 1fr" stackBelow=#md>
           {box("Sidebar")}
           {box("Content")}
@@ -90,14 +106,25 @@ let make = (~group: Groups.group) =>
     <Specimen.Section
       name="Container" summary="The page's column: centred, at most a width, with a gutter."
     >
-      <Specimen.Example caption="size=#sm, in a band the width of the frame">
+      <Specimen.Example
+        caption="size=#sm, in a band the width of the frame"
+        code={`<Container size=#sm> ... </Container>`}
+      >
         <div className=Styles.band>
           <Ui.Container size=#sm> {box("At most Tokens.containerSm wide")} </Ui.Container>
         </div>
       </Specimen.Example>
     </Specimen.Section>
     <Specimen.Section name="Separator" summary="A line between things: a separator, or decorative.">
-      <Specimen.Example caption="Horizontal, and vertical in a row">
+      <Specimen.Example
+        caption="Horizontal, and vertical in a row"
+        code={`<Separator />
+<Stack direction=#row align=#stretch>
+  <Text> {text("Left")} </Text>
+  <Separator orientation=#vertical />
+  <Text> {text("Right")} </Text>
+</Stack>`}
+      >
         <Ui.Stack>
           <Ui.Text> {text("Above")} </Ui.Text>
           <Ui.Separator />

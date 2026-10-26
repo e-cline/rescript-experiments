@@ -25,7 +25,25 @@ let make = (~group: Groups.group) =>
     <Specimen.Section
       name="Table" summary="Data in rows and columns, read cell by cell with its row and column."
     >
-      <Specimen.Example caption="A captioned table in a scrolling region, numbers at the end">
+      <Specimen.Example
+        caption="A captioned table in a scrolling region, numbers at the end"
+        code={`<Table.Root scrollLabel="Orders">
+  <Table.Caption> {text("Your orders")} </Table.Caption>
+  <Table.Head>
+    <Table.Row>
+      <Table.HeaderCell> {text("Order")} </Table.HeaderCell>
+      <Table.HeaderCell numeric=true> {text("Total")} </Table.HeaderCell>
+    </Table.Row>
+  </Table.Head>
+  <Table.Body>
+    <Table.Row>
+      <Table.HeaderCell scope=#row> {text("#1042")} </Table.HeaderCell>
+      <Table.Cell numeric=true> {text("$48.00")} </Table.Cell>
+    </Table.Row>
+  </Table.Body>
+  <Table.Foot> ... </Table.Foot>
+</Table.Root>`}
+      >
         <Ui.Table.Root scrollLabel="Orders">
           <Ui.Table.Caption> {text("Your orders")} </Ui.Table.Caption>
           <Ui.Table.Head>
@@ -58,7 +76,13 @@ let make = (~group: Groups.group) =>
           </Ui.Table.Foot>
         </Ui.Table.Root>
       </Specimen.Example>
-      <Specimen.Example caption="density=#compact, striped=true, a row selected">
+      <Specimen.Example
+        caption="density=#compact, striped=true, a row selected"
+        code={`<Table.Root density=#compact striped=true ariaLabel="Sizes">
+  ...
+  <Table.Row selected=true> ... </Table.Row>
+</Table.Root>`}
+      >
         <Ui.Table.Root density=#compact striped=true ariaLabel="Sizes">
           <Ui.Table.Head>
             <Ui.Table.Row>
@@ -83,14 +107,26 @@ let make = (~group: Groups.group) =>
       name="List" summary="Items one under the other: divided, a gap apart, or with markers."
     >
       <Ui.Grid minItemWidth="220px" gap=#lg>
-        <Specimen.Example caption="divided=true">
+        <Specimen.Example
+          caption="divided=true"
+          code={`<List.Root divided=true>
+  <List.Item> {text("Shopping list")} </List.Item>
+  <List.Item> {text("Ideas for the weekend")} </List.Item>
+</List.Root>`}
+        >
           <Ui.List.Root divided=true>
             <Ui.List.Item> {text("Shopping list")} </Ui.List.Item>
             <Ui.List.Item> {text("Ideas for the weekend")} </Ui.List.Item>
             <Ui.List.Item> {text("Books to read")} </Ui.List.Item>
           </Ui.List.Root>
         </Specimen.Example>
-        <Specimen.Example caption="markers=true, as_=#ol">
+        <Specimen.Example
+          caption="markers=true, as_=#ol"
+          code={`<List.Root as_=#ol markers=true gap=#xs>
+  <List.Item> {text("Preheat the oven")} </List.Item>
+  <List.Item> {text("Mix the dough")} </List.Item>
+</List.Root>`}
+        >
           <Ui.List.Root as_=#ol markers=true gap=#xs>
             <Ui.List.Item> {text("Preheat the oven")} </Ui.List.Item>
             <Ui.List.Item> {text("Mix the dough")} </Ui.List.Item>
@@ -103,7 +139,13 @@ let make = (~group: Groups.group) =>
       name="DescriptionList" summary="Terms and their details, side by side or stacked."
     >
       <Ui.Grid minItemWidth="220px" gap=#lg>
-        <Specimen.Example caption="A summary, details at the end">
+        <Specimen.Example
+          caption="A summary, details at the end"
+          code={`<DescriptionList.Root detailsAlign=#end>
+  <DescriptionList.Term> {text("Subtotal")} </DescriptionList.Term>
+  <DescriptionList.Details> {text("$199.50")} </DescriptionList.Details>
+</DescriptionList.Root>`}
+        >
           <Ui.DescriptionList.Root detailsAlign=#end>
             <Ui.DescriptionList.Term> {text("Subtotal")} </Ui.DescriptionList.Term>
             <Ui.DescriptionList.Details> {text("$199.50")} </Ui.DescriptionList.Details>
@@ -113,7 +155,13 @@ let make = (~group: Groups.group) =>
             <Ui.DescriptionList.Details> {text("$179.50")} </Ui.DescriptionList.Details>
           </Ui.DescriptionList.Root>
         </Specimen.Example>
-        <Specimen.Example caption="layout=#stacked">
+        <Specimen.Example
+          caption="layout=#stacked"
+          code={`<DescriptionList.Root layout=#stacked>
+  <DescriptionList.Term> {text("Material")} </DescriptionList.Term>
+  <DescriptionList.Details> {text("Merino wool")} </DescriptionList.Details>
+</DescriptionList.Root>`}
+        >
           <Ui.DescriptionList.Root layout=#stacked>
             <Ui.DescriptionList.Term> {text("Material")} </Ui.DescriptionList.Term>
             <Ui.DescriptionList.Details> {text("Merino wool")} </Ui.DescriptionList.Details>
@@ -124,7 +172,14 @@ let make = (~group: Groups.group) =>
       </Ui.Grid>
     </Specimen.Section>
     <Specimen.Section name="Breadcrumbs" summary="The trail of pages above this one.">
-      <Specimen.Example caption="Two links, then the page">
+      <Specimen.Example
+        caption="Two links, then the page"
+        code={`<Breadcrumbs.Root>
+  <Breadcrumbs.Item> <a href="/"> {text("Home")} </a> </Breadcrumbs.Item>
+  <Breadcrumbs.Item> <a href="/c/scarves"> {text("Scarves")} </a> </Breadcrumbs.Item>
+  <Breadcrumbs.Current> {text("Wool scarf")} </Breadcrumbs.Current>
+</Breadcrumbs.Root>`}
+      >
         <Ui.Breadcrumbs.Root>
           <Ui.Breadcrumbs.Item>
             <a href="#breadcrumbs"> {text("Home")} </a>
@@ -137,14 +192,24 @@ let make = (~group: Groups.group) =>
       </Specimen.Example>
     </Specimen.Section>
     <Specimen.Section name="Steps" summary="Progress through steps: done, current, still to come.">
-      <Specimen.Example caption="Horizontal">
+      <Specimen.Example
+        caption="Horizontal"
+        code={`<Steps.Root ariaLabel="Checkout">
+  <Steps.Step status=#complete> {text("Address")} </Steps.Step>
+  <Steps.Step status=#current> {text("Delivery")} </Steps.Step>
+  <Steps.Step status=#upcoming> {text("Review")} </Steps.Step>
+</Steps.Root>`}
+      >
         <Ui.Steps.Root ariaLabel="Checkout">
           <Ui.Steps.Step status=#complete> {text("Address")} </Ui.Steps.Step>
           <Ui.Steps.Step status=#current> {text("Delivery")} </Ui.Steps.Step>
           <Ui.Steps.Step status=#upcoming> {text("Review")} </Ui.Steps.Step>
         </Ui.Steps.Root>
       </Specimen.Example>
-      <Specimen.Example caption="orientation=#vertical">
+      <Specimen.Example
+        caption="orientation=#vertical"
+        code={`<Steps.Root ariaLabel="Delivery" orientation=#vertical> ... </Steps.Root>`}
+      >
         <Ui.Steps.Root ariaLabel="Delivery" orientation=#vertical>
           <Ui.Steps.Step status=#complete> {text("Placed")} </Ui.Steps.Step>
           <Ui.Steps.Step status=#complete> {text("Packed")} </Ui.Steps.Step>

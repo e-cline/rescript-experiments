@@ -23,8 +23,8 @@ module Styles = {
 }
 
 @weft.component({kind: Server})
-let make = (~current: option<string>=?, ~children) =>
-  <div className=Theme.root>
+let make = (~current: option<string>=?, ~theme="default", ~children) =>
+  <div dataId="gallery" className={Theme.rootClass(theme)}>
     <header className=Styles.header>
       <Ui.Container size=#xl>
         <Ui.Stack direction=#row align=#center justify=#between>
@@ -35,7 +35,7 @@ let make = (~current: option<string>=?, ~children) =>
           >
             <span className=Styles.logo> {text("weft_ui")} </span>
           </NavLink>
-          <Ui.Text tone=#muted size=#sm> {text("Components for Weft")} </Ui.Text>
+          <ThemeSwitcher current=theme />
         </Ui.Stack>
       </Ui.Container>
     </header>

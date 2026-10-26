@@ -101,10 +101,10 @@ test('a dialog is modal, starts in its content, and closes on Escape with the fo
     true,
   );
   expect(await violations(page)).toEqual([]);
-  expect(await focused(page)).toBe('Close');
+  await expect.poll(() => focused(page)).toBe('Close');
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
-  expect(await focused(page)).toBe('size-guide');
+  await expect.poll(() => focused(page)).toBe('size-guide');
 });
 
 test("an alert dialog starts on Cancel, and a click outside doesn't close it", async ({
@@ -114,7 +114,7 @@ test("an alert dialog starts on Cancel, and a click outside doesn't close it", a
   await hydrated(page, '[data-id=delete-open]');
   await page.locator('[data-id=delete-open]').click();
   await expect(page.locator('[data-id=delete-dialog]')).toBeVisible();
-  expect(await focused(page)).toBe('delete-cancel');
+  await expect.poll(() => focused(page)).toBe('delete-cancel');
   await page.mouse.click(10, 400);
   await expect(page.locator('[data-id=delete-dialog]')).toBeVisible();
   expect(await violations(page)).toEqual([]);
@@ -140,7 +140,7 @@ test('a drawer is pinned to the end, its full height, and its backdrop closes it
   expect(Math.round(box.height)).toBe(viewport.height);
   await page.mouse.click(10, 400);
   await expect(drawer).toHaveCount(0);
-  expect(await focused(page)).toBe('drawer-end');
+  await expect.poll(() => focused(page)).toBe('drawer-end');
 });
 
 test('a popover opens below its trigger, the focus in it, and Escape puts it back', async ({
@@ -162,7 +162,7 @@ test('a popover opens below its trigger, the focus in it, and Escape puts it bac
   expect(await violations(page)).toEqual([]);
   await page.keyboard.press('Escape');
   await expect(page.locator(popup)).toBeHidden();
-  expect(await focused(page)).toBe('popover-open');
+  await expect.poll(() => focused(page)).toBe('popover-open');
 });
 
 test('a menu: ArrowDown opens it on the first item, the arrows skip a disabled one, a letter jumps, Enter chooses', async ({
@@ -173,20 +173,20 @@ test('a menu: ArrowDown opens it on the first item, the arrows skip a disabled o
   await page.locator('[data-id=menu-open]').focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.locator('[data-id=menu]')).toBeVisible();
-  expect(await focused(page)).toBe('menu-account');
+  await expect.poll(() => focused(page)).toBe('menu-account');
   expect(await violations(page)).toEqual([]);
   await page.keyboard.press('ArrowDown');
-  expect(await focused(page)).toBe('Orders');
+  await expect.poll(() => focused(page)).toBe('Orders');
   await page.keyboard.press('ArrowDown');
-  expect(await focused(page)).toBe('Light');
+  await expect.poll(() => focused(page)).toBe('Light');
   await page.keyboard.press('s');
-  expect(await focused(page)).toBe('menu-sign-out');
+  await expect.poll(() => focused(page)).toBe('menu-sign-out');
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-id=menu-last]')).toHaveText(
     'Chose: Sign out',
   );
   await expect(page.locator('[data-id=menu]')).toBeHidden();
-  expect(await focused(page)).toBe('menu-open');
+  await expect.poll(() => focused(page)).toBe('menu-open');
 });
 
 test('a tooltip shows on focus, describing its trigger, and Escape hides it', async ({
@@ -275,3 +275,58 @@ test('a combobox: its popup under the input, the arrows highlighting with the fo
     'false',
   );
 });
+
+test('the theme switcher sets the tokens at once, and the server keeps them, navigating or reloading', async ({
+  page,
+}) => {
+  await page.goto('/surfaces');
+  await hydrated(page, '[data-id=theme-shop]');
+  // The page's background: the theme's `bg` token.
+  const background = () =>
+    page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector('[data-id=gallery]')!)
+          .backgroundColor,
+    );
+  const shop = 'rgb(251, 248, 244)';
+  const defaultBackground = await background();
+  expect(defaultBackground).not.toBe(shop);
+  await page.locator('[data-id=theme-shop]').click();
+  await expect(page.locator('[data-id=theme-shop]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(await background()).toBe(shop);
+  await page.locator('[data-id=nav-forms]').click();
+  await expect(page.locator('[data-id=page-title]')).toHaveText('Forms');
+  expect(await background()).toBe(shop);
+  await page.reload();
+  await expect(page.locator('[data-id=theme-shop]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(await background()).toBe(shop);
+  await hydrated(page, '[data-id=theme-default]');
+  await page.locator('[data-id=theme-default]').click();
+  expect(await background()).toBe(defaultBackground);
+});
+
+for (const theme of ['notes', 'shop']) {
+  for (const path of ['/surfaces', '/forms', '/actions']) {
+    test(`${path}, in the ${theme} theme, has nothing axe finds wrong`, async ({
+      page,
+      context,
+      baseURL,
+    }) => {
+      await context.addCookies([
+        {name: 'gallery-theme', value: theme, url: baseURL!},
+      ]);
+      await page.goto(path);
+      await expect(page.locator(`[data-id=theme-${theme}]`)).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      expect(await violations(page)).toEqual([]);
+    });
+  }
+}

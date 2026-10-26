@@ -15,6 +15,18 @@ function SearchPage(props) {
       summary: "A text input with suggestions: the arrow keys highlight them while the focus stays in the input, Enter chooses one, Escape closes.",
       children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
         caption: "Suggestions filtered as it's typed, kinds beside them",
+        code: `<Field label="Fruit">
+  <Combobox.Root onSelect=choose>
+    <Combobox.Input value=query onInput />
+    {matches == []
+      ? <Combobox.Popup> <Combobox.Empty> {text("No fruit")} </Combobox.Empty> </Combobox.Popup>
+      : <Combobox.Popup>
+          {matches->Array.map(fruit =>
+            <Combobox.Item key=fruit.id value=fruit.id> {text(fruit.name)} </Combobox.Item>
+          )->WeftDom.Jsx.array}
+        </Combobox.Popup>}
+  </Combobox.Root>
+</Field>`,
         children: Jsx$WeftDom.jsx(DisclosureDemos$WeftUiGallery.FruitSearch.make, {})
       })
     })

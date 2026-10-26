@@ -5,6 +5,7 @@ import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as Theme$WeftUiGallery from "../src/shared/Theme.res.js";
 import * as GallerySupport$WeftUiGallery from "./GallerySupport.res.js";
 
 let app = {
@@ -153,6 +154,17 @@ Vitest.describe("the gallery", undefined, undefined, undefined, undefined, undef
     key("ArrowDown");
     key("Enter");
     return await WeftTesting.waitFor(search, undefined, () => GallerySupport$WeftUiGallery.text(search, "[data-id=fruit-chosen]") === "Chose: blueberry");
+  });
+  Vitest.testAsync("the theme switcher puts a palette's class on the outermost element", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = WeftTesting.open_(app$1(), GallerySupport$WeftUiGallery.rootElement(), undefined, undefined, "/surfaces");
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.has(page, "[data-id=theme-notes]"));
+    await WeftTesting.hydrated(page, undefined);
+    let attribute = (selector, name) => Stdlib_Option.flatMap(WeftTesting.query(page, selector), element => Primitive_option.fromNullable(element.getAttribute(name)));
+    t.expect(attribute("[data-id=gallery]", "class")).toEqual(Theme$WeftUiGallery.rootClass("default"));
+    WeftTesting.click(page, "[data-id=theme-notes]");
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(attribute("[data-id=theme-notes]", "aria-pressed"), "true"));
+    t.expect(attribute("[data-id=gallery]", "class")).toEqual(Theme$WeftUiGallery.rootClass("notes"));
+    return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
 });
 

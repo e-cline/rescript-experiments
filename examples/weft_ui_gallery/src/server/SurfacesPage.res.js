@@ -28,6 +28,14 @@ function SurfacesPage(props) {
         summary: "A surface for one thing, with a header, content and a footer.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Each variant",
+          code: `<Card.Root as_=#article variant=#elevated>
+  <Card.Header>
+    <Card.Title> {text("Wool scarf")} </Card.Title>
+    <Card.Description> {text("Merino, hand-dyed")} </Card.Description>
+  </Card.Header>
+  <Card.Content> ... </Card.Content>
+  <Card.Footer> <Badge tone=#success> {text("In stock")} </Badge> </Card.Footer>
+</Card.Root>`,
           children: Jsx$WeftDom.jsx(Grid$WeftUi.make, {
             minItemWidth: "220px",
             gap: "lg",
@@ -79,6 +87,14 @@ function SurfacesPage(props) {
         summary: "A message in a box. Danger and warning are alerts, announced at once; the rest are statuses.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "Each tone, one with an action",
+          code: `<Alert.Root tone=#success>
+  <Alert.Title> {text("Saved")} </Alert.Title>
+</Alert.Root>
+<Alert.Root tone=#danger>
+  <Alert.Title> {text("Couldn't load this")} </Alert.Title>
+  <Alert.Description> {text("The reviews service is down.")} </Alert.Description>
+  <Alert.Action> <Button size=#sm onClick=retry> {text("Retry")} </Button> </Alert.Action>
+</Alert.Root>`,
           children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
             gap: "sm",
             children: [
@@ -148,6 +164,9 @@ function SurfacesPage(props) {
         children: [
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Each tone, in each variant",
+            code: `<Badge tone=#success> {text("In stock")} </Badge>
+<Badge tone=#danger variant=#solid> {text("Sale")} </Badge>
+<Badge tone=#accent variant=#outline> {text("New")} </Badge>`,
             children: Jsx$WeftDom.jsx(Stack$WeftUi.make, {
               gap: "sm",
               children: Primitive_option.some([
@@ -174,6 +193,8 @@ function SurfacesPage(props) {
           }),
           Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
             caption: "Small and rounded, and links as chips",
+            code: `<Badge size=#sm shape=#rounded tone=#accent> {text("New")} </Badge>
+<a href className={Badge.className(~variant=#outline, ~link=true, ())}> {text("Merino")} </a>`,
             children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
               direction: "row",
               gap: "sm",
@@ -212,6 +233,13 @@ function SurfacesPage(props) {
         summary: "What a place shows when there's nothing in it yet.",
         children: Jsx$WeftDom.jsx(Specimen$WeftUiGallery.Example.make, {
           caption: "bordered=true, with an action",
+          code: `<EmptyState.Root bordered=true>
+  <EmptyState.Title> {text("Your cart is empty")} </EmptyState.Title>
+  <EmptyState.Description> {text("Anything you add shows up here.")} </EmptyState.Description>
+  <EmptyState.Action>
+    <a href="/" className={Button.className(~variant=#primary, ())}> {text("Keep shopping")} </a>
+  </EmptyState.Action>
+</EmptyState.Root>`,
           children: Jsx$WeftDom.jsxs(EmptyState$WeftUi.Root.make, {
             bordered: true,
             children: [

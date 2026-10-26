@@ -58,6 +58,43 @@ async function serverRender(element) {
   ];
 }
 
+function keyDown(element, key) {
+  let event = ((key) => new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true}))(key);
+  Client$WeftDom.act(() => {
+    element.dispatchEvent(event);
+  });
+  return event;
+}
+
+function typeInto(input, text) {
+  Client$WeftDom.act(() => {
+    input["value"] = text;
+    input.dispatchEvent(new Event("input", {
+      bubbles: true
+    }));
+  });
+}
+
+function blur(element) {
+  Client$WeftDom.act(() => {
+    element.dispatchEvent(new Event("blur", {}));
+  });
+}
+
+function focus(element) {
+  Client$WeftDom.act(() => {
+    element.focus();
+  });
+}
+
+function activeElement() {
+  return Primitive_option.fromNullable(document.activeElement);
+}
+
+function property(element, name) {
+  return element[name];
+}
+
 let Dom;
 
 let findAll = Dom$WeftDom.querySelectorAll;
@@ -73,5 +110,11 @@ export {
   has,
   click,
   serverRender,
+  keyDown,
+  typeInto,
+  blur,
+  focus,
+  activeElement,
+  property,
 }
 /* Client-WeftDom Not a pure module */

@@ -41,3 +41,31 @@ let serverRender = async (element: Weft.Element.t) => {
   )
   (payload, errors)
 }
+
+/** A key pressed on `element` (a `keydown` that bubbles and can be cancelled). */
+let keyDown = (element, key) => {
+  let event: Dom.event = %raw(`(key) => new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true})`)(
+    key,
+  )
+  WeftDom.Client.act(() => Dom.dispatchEvent(element, event))
+  event
+}
+
+/** Types `text` into an input: sets its value and fires `input`, as a keystroke would. */
+let typeInto = (input, text) =>
+  WeftDom.Client.act(() => {
+    Dom.setProperty(input, "value", Obj.magic(text))
+    Dom.dispatchEvent(input, Dom.Event.make("input", {bubbles: true}))
+  })
+
+/** Fires `blur` on `element`, as the focus leaving it would. */
+let blur = element =>
+  WeftDom.Client.act(() => Dom.dispatchEvent(element, Dom.Event.make("blur", {})))
+
+let focus = element => WeftDom.Client.act(() => Dom.focus(element))
+
+let activeElement = () => Dom.activeElement(Dom.document)->Nullable.toOption
+
+external toString: unknown => string = "%identity"
+external toBool: unknown => bool = "%identity"
+let property = (element, name) => Dom.getProperty(element, name)

@@ -802,6 +802,9 @@ Vitest.describe("the HTML, parsed", undefined, undefined, undefined, undefined, 
           id: "p",
           popover: "auto"
         }),
+        Jsx$WeftDom.Elements.jsx("form", {
+          noValidate: true
+        }),
         Jsx$WeftDom.Elements.jsx("details", {
           open: true,
           children: Jsx$WeftDom.Elements.jsx("summary", {})
@@ -842,6 +845,7 @@ Vitest.describe("the HTML, parsed", undefined, undefined, undefined, undefined, 
       `data-highlighted=""`,
       `popover="auto"`,
       `rowspan="2"`,
+      `<form novalidate="">`,
       `<details open="">`,
       `<dialog>`
     ].forEach(expected => t.expect(markup.includes(expected)).toBe(true));

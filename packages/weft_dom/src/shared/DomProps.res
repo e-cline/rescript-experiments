@@ -119,6 +119,8 @@ type props = {
   multiple?: bool,
   size?: int,
   form?: string,
+  // A form's: submitting it doesn't run the browser's own validation (the page shows its errors).
+  noValidate?: bool,
   // Events
   onClick?: Dom.event => unit,
   onDoubleClick?: Dom.event => unit,
@@ -188,6 +190,7 @@ let attributeName = (prop: string) =>
   | "minLength" => "minlength"
   | "popoverTarget" => "popovertarget"
   | "popoverTargetAction" => "popovertargetaction"
+  | "noValidate" => "novalidate"
   | "autoComplete" => "autocomplete"
   | "inputMode" => "inputmode"
   | "maxLength" => "maxlength"

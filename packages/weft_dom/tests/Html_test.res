@@ -728,6 +728,7 @@ describe("the HTML, parsed", () => {
           dataVariant="primary"
         />
         <div id="p" popover="auto" />
+        <form noValidate=true />
         <details open_=true>
           <summary />
         </details>
@@ -757,6 +758,7 @@ describe("the HTML, parsed", () => {
       `data-highlighted=""`,
       `popover="auto"`,
       `rowspan="2"`,
+      `<form novalidate="">`,
       `<details open="">`,
       `<dialog>`,
     ]->Array.forEach(expected => t->expect(markup->String.includes(expected))->Expect.toBe(true))

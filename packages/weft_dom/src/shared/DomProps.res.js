@@ -35,6 +35,8 @@ function attributeName(prop) {
       return "maxlength";
     case "minLength" :
       return "minlength";
+    case "noValidate" :
+      return "novalidate";
     case "popoverTarget" :
       return "popovertarget";
     case "popoverTargetAction" :

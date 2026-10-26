@@ -13,6 +13,9 @@ let installJsdomShims = (() => {
     target?.focus();
   };
 
+  // jsdom lays nothing out, so there's nothing to scroll into view (a combobox's highlighted option).
+  if (!window.Element.prototype.scrollIntoView) window.Element.prototype.scrollIntoView = () => {};
+
   // Dialogs
   const modals = [];
   if (HTMLDialogElement && !HTMLDialogElement.prototype.showModal) {

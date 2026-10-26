@@ -14,6 +14,7 @@ What it does, and doesn't:
   target when clicked. Escape, or a click outside, hides the newest `auto` popover.
 - jsdom hides every popover (it never matches `:popover-open`), and won't focus in a hidden one, so
   a stylesheet the shim adds shows those it shows (they have `data-popover-open`, for tests too).
+- `scrollIntoView` does nothing (jsdom has none).
 - It doesn't make anything inert, trap focus, or lay anything out: those are the browser's, and
   weft_ui's browser tests check them.
 */
@@ -29,6 +30,9 @@ let installJsdomShims: unit => unit = %raw(`() => {
     const target = element.querySelector('[autofocus]') ?? element.querySelector(focusables);
     target?.focus();
   };
+
+  // jsdom lays nothing out, so there's nothing to scroll into view (a combobox's highlighted option).
+  if (!window.Element.prototype.scrollIntoView) window.Element.prototype.scrollIntoView = () => {};
 
   // Dialogs
   const modals = [];

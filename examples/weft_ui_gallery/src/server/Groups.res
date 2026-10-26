@@ -49,6 +49,12 @@ let all = [
     ],
   },
   {
+    slug: "overlays",
+    title: "Overlays",
+    summary: "Dialogs, alert dialogs, drawers, popovers, menus, tooltips and toasts.",
+    components: ["Dialog", "AlertDialog", "Drawer", "Popover", "Menu", "Tooltip", "Toast"],
+  },
+  {
     slug: "actions",
     title: "Actions and status",
     summary: "Buttons, icon buttons, and saying something's working.",

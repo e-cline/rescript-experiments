@@ -4,9 +4,12 @@ import * as Nodeurl from "node:url";
 import * as Nodepath from "node:path";
 import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Testing$WeftUi from "@e-cline/weft_ui/src/Testing.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 
 let packageRoot = Nodepath.dirname(Nodepath.dirname(Nodeurl.fileURLToPath(import.meta.url)));
+
+Testing$WeftUi.installJsdomShims();
 
 function rootElement() {
   let root = document.getElementById("root");

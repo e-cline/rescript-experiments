@@ -3,6 +3,7 @@
 import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
+import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as GallerySupport$WeftUiGallery from "./GallerySupport.res.js";
 
@@ -44,6 +45,10 @@ let pages = [
   [
     "/forms",
     "Forms"
+  ],
+  [
+    "/overlays",
+    "Overlays"
   ],
   [
     "/actions",
@@ -99,6 +104,25 @@ Vitest.describe("the gallery", undefined, undefined, undefined, undefined, undef
     WeftTesting.click(page, "[data-id=signup-terms]");
     WeftTesting.click(page, "[data-id=signup-submit]");
     return await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=signup-done]").includes("Welcome, Ada"));
+  });
+  Vitest.testAsync("a toast added on the overlays page shows in the frame's viewport", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = WeftTesting.open_(app$1(), GallerySupport$WeftUiGallery.rootElement(), undefined, undefined, "/overlays");
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.has(page, "[data-id=toast-neutral]"));
+    await WeftTesting.hydrated(page, undefined);
+    WeftTesting.click(page, "[data-id=toast-neutral]");
+    await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=toasts] li").includes("Link copied"));
+    return t.expect(WeftTesting.unstyled(page)).toEqual([]);
+  });
+  Vitest.testAsync("the menu opens on its first item, and a choice closes it", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = WeftTesting.open_(app$1(), GallerySupport$WeftUiGallery.rootElement(), undefined, undefined, "/overlays");
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.has(page, "[data-id=menu-open]"));
+    await WeftTesting.hydrated(page, undefined);
+    WeftTesting.click(page, "[data-id=menu-open]");
+    let attribute = (selector, name) => Stdlib_Option.flatMap(WeftTesting.query(page, selector), element => Primitive_option.fromNullable(element.getAttribute(name)));
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(attribute("[data-id=menu-open]", "aria-expanded"), "true"));
+    WeftTesting.click(page, "[data-id=menu-sign-out]");
+    await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=menu-last]") === "Chose: Sign out");
+    return t.expect(attribute("[data-id=menu-open]", "aria-expanded")).toEqual("false");
   });
 });
 

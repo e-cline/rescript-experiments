@@ -6,6 +6,9 @@
 
 let packageRoot = dirname(dirname(fileURLToPath(importMetaUrl)))
 
+// jsdom has no `<dialog>` methods or Popover API: weft_ui's stand-ins for its overlays.
+WeftUi.Testing.installJsdomShims()
+
 @val external document: {..} = "document"
 
 /** The document's `#root`, made if there isn't one (the built bootstrap looks for it). */

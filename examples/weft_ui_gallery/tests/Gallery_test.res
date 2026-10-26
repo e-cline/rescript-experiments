@@ -19,6 +19,7 @@ let pages = [
   ("/surfaces", "Surfaces"),
   ("/data", "Data"),
   ("/forms", "Forms"),
+  ("/overlays", "Overlays"),
   ("/actions", "Actions and status"),
 ]
 
@@ -90,4 +91,32 @@ describe("the gallery", () => {
       )
     },
   )
+
+  testAsync("a toast added on the overlays page shows in the frame's viewport", async t => {
+    let page = app()->WeftTesting.open_(~container=rootElement(), "/overlays")
+    await page->WeftTesting.waitFor(() => page->WeftTesting.has("[data-id=toast-neutral]"))
+    await page->WeftTesting.hydrated
+    page->WeftTesting.click("[data-id=toast-neutral]")
+    await page->WeftTesting.waitFor(
+      () => text(page, "[data-id=toasts] li")->String.includes("Link copied"),
+    )
+    t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+  })
+
+  testAsync("the menu opens on its first item, and a choice closes it", async t => {
+    let page = app()->WeftTesting.open_(~container=rootElement(), "/overlays")
+    await page->WeftTesting.waitFor(() => page->WeftTesting.has("[data-id=menu-open]"))
+    await page->WeftTesting.hydrated
+    page->WeftTesting.click("[data-id=menu-open]")
+    let attribute = (selector, name) =>
+      page
+      ->WeftTesting.query(selector)
+      ->Option.flatMap(element => WeftDom.Dom.getAttribute(element, name)->Nullable.toOption)
+    await page->WeftTesting.waitFor(
+      () => attribute("[data-id=menu-open]", "aria-expanded") == Some("true"),
+    )
+    page->WeftTesting.click("[data-id=menu-sign-out]")
+    await page->WeftTesting.waitFor(() => text(page, "[data-id=menu-last]") == "Chose: Sign out")
+    t->expect(attribute("[data-id=menu-open]", "aria-expanded"))->Expect.toEqual(Some("false"))
+  })
 })

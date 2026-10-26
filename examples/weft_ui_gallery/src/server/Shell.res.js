@@ -15,6 +15,7 @@ import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Theme$WeftUiGallery from "../shared/Theme.res.js";
 import * as Groups$WeftUiGallery from "./Groups.res.js";
+import * as ToastViewport$WeftUi from "@e-cline/weft_ui/src/entrypoints/ToastViewport.res.js";
 import * as NavLink$WeftUiGallery from "../client/NavLink.res.js";
 
 function text(prim) {
@@ -126,6 +127,9 @@ function Shell(props) {
             })
           ]
         }))
+      }),
+      Jsx$WeftDom.jsx(ToastViewport$WeftUi.make, {
+        dataId: "toasts"
       })
     ]
   });

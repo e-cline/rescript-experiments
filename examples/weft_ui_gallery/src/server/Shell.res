@@ -62,4 +62,5 @@ let make = (~current: option<string>=?, ~children) =>
         <main dataId="main" className=Styles.main> children </main>
       </Ui.Grid>
     </Ui.Container>
+    <Ui.ToastViewport dataId="toasts" />
   </div>

@@ -15,6 +15,7 @@ import * as TextPage$WeftUiGallery from "./TextPage.res.js";
 import * as FormsPage$WeftUiGallery from "./FormsPage.res.js";
 import * as LayoutPage$WeftUiGallery from "./LayoutPage.res.js";
 import * as ActionsPage$WeftUiGallery from "./ActionsPage.res.js";
+import * as OverlaysPage$WeftUiGallery from "./OverlaysPage.res.js";
 import * as SurfacesPage$WeftUiGallery from "./SurfacesPage.res.js";
 
 function respond(ctx, title, element) {
@@ -34,6 +35,10 @@ function groupPage(group) {
       });
     case "layout" :
       return Jsx$WeftDom.jsx(LayoutPage$WeftUiGallery.make, {
+        group: group
+      });
+    case "overlays" :
+      return Jsx$WeftDom.jsx(OverlaysPage$WeftUiGallery.make, {
         group: group
       });
     case "surfaces" :

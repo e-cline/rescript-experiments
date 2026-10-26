@@ -5,8 +5,11 @@
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Alert$WeftUi from "@e-cline/weft_ui/src/Alert.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as ErrorBoundary$Weft from "@e-cline/weft/src/shared/ErrorBoundary.res.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigation.res.js";
 
@@ -30,25 +33,8 @@ let block = Css$WeftCss.Internal.class_("BlockFrame-Styles-block_wjl03nx", undef
     ]]
 }));
 
-let error = Css$WeftCss.Internal.class_("BlockFrame-Styles-error_wjl03nx", undefined, () => ({
-  padding: {
-    TAG: "Px",
-    _0: 12
-  },
-  backgroundColor: {
-    TAG: "Hex",
-    _0: "fdf1f0"
-  },
-  border: "1px solid #f0c8c4",
-  borderRadius: {
-    TAG: "Px",
-    _0: 8
-  }
-}));
-
 let Styles = {
-  block: block,
-  error: error
+  block: block
 };
 
 function BlockFrame(props) {
@@ -91,24 +77,26 @@ function BlockFrame(props) {
     "aria-busy": block$1.isPending ? "true" : "false",
     "data-id": `block-` + id,
     children: Jsx$WeftDom.jsx(ErrorBoundary$Weft.make, {
-      fallback: (error$1, resetBoundary) => {
+      fallback: (error, resetBoundary) => {
         reset.current = resetBoundary;
-        return Jsx$WeftDom.Elements.jsxs("div", {
-          className: error,
-          role: "alert",
-          "data-id": `block-error-` + id,
+        return Jsx$WeftDom.jsxs(Alert$WeftUi.Root.make, {
+          tone: "danger",
+          dataId: `block-error-` + id,
           children: [
-            Jsx$WeftDom.Elements.jsx("p", {
-              children: "Couldn't load this: " + ErrorBoundary$Weft.message(error$1)
+            Jsx$WeftDom.jsx(Alert$WeftUi.Title.make, {
+              children: Primitive_option.some("Couldn't load this: " + ErrorBoundary$Weft.message(error))
             }),
-            Jsx$WeftDom.Elements.jsx("button", {
-              "data-id": `retry-` + id,
-              disabled: retrying,
-              onClick: param => {
-                setRetrying(param => true);
-                Stdlib_Promise.$$catch(refetch.current(undefined), param => Promise.resolve());
-              },
-              children: retrying ? "Retrying…" : "Retry"
+            Jsx$WeftDom.jsx(Alert$WeftUi.Action.make, {
+              children: Primitive_option.some(Jsx$WeftDom.jsx(Button$WeftUi.make, {
+                size: "sm",
+                busy: retrying,
+                onClick: param => {
+                  setRetrying(param => true);
+                  Stdlib_Promise.$$catch(refetch.current(undefined), param => Promise.resolve());
+                },
+                dataId: `retry-` + id,
+                children: Primitive_option.some(retrying ? "Retrying…" : "Retry")
+              }))
             })
           ]
         });

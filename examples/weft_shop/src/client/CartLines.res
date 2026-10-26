@@ -22,20 +22,7 @@ let reducer = (state: pending, action) => {
   next
 }
 
-open WeftCss
-
-module Styles = {
-  let lines = Css.class({padding: Zero, listStyle: None})
-  let line = Css.class({
-    display: Grid,
-    gridTemplateColumns: "1fr auto auto auto auto",
-    gap: Px(12),
-    alignItems: Center,
-    padding: Pair(Px(10), Zero),
-    borderBottom: Theme.hairline(),
-  })
-  let stepper = Css.class({display: InlineFlex, gap: Px(6), alignItems: Center})
-}
+module Ui = WeftUi
 
 @weft.component({kind: Entrypoint})
 let make = () => {
@@ -63,44 +50,84 @@ let make = () => {
     })
     ->Array.filter(line => line.quantity > 0)
   lines == []
-    ? <div dataId="cart-empty">
-        <p> {WeftDom.Jsx.string("Your cart is empty.")} </p>
-        <Link dataId="keep-shopping" href="/"> {WeftDom.Jsx.string("Keep shopping")} </Link>
-      </div>
-    : <ul dataId="cart-lines" className=Styles.lines>
-        {lines
-        ->Array.map(line =>
-          <li key=line.sku dataId={`line-${line.sku}`} className={Styles.line}>
-            <Link href={`/p/${line.slug}`}> {WeftDom.Jsx.string(line.name)} </Link>
-            <span> {WeftDom.Jsx.string(line.variant)} </span>
-            <span className={Styles.stepper}>
-              <button
-                dataId={`less-${line.sku}`}
-                ariaLabel="One fewer"
-                onClick={_ => change(line.sku, line.quantity - 1)}
-              >
-                {WeftDom.Jsx.string("−")}
-              </button>
-              <span dataId={`quantity-${line.sku}`}>
-                {WeftDom.Jsx.string(Int.toString(line.quantity))}
-              </span>
-              <button
-                dataId={`more-${line.sku}`}
-                ariaLabel="One more"
-                disabled={line.quantity >= 10}
-                onClick={_ => change(line.sku, line.quantity + 1)}
-              >
-                {WeftDom.Jsx.string("+")}
-              </button>
-            </span>
-            <span dataId={`total-${line.sku}`}>
-              {WeftDom.Jsx.string(Money.format(line.unitPrice * line.quantity, currency))}
-            </span>
-            <button dataId={`remove-${line.sku}`} onClick={_ => change(line.sku, 0)}>
-              {WeftDom.Jsx.string("Remove")}
-            </button>
-          </li>
-        )
-        ->WeftDom.Jsx.array}
-      </ul>
+    ? <Ui.EmptyState.Root bordered=true dataId="cart-empty">
+        <Ui.EmptyState.Title> {WeftDom.Jsx.string("Your cart is empty.")} </Ui.EmptyState.Title>
+        <Ui.EmptyState.Action>
+          <Link
+            dataId="keep-shopping" className={Ui.Button.className(~variant=#primary, ())} href="/"
+          >
+            {WeftDom.Jsx.string("Keep shopping")}
+          </Link>
+        </Ui.EmptyState.Action>
+      </Ui.EmptyState.Root>
+    : <Ui.Table.Root scrollLabel="Your cart" dataId="cart-lines">
+        <Ui.Table.Caption hidden=true>
+          {WeftDom.Jsx.string("What's in your cart")}
+        </Ui.Table.Caption>
+        <Ui.Table.Head>
+          <Ui.Table.Row>
+            <Ui.Table.HeaderCell> {WeftDom.Jsx.string("Item")} </Ui.Table.HeaderCell>
+            <Ui.Table.HeaderCell> {WeftDom.Jsx.string("Variant")} </Ui.Table.HeaderCell>
+            <Ui.Table.HeaderCell align=#center>
+              {WeftDom.Jsx.string("Quantity")}
+            </Ui.Table.HeaderCell>
+            <Ui.Table.HeaderCell numeric=true> {WeftDom.Jsx.string("Total")} </Ui.Table.HeaderCell>
+            <Ui.Table.HeaderCell>
+              <Ui.VisuallyHidden> {WeftDom.Jsx.string("Remove")} </Ui.VisuallyHidden>
+            </Ui.Table.HeaderCell>
+          </Ui.Table.Row>
+        </Ui.Table.Head>
+        <Ui.Table.Body>
+          {lines
+          ->Array.map(line =>
+            <Ui.Table.Row key=line.sku dataId={`line-${line.sku}`}>
+              <Ui.Table.HeaderCell scope=#row>
+                <Link href={`/p/${line.slug}`}> {WeftDom.Jsx.string(line.name)} </Link>
+              </Ui.Table.HeaderCell>
+              <Ui.Table.Cell> {WeftDom.Jsx.string(line.variant)} </Ui.Table.Cell>
+              <Ui.Table.Cell align=#center>
+                <Ui.Stack direction=#row gap=#xs align=#center justify=#center>
+                  <Ui.IconButton
+                    label={`One fewer ${line.name}`}
+                    size=#sm
+                    variant=#secondary
+                    dataId={`less-${line.sku}`}
+                    onClick={_ => change(line.sku, line.quantity - 1)}
+                  >
+                    {WeftDom.Jsx.string("−")}
+                  </Ui.IconButton>
+                  <Ui.Text as_=#span numeric=true dataId={`quantity-${line.sku}`}>
+                    {WeftDom.Jsx.string(Int.toString(line.quantity))}
+                  </Ui.Text>
+                  <Ui.IconButton
+                    label={`One more ${line.name}`}
+                    size=#sm
+                    variant=#secondary
+                    dataId={`more-${line.sku}`}
+                    disabled={line.quantity >= 10}
+                    onClick={_ => change(line.sku, line.quantity + 1)}
+                  >
+                    {WeftDom.Jsx.string("+")}
+                  </Ui.IconButton>
+                </Ui.Stack>
+              </Ui.Table.Cell>
+              <Ui.Table.Cell numeric=true dataId={`total-${line.sku}`}>
+                {WeftDom.Jsx.string(Money.format(line.unitPrice * line.quantity, currency))}
+              </Ui.Table.Cell>
+              <Ui.Table.Cell align=#end>
+                <Ui.Button
+                  variant=#ghost
+                  size=#sm
+                  dataId={`remove-${line.sku}`}
+                  ariaLabel={`Remove ${line.name}`}
+                  onClick={_ => change(line.sku, 0)}
+                >
+                  {WeftDom.Jsx.string("Remove")}
+                </Ui.Button>
+              </Ui.Table.Cell>
+            </Ui.Table.Row>
+          )
+          ->WeftDom.Jsx.array}
+        </Ui.Table.Body>
+      </Ui.Table.Root>
 }

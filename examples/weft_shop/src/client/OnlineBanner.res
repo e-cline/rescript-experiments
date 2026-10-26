@@ -19,14 +19,7 @@ let subscribe = onChange => {
 open WeftCss
 
 module Styles = {
-  let offline = Css.class({
-    position: Sticky,
-    top: Zero,
-    margin: Zero,
-    padding: Pair(Px(8), Px(16)),
-    backgroundColor: Hex("fff3cd"),
-    textAlign: Center,
-  })
+  let offline = Css.class({position: Sticky, top: Zero, zIndex: 10, borderRadius: Zero})
 }
 
 @weft.component
@@ -38,7 +31,9 @@ let make = () => {
   )
   online
     ? WeftDom.Jsx.null
-    : <p dataId="offline" className=Styles.offline role="alert">
-        {WeftDom.Jsx.string("You're offline: prices and stock may be out of date.")}
-      </p>
+    : <WeftUi.Alert.Root tone=#warning dataId="offline" className=Styles.offline>
+        <WeftUi.Alert.Description>
+          {WeftDom.Jsx.string("You're offline: prices and stock may be out of date.")}
+        </WeftUi.Alert.Description>
+      </WeftUi.Alert.Root>
 }

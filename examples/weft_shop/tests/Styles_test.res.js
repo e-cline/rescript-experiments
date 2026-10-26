@@ -20,6 +20,14 @@ function hasSheet(hrefs, file) {
   return hrefs.some(href => href.includes(sheetOf(file)));
 }
 
+function uiSheetOf(file) {
+  return SheetId$WeftCss.ofFileId(`@e-cline/weft_ui/src/` + file + `.res`);
+}
+
+function hasUiSheet(hrefs, file) {
+  return hrefs.some(href => href.includes(uiSheetOf(file)));
+}
+
 Vitest.describe("the store's styles", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("are sent by what each page renders: the home page's in its head, the cart's when it's opened", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     await ShopSupport$WeftShop.releaseAll(app());
@@ -29,13 +37,13 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
     let head = headSheets(await WeftTesting.shell(page));
     t.expect(hasSheet(head, "shared/Theme")).toBe(true);
     t.expect(hasSheet(head, "server/Ui")).toBe(true);
-    t.expect(hasSheet(head, "client/CartLines")).toBe(false);
+    t.expect(hasUiSheet(head, "Table")).toBe(false);
     t.expect(hasSheet(head, "client/CheckoutForm")).toBe(false);
     t.expect(WeftTesting.unstyled(page)).toEqual([]);
     await ShopSupport$WeftShop.addToCart(app(), "p1-9", 1);
     await WeftTesting.navigate(page, "/cart");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-lines]"));
-    t.expect(hasSheet(WeftTesting.stylesheets(page), "client/CartLines")).toBe(true);
+    t.expect(hasUiSheet(WeftTesting.stylesheets(page), "Table")).toBe(true);
     return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
   Vitest.testAsync("show nothing unstyled while the page streams in, block by block", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -63,7 +71,7 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
     let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=blocks-home]"));
     await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
-    WeftTesting.holdStylesheets(page, sheetOf("client/CartLines"));
+    WeftTesting.holdStylesheets(page, uiSheetOf("Table"));
     let navigated = WeftTesting.navigate(page, "/cart");
     await WeftTesting.settle(page);
     t.expect(ShopSupport$WeftShop.has(page, "[data-id=blocks-home]")).toBe(true);
@@ -81,5 +89,7 @@ export {
   sheetOf,
   headSheets,
   hasSheet,
+  uiSheetOf,
+  hasUiSheet,
 }
 /* app Not a pure module */

@@ -4,7 +4,6 @@ import * as Vitest from "rescript-vitest/src/Vitest.res.js";
 import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
-import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as ShopSupport$WeftShop from "./ShopSupport.res.js";
 
 let app = ShopSupport$WeftShop.useApp();
@@ -116,12 +115,10 @@ Vitest.describe("a product's page", undefined, undefined, undefined, undefined, 
     t.expect(ShopSupport$WeftShop.text(page, "[data-id=add-error]")).toBe("Not enough left of p1-9.");
     t.expect(ShopSupport$WeftShop.text(page, "[data-id=cart-button]")).toBe("Cart (3)");
     WeftTesting.click(page, "[data-id=cart-button]");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=cart-drawer]")));
-    t.expect(Stdlib_Option.map(ShopSupport$WeftShop.Doc.find("[data-id=drawer-p1-9]"), prim => prim.textContent)).toEqual("Trail Runner (Size 9) × 3: $387.00");
-    t.expect(Stdlib_Option.map(ShopSupport$WeftShop.Doc.find("[data-id=cart-drawer]"), drawer => Primitive_object.equal(WeftTesting.query(page, "[data-id=cart-drawer]"), Primitive_option.some(drawer)))).toEqual(false);
-    ShopSupport$WeftShop.clickAnywhere("[data-id=drawer-close]");
-    await WeftTesting.idle(page);
-    t.expect(ShopSupport$WeftShop.Doc.find("[data-id=cart-drawer]")).toBe(undefined);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-drawer][open]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=drawer-p1-9]")).toBe("Trail Runner (Size 9) × 3: $387.00");
+    WeftTesting.click(page, "[data-id=drawer-close]");
+    await WeftTesting.waitFor(page, undefined, () => !ShopSupport$WeftShop.has(page, "[data-id=cart-drawer][open]"));
     return ShopSupport$WeftShop.noWarnings(page);
   });
   Vitest.testAsync("can't add a variant that's sold out", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -185,10 +182,10 @@ Vitest.describe("the wishlist", undefined, undefined, undefined, undefined, unde
   Vitest.testAsync("asks a signed-out shopper to sign in, then saves at once, and on the server", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openProduct(undefined);
     WeftTesting.click(page, "[data-id=wishlist-p1]");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")));
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog][open]")));
     t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=wishlist-p1]", "aria-pressed")).toBe("false");
     ShopSupport$WeftShop.press("[data-id=signin-dialog]", "Escape");
-    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isNone(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog]")));
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isNone(ShopSupport$WeftShop.Doc.find("[data-id=signin-dialog][open]")));
     await ShopSupport$WeftShop.signIn(page, "Ada");
     WeftTesting.click(page, "[data-id=wishlist-p1]");
     t.expect(ShopSupport$WeftShop.attribute(page, "[data-id=wishlist-p1]", "aria-pressed")).toBe("true");

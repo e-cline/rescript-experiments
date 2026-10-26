@@ -136,22 +136,14 @@ describe("a product's page", () => {
       await page->WeftTesting.waitFor(() => has(page, "[data-id=add-error]"))
       t->expect(text(page, "[data-id=add-error]"))->Expect.toBe("Not enough left of p1-9.")
       t->expect(text(page, "[data-id=cart-button]"))->Expect.toBe("Cart (3)")
-      // The drawer, in a portal, lists what's in the cart.
+      // The drawer (a modal dialog, in its place in the page) lists what's in the cart.
       page->WeftTesting.click("[data-id=cart-button]")
-      await page->WeftTesting.waitFor(() => Doc.find("[data-id=cart-drawer]")->Option.isSome)
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=cart-drawer][open]"))
       t
-      ->expect(Doc.find("[data-id=drawer-p1-9]")->Option.map(WeftDom.Dom.textContent))
-      ->Expect.toEqual(Some("Trail Runner (Size 9) × 3: $387.00"))
-      t
-      ->expect(
-        Doc.find("[data-id=cart-drawer]")->Option.map(
-          drawer => page->WeftTesting.query("[data-id=cart-drawer]") == Some(drawer),
-        ),
-      )
-      ->Expect.toEqual(Some(false))
-      clickAnywhere("[data-id=drawer-close]")
-      await page->WeftTesting.idle
-      t->expect(Doc.find("[data-id=cart-drawer]"))->Expect.toBe(None)
+      ->expect(text(page, "[data-id=drawer-p1-9]"))
+      ->Expect.toBe("Trail Runner (Size 9) × 3: $387.00")
+      page->WeftTesting.click("[data-id=drawer-close]")
+      await page->WeftTesting.waitFor(() => !has(page, "[data-id=cart-drawer][open]"))
       noWarnings(page)
     },
   )
@@ -214,13 +206,17 @@ describe("the wishlist", () => {
     async t => {
       let page = await openProduct()
       page->WeftTesting.click("[data-id=wishlist-p1]")
-      await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+      await page->WeftTesting.waitFor(
+        () => Doc.find("[data-id=signin-dialog][open]")->Option.isSome,
+      )
       t
       ->expect(attribute(page, "[data-id=wishlist-p1]", "aria-pressed"))
       ->Expect.toBe(Some("false"))
       // Escape closes the dialog; the header opens it again.
       press("[data-id=signin-dialog]", "Escape")
-      await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isNone)
+      await page->WeftTesting.waitFor(
+        () => Doc.find("[data-id=signin-dialog][open]")->Option.isNone,
+      )
       await page->signIn("Ada")
       page->WeftTesting.click("[data-id=wishlist-p1]")
       t->expect(attribute(page, "[data-id=wishlist-p1]", "aria-pressed"))->Expect.toBe(Some("true"))

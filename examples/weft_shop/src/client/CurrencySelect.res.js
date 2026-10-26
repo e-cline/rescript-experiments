@@ -4,11 +4,13 @@
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Api$WeftShop from "../shared/Api.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Select$WeftUi from "@e-cline/weft_ui/src/Select.res.js";
 import * as Money$WeftShop from "../shared/Money.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Store$WeftShop from "./Store.res.js";
-import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as ShopContext$WeftShop from "./ShopContext.res.js";
 
 function CurrencySelect(props) {
@@ -16,36 +18,33 @@ function CurrencySelect(props) {
   let setCurrency = match.setCurrency;
   let currency = match.currency;
   let save = Rpc$WeftServer.use(Api$WeftShop.setCurrency, undefined);
-  return Jsx$WeftDom.Elements.jsxs("label", {
-    children: [
-      Jsx$WeftDom.Elements.jsx("span", {
-        className: Theme$WeftShop.visuallyHidden,
-        children: "Currency"
-      }),
-      Jsx$WeftDom.Elements.jsx("select", {
-        "data-id": "currency",
-        value: Money$WeftShop.code(currency),
-        onChange: event => {
-          let next = Money$WeftShop.fromCode(Dom$WeftDom.Event.targetValue(event));
-          if (next !== undefined) {
-            setCurrency(next);
-            (async () => {
-              let error = await save(next);
-              if (error.TAG === "Ok") {
-                return;
-              }
-              setCurrency(currency);
-              return Store$WeftShop.toast(Api$WeftShop.describe(error._0));
-            })();
-            return;
-          }
-        },
-        children: Money$WeftShop.currencies.map(option => Jsx$WeftDom.Elements.jsxKeyed("option", {
-          value: Money$WeftShop.code(option),
-          children: Money$WeftShop.symbol(option) + ` ` + Money$WeftShop.code(option)
-        }, Money$WeftShop.code(option), undefined))
-      })
-    ]
+  return Jsx$WeftDom.jsx(Field$WeftUi.make, {
+    label: "Currency",
+    hideLabel: true,
+    children: Jsx$WeftDom.jsx(Select$WeftUi.make, {
+      size: "sm",
+      value: Money$WeftShop.code(currency),
+      onChange: event => {
+        let next = Money$WeftShop.fromCode(Dom$WeftDom.Event.targetValue(event));
+        if (next !== undefined) {
+          setCurrency(next);
+          (async () => {
+            let error = await save(next);
+            if (error.TAG === "Ok") {
+              return;
+            }
+            setCurrency(currency);
+            return Store$WeftShop.toast(Api$WeftShop.describe(error._0));
+          })();
+          return;
+        }
+      },
+      dataId: "currency",
+      children: Primitive_option.some(Money$WeftShop.currencies.map(option => Jsx$WeftDom.jsxKeyed(Select$WeftUi.Option.make, {
+        value: Money$WeftShop.code(option),
+        children: Primitive_option.some(Money$WeftShop.symbol(option) + ` ` + Money$WeftShop.code(option))
+      }, Money$WeftShop.code(option), undefined)))
+    })
   });
 }
 

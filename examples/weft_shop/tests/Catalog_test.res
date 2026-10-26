@@ -183,8 +183,8 @@ describe("a category page", () => {
 
   testAsync("narrows by price, and the range resets when the filters are cleared", async t => {
     let page = await openCatalog()
-    let low = "[data-id=facet-price] input:first-of-type"
-    let high = "[data-id=facet-price] input:last-of-type"
+    let low = "[data-id=price-from]"
+    let high = "[data-id=price-to]"
     t->expect(page->WeftTesting.query(low)->Option.map(Doc.value))->Expect.toEqual(Some("59"))
     page->WeftTesting.input(low, "80")
     page->WeftTesting.input(high, "130")

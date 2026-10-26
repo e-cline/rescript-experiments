@@ -1,19 +1,9 @@
 /***
-Saving a product for later (the `wishlist.toggle` RPC): shown saved at once, put back if the server
+Saving a product for later (the `wishlist.toggle` RPC): a toggle (pressed while it's saved, its label
+the same either way), shown saved at once, put back if the server
 says no. Signed out, it opens the sign-in dialog instead. The server's answer (with a refresh, or
 another page) wins over what was shown.
 */
-
-open WeftCss
-
-module Styles = {
-  let wishlist = Css.class({
-    border: "none",
-    fontSize: Px(18),
-    color: Var(Theme.sale),
-    background: "none",
-  })
-}
 
 @weft.component({kind: Entrypoint})
 let make = (~productId: string, ~saved as serverSaved: bool) => {
@@ -24,13 +14,13 @@ let make = (~productId: string, ~saved as serverSaved: bool) => {
     None
   }, [serverSaved])
   let toggle = WeftServer.Rpc.use(Api.toggleWishlist)
-  <button
-    className={Styles.wishlist}
+  <WeftUi.Toggle
+    label="Save to wishlist"
+    variant=#ghost
+    size=#sm
     dataId={`wishlist-${productId}`}
-    ariaPressed={saved ? "true" : "false"}
-    ariaLabel={saved ? "Remove from wishlist" : "Save to wishlist"}
-    onClick={event => {
-      WeftDom.Dom.Event.preventDefault(event)
+    pressed=saved
+    onPressedChange={_ => {
       switch user {
       | None => Store.openSignIn()
       | Some(_) =>
@@ -50,5 +40,5 @@ let make = (~productId: string, ~saved as serverSaved: bool) => {
     }}
   >
     {WeftDom.Jsx.string(saved ? "♥" : "♡")}
-  </button>
+  </WeftUi.Toggle>
 }

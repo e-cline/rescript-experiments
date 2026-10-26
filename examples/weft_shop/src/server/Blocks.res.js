@@ -6,15 +6,19 @@ import * as Lazy$Weft from "@e-cline/weft/src/shared/Lazy.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Db$WeftShop from "./Db.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
 import * as Ui$WeftShop from "./Ui.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Link$WeftShop from "../client/Link.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
-import * as Tabs$WeftShop from "../client/Tabs.res.js";
+import * as Heading$WeftUi from "@e-cline/weft_ui/src/Heading.res.js";
 import * as Price$WeftShop from "../client/Price.res.js";
 import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Latency$WeftShop from "./Latency.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as TabsEntry$WeftUi from "@e-cline/weft_ui/src/entrypoints/TabsEntry.res.js";
 import * as Carousel$WeftShop from "../client/Carousel.res.js";
 import * as Countdown$WeftShop from "../client/Countdown.res.js";
 import * as BlockFrame$WeftShop from "../client/BlockFrame.res.js";
@@ -38,21 +42,20 @@ let hero = Css$WeftCss.Internal.class_("Blocks-Styles-hero_wcc2zg5", undefined, 
     _0: 12
   },
   selectors: [[
-      "h1",
+      "p",
       {
         margin: {
           TAG: "Four",
-          _0: "Zero",
-          _1: "Zero",
-          _2: {
+          _0: {
             TAG: "Px",
             _0: 6
           },
+          _1: "Zero",
+          _2: {
+            TAG: "Px",
+            _0: 16
+          },
           _3: "Zero"
-        },
-        fontSize: {
-          TAG: "Px",
-          _0: 32
         }
       }
     ]]
@@ -239,15 +242,17 @@ function Blocks$Body(props) {
           ]),
           "data-id": `hero-` + block.id,
           children: [
-            Jsx$WeftDom.Elements.jsx("h1", {
-              children: Ui$WeftShop.text(match.title)
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h1",
+              size: "xxl",
+              children: Primitive_option.some(Ui$WeftShop.text(match.title))
             }),
             Jsx$WeftDom.Elements.jsx("p", {
               children: Ui$WeftShop.text(match.subtitle)
             }),
             Jsx$WeftDom.jsx(Link$WeftShop.make, {
               href: match$1[1],
-              className: Theme$WeftShop.cta,
+              className: Button$WeftUi.className("primary", undefined, undefined, undefined, undefined),
               children: Ui$WeftShop.text(match$1[0])
             })
           ]
@@ -271,8 +276,10 @@ function Blocks$Body(props) {
         return Jsx$WeftDom.Elements.jsxs("div", {
           className: tiles,
           children: [
-            Jsx$WeftDom.Elements.jsx("h2", {
-              children: Ui$WeftShop.text(match.title)
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h2",
+              size: "lg",
+              children: Primitive_option.some(Ui$WeftShop.text(match.title))
             }),
             Jsx$WeftDom.Elements.jsx("ul", {
               children: Db$WeftShop.categories.map(param => {
@@ -315,8 +322,10 @@ function Blocks$Body(props) {
         return Jsx$WeftDom.Elements.jsxs("div", {
           className: liveDeals,
           children: [
-            Jsx$WeftDom.Elements.jsx("h2", {
-              children: Ui$WeftShop.text(match.title)
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h2",
+              size: "lg",
+              children: Primitive_option.some(Ui$WeftShop.text(match.title))
             }),
             Jsx$WeftDom.Elements.jsx("ul", {
               "data-id": "live-list",
@@ -346,11 +355,13 @@ function Blocks$Body(props) {
         return Jsx$WeftDom.Elements.jsxs("div", {
           "data-id": `text-` + block.id,
           children: [
-            Jsx$WeftDom.Elements.jsx("h2", {
-              children: Ui$WeftShop.text(match.title)
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h2",
+              size: "lg",
+              children: Primitive_option.some(Ui$WeftShop.text(match.title))
             }),
-            body === "" ? Jsx$WeftDom.$$null : Jsx$WeftDom.Elements.jsx("p", {
-                children: Ui$WeftShop.text(body)
+            body === "" ? Jsx$WeftDom.$$null : Jsx$WeftDom.jsx(Text$WeftUi.make, {
+                children: Primitive_option.some(Ui$WeftShop.text(body))
               })
           ]
         });
@@ -416,10 +427,11 @@ function framed(_block, _keyOpt, page, request) {
       switch (match.TAG) {
         case "Tabs" :
           let tabs = match.tabs;
-          return Jsx$WeftDom.jsxKeyed(Tabs$WeftShop.make, {
-            id: `tabs-` + block.id,
+          return Jsx$WeftDom.jsxKeyed(TabsEntry$WeftUi.make, {
             labels: tabs.map(param => param[0]),
-            panels: tabs.map(param => blockList(param[1], page, request))
+            panels: tabs.map(param => blockList(param[1], page, request)),
+            variant: "pills",
+            dataId: `tabs-` + block.id
           }, key, undefined);
         case "Columns" :
           return Jsx$WeftDom.Elements.jsxKeyed("div", {

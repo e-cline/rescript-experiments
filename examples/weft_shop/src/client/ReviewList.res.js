@@ -4,10 +4,18 @@
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as List$WeftUi from "@e-cline/weft_ui/src/List.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
+import * as Select$WeftUi from "@e-cline/weft_ui/src/Select.res.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
 import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as VisuallyHidden$WeftUi from "@e-cline/weft_ui/src/VisuallyHidden.res.js";
 
 function ReviewList$Items(props) {
   let reviews = Hooks$Weft.use(props.reviews);
@@ -32,53 +40,70 @@ function ReviewList$Items(props) {
   }
   let shown = all ? sorted : sorted.slice(0, 3);
   let average = Stdlib_Array.reduce(reviews, 0, (total, review) => total + review.stars | 0) / Math.max(1, reviews.length);
-  return Jsx$WeftDom.Elements.jsxs("div", {
+  return Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+    gap: "md",
+    align: "start",
     className: match$2[0] ? Theme$WeftShop.stale : "",
-    "data-id": "reviews",
+    dataId: "reviews",
     children: [
-      Jsx$WeftDom.Elements.jsx("p", {
-        "data-id": "review-summary",
-        children: average.toFixed(1) + ` out of 5, from ` + reviews.length.toString() + ` reviews`
+      Jsx$WeftDom.jsx(Text$WeftUi.make, {
+        weight: "medium",
+        dataId: "review-summary",
+        children: Primitive_option.some(average.toFixed(1) + ` out of 5, from ` + reviews.length.toString() + ` reviews`)
       }),
-      Jsx$WeftDom.Elements.jsxs("select", {
-        "aria-label": "Sort reviews",
-        "data-id": "review-order",
-        value: order,
-        onChange: event => {
-          let value = Dom$WeftDom.Event.targetValue(event);
-          startTransition(() => setOrder(param => value));
-        },
-        children: [
-          Jsx$WeftDom.Elements.jsx("option", {
-            value: "newest",
-            children: "Newest"
-          }),
-          Jsx$WeftDom.Elements.jsx("option", {
-            value: "highest",
-            children: "Highest rated"
-          }),
-          Jsx$WeftDom.Elements.jsx("option", {
-            value: "lowest",
-            children: "Lowest rated"
-          })
-        ]
-      }),
-      Jsx$WeftDom.Elements.jsx("ul", {
-        "data-id": "review-list",
-        children: shown.map(review => Jsx$WeftDom.Elements.jsxsKeyed("li", {
-          "data-id": `review-` + review.id,
+      Jsx$WeftDom.jsx(Field$WeftUi.make, {
+        label: "Sort reviews",
+        children: Jsx$WeftDom.jsxs(Select$WeftUi.make, {
+          size: "sm",
+          value: order,
+          onChange: event => {
+            let value = Dom$WeftDom.Event.targetValue(event);
+            startTransition(() => setOrder(param => value));
+          },
+          dataId: "review-order",
           children: [
-            Jsx$WeftDom.Elements.jsx("b", {
-              children: "★".repeat(review.stars) + ` ` + review.author
+            Jsx$WeftDom.jsx(Select$WeftUi.Option.make, {
+              value: "newest",
+              children: "Newest"
+            }),
+            Jsx$WeftDom.jsx(Select$WeftUi.Option.make, {
+              value: "highest",
+              children: "Highest rated"
+            }),
+            Jsx$WeftDom.jsx(Select$WeftUi.Option.make, {
+              value: "lowest",
+              children: "Lowest rated"
+            })
+          ]
+        })
+      }),
+      Jsx$WeftDom.jsx(List$WeftUi.Root.make, {
+        divided: true,
+        dataId: "review-list",
+        children: Primitive_option.some(shown.map(review => Jsx$WeftDom.jsxsKeyed(List$WeftUi.Item.make, {
+          dataId: `review-` + review.id,
+          children: [
+            Jsx$WeftDom.Elements.jsxs("b", {
+              children: [
+                Jsx$WeftDom.Elements.jsx("span", {
+                  "aria-hidden": "true",
+                  children: "★".repeat(review.stars)
+                }),
+                Jsx$WeftDom.jsx(VisuallyHidden$WeftUi.make, {
+                  children: Primitive_option.some(review.stars.toString() + ` out of 5 stars, `)
+                }),
+                ` ` + review.author
+              ]
             }),
             ": " + review.text
           ]
-        }, review.id, undefined))
+        }, review.id, undefined)))
       }),
-      !all && reviews.length > 3 ? Jsx$WeftDom.Elements.jsx("button", {
-          "data-id": "all-reviews",
+      !all && reviews.length > 3 ? Jsx$WeftDom.jsx(Button$WeftUi.make, {
+          size: "sm",
           onClick: param => setAll(param => true),
-          children: `Show all ` + reviews.length.toString()
+          dataId: "all-reviews",
+          children: Primitive_option.some(`Show all ` + reviews.length.toString())
         }) : Jsx$WeftDom.$$null
     ]
   });
@@ -90,8 +115,10 @@ let Items = {
 
 function ReviewList(props) {
   return Jsx$WeftDom.jsx(Suspense$Weft.make, {
-    fallback: Jsx$WeftDom.Elements.jsx("p", {
-      "data-id": "reviews-loading",
+    fallback: Jsx$WeftDom.jsx(Text$WeftUi.make, {
+      tone: "muted",
+      italic: true,
+      dataId: "reviews-loading",
       children: "Loading reviews…"
     }),
     children: Jsx$WeftDom.jsx(ReviewList$Items, {

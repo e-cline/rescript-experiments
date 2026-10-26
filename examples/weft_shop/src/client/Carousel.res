@@ -8,7 +8,6 @@ module Styles = {
   /** How far the track is moved: a page (100%) for each page before the one shown. */
   let offset = Css.var("0%")
   let head = Css.class({display: Flex, justifyContent: SpaceBetween, alignItems: Center})
-  let controls = Css.class({display: Flex, gap: Px(8), alignItems: Center, color: Var(Theme.muted)})
   let window = Css.class({overflow: Hidden})
   let track = Css.class({
     display: Grid,
@@ -30,33 +29,37 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
   let first = page * pageSize
   <div dataId={`carousel-${id}`}>
     <div className={Styles.head}>
-      <h2> {WeftDom.Jsx.string(title)} </h2>
+      <WeftUi.Heading level=#h2 size=#lg> {WeftDom.Jsx.string(title)} </WeftUi.Heading>
       {pages > 1
-        ? <div className={Styles.controls}>
-            <button
+        ? <WeftUi.Stack direction=#row gap=#sm align=#center>
+            <WeftUi.IconButton
+              label="Previous"
+              variant=#secondary
+              size=#sm
               dataId={`prev-${id}`}
-              ariaLabel="Previous"
               disabled={page == 0}
               onClick={_ => setPage(_ => page - 1)}
             >
               {WeftDom.Jsx.string("‹")}
-            </button>
-            <span dataId={`position-${id}`}>
+            </WeftUi.IconButton>
+            <WeftUi.Text as_=#span tone=#muted size=#sm numeric=true dataId={`position-${id}`}>
               {WeftDom.Jsx.string(
                 `${Int.toString(first + 1)}–${Int.toString(
                     Math.Int.min(count, first + pageSize),
                   )} of ${Int.toString(count)}`,
               )}
-            </span>
-            <button
+            </WeftUi.Text>
+            <WeftUi.IconButton
+              label="Next"
+              variant=#secondary
+              size=#sm
               dataId={`next-${id}`}
-              ariaLabel="Next"
               disabled={page == pages - 1}
               onClick={_ => setPage(_ => page + 1)}
             >
               {WeftDom.Jsx.string("›")}
-            </button>
-          </div>
+            </WeftUi.IconButton>
+          </WeftUi.Stack>
         : WeftDom.Jsx.null}
     </div>
     <div className={Styles.window}>

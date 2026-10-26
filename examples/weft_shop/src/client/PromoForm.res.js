@@ -3,12 +3,19 @@
 
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
+import * as Form$WeftUi from "@e-cline/weft_ui/src/Form.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
 import * as Api$WeftShop from "../shared/Api.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Input$WeftUi from "@e-cline/weft_ui/src/Input.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Store$WeftShop from "./Store.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
 function PromoForm(props) {
   let match = Hooks$Weft.useState(() => "");
@@ -18,43 +25,55 @@ function PromoForm(props) {
   let setMessage = match$1[1];
   let message = match$1[0];
   let apply = Rpc$WeftServer.use(Api$WeftShop.applyPromo, undefined);
-  let inputId = Hooks$Weft.useId();
-  return Jsx$WeftDom.Elements.jsxs("form", {
-    "data-id": "promo",
-    onSubmit: event => {
-      event.preventDefault();
+  return Jsx$WeftDom.jsxs(Form$WeftUi.make, {
+    onSubmit: () => {
       (async () => {
         let cart = await apply(code);
         if (cart.TAG === "Ok") {
           let cart$1 = cart._0;
           Store$WeftShop.setCart(cart$1);
           setCode(param => "");
-          return setMessage(param => `Applied ` + Stdlib_Option.getOr(cart$1.promo, ""));
+          return setMessage(param => [
+            "success",
+            `Applied ` + Stdlib_Option.getOr(cart$1.promo, "")
+          ]);
         }
         let error = cart._0;
-        return setMessage(param => Api$WeftShop.describe(error));
+        return setMessage(param => [
+          "danger",
+          Api$WeftShop.describe(error)
+        ]);
       })();
     },
+    dataId: "promo",
     children: [
-      Jsx$WeftDom.Elements.jsx("label", {
-        htmlFor: inputId,
-        children: "Promo code"
+      Jsx$WeftDom.jsx(Field$WeftUi.make, {
+        label: "Promo code",
+        children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+          direction: "row",
+          gap: "sm",
+          children: [
+            Jsx$WeftDom.jsx(Input$WeftUi.make, {
+              size: "sm",
+              value: code,
+              onInput: event => setCode(param => Dom$WeftDom.Event.targetValue(event)),
+              placeholder: Stdlib_Option.getOr(props.applied, "")
+            }),
+            Jsx$WeftDom.jsx(Button$WeftUi.make, {
+              size: "sm",
+              type_: "submit",
+              dataId: "apply-promo",
+              children: "Apply"
+            })
+          ]
+        })
       }),
-      Jsx$WeftDom.Elements.jsx("input", {
-        id: inputId,
-        value: code,
-        placeholder: Stdlib_Option.getOr(props.applied, ""),
-        onInput: event => setCode(param => Dom$WeftDom.Event.targetValue(event))
-      }),
-      Jsx$WeftDom.Elements.jsx("button", {
-        "data-id": "apply-promo",
-        type: "submit",
-        children: "Apply"
-      }),
-      message !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
+      message !== undefined ? Jsx$WeftDom.jsx(Text$WeftUi.make, {
+          tone: message[0],
+          size: "sm",
+          dataId: "promo-message",
           role: "status",
-          "data-id": "promo-message",
-          children: message
+          children: Primitive_option.some(message[1])
         }) : Jsx$WeftDom.$$null
     ]
   });
@@ -62,9 +81,12 @@ function PromoForm(props) {
 
 Entrypoint$Weft.mark(PromoForm, "@e-cline/weft_shop_example/src/client/PromoForm.res#");
 
+let Ui;
+
 let make = PromoForm;
 
 export {
+  Ui,
   make,
 }
 /*  Not a pure module */

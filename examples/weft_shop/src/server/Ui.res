@@ -10,11 +10,7 @@ open Types
 open WeftCss
 
 module Styles = {
-  let app = Css.class({
-    maxWidth: Px(1100),
-    margin: Pair(Zero, Auto),
-    padding: Four(Zero, Px(16), Px(48), Px(16)),
-  })
+  let app = Css.class({paddingBlockEnd: Px(48)})
   let header = Css.class({
     display: Flex,
     flexWrap: Wrap,
@@ -23,31 +19,29 @@ module Styles = {
     padding: Pair(Px(16), Zero),
     borderBottom: Theme.hairline(),
   })
-  let logo = Css.class({fontWeight: 700, fontSize: Px(20), textDecoration: None})
-  let nav = Css.class({
-    display: Flex,
-    gap: Px(14),
-    selectors: [("a", Css.style({textDecoration: None, color: Var(Theme.muted)}))],
-  })
-  let headerTools = Css.class({display: Flex, gap: Px(10), alignItems: Center})
+  let logo = Css.class({fontWeight: 700, fontSize: Px(20)})
+  let navList = Css.class({flexDirection: Row, gap: Px(14)})
   let main = Css.class({paddingTop: Px(20)})
-  let footer = Css.class({marginTop: Px(48), color: Var(Theme.muted), fontSize: Px(13)})
-  let card = Css.class({
-    backgroundColor: Named("white"),
-    border: Theme.hairline(),
-    borderRadius: Px(10),
-    padding: Px(10),
+  let footer = Css.class({marginTop: Px(48)})
+  let cardLink = Css.class({
+    display: Flex,
+    flexDirection: Column,
+    gap: Px(8),
+    color: Raw("inherit"),
+    textDecoration: None,
+    borderRadius: Px(8),
+    focusVisible: WeftUi.Tokens.focusVisible(),
   })
-  let cardLink = Css.class({textDecoration: None})
-  let cardName = Css.class({fontSize: Px(15), margin: Four(Px(8), Zero, Px(4), Zero)})
-  let cardMeta = Css.class({display: Flex, justifyContent: SpaceBetween, alignItems: Center})
-  let stock = Css.class({fontSize: Px(13), color: Hex("2f6b3a")})
-  let stockOut = Css.class({color: Var(Theme.sale)})
-  let stockLoading = Css.class({color: Var(Theme.muted)})
+  let cardName = Css.class({fontSize: Px(15), fontWeight: 600, margin: Zero})
 }
 
-/** A product's stock's classes: its semantic ones (which tests find it by), and its style. */
-let stockClass = stock => stock == 0 ? Css.cx([Styles.stock, Styles.stockOut]) : Styles.stock
+/** A product's stock's tone: sold out is the sale colour, a few left the accent, else in stock. */
+let stockTone = (stock): WeftUi.Variants.tone =>
+  switch stock {
+  | 0 => #danger
+  | stock if stock <= 3 => #accent
+  | _ => #success
+  }
 
 /** What a server component needs from the request: the shopper's session, and the request's signal. */
 type request = {
@@ -68,7 +62,7 @@ module StockBadge = {
   let make = async (~id, ~signal) => {
     await Latency.wait(`stock:${id}`, ~signal)
     let stock = Db.productStock(id)
-    <span className={stockClass(stock)} dataId={`stock-${id}`}>
+    <WeftUi.Badge tone={stockTone(stock)} size=#sm dataId={`stock-${id}`}>
       {text(
         switch stock {
         | 0 => "Sold out"
@@ -76,34 +70,39 @@ module StockBadge = {
         | _ => "In stock"
         },
       )}
-    </span>
+    </WeftUi.Badge>
   }
 }
 
 module ProductCard = {
   @weft.component({kind: Server})
   let make = (~summary: summary, ~saved: bool, ~signal) =>
-    <article className={Styles.card} dataId={`card-${summary.id}`}>
+    <WeftUi.Card.Root as_=#article padding=#sm dataId={`card-${summary.id}`}>
       <Link className={Styles.cardLink} href={`/p/${summary.slug}`}>
         <div className={Theme.picture} style={Theme.pictureVars(~hue=summary.hue)} />
         <h3 className={Styles.cardName}> {text(summary.name)} </h3>
       </Link>
-      <div className={Styles.cardMeta}>
+      <WeftUi.Stack direction=#row justify=#between align=#center gap=#sm>
         <Price cents=summary.price compareAt=?summary.compareAt />
         <WishlistButton productId=summary.id saved />
-      </div>
-      <Weft.Suspense
-        fallback={<span
-          className={Css.cx([Styles.stock, Styles.stockLoading])}
-          dataId={`stock-loading-${summary.id}`}
-          ariaBusy="true"
+      </WeftUi.Stack>
+      // In a box of its own: the card is a column, which would stretch the badge across it.
+      <div>
+        <Weft.Suspense
+          fallback={<WeftUi.Text
+            as_=#span
+            tone=#muted
+            size=#sm
+            dataId={`stock-loading-${summary.id}`}
+            attrs={{ariaBusy: "true"}}
+          >
+            {text("Checking stock…")}
+          </WeftUi.Text>}
         >
-          {text("Checking stock…")}
-        </span>}
-      >
-        <StockBadge id=summary.id signal />
-      </Weft.Suspense>
-    </article>
+          <StockBadge id=summary.id signal />
+        </Weft.Suspense>
+      </div>
+    </WeftUi.Card.Root>
 }
 
 /** Cards for `summaries`, keyed. */
@@ -130,20 +129,36 @@ module Header = {
   @weft.component({kind: Server})
   let make = (~query) =>
     <header dataId="header" className=Styles.header>
-      <Link dataId="logo" className=Styles.logo href="/"> {text("Loom & Co.")} </Link>
-      <nav dataId="nav" className=Styles.nav>
-        {Db.categories
-        ->Array.map(((slug, name)) =>
-          <Link key=slug dataId={`nav-${slug}`} href={`/c/${slug}`}> {text(name)} </Link>
-        )
-        ->WeftDom.Jsx.array}
+      <Link
+        dataId="logo"
+        className={WeftUi.Link.className(~tone=#inherit, ~underline=#none, ())}
+        href="/"
+      >
+        <span className=Styles.logo> {text("Loom & Co.")} </span>
+      </Link>
+      <nav dataId="nav" ariaLabel="Categories">
+        <WeftUi.List.Root className=Styles.navList>
+          {Db.categories
+          ->Array.map(((slug, name)) =>
+            <WeftUi.List.Item key=slug>
+              <Link
+                dataId={`nav-${slug}`}
+                className={WeftUi.Link.className(~tone=#muted, ~underline=#hover, ())}
+                href={`/c/${slug}`}
+              >
+                {text(name)}
+              </Link>
+            </WeftUi.List.Item>
+          )
+          ->WeftDom.Jsx.array}
+        </WeftUi.List.Root>
       </nav>
       <SearchBox initial=query />
-      <div className={Styles.headerTools}>
+      <WeftUi.Stack direction=#row gap=#sm align=#center>
         <CurrencySelect />
         <AccountMenu />
         <CartBadge />
-      </div>
+      </WeftUi.Stack>
     </header>
 }
 
@@ -152,13 +167,15 @@ module Shell = {
   let make = (~request: request, ~children) => {
     let session = request.session
     <ShopShell currency=session.currency user=session.user cart={Session.cart(session)}>
-      <div dataId="app" className=Styles.app>
+      <WeftUi.Container size=#lg dataId="app" className={Css.cx([Theme.root, Styles.app])}>
         <Header query=request.query />
         <main dataId="main" className=Styles.main> children </main>
         <footer dataId="footer" className=Styles.footer>
-          {text("Loom & Co. — a Weft example. Nothing here is for sale.")}
+          <WeftUi.Text tone=#muted size=#sm>
+            {text("Loom & Co. — a Weft example. Nothing here is for sale.")}
+          </WeftUi.Text>
         </footer>
-      </div>
+      </WeftUi.Container>
     </ShopShell>
   }
 }

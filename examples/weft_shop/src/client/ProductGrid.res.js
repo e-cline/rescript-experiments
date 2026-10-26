@@ -7,22 +7,19 @@ import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
 import * as Api$WeftShop from "../shared/Api.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Input$WeftUi from "@e-cline/weft_ui/src/Input.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Store$WeftShop from "./Store.res.js";
 import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
-
-let tools = Css$WeftCss.Internal.class_("ProductGrid-Styles-tools_wj7z8rq", undefined, () => ({
-  display: "flex",
-  gap: {
-    TAG: "Px",
-    _0: 12
-  },
-  alignItems: "center",
-  justifyContent: "space-between"
-}));
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as EmptyState$WeftUi from "@e-cline/weft_ui/src/EmptyState.res.js";
 
 let grid = Css$WeftCss.Internal.class_("ProductGrid-Styles-grid_wj7z8rq", undefined, () => ({
   display: "grid",
@@ -36,17 +33,8 @@ let grid = Css$WeftCss.Internal.class_("ProductGrid-Styles-grid_wj7z8rq", undefi
   transition: "opacity .2s"
 }));
 
-let loadMore = Css$WeftCss.Internal.class_("ProductGrid-Styles-loadMore_wj7z8rq", undefined, () => ({
-  marginTop: {
-    TAG: "Px",
-    _0: 16
-  }
-}));
-
 let Styles = {
-  tools: tools,
-  grid: grid,
-  loadMore: loadMore
+  grid: grid
 };
 
 function ProductGrid(props) {
@@ -65,30 +53,42 @@ function ProductGrid(props) {
   let setFilter = match$3[1];
   let filter = match$3[0];
   let deferred = Hooks$Weft.useDeferredValue(filter);
-  let loadMore$1 = Rpc$WeftServer.use(Api$WeftShop.more, undefined);
+  let loadMore = Rpc$WeftServer.use(Api$WeftShop.more, undefined);
   let all = Belt_Array.concatMany([
     props.items,
     match[0]
   ]);
   let needle = deferred.trim().toLowerCase();
   let shown = needle === "" ? all : all.filter(item => item.name.toLowerCase().includes(needle));
-  return Jsx$WeftDom.Elements.jsxs("div", {
-    "data-id": "grid-wrap",
+  return Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+    gap: "md",
+    dataId: "grid-wrap",
     children: [
-      Jsx$WeftDom.Elements.jsxs("div", {
-        className: tools,
+      Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+        direction: "row",
+        gap: "md",
+        align: "center",
+        justify: "between",
+        wrap: true,
         children: [
-          Jsx$WeftDom.Elements.jsx("input", {
-            "aria-label": "Filter these results",
-            "data-id": "quick-filter",
-            type: "search",
-            value: filter,
-            placeholder: "Filter these results",
-            onInput: event => setFilter(param => Dom$WeftDom.Event.targetValue(event))
+          Jsx$WeftDom.jsx(Field$WeftUi.make, {
+            label: "Filter these results",
+            hideLabel: true,
+            children: Jsx$WeftDom.jsx(Input$WeftUi.make, {
+              type_: "search",
+              size: "sm",
+              value: filter,
+              onInput: event => setFilter(param => Dom$WeftDom.Event.targetValue(event)),
+              placeholder: "Filter these results",
+              dataId: "quick-filter"
+            })
           }),
-          Jsx$WeftDom.Elements.jsx("p", {
-            "data-id": "result-count",
-            children: `Showing ` + shown.length.toString() + ` of ` + props.total.toString()
+          Jsx$WeftDom.jsx(Text$WeftUi.make, {
+            tone: "muted",
+            size: "sm",
+            dataId: "result-count",
+            role: "status",
+            children: Primitive_option.some(`Showing ` + shown.length.toString() + ` of ` + props.total.toString())
           })
         ]
       }),
@@ -102,38 +102,42 @@ function ProductGrid(props) {
           children: item.card
         }, item.key, undefined))
       }),
-      Primitive_object.equal(shown, []) ? Jsx$WeftDom.Elements.jsx("p", {
-          "data-id": "no-results",
-          children: "Nothing matches."
+      Primitive_object.equal(shown, []) ? Jsx$WeftDom.jsx(EmptyState$WeftUi.Root.make, {
+          bordered: true,
+          dataId: "no-results",
+          children: Primitive_option.some(Jsx$WeftDom.jsx(EmptyState$WeftUi.Title.make, {
+            children: "Nothing matches."
+          }))
         }) : Jsx$WeftDom.$$null,
-      next !== undefined ? Jsx$WeftDom.Elements.jsx("button", {
-          className: loadMore,
-          "data-id": "load-more",
-          disabled: loading,
-          onClick: param => {
-            setLoading(param => true);
-            (async () => {
-              let error = await loadMore$1({
-                category: category,
-                query: query,
-                page: next
-              });
-              if (error.TAG === "Ok") {
-                let match = error._0;
-                let next$1 = match.next;
-                let items = match.items;
-                setMore(more => Belt_Array.concatMany([
-                  more,
-                  items
-                ]));
-                setNext(param => next$1);
-              } else {
-                Store$WeftShop.toast(Api$WeftShop.describe(error._0));
-              }
-              return setLoading(param => false);
-            })();
-          },
-          children: loading ? "Loading…" : "Load more"
+      next !== undefined ? Jsx$WeftDom.Elements.jsx("div", {
+          children: Jsx$WeftDom.jsx(Button$WeftUi.make, {
+            busy: loading,
+            onClick: param => {
+              setLoading(param => true);
+              (async () => {
+                let error = await loadMore({
+                  category: category,
+                  query: query,
+                  page: next
+                });
+                if (error.TAG === "Ok") {
+                  let match = error._0;
+                  let next$1 = match.next;
+                  let items = match.items;
+                  setMore(more => Belt_Array.concatMany([
+                    more,
+                    items
+                  ]));
+                  setNext(param => next$1);
+                } else {
+                  Store$WeftShop.toast(Api$WeftShop.describe(error._0));
+                }
+                return setLoading(param => false);
+              })();
+            },
+            dataId: "load-more",
+            children: Primitive_option.some(loading ? "Loading…" : "Load more")
+          })
         }) : Jsx$WeftDom.$$null
     ]
   });
@@ -147,4 +151,4 @@ export {
   Styles,
   make,
 }
-/* tools Not a pure module */
+/* grid Not a pure module */

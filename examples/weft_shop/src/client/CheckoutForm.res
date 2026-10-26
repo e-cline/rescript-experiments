@@ -61,41 +61,20 @@ let reducer = (state, action) =>
   }
 
 open WeftCss
+module Ui = WeftUi
 
 module Styles = {
-  let steps = Css.class({
-    display: Flex,
-    gap: Px(16),
-    padding: Zero,
-    listStyle: None,
-    color: Var(Theme.muted),
-    selectors: [("[aria-current=\"step\"]", Css.style({color: Var(Theme.ink), fontWeight: 600}))],
-  })
-  let field = Css.class({
-    display: Grid,
-    gap: Px(2),
-    marginBottom: Px(10),
-    maxWidth: Px(360),
-    selectors: [
-      (
-        "input",
-        Css.style({padding: Pair(Px(6), Px(8)), border: Theme.hairline(), borderRadius: Px(6)}),
-      ),
-    ],
-  })
+  let checkout = Css.class({maxWidth: Px(520)})
 }
 
 module Field = {
   @weft.component
-  let make = (~label: string, ~name: string, ~value: string, ~autoComplete: string, ~onEdit) => {
-    let id = Weft.Hooks.useId()
-    <div className={Styles.field}>
-      <label htmlFor=id> {WeftDom.Jsx.string(label)} </label>
-      <input
-        id name value autoComplete onInput={event => onEdit(WeftDom.Dom.Event.targetValue(event))}
+  let make = (~label: string, ~name: string, ~value: string, ~autoComplete: string, ~onEdit) =>
+    <Ui.Field label required=true>
+      <Ui.Input
+        name value autoComplete onInput={event => onEdit(WeftDom.Dom.Event.targetValue(event))}
       />
-    </div>
-  }
+    </Ui.Field>
 }
 
 @weft.component({kind: Entrypoint})
@@ -132,27 +111,32 @@ let make = (~total: cents, ~count: int) => {
         }
     )()->ignore
   }
-  <div dataId="checkout">
-    <ol dataId="checkout-steps" className=Styles.steps>
-      {[(Address, "Address"), (Delivery, "Delivery"), (Review, "Review")]
-      ->Array.map(((step, label)) =>
-        <li key=label ariaCurrent={step == state.step ? "step" : "false"}>
+  let stepStatus = (step, ~rank) => {
+    let current = switch state.step {
+    | Address => 0
+    | Delivery => 1
+    | Review => 2
+    }
+    step == state.step ? #current : rank < current ? #complete : #upcoming
+  }
+  <Ui.Stack gap=#lg dataId="checkout" className=Styles.checkout>
+    <Ui.Steps.Root ariaLabel="Checkout" dataId="checkout-steps">
+      {[(Address, "Address", 0), (Delivery, "Delivery", 1), (Review, "Review", 2)]
+      ->Array.map(((step, label, rank)) =>
+        <Ui.Steps.Step key=label status={stepStatus(step, ~rank)}>
           {WeftDom.Jsx.string(label)}
-        </li>
+        </Ui.Steps.Step>
       )
       ->WeftDom.Jsx.array}
-    </ol>
-    <form
+    </Ui.Steps.Root>
+    <Ui.Form
       dataId="checkout-form"
-      onSubmit={event => {
-        WeftDom.Dom.Event.preventDefault(event)
-        state.step == Review ? place() : dispatch(Next)
-      }}
+      busy=state.placing
+      onSubmit={() => state.step == Review ? place() : dispatch(Next)}
     >
       {switch state.step {
       | Address =>
-        <fieldset dataId="address-step">
-          <legend> {WeftDom.Jsx.string("Where to?")} </legend>
+        <Ui.Fieldset legend="Where to?" dataId="address-step">
           <Field
             label="Name" name="name" value=details.name autoComplete="name" onEdit={edit(Name, ...)}
           />
@@ -163,86 +147,102 @@ let make = (~total: cents, ~count: int) => {
             autoComplete="address-line1"
             onEdit={edit(Street, ...)}
           />
-          <Field
-            label="City"
-            name="city"
-            value=details.city
-            autoComplete="address-level2"
-            onEdit={edit(City, ...)}
-          />
-          <Field
-            label="Postcode"
-            name="postcode"
-            value=details.postcode
-            autoComplete="postal-code"
-            onEdit={edit(Postcode, ...)}
-          />
-        </fieldset>
+          <Ui.Grid template="2fr 1fr" gap=#md stackBelow=#sm>
+            <Field
+              label="City"
+              name="city"
+              value=details.city
+              autoComplete="address-level2"
+              onEdit={edit(City, ...)}
+            />
+            <Field
+              label="Postcode"
+              name="postcode"
+              value=details.postcode
+              autoComplete="postal-code"
+              onEdit={edit(Postcode, ...)}
+            />
+          </Ui.Grid>
+        </Ui.Fieldset>
       | Delivery =>
-        <fieldset dataId="delivery-step">
-          <legend> {WeftDom.Jsx.string("How fast?")} </legend>
-          {[(Standard, "Standard (3–5 days)"), (Express, "Express (next day)")]
-          ->Array.map(((delivery, label)) => {
-            let value = delivery == Standard ? "standard" : "express"
-            <label key=value className={Theme.choice}>
-              <input
-                type_="radio"
-                name="delivery"
-                dataId={`delivery-${value}`}
-                value
-                checked={details.delivery == delivery}
-                onChange={_ => dispatch(Choose(delivery))}
-              />
-              {WeftDom.Jsx.string(
-                ` ${label}: ${deliveryCost(delivery) == 0
-                    ? "free"
-                    : Money.format(deliveryCost(delivery), currency)}`,
-              )}
-            </label>
-          })
-          ->WeftDom.Jsx.array}
-          <label htmlFor="gift-note"> {WeftDom.Jsx.string("Gift note (optional)")} </label>
-          <textarea
+        <Ui.Stack gap=#lg dataId="delivery-step">
+          <Ui.RadioGroup.Root
+            legend="How fast?"
+            name="delivery"
+            value={details.delivery == Standard ? "standard" : "express"}
+            onValueChange={value => dispatch(Choose(value == "express" ? Express : Standard))}
+          >
+            {[(Standard, "Standard", "3–5 days"), (Express, "Express", "Next day")]
+            ->Array.map(((delivery, label, days)) => {
+              let value = delivery == Standard ? "standard" : "express"
+              let cost =
+                deliveryCost(delivery) == 0
+                  ? "free"
+                  : Money.format(deliveryCost(delivery), currency)
+              <Ui.RadioGroup.Radio
+                key=value value dataId={`delivery-${value}`} description={`${days}, ${cost}`}
+              >
+                {WeftDom.Jsx.string(label)}
+              </Ui.RadioGroup.Radio>
+            })
+            ->WeftDom.Jsx.array}
+          </Ui.RadioGroup.Root>
+          <Ui.Field
+            label="Gift note"
+            description="Optional: we'll print it on the packing slip."
             id="gift-note"
-            rows=2
-            value={details.giftNote->Option.getOr("")}
-            onInput={event => edit(GiftNote, WeftDom.Dom.Event.targetValue(event))}
-          />
-        </fieldset>
+          >
+            <Ui.Textarea
+              rows=2
+              value={details.giftNote->Option.getOr("")}
+              onInput={event => edit(GiftNote, WeftDom.Dom.Event.targetValue(event))}
+            />
+          </Ui.Field>
+        </Ui.Stack>
       | Review =>
-        <div dataId="review-step">
-          <p dataId="review-address">
-            {WeftDom.Jsx.string(
-              `${details.name}, ${details.street}, ${details.city} ${details.postcode}`,
-            )}
-          </p>
-          <p dataId="review-items"> {WeftDom.Jsx.string(`${Int.toString(count)} items`)} </p>
-          <p dataId="review-total">
-            {WeftDom.Jsx.string(
-              `Total: ${Money.format(total + deliveryCost(details.delivery), currency)}`,
-            )}
-          </p>
-        </div>
+        <Ui.Card.Root dataId="review-step">
+          <Ui.DescriptionList.Root>
+            <Ui.DescriptionList.Term> {WeftDom.Jsx.string("To")} </Ui.DescriptionList.Term>
+            <Ui.DescriptionList.Details dataId="review-address">
+              {WeftDom.Jsx.string(
+                `${details.name}, ${details.street}, ${details.city} ${details.postcode}`,
+              )}
+            </Ui.DescriptionList.Details>
+            <Ui.DescriptionList.Term> {WeftDom.Jsx.string("Items")} </Ui.DescriptionList.Term>
+            <Ui.DescriptionList.Details dataId="review-items">
+              {WeftDom.Jsx.string(`${Int.toString(count)} items`)}
+            </Ui.DescriptionList.Details>
+            <Ui.DescriptionList.Term> {WeftDom.Jsx.string("Total")} </Ui.DescriptionList.Term>
+            <Ui.DescriptionList.Details dataId="review-total">
+              {WeftDom.Jsx.string(
+                `Total: ${Money.format(total + deliveryCost(details.delivery), currency)}`,
+              )}
+            </Ui.DescriptionList.Details>
+          </Ui.DescriptionList.Root>
+        </Ui.Card.Root>
       }}
       {switch state.error {
-      | Some(message) => <p dataId="checkout-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+      | Some(message) =>
+        <Ui.Alert.Root tone=#danger dataId="checkout-error">
+          <Ui.Alert.Description> {WeftDom.Jsx.string(message)} </Ui.Alert.Description>
+        </Ui.Alert.Root>
       | None => WeftDom.Jsx.null
       }}
-      <div>
+      <Ui.Stack direction=#row gap=#sm>
         {state.step == Address
           ? WeftDom.Jsx.null
-          : <button dataId="checkout-back" type_="button" onClick={_ => dispatch(Back)}>
+          : <Ui.Button dataId="checkout-back" onClick={_ => dispatch(Back)}>
               {WeftDom.Jsx.string("Back")}
-            </button>}
-        <button dataId="checkout-next" type_="submit" disabled=state.placing>
+            </Ui.Button>}
+        <Ui.Button dataId="checkout-next" type_=#submit variant=#primary busy=state.placing>
           {WeftDom.Jsx.string(
             switch state.step {
             | Review => state.placing ? "Placing…" : "Place order"
             | _ => "Continue"
             },
           )}
-        </button>
-      </div>
-    </form>
-  </div>
+        </Ui.Button>
+      </Ui.Stack>
+    </Ui.Form>
+  </Ui.Stack>
 }

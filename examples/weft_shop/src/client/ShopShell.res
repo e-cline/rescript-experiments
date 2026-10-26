@@ -1,5 +1,5 @@
 /***
-The page around every page: the shared context (`ShopContext`) for what's below, the toasts, the
+The page around every page: the shared context (`ShopContext`) for what's below, the toasts (weft_ui's), the
 sign-in dialog and the offline banner. It stays in place as the shopper navigates, so the currency
 they picked here, and the toasts, carry over.
 
@@ -43,7 +43,7 @@ let make = (
   <ShopContext.Provider value>
     <OnlineBanner />
     children
-    <Toaster />
+    <WeftUi.Toast.Viewport dataId="toasts" />
     <SignInDialog />
   </ShopContext.Provider>
 }

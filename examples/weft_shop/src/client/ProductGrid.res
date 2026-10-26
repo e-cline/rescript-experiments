@@ -16,12 +16,6 @@ open Types
 open WeftCss
 
 module Styles = {
-  let tools = Css.class({
-    display: Flex,
-    justifyContent: SpaceBetween,
-    alignItems: Center,
-    gap: Px(12),
-  })
   let grid = Css.class({
     display: Grid,
     gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -30,7 +24,6 @@ module Styles = {
     listStyle: None,
     transition: "opacity .2s",
   })
-  let loadMore = Css.class({marginTop: Px(16)})
 }
 
 @weft.component({kind: Entrypoint})
@@ -53,22 +46,24 @@ let make = (
     needle == ""
       ? all
       : all->Array.filter(item => item.name->String.toLowerCase->String.includes(needle))
-  <div dataId="grid-wrap">
-    <div className={Styles.tools}>
-      <input
-        dataId="quick-filter"
-        type_="search"
-        ariaLabel="Filter these results"
-        placeholder="Filter these results"
-        value=filter
-        onInput={event => setFilter(_ => WeftDom.Dom.Event.targetValue(event))}
-      />
-      <p dataId="result-count">
+  <WeftUi.Stack gap=#md dataId="grid-wrap">
+    <WeftUi.Stack direction=#row justify=#between align=#center gap=#md wrap=true>
+      <WeftUi.Field label="Filter these results" hideLabel=true>
+        <WeftUi.Input
+          dataId="quick-filter"
+          type_=#search
+          size=#sm
+          placeholder="Filter these results"
+          value=filter
+          onInput={event => setFilter(_ => WeftDom.Dom.Event.targetValue(event))}
+        />
+      </WeftUi.Field>
+      <WeftUi.Text tone=#muted size=#sm dataId="result-count" role="status">
         {WeftDom.Jsx.string(
           `Showing ${Int.toString(Array.length(shown))} of ${Int.toString(total)}`,
         )}
-      </p>
-    </div>
+      </WeftUi.Text>
+    </WeftUi.Stack>
     <ul
       dataId="grid"
       className={filter == deferred ? Styles.grid : Css.cx([Styles.grid, Theme.stale])}
@@ -78,33 +73,38 @@ let make = (
       ->WeftDom.Jsx.array}
     </ul>
     {shown == []
-      ? <p dataId="no-results"> {WeftDom.Jsx.string("Nothing matches.")} </p>
+      ? <WeftUi.EmptyState.Root bordered=true dataId="no-results">
+          <WeftUi.EmptyState.Title>
+            {WeftDom.Jsx.string("Nothing matches.")}
+          </WeftUi.EmptyState.Title>
+        </WeftUi.EmptyState.Root>
       : WeftDom.Jsx.null}
     {switch next {
     | Some(page) =>
-      <button
-        dataId="load-more"
-        className=Styles.loadMore
-        disabled=loading
-        onClick={_ => {
-          setLoading(_ => true)
+      <div>
+        <WeftUi.Button
+          dataId="load-more"
+          busy=loading
+          onClick={_ => {
+            setLoading(_ => true)
 
-          (
-            async () => {
-              switch await loadMore({category, query, page}) {
-              | Ok({items, next}) =>
-                setMore(more => [...more, ...items])
-                setNext(_ => next)
-              | Error(error) => Store.toast(Api.describe(error))
+            (
+              async () => {
+                switch await loadMore({category, query, page}) {
+                | Ok({items, next}) =>
+                  setMore(more => [...more, ...items])
+                  setNext(_ => next)
+                | Error(error) => Store.toast(Api.describe(error))
+                }
+                setLoading(_ => false)
               }
-              setLoading(_ => false)
-            }
-          )()->ignore
-        }}
-      >
-        {WeftDom.Jsx.string(loading ? "Loading…" : "Load more")}
-      </button>
+            )()->ignore
+          }}
+        >
+          {WeftDom.Jsx.string(loading ? "Loading…" : "Load more")}
+        </WeftUi.Button>
+      </div>
     | None => WeftDom.Jsx.null
     }}
-  </div>
+  </WeftUi.Stack>
 }

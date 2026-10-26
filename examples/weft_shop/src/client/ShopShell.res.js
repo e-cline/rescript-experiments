@@ -3,9 +3,9 @@
 
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Toast$WeftUi from "@e-cline/weft_ui/src/Toast.res.js";
 import * as Store$WeftShop from "./Store.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
-import * as Toaster$WeftShop from "./Toaster.res.js";
 import * as ShopContext$WeftShop from "./ShopContext.res.js";
 import * as OnlineBanner$WeftShop from "./OnlineBanner.res.js";
 import * as SignInDialog$WeftShop from "./SignInDialog.res.js";
@@ -45,7 +45,9 @@ function ShopShell(props) {
     children: [
       Jsx$WeftDom.jsx(OnlineBanner$WeftShop.make, {}),
       props.children,
-      Jsx$WeftDom.jsx(Toaster$WeftShop.make, {}),
+      Jsx$WeftDom.jsx(Toast$WeftUi.Viewport.make, {
+        dataId: "toasts"
+      }),
       Jsx$WeftDom.jsx(SignInDialog$WeftShop.make, {})
     ]
   });

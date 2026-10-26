@@ -5,12 +5,18 @@ import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Stdlib_Int from "@rescript/runtime/lib/es6/Stdlib_Int.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Alert$WeftUi from "@e-cline/weft_ui/src/Alert.res.js";
 import * as Api$WeftShop from "../shared/Api.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
+import * as Select$WeftUi from "@e-cline/weft_ui/src/Select.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Store$WeftShop from "./Store.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
 function AddToCart(props) {
   let stock = props.stock;
@@ -27,56 +33,67 @@ function AddToCart(props) {
   let add = Rpc$WeftServer.use(Api$WeftShop.addToCart, undefined);
   let most = Math.min(stock, 10);
   let quantity = Math.max(1, Math.min(match[0], most));
-  let quantityId = Hooks$Weft.useId();
-  return Jsx$WeftDom.Elements.jsxs("div", {
-    "data-id": "add-to-cart",
+  return Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+    gap: "sm",
+    align: "start",
+    dataId: "add-to-cart",
     children: [
-      Jsx$WeftDom.Elements.jsx("label", {
-        htmlFor: quantityId,
-        children: "Quantity"
+      Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+        direction: "row",
+        gap: "sm",
+        align: "end",
+        children: [
+          Jsx$WeftDom.jsx(Field$WeftUi.make, {
+            label: "Quantity",
+            children: Jsx$WeftDom.jsx(Select$WeftUi.make, {
+              size: "md",
+              value: quantity.toString(),
+              onChange: event => {
+                let value = Dom$WeftDom.Event.targetValue(event);
+                setQuantity(param => Stdlib_Option.getOr(Stdlib_Int.fromString(value, undefined), 1));
+              },
+              disabled: stock === 0,
+              children: Primitive_option.some(Stdlib_Array.fromInitializer(Math.max(1, most), index => index + 1 | 0).map(count => Jsx$WeftDom.jsxKeyed(Select$WeftUi.Option.make, {
+                value: count.toString(),
+                children: Primitive_option.some(count.toString())
+              }, count.toString(), undefined)))
+            })
+          }),
+          Jsx$WeftDom.jsx(Button$WeftUi.make, {
+            variant: "primary",
+            busy: busy,
+            disabled: stock === 0,
+            onClick: param => {
+              setBusy(param => true);
+              (async () => {
+                let cart = await add({
+                  sku: sku,
+                  quantity: quantity
+                });
+                if (cart.TAG === "Ok") {
+                  setError(param => {});
+                  Store$WeftShop.setCart(cart._0);
+                  Store$WeftShop.toast(`Added ` + quantity.toString() + ` × ` + name + ` to your cart`);
+                } else {
+                  let error = cart._0;
+                  setError(param => Api$WeftShop.describe(error));
+                }
+                return setBusy(param => false);
+              })();
+            },
+            dataId: "add",
+            children: Primitive_option.some(stock === 0 ? "Sold out" : (
+                busy ? "Adding…" : "Add to cart"
+              ))
+          })
+        ]
       }),
-      Jsx$WeftDom.Elements.jsx("select", {
-        id: quantityId,
-        value: quantity.toString(),
-        disabled: stock === 0,
-        onChange: event => {
-          let value = Dom$WeftDom.Event.targetValue(event);
-          setQuantity(param => Stdlib_Option.getOr(Stdlib_Int.fromString(value, undefined), 1));
-        },
-        children: Stdlib_Array.fromInitializer(Math.max(1, most), index => index + 1 | 0).map(count => Jsx$WeftDom.Elements.jsxKeyed("option", {
-          value: count.toString(),
-          children: count.toString()
-        }, count.toString(), undefined))
-      }),
-      Jsx$WeftDom.Elements.jsx("button", {
-        "data-id": "add",
-        disabled: stock === 0 || busy,
-        onClick: param => {
-          setBusy(param => true);
-          (async () => {
-            let cart = await add({
-              sku: sku,
-              quantity: quantity
-            });
-            if (cart.TAG === "Ok") {
-              setError(param => {});
-              Store$WeftShop.setCart(cart._0);
-              Store$WeftShop.toast(`Added ` + quantity.toString() + ` × ` + name + ` to your cart`);
-            } else {
-              let error = cart._0;
-              setError(param => Api$WeftShop.describe(error));
-            }
-            return setBusy(param => false);
-          })();
-        },
-        children: stock === 0 ? "Sold out" : (
-            busy ? "Adding…" : "Add to cart"
-          )
-      }),
-      error !== undefined ? Jsx$WeftDom.Elements.jsx("p", {
-          role: "alert",
-          "data-id": "add-error",
-          children: error
+      error !== undefined ? Jsx$WeftDom.jsx(Alert$WeftUi.Root.make, {
+          tone: "danger",
+          dataId: "add-error",
+          children: Primitive_option.some(Jsx$WeftDom.jsx(Alert$WeftUi.Description.make, {
+            children: Primitive_option.some(error)
+          }))
         }) : Jsx$WeftDom.$$null
     ]
   });

@@ -1,6 +1,6 @@
 /***
 The client's own state, in `signals` atoms, which entrypoints anywhere on the page read and write:
-the cart an RPC last answered with, toasts, and whether the sign-in dialog is open.
+the cart an RPC last answered with, and whether the sign-in dialog is open. Toasts are weft_ui's.
 
 These are module-level, so they outlive a page (in a browser, a navigation; in the tests, a page
 opened after another in the same document), and on the server they'd be shared by every request:
@@ -33,19 +33,8 @@ let setCart = (next: cart) =>
     }
   )
 
-type toast = {id: int, text: string}
-
-let toasts: Signals.Atom.t<array<toast>, unit> = Signals.Atom.make([])
-let nextToast = ref(0)
-
-let toast = text => {
-  nextToast := nextToast.contents + 1
-  let id = nextToast.contents
-  toasts->Signals.Atom.update(current => [...current, {id, text}])
-}
-
-let dismiss = id =>
-  toasts->Signals.Atom.update(current => current->Array.filter(toast => toast.id != id))
+/** A toast (weft_ui's, which `ToastViewport`, in the shell, shows). */
+let toast = text => WeftUi.Toast.add(~title=text, ())->ignore
 
 let signInOpen: Signals.Atom.t<bool, unit> = Signals.Atom.make(false)
 

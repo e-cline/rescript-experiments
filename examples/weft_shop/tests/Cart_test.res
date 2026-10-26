@@ -48,6 +48,9 @@ describe("the cart", () => {
     "changes a quantity at once, then takes the server's cart, and its totals follow by themselves",
     async t => {
       let page = await openCart([("p1-9", 2), ("p19-one", 1)])
+      // However many times it rendered hydrating (a page opened after another may render it again),
+      // the change below mustn't render it at all.
+      let promoRenders = page->WeftTesting.renderCount(entrypoint("PromoForm"))
       await app()->hold("block:summary")
       page->WeftTesting.click("[data-id=more-p19-one]")
       // At once, before the server has answered.
@@ -64,7 +67,7 @@ describe("the cart", () => {
       ->expect(page->WeftTesting.pageRequests)
       ->Expect.toEqual(["/cart", "/_weft/rpc/cart.setQuantity", "/cart/summary"])
       // Only the totals' frame fetched; the lines didn't come from a refresh.
-      t->expect(page->WeftTesting.renderCount(entrypoint("PromoForm")))->Expect.toBe(1)
+      t->expect(page->WeftTesting.renderCount(entrypoint("PromoForm")))->Expect.toBe(promoRenders)
       noWarnings(page)
     },
   )
@@ -294,7 +297,7 @@ describe("the session", () => {
       submitAnywhere("[data-id=signin-page] form")
       await page->WeftTesting.waitFor(() => has(page, "[data-id=account-title]"))
       t->expect(text(page, "[data-id=account-title]"))->Expect.toBe("Grace's account")
-      t->expect(text(page, "[data-id=account-menu]"))->Expect.toBe("Hi, GraceSign out")
+      t->expect(text(page, "[data-id=account-trigger]"))->Expect.toBe("Hi, Grace")
       t->expect(has(page, "[data-id=no-orders]"))->Expect.toBe(true)
       t->expect(await urlOf(page))->Expect.toBe("/account")
       t->expect(addressBar())->Expect.toBe("/account")
@@ -327,12 +330,14 @@ describe("the session", () => {
       await page->WeftTesting.waitFor(() => has(page, "[data-id=signin-page]"))
       await page->WeftTesting.hydrated
       submitAnywhere("[data-id=signin-page] form")
-      await page->WeftTesting.waitFor(() => has(page, "[data-id=signin-page] [role=\"alert\"]"))
-      t->expect(text(page, "[data-id=signin-page] [role=\"alert\"]"))->Expect.toBe("Enter a name.")
+      // The name's error, in its field (a polite live region the name's input is described by).
+      await page->WeftTesting.waitFor(
+        () => text(page, "[data-id=signin-page] [aria-live=polite]") == "Enter a name.",
+      )
       page->WeftTesting.input("[data-id=signin-page] input", "x"->String.repeat(41))
       submitAnywhere("[data-id=signin-page] form")
       await page->WeftTesting.waitFor(
-        () => text(page, "[data-id=signin-page] [role=\"alert\"]") == "That name is too long.",
+        () => text(page, "[data-id=signin-page] [aria-live=polite]") == "That name is too long.",
       )
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/signin?next=/cart"])
       // A client that doesn't check: the server does.
@@ -346,7 +351,7 @@ describe("the session", () => {
         () => page->WeftTesting.pageRequests->Array.includes("/_weft/rpc/auth.signIn"),
       )
       await page->WeftTesting.waitFor(
-        () => text(page, "[data-id=signin-page] [role=\"alert\"]") == "That name is too long.",
+        () => text(page, "[data-id=signin-page] [aria-live=polite]") == "That name is too long.",
       )
       app()->WeftTesting.stopRewriting
       t->expect((await app()->session).user)->Expect.toBe("")

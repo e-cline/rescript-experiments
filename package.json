@@ -57,6 +57,8 @@
     "@e-cline/weft_shop_example": "workspace:*",
     "@e-cline/weft_signals": "workspace:*",
     "@e-cline/weft_split_example": "workspace:*",
+    "@e-cline/weft_ui": "workspace:*",
+    "@e-cline/weft_ui_gallery_example": "workspace:*",
     "@e-cline/weft_vite_plugin": "workspace:*",
     "@e-cline/weft_vite_plugin_fixture_basic": "workspace:*",
     "@e-cline/weft_vite_plugin_fixture_client_imports_server": "workspace:*",

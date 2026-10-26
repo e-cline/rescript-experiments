@@ -75,6 +75,7 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
         1
       ]
     ]);
+    let promoRenders = WeftTesting.renderCount(page, `@e-cline/weft_shop_example/src/client/` + "PromoForm" + `.res#`);
     await ShopSupport$WeftShop.hold(app(), "block:summary");
     WeftTesting.click(page, "[data-id=more-p19-one]");
     t.expect(quantity(page, "p19-one")).toBe("2");
@@ -88,7 +89,7 @@ Vitest.describe("the cart", undefined, undefined, undefined, undefined, undefine
       "/_weft/rpc/cart.setQuantity",
       "/cart/summary"
     ]);
-    t.expect(WeftTesting.renderCount(page, `@e-cline/weft_shop_example/src/client/` + "PromoForm" + `.res#`)).toBe(1);
+    t.expect(WeftTesting.renderCount(page, `@e-cline/weft_shop_example/src/client/` + "PromoForm" + `.res#`)).toBe(promoRenders);
     return ShopSupport$WeftShop.noWarnings(page);
   });
   Vitest.testAsync("puts the quantity back when the server says there aren't that many", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -367,7 +368,7 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
     ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=account-title]"));
     t.expect(ShopSupport$WeftShop.text(page, "[data-id=account-title]")).toBe("Grace's account");
-    t.expect(ShopSupport$WeftShop.text(page, "[data-id=account-menu]")).toBe("Hi, GraceSign out");
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=account-trigger]")).toBe("Hi, Grace");
     t.expect(ShopSupport$WeftShop.has(page, "[data-id=no-orders]")).toBe(true);
     t.expect(await ShopSupport$WeftShop.urlOf(page)).toBe("/account");
     t.expect(ShopSupport$WeftShop.addressBar()).toBe("/account");
@@ -393,17 +394,16 @@ Vitest.describe("the session", undefined, undefined, undefined, undefined, undef
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=signin-page]"));
     await WeftTesting.hydrated(page, undefined);
     ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=signin-page] [role=\"alert\"]"));
-    t.expect(ShopSupport$WeftShop.text(page, "[data-id=signin-page] [role=\"alert\"]")).toBe("Enter a name.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [aria-live=polite]") === "Enter a name.");
     WeftTesting.input(page, "[data-id=signin-page] input", "x".repeat(41));
     ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [role=\"alert\"]") === "That name is too long.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [aria-live=polite]") === "That name is too long.");
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/signin?next=/cart"]);
     WeftTesting.rewriteBodies(app(), "/_weft/rpc/auth.signIn", param => JSON.stringify("y".repeat(41)));
     WeftTesting.input(page, "[data-id=signin-page] input", "Grace");
     ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");
     await WeftTesting.waitFor(page, undefined, () => WeftTesting.pageRequests(page).includes("/_weft/rpc/auth.signIn"));
-    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [role=\"alert\"]") === "That name is too long.");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.text(page, "[data-id=signin-page] [aria-live=polite]") === "That name is too long.");
     WeftTesting.stopRewriting(app());
     t.expect((await ShopSupport$WeftShop.session(app())).user).toBe("");
     ShopSupport$WeftShop.submitAnywhere("[data-id=signin-page] form");

@@ -27,10 +27,15 @@ things only a browser can show, in Chromium.
   links that `navigate` in place.
 - `Today`, an entrypoint showing the date by the clock where it renders: the server's in the HTML,
   then the browser's (a mismatch, if they disagree, that hydration patches).
-- Styles with [`weft_css`](../../packages/weft_css): the colours, as CSS variables, the page's own
-  rules and shared looks in [`src/shared/Theme.res`](src/shared/Theme.res), and each component's
-  beside it. Each page is sent the stylesheets of what it renders (the list's in its head, a note's
-  comment form's when it's opened); the pages' styles, server-only, reach the client only as CSS.
+- Its look is [`weft_ui`](../../packages/weft_ui)'s components (a container, stacks, headings,
+  lists, a form whose fields label and describe their inputs, buttons, an alert for the error box,
+  chips for related notes), in the notes' colours: [`src/shared/Theme.res`](src/shared/Theme.res)
+  sets weft_ui's tokens on the page's outermost element. What's left of the notes' own styles (the
+  page's frame, the note's body) is in [`weft_css`](../../packages/weft_css), beside the components.
+  Each page is sent the stylesheets of what it renders (the list's in its head, a note's comment
+  form's when it's opened); the pages' styles, server-only, reach the client only as CSS.
+- A refused comment or title says why on its own field (an empty or too long one), linked to its
+  input as its error, or at the form's top (anything else: the note's gone).
 
 Every page is rendered on the server first, and hydrated in the browser.
 
@@ -89,8 +94,10 @@ can: the HTML streaming, a chunk loaded once a page needs it and only once, focu
 across a refetch, the back button, a comment posted through its RPC (the request as the browser
 sends it, `Origin` and all), a boundary's content painted before the bootstrap's chunk has loaded, a
 click and typing before then done once it has, and the page readable with JavaScript off; each over
-a hydrated page, with nothing in the console. With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes
-that open the gates, for these tests. Run them (they need Chromium:
+a hydrated page, with nothing in the console. [`e2e/a11y.e2e.ts`](e2e/a11y.e2e.ts) runs
+[axe](https://github.com/dequelabs/axe-core-npm) (WCAG 2.1, A and AA) on the list and on a note's
+page, all of it in and with a comment refused. With `WEFT_NOTES_TEST_ROUTES=1`, the server has
+routes that open the gates, for these tests. Run them (they need Chromium:
 `pnpm --filter @e-cline/weft_notes_example exec playwright install chromium`):
 
 ```bash

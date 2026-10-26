@@ -5,13 +5,21 @@
 import * as Lazy$Weft from "@e-cline/weft/src/shared/Lazy.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Link$WeftUi from "@e-cline/weft_ui/src/Link.res.js";
+import * as List$WeftUi from "@e-cline/weft_ui/src/List.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
+import * as Badge$WeftUi from "@e-cline/weft_ui/src/Badge.res.js";
 import * as Db$WeftNotes from "./Db.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
+import * as Heading$WeftUi from "@e-cline/weft_ui/src/Heading.res.js";
 import * as Link$WeftNotes from "../client/Link.res.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Theme$WeftNotes from "../shared/Theme.res.js";
 import * as Today$WeftNotes from "../client/Today.res.js";
+import * as Container$WeftUi from "@e-cline/weft_ui/src/Container.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as ErrorBox$WeftNotes from "../client/ErrorBox.res.js";
 import * as LikeButton$WeftNotes from "../client/LikeButton.res.js";
 import * as NoteEditor$WeftNotes from "../client/NoteEditor.res.js";
@@ -19,189 +27,93 @@ import * as CommentForm$WeftNotes from "../client/CommentForm.res.js";
 import * as CommentList$WeftNotes from "../client/CommentList.res.js";
 import * as CommentsPanel$WeftNotes from "../client/CommentsPanel.res.js";
 
+function text(prim) {
+  return prim;
+}
+
 let app = Css$WeftCss.Internal.class_("Pages-Styles-app_w77k6yy", undefined, () => ({
-  maxWidth: {
+  paddingBlock: {
     TAG: "Px",
-    _0: 720
-  },
-  margin: {
-    TAG: "Pair",
-    _0: "Zero",
-    _1: "Auto"
-  },
-  padding: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 24
-    },
-    _1: {
-      TAG: "Px",
-      _0: 16
-    }
+    _0: 24
   }
+}));
+
+let related = Css$WeftCss.Internal.class_("Pages-Styles-related_w77k6yy", undefined, () => ({
+  marginBlock: {
+    TAG: "Px",
+    _0: 8
+  },
+  flexDirection: "row",
+  flexWrap: "wrap"
 }));
 
 let nav = Css$WeftCss.Internal.class_("Pages-Styles-nav_w77k6yy", undefined, () => ({
-  display: "flex",
-  marginBottom: {
+  marginBlockEnd: {
     TAG: "Px",
     _0: 24
   },
-  paddingBottom: {
+  paddingBlock: {
     TAG: "Px",
     _0: 12
   },
-  alignItems: "baseline",
-  justifyContent: "space-between",
   borderBottom: Theme$WeftNotes.hairline()
 }));
 
-let homeLink = Css$WeftCss.Internal.class_("Pages-Styles-homeLink_w77k6yy", undefined, () => ({
-  fontWeight: 600,
-  textDecoration: "none"
-}));
-
-let title = Css$WeftCss.Internal.class_("Pages-Styles-title_w77k6yy", undefined, () => ({
-  marginBottom: {
-    TAG: "Px",
-    _0: 16
-  }
-}));
-
-let noteLink = Css$WeftCss.Internal.class_("Pages-Styles-noteLink_w77k6yy", undefined, () => ({
-  fontWeight: 500,
-  textDecoration: "none",
-  hover: {
-    textDecoration: "underline"
-  }
-}));
-
-let header = Css$WeftCss.Internal.class_("Pages-Styles-header_w77k6yy", undefined, () => ({
-  marginBottom: {
-    TAG: "Px",
-    _0: 16
-  }
-}));
-
-let savedAt = Css$WeftCss.Internal.class_("Pages-Styles-savedAt_w77k6yy", undefined, () => ({
-  display: "block",
-  marginTop: {
-    TAG: "Px",
-    _0: 4
-  }
-}));
-
 let body = Css$WeftCss.Internal.class_("Pages-Styles-body_w77k6yy", undefined, () => ({
-  margin: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 16
-    },
-    _1: "Zero"
-  },
+  margin: "Zero",
   lineHeight: 1.7,
   whiteSpace: "pre-line"
 }));
 
 let section = Css$WeftCss.Internal.class_("Pages-Styles-section_w77k6yy", undefined, () => ({
-  display: "grid",
   marginTop: {
     TAG: "Px",
-    _0: 32
+    _0: 16
   },
   paddingTop: {
     TAG: "Px",
     _0: 16
   },
-  gap: {
-    TAG: "Px",
-    _0: 12
-  },
   borderTop: Theme$WeftNotes.hairline()
-}));
-
-let related = Css$WeftCss.Internal.class_("Pages-Styles-related_w77k6yy", undefined, () => ({
-  display: "flex",
-  margin: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 24
-    },
-    _1: "Zero"
-  },
-  padding: "Zero",
-  gap: {
-    TAG: "Px",
-    _0: 8
-  },
-  flexWrap: "wrap",
-  listStyle: "none"
-}));
-
-let chip = Css$WeftCss.Internal.class_("Pages-Styles-chip_w77k6yy", undefined, () => ({
-  display: "inline-block",
-  padding: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 2
-    },
-    _1: {
-      TAG: "Px",
-      _0: 10
-    }
-  },
-  fontSize: {
-    TAG: "Rem",
-    _0: 0.875
-  },
-  textDecoration: "none",
-  border: Theme$WeftNotes.hairline(),
-  borderRadius: {
-    TAG: "Px",
-    _0: 999
-  },
-  hover: {
-    borderColor: {
-      TAG: "Var",
-      _0: Theme$WeftNotes.accent
-    }
-  }
 }));
 
 let Styles = {
   app: app,
-  nav: nav,
-  homeLink: homeLink,
-  title: title,
-  noteLink: noteLink,
-  header: header,
-  savedAt: savedAt,
-  body: body,
-  section: section,
   related: related,
-  chip: chip
+  nav: nav,
+  body: body,
+  section: section
 };
 
 function Pages$Layout(props) {
-  return Jsx$WeftDom.Elements.jsxs("div", {
-    className: app,
-    "data-id": "app",
+  return Jsx$WeftDom.jsxs(Container$WeftUi.make, {
+    size: "md",
+    className: Css$WeftCss.cx([
+      Theme$WeftNotes.root,
+      app
+    ]),
+    dataId: "app",
     children: [
-      Jsx$WeftDom.Elements.jsxs("nav", {
+      Jsx$WeftDom.Elements.jsx("nav", {
         className: nav,
-        children: [
-          Jsx$WeftDom.jsx(Link$WeftNotes.make, {
-            href: "/",
-            dataId: "home-link",
-            className: homeLink,
-            children: "All notes"
-          }),
-          Jsx$WeftDom.jsx(Today$WeftNotes.make, {})
-        ]
+        children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+          direction: "row",
+          align: "baseline",
+          justify: "between",
+          children: [
+            Jsx$WeftDom.jsx(Link$WeftNotes.make, {
+              href: "/",
+              dataId: "home-link",
+              className: Link$WeftUi.className("inherit", "hover", undefined),
+              children: Jsx$WeftDom.jsx(Text$WeftUi.make, {
+                as_: "span",
+                weight: "semibold",
+                children: "All notes"
+              })
+            }),
+            Jsx$WeftDom.jsx(Today$WeftNotes.make, {})
+          ]
+        })
       }),
       props.children
     ]
@@ -213,26 +125,33 @@ let Layout = {
 };
 
 function Pages$NoteList(props) {
-  return Jsx$WeftDom.jsxs(Pages$Layout, {
-    children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        className: title,
-        "data-id": "list-title",
-        children: "Notes"
-      }),
-      Jsx$WeftDom.Elements.jsx("ul", {
-        className: Theme$WeftNotes.list,
-        "data-id": "notes",
-        children: Db$WeftNotes.all().map(note => Jsx$WeftDom.Elements.jsxKeyed("li", {
-          children: Jsx$WeftDom.jsx(Link$WeftNotes.make, {
-            href: `/notes/` + note.id,
-            dataId: `note-link-` + note.id,
-            className: noteLink,
-            children: note.title
-          })
-        }, note.id, undefined))
-      })
-    ]
+  return Jsx$WeftDom.jsx(Pages$Layout, {
+    children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "lg",
+      children: [
+        Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+          level: "h1",
+          dataId: "list-title",
+          children: "Notes"
+        }),
+        Jsx$WeftDom.jsx(List$WeftUi.Root.make, {
+          divided: true,
+          dataId: "notes",
+          children: Primitive_option.some(Db$WeftNotes.all().map(note => Jsx$WeftDom.jsxKeyed(List$WeftUi.Item.make, {
+            children: Primitive_option.some(Jsx$WeftDom.jsx(Link$WeftNotes.make, {
+              href: `/notes/` + note.id,
+              dataId: `note-link-` + note.id,
+              className: Link$WeftUi.className("inherit", "hover", undefined),
+              children: Jsx$WeftDom.jsx(Text$WeftUi.make, {
+                as_: "span",
+                weight: "medium",
+                children: Primitive_option.some(note.title)
+              })
+            }))
+          }, note.id, undefined)))
+        })
+      ]
+    })
   });
 }
 
@@ -243,26 +162,27 @@ let NoteList = {
 function Pages$NoteTitle(props) {
   let note = Db$WeftNotes.find(props.id);
   if (note !== undefined) {
-    return Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
+    return Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "xs",
       children: [
-        Jsx$WeftDom.Elements.jsx("h1", {
-          "data-id": "title",
-          children: note.title
+        Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+          level: "h1",
+          dataId: "title",
+          children: Primitive_option.some(note.title)
         }),
-        Jsx$WeftDom.Elements.jsx("span", {
-          className: Css$WeftCss.cx([
-            savedAt,
-            Theme$WeftNotes.secondary
-          ]),
-          "data-id": "saved-at",
-          children: `Saved: ` + note.savedAt
+        Jsx$WeftDom.jsx(Text$WeftUi.make, {
+          as_: "span",
+          tone: "muted",
+          size: "sm",
+          dataId: "saved-at",
+          children: Primitive_option.some(`Saved: ` + note.savedAt)
         })
       ]
     });
   } else {
-    return Jsx$WeftDom.Elements.jsx("p", {
-      className: Theme$WeftNotes.error,
-      "data-id": "not-found",
+    return Jsx$WeftDom.jsx(Text$WeftUi.make, {
+      tone: "danger",
+      dataId: "not-found",
       children: "No such note"
     });
   }
@@ -275,7 +195,6 @@ let NoteTitle = {
 function Pages$NoteHeader(props) {
   let id = props.id;
   return Jsx$WeftDom.Elements.jsx("header", {
-    className: header,
     "data-id": "note-header",
     children: Jsx$WeftDom.jsx(NoteEditor$WeftNotes.make, {
       noteId: id,
@@ -295,9 +214,11 @@ function Pages$Likes(props) {
   let id = props.id;
   return Lazy$Weft.fromPromise((async () => {
     await Promise.resolve();
-    return Jsx$WeftDom.jsx(LikeButton$WeftNotes.make, {
-      noteId: id,
-      likes: Stdlib_Option.mapOr(Db$WeftNotes.find(id), 0, note => note.likes)
+    return Jsx$WeftDom.Elements.jsx("div", {
+      children: Jsx$WeftDom.jsx(LikeButton$WeftNotes.make, {
+        noteId: id,
+        likes: Stdlib_Option.mapOr(Db$WeftNotes.find(id), 0, note => note.likes)
+      })
     });
   })());
 }
@@ -338,17 +259,19 @@ function Pages$Related(props) {
   let id = props.id;
   return Lazy$Weft.fromPromise((async () => {
     let notes = await Db$WeftNotes.related(id, signal);
-    return Jsx$WeftDom.Elements.jsx("ul", {
+    return Jsx$WeftDom.jsx(List$WeftUi.Root.make, {
+      gap: "sm",
       className: related,
-      "data-id": "related",
-      children: notes.map(note => Jsx$WeftDom.Elements.jsxKeyed("li", {
-        children: Jsx$WeftDom.jsx(Link$WeftNotes.make, {
+      dataId: "related",
+      ariaLabel: "Related notes",
+      children: Primitive_option.some(notes.map(note => Jsx$WeftDom.jsxKeyed(List$WeftUi.Item.make, {
+        children: Primitive_option.some(Jsx$WeftDom.jsx(Link$WeftNotes.make, {
           href: `/notes/` + note.id,
           dataId: `related-` + note.id,
-          className: chip,
+          className: Badge$WeftUi.className(undefined, "outline", undefined, undefined, true, undefined),
           children: note.title
-        })
-      }, note.id, undefined))
+        }))
+      }, note.id, undefined)))
     });
   })());
 }
@@ -365,71 +288,82 @@ let Broken = {
   make: Pages$Broken
 };
 
-function loading(id, text) {
-  return Jsx$WeftDom.Elements.jsx("p", {
-    className: Theme$WeftNotes.loading,
-    "data-id": id,
-    children: text
+function loading(id, message) {
+  return Jsx$WeftDom.jsx(Text$WeftUi.make, {
+    tone: "muted",
+    italic: true,
+    dataId: id,
+    children: Primitive_option.some(message)
   });
 }
 
 function Pages$NotePage(props) {
   let signal = props.signal;
   let id = props.id;
-  return Jsx$WeftDom.jsxs(Pages$Layout, {
-    children: [
-      Jsx$WeftDom.jsx(Pages$NoteHeader, {
-        id: id
-      }),
-      Jsx$WeftDom.jsx(Suspense$Weft.make, {
-        fallback: loading("likes-loading", "…"),
-        children: Jsx$WeftDom.jsx(Pages$Likes, {
+  return Jsx$WeftDom.jsx(Pages$Layout, {
+    children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "lg",
+      children: [
+        Jsx$WeftDom.jsx(Pages$NoteHeader, {
           id: id
-        })
-      }),
-      Jsx$WeftDom.jsx(Suspense$Weft.make, {
-        fallback: loading("body-loading", "Loading the note…"),
-        children: Jsx$WeftDom.jsx(Pages$NoteBody, {
-          id: id,
-          signal: signal
-        })
-      }),
-      Jsx$WeftDom.Elements.jsxs("section", {
-        className: section,
-        "data-id": "comments-section",
-        children: [
-          Jsx$WeftDom.Elements.jsx("h2", {
-            children: "Comments"
-          }),
-          Jsx$WeftDom.jsx(CommentsPanel$WeftNotes.make, {
-            noteId: id,
-            children: Jsx$WeftDom.jsx(Pages$Comments, {
-              id: id,
-              signal: signal
+        }),
+        Jsx$WeftDom.jsx(Suspense$Weft.make, {
+          fallback: loading("likes-loading", "…"),
+          children: Jsx$WeftDom.jsx(Pages$Likes, {
+            id: id
+          })
+        }),
+        Jsx$WeftDom.jsx(Suspense$Weft.make, {
+          fallback: loading("body-loading", "Loading the note…"),
+          children: Jsx$WeftDom.jsx(Pages$NoteBody, {
+            id: id,
+            signal: signal
+          })
+        }),
+        Jsx$WeftDom.Elements.jsx("section", {
+          className: section,
+          "aria-labelledby": "comments-title",
+          "data-id": "comments-section",
+          children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+            gap: "md",
+            children: [
+              Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+                level: "h2",
+                size: "lg",
+                id: "comments-title",
+                children: "Comments"
+              }),
+              Jsx$WeftDom.jsx(CommentsPanel$WeftNotes.make, {
+                noteId: id,
+                children: Jsx$WeftDom.jsx(Pages$Comments, {
+                  id: id,
+                  signal: signal
+                })
+              }),
+              Jsx$WeftDom.jsx(CommentForm$WeftNotes.make, {
+                noteId: id
+              })
+            ]
+          })
+        }),
+        Jsx$WeftDom.jsx(Suspense$Weft.make, {
+          fallback: loading("related-loading", "Finding related notes…"),
+          children: Jsx$WeftDom.jsx(Pages$Related, {
+            id: id,
+            signal: signal
+          })
+        }),
+        Jsx$WeftDom.jsx(Suspense$Weft.make, {
+          fallback: loading("recommendations-loading", "…"),
+          children: Jsx$WeftDom.jsx(ErrorBox$WeftNotes.make, {
+            children: Jsx$WeftDom.jsx(Suspense$Weft.make, {
+              fallback: loading("broken-loading", "…"),
+              children: Jsx$WeftDom.jsx(Pages$Broken, {})
             })
-          }),
-          Jsx$WeftDom.jsx(CommentForm$WeftNotes.make, {
-            noteId: id
-          })
-        ]
-      }),
-      Jsx$WeftDom.jsx(Suspense$Weft.make, {
-        fallback: loading("related-loading", "Finding related notes…"),
-        children: Jsx$WeftDom.jsx(Pages$Related, {
-          id: id,
-          signal: signal
-        })
-      }),
-      Jsx$WeftDom.jsx(Suspense$Weft.make, {
-        fallback: loading("recommendations-loading", "…"),
-        children: Jsx$WeftDom.jsx(ErrorBox$WeftNotes.make, {
-          children: Jsx$WeftDom.jsx(Suspense$Weft.make, {
-            fallback: loading("broken-loading", "…"),
-            children: Jsx$WeftDom.jsx(Pages$Broken, {})
           })
         })
-      })
-    ]
+      ]
+    })
   });
 }
 
@@ -437,7 +371,11 @@ let NotePage = {
   make: Pages$NotePage
 };
 
+let Ui;
+
 export {
+  Ui,
+  text,
   Styles,
   Layout,
   NoteList,

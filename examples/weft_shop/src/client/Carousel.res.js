@@ -5,8 +5,13 @@
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
+import * as Heading$WeftUi from "@e-cline/weft_ui/src/Heading.res.js";
 import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
+import * as IconButton$WeftUi from "@e-cline/weft_ui/src/IconButton.res.js";
 
 let offset = Css$WeftCss.Internal.var_("--Carousel-Styles-offset_w28oj8l", () => "0%");
 
@@ -14,19 +19,6 @@ let head = Css$WeftCss.Internal.class_("Carousel-Styles-head_w28oj8l", undefined
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between"
-}));
-
-let controls = Css$WeftCss.Internal.class_("Carousel-Styles-controls_w28oj8l", undefined, () => ({
-  display: "flex",
-  gap: {
-    TAG: "Px",
-    _0: 8
-  },
-  alignItems: "center",
-  color: {
-    TAG: "Var",
-    _0: Theme$WeftShop.muted
-  }
 }));
 
 let window = Css$WeftCss.Internal.class_("Carousel-Styles-window_w28oj8l", undefined, () => ({
@@ -51,7 +43,6 @@ let track = Css$WeftCss.Internal.class_("Carousel-Styles-track_w28oj8l", undefin
 let Styles = {
   offset: offset,
   head: head,
-  controls: controls,
   window: window,
   track: track
 };
@@ -70,28 +61,40 @@ function Carousel(props) {
       Jsx$WeftDom.Elements.jsxs("div", {
         className: head,
         children: [
-          Jsx$WeftDom.Elements.jsx("h2", {
-            children: props.title
+          Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+            level: "h2",
+            size: "lg",
+            children: Primitive_option.some(props.title)
           }),
-          pages > 1 ? Jsx$WeftDom.Elements.jsxs("div", {
-              className: controls,
+          pages > 1 ? Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+              direction: "row",
+              gap: "sm",
+              align: "center",
               children: [
-                Jsx$WeftDom.Elements.jsx("button", {
-                  "aria-label": "Previous",
-                  "data-id": `prev-` + id,
+                Jsx$WeftDom.jsx(IconButton$WeftUi.make, {
+                  label: "Previous",
+                  variant: "secondary",
+                  size: "sm",
                   disabled: page === 0,
                   onClick: param => setPage(param => page - 1 | 0),
+                  dataId: `prev-` + id,
                   children: "‹"
                 }),
-                Jsx$WeftDom.Elements.jsx("span", {
-                  "data-id": `position-` + id,
-                  children: (first + 1 | 0).toString() + `–` + Math.min(count, first + 4 | 0).toString() + ` of ` + count.toString()
+                Jsx$WeftDom.jsx(Text$WeftUi.make, {
+                  as_: "span",
+                  tone: "muted",
+                  size: "sm",
+                  numeric: true,
+                  dataId: `position-` + id,
+                  children: Primitive_option.some((first + 1 | 0).toString() + `–` + Math.min(count, first + 4 | 0).toString() + ` of ` + count.toString())
                 }),
-                Jsx$WeftDom.Elements.jsx("button", {
-                  "aria-label": "Next",
-                  "data-id": `next-` + id,
+                Jsx$WeftDom.jsx(IconButton$WeftUi.make, {
+                  label: "Next",
+                  variant: "secondary",
+                  size: "sm",
                   disabled: page === (pages - 1 | 0),
                   onClick: param => setPage(param => page + 1 | 0),
+                  dataId: `next-` + id,
                   children: "›"
                 })
               ]

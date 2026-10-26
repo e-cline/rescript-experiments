@@ -20,7 +20,7 @@ export default defineConfig({
   projects: [
     {
       name: 'gated',
-      testMatch: ['shop.e2e.ts', 'styles.e2e.ts'],
+      testMatch: ['shop.e2e.ts', 'styles.e2e.ts', 'a11y.e2e.ts'],
       use: {...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${gated}`},
     },
     // When a stylesheet counts as loaded, and when a script runs, differ by engine: the flash test

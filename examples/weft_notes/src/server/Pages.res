@@ -9,86 +9,65 @@ stops.
 */
 
 open WeftCss
+module Ui = WeftUi
+
+let text = WeftDom.Jsx.string
 
 module Styles = {
-  let app = Css.class({maxWidth: Px(720), margin: Pair(Zero, Auto), padding: Pair(Px(24), Px(16))})
+  let app = Css.class({paddingBlock: Px(24)})
+  /** The related notes: a row of chips. */
+  let related = Css.class({flexDirection: Row, flexWrap: Wrap, marginBlock: Px(8)})
   let nav = Css.class({
-    display: Flex,
-    justifyContent: SpaceBetween,
-    alignItems: Baseline,
-    paddingBottom: Px(12),
-    marginBottom: Px(24),
+    paddingBlock: Px(12),
+    marginBlockEnd: Px(24),
     borderBottom: Theme.hairline(),
   })
-  let homeLink = Css.class({fontWeight: 600, textDecoration: None})
-  let title = Css.class({marginBottom: Px(16)})
-  let noteLink = Css.class({
-    fontWeight: 500,
-    textDecoration: None,
-    hover: Css.style({textDecoration: Underline}),
-  })
-  let header = Css.class({marginBottom: Px(16)})
-  let savedAt = Css.class({display: Block, marginTop: Px(4)})
-  let body = Css.class({margin: Pair(Px(16), Zero), lineHeight: 1.7, whiteSpace: PreLine})
-  let section = Css.class({
-    marginTop: Px(32),
-    paddingTop: Px(16),
-    borderTop: Theme.hairline(),
-    display: Grid,
-    gap: Px(12),
-  })
-  /** The related notes: a row of chips. */
-  let related = Css.class({
-    display: Flex,
-    flexWrap: Wrap,
-    gap: Px(8),
-    listStyle: None,
-    padding: Zero,
-    margin: Pair(Px(24), Zero),
-  })
-  let chip = Css.class({
-    display: InlineBlock,
-    padding: Pair(Px(2), Px(10)),
-    border: Theme.hairline(),
-    borderRadius: Px(999),
-    textDecoration: None,
-    fontSize: Rem(0.875),
-    hover: Css.style({borderColor: Var(Theme.accent)}),
-  })
+  let body = Css.class({margin: Zero, lineHeight: 1.7, whiteSpace: PreLine})
+  let section = Css.class({marginTop: Px(16), paddingTop: Px(16), borderTop: Theme.hairline()})
 }
 
 module Layout = {
   @weft.component({kind: Server})
   let make = (~children) =>
-    <div dataId="app" className=Styles.app>
+    <Ui.Container size=#md dataId="app" className={Css.cx([Theme.root, Styles.app])}>
       <nav className=Styles.nav>
-        <Link dataId="home-link" className=Styles.homeLink href="/">
-          {WeftDom.Jsx.string("All notes")}
-        </Link>
-        <Today />
+        <Ui.Stack direction=#row justify=#between align=#baseline>
+          <Link
+            dataId="home-link"
+            className={Ui.Link.className(~tone=#inherit, ~underline=#hover, ())}
+            href="/"
+          >
+            <Ui.Text as_=#span weight=#semibold> {text("All notes")} </Ui.Text>
+          </Link>
+          <Today />
+        </Ui.Stack>
       </nav>
       children
-    </div>
+    </Ui.Container>
 }
 
 module NoteList = {
   @weft.component({kind: Server})
   let make = () =>
     <Layout>
-      <h1 dataId="list-title" className=Styles.title> {WeftDom.Jsx.string("Notes")} </h1>
-      <ul dataId="notes" className=Theme.list>
-        {Db.all()
-        ->Array.map(note =>
-          <li key=note.id>
-            <Link
-              dataId={`note-link-${note.id}`} className=Styles.noteLink href={`/notes/${note.id}`}
-            >
-              {WeftDom.Jsx.string(note.title)}
-            </Link>
-          </li>
-        )
-        ->WeftDom.Jsx.array}
-      </ul>
+      <Ui.Stack gap=#lg>
+        <Ui.Heading level=#h1 dataId="list-title"> {text("Notes")} </Ui.Heading>
+        <Ui.List.Root divided=true dataId="notes">
+          {Db.all()
+          ->Array.map(note =>
+            <Ui.List.Item key=note.id>
+              <Link
+                dataId={`note-link-${note.id}`}
+                className={Ui.Link.className(~tone=#inherit, ~underline=#hover, ())}
+                href={`/notes/${note.id}`}
+              >
+                <Ui.Text as_=#span weight=#medium> {text(note.title)} </Ui.Text>
+              </Link>
+            </Ui.List.Item>
+          )
+          ->WeftDom.Jsx.array}
+        </Ui.List.Root>
+      </Ui.Stack>
     </Layout>
 }
 
@@ -98,13 +77,13 @@ module NoteTitle = {
   let make = (~id) =>
     switch Db.find(id) {
     | Some(note) =>
-      <>
-        <h1 dataId="title"> {WeftDom.Jsx.string(note.title)} </h1>
-        <span dataId="saved-at" className={Css.cx([Styles.savedAt, Theme.secondary])}>
-          {WeftDom.Jsx.string(`Saved: ${note.savedAt}`)}
-        </span>
-      </>
-    | None => <p dataId="not-found" className=Theme.error> {WeftDom.Jsx.string("No such note")} </p>
+      <Ui.Stack gap=#xs>
+        <Ui.Heading level=#h1 dataId="title"> {text(note.title)} </Ui.Heading>
+        <Ui.Text as_=#span tone=#muted size=#sm dataId="saved-at">
+          {text(`Saved: ${note.savedAt}`)}
+        </Ui.Text>
+      </Ui.Stack>
+    | None => <Ui.Text tone=#danger dataId="not-found"> {text("No such note")} </Ui.Text>
     }
 }
 
@@ -112,7 +91,7 @@ module NoteHeader = {
   /** The title, and the editor around it. */
   @weft.component({kind: Server})
   let make = (~id) =>
-    <header dataId="note-header" className=Styles.header>
+    <header dataId="note-header">
       <NoteEditor noteId=id title={Db.find(id)->Option.mapOr("", note => note.title)}>
         <NoteTitle id />
       </NoteEditor>
@@ -124,7 +103,9 @@ module Likes = {
   @weft.component({kind: Server})
   let make = async (~id) => {
     await Promise.resolve()
-    <LikeButton noteId=id likes={Db.find(id)->Option.mapOr(0, note => note.likes)} />
+    <div>
+      <LikeButton noteId=id likes={Db.find(id)->Option.mapOr(0, note => note.likes)} />
+    </div>
   }
 }
 
@@ -146,17 +127,21 @@ module Related = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let notes = await Db.related(id, ~signal)
-    <ul dataId="related" className=Styles.related>
+    <Ui.List.Root gap=#sm dataId="related" className=Styles.related ariaLabel="Related notes">
       {notes
       ->Array.map(note =>
-        <li key=note.id>
-          <Link dataId={`related-${note.id}`} className=Styles.chip href={`/notes/${note.id}`}>
-            {WeftDom.Jsx.string(note.title)}
+        <Ui.List.Item key=note.id>
+          <Link
+            dataId={`related-${note.id}`}
+            className={Ui.Badge.className(~variant=#outline, ~link=true, ())}
+            href={`/notes/${note.id}`}
+          >
+            {text(note.title)}
           </Link>
-        </li>
+        </Ui.List.Item>
       )
       ->WeftDom.Jsx.array}
-    </ul>
+    </Ui.List.Root>
   }
 }
 
@@ -166,38 +151,43 @@ module Broken = {
   let make = () => JsError.throwWithMessage("the recommendations service is down")
 }
 
-let loading = (id, text) => <p dataId=id className=Theme.loading> {WeftDom.Jsx.string(text)} </p>
+let loading = (id, message) =>
+  <Ui.Text dataId=id tone=#muted italic=true> {text(message)} </Ui.Text>
 
 module NotePage = {
   @weft.component({kind: Server})
   let make = (~id, ~signal) =>
     <Layout>
-      <NoteHeader id />
-      <Weft.Suspense fallback={loading("likes-loading", "…")}>
-        <Likes id />
-      </Weft.Suspense>
-      <Weft.Suspense fallback={loading("body-loading", "Loading the note…")}>
-        <NoteBody id signal />
-      </Weft.Suspense>
-      <section dataId="comments-section" className=Styles.section>
-        <h2> {WeftDom.Jsx.string("Comments")} </h2>
-        <CommentsPanel noteId=id>
-          <Comments id signal />
-        </CommentsPanel>
-        <CommentForm noteId=id />
-      </section>
-      <Weft.Suspense fallback={loading("related-loading", "Finding related notes…")}>
-        <Related id signal />
-      </Weft.Suspense>
-      // A boundary of its own around the error box: the server's error is thrown again on the
-      // client, for the box to catch, and the part rendered on the client to show it is this
-      // boundary, not the whole page.
-      <Weft.Suspense fallback={loading("recommendations-loading", "…")}>
-        <ErrorBox>
-          <Weft.Suspense fallback={loading("broken-loading", "…")}>
-            <Broken />
-          </Weft.Suspense>
-        </ErrorBox>
-      </Weft.Suspense>
+      <Ui.Stack gap=#lg>
+        <NoteHeader id />
+        <Weft.Suspense fallback={loading("likes-loading", "…")}>
+          <Likes id />
+        </Weft.Suspense>
+        <Weft.Suspense fallback={loading("body-loading", "Loading the note…")}>
+          <NoteBody id signal />
+        </Weft.Suspense>
+        <section dataId="comments-section" className=Styles.section ariaLabelledby="comments-title">
+          <Ui.Stack gap=#md>
+            <Ui.Heading level=#h2 size=#lg id="comments-title"> {text("Comments")} </Ui.Heading>
+            <CommentsPanel noteId=id>
+              <Comments id signal />
+            </CommentsPanel>
+            <CommentForm noteId=id />
+          </Ui.Stack>
+        </section>
+        <Weft.Suspense fallback={loading("related-loading", "Finding related notes…")}>
+          <Related id signal />
+        </Weft.Suspense>
+        // A boundary of its own around the error box: the server's error is thrown again on the
+        // client, for the box to catch, and the part rendered on the client to show it is this
+        // boundary, not the whole page.
+        <Weft.Suspense fallback={loading("recommendations-loading", "…")}>
+          <ErrorBox>
+            <Weft.Suspense fallback={loading("broken-loading", "…")}>
+              <Broken />
+            </Weft.Suspense>
+          </ErrorBox>
+        </Weft.Suspense>
+      </Ui.Stack>
     </Layout>
 }

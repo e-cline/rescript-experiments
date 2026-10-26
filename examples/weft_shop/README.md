@@ -35,18 +35,18 @@ data the server decides on for each request, and each part of them streams in by
   [`src/client/ShopContext.res`](src/client/ShopContext.res)): the cart an RPC answers with goes to
   a `signals` atom, which `ShopShell` (the entrypoint around every page, providing the page's
   context) reads and hands down, newest of its and the server's, so the header's count, the drawer
-  (a portal) and the cart page follow at once; the cart page's quantities change before the server
-  answers (a reducer), and its totals, rendered on the server, are fetched again whenever the cart's
-  version goes up.
+  and the cart page follow at once; the cart page's quantities change before the server answers (a
+  reducer), and its totals, rendered on the server, are fetched again whenever the cart's version
+  goes up.
 - **Context and currency**: every price is a `Price` entrypoint reading the currency from
   `ShopContext`, so picking one re-renders every price on the page with nothing fetched, and the
   `prefs.setCurrency` RPC makes it the session's, for the next pages the server renders.
 - **Sessions and auth** ([`src/server/Session.res`](src/server/Session.res)): an `sid` cookie that
   `@e-cline/servy` middleware sets on the first response without one, naming what the server keeps
-  for the shopper; signing in (a name, no password: a demo) from a dialog rendered into `<body>` (a
-  portal) that takes the focus (`autoFocus`), or from the sign-in page the account page redirects a
-  signed-out shopper to (a navigation lands at the URL a redirect leads to); RPC handlers finding
-  the session from the HTTP request, even on a visitor's first request.
+  for the shopper; signing in (a name, no password: a demo) from a modal dialog that takes the
+  focus, or from the sign-in page the account page redirects a signed-out shopper to (a navigation
+  lands at the URL a redirect leads to); RPC handlers finding the session from the HTTP request,
+  even on a visitor's first request.
 - **Checkout**: a three-step form (a reducer, labels linked by `useId`; an empty cart is redirected
   back to the cart), the address checked as the RPC will check it before moving on, and the order
   refused, saying which item, if someone else bought the last of it first. The order's page
@@ -55,15 +55,21 @@ data the server decides on for each request, and each part of them streams in by
   [`src/server/ApiServer.res`](src/server/ApiServer.res)): eleven, with object, variant, option and
   custom codecs, `prepare` steps that send nothing for an empty promo code or name, `check`s on both
   sides, and errors the shopper is told about.
-- **Styles** ([`weft_css`](../../packages/weft_css)): each component's beside it (the theme's
-  colours, as CSS variables, and the page's own rules in
-  [`src/shared/Theme.res`](src/shared/Theme.res)), and no other class names. The tests find elements
-  by role, ARIA attribute or `data-id` (`dataId`): an element has an `id` only when the page needs
-  it (a label's, an ARIA reference's). Each page is sent the stylesheets of what it renders: the
-  shell's linked in its head, a block's with it as it streams in (its swap waiting for them), a page
-  navigated to with its payload (shown once they've loaded). Server components' styles (the frame,
-  the blocks, the pages) never reach the client as code, only as CSS. What changes at run time (a
-  product's hue, a carousel's page) is a CSS variable its class uses, set with `Css.vars`.
+- **Components** ([`weft_ui`](../../packages/weft_ui)): cards, badges, tables, forms and their
+  fields, steps, alerts, empty states, toggles, the cart's drawer and the sign-in dialog (native
+  modal dialogs), the account's menu, the search's combobox, the questions' accordion, the home
+  page's tabs (`TabsEntry`, rendered by a server component) and the toasts. They're in the store's
+  colours: [`src/shared/Theme.res`](src/shared/Theme.res) sets weft_ui's tokens on `:root`, with a
+  class on the page's outermost element bringing that sheet to every page.
+- **Styles** ([`weft_css`](../../packages/weft_css)): what's the store's own (its frame, its
+  pictures, the carousel) is beside each component, and there are no other class names. The tests
+  find elements by role, ARIA attribute or `data-id` (`dataId`): an element has an `id` only when
+  the page needs it (a label's, an ARIA reference's). Each page is sent the stylesheets of what it
+  renders: the shell's linked in its head, a block's with it as it streams in (its swap waiting for
+  them), a page navigated to with its payload (shown once they've loaded). Server components' styles
+  (the frame, the blocks, the pages) never reach the client as code, only as CSS. What changes at
+  run time (a product's hue, a carousel's page) is a CSS variable its class uses, set with
+  `Css.vars`.
 - **The rest**: an offline banner (`useSyncExternalStore` with a server snapshot), a countdown that
   renders the server's time first so hydration matches, and toasts.
 
@@ -133,6 +139,10 @@ opens them in the order it's about:
   every frame finds nothing shown without its CSS, from the home page streaming to a navigation, a
   product, the cart's drawer and page, and a quantity changed (its totals refetched); and, as a
   control, that it does find a page shown before its stylesheet. In Firefox and WebKit too.
+- [`a11y.e2e.ts`](e2e/a11y.e2e.ts), gated: [axe](https://github.com/dequelabs/axe-core-npm) (WCAG
+  2.1, A and AA) on every page, on each overlay while it's open (the drawer, the search's
+  suggestions, the sign-in dialog, the account menu), on each step of the checkout, and on forms
+  refusing what's typed, once what's animating in has finished.
 - [`random.e2e.ts`](e2e/random.e2e.ts), with seeded random latency and failures, as `vp run start`
   serves it: every page streaming in completely, once, and hydrating; navigating quickly through
   pages still streaming; and a purchase, retrying whatever fails.

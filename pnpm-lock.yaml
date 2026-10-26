@@ -164,6 +164,9 @@ settings:
 
 catalogs:
   default:
+    '@axe-core/playwright':
+      specifier: ^4.14.0
+      version: 4.14.0
     '@changesets/changelog-github':
       specifier: ^1.0.1
       version: 1.0.1
@@ -316,6 +319,12 @@ importers:
       '@e-cline/weft_split_example':
         specifier: workspace:*
         version: link:examples/weft_split
+      '@e-cline/weft_ui':
+        specifier: workspace:*
+        version: link:packages/weft_ui
+      '@e-cline/weft_ui_gallery_example':
+        specifier: workspace:*
+        version: link:examples/weft_ui_gallery
       '@e-cline/weft_vite_plugin':
         specifier: workspace:*
         version: link:tools/weft_vite_plugin
@@ -531,6 +540,9 @@ importers:
       '@e-cline/weft_server':
         specifier: workspace:*
         version: link:../../packages/weft_server
+      '@e-cline/weft_ui':
+        specifier: workspace:*
+        version: link:../../packages/weft_ui
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -538,6 +550,9 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
     devDependencies:
+      '@axe-core/playwright':
+        specifier: 'catalog:'
+        version: 4.14.0(playwright-core@1.63.0)
       '@e-cline/ppx_weft':
         specifier: workspace:*
         version: link:../../tools/ppx/weft
@@ -589,6 +604,9 @@ importers:
       '@e-cline/weft_signals':
         specifier: workspace:*
         version: link:../../packages/weft_signals
+      '@e-cline/weft_ui':
+        specifier: workspace:*
+        version: link:../../packages/weft_ui
       '@rescript/runtime':
         specifier: 'catalog:'
         version: 12.3.1
@@ -596,6 +614,9 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
     devDependencies:
+      '@axe-core/playwright':
+        specifier: 'catalog:'
+        version: 4.14.0(playwright-core@1.63.0)
       '@e-cline/ppx_weft':
         specifier: workspace:*
         version: link:../../tools/ppx/weft
@@ -651,6 +672,64 @@ importers:
       '@e-cline/weft_vite_plugin':
         specifier: workspace:*
         version: link:../../tools/weft_vite_plugin
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@1.3.0
+        version: '@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.3.0(@types/node@26.6.5)(@vitest/ui@5.0.5)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.1.3)(playwright@1.63.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0)
+
+  examples/weft_ui_gallery:
+    dependencies:
+      '@e-cline/servy':
+        specifier: workspace:*
+        version: link:../../packages/servy
+      '@e-cline/weft':
+        specifier: workspace:*
+        version: link:../../packages/weft
+      '@e-cline/weft_css':
+        specifier: workspace:*
+        version: link:../../packages/weft_css
+      '@e-cline/weft_dom':
+        specifier: workspace:*
+        version: link:../../packages/weft_dom
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../../packages/weft_server
+      '@e-cline/weft_ui':
+        specifier: workspace:*
+        version: link:../../packages/weft_ui
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      '@rescript/webapi':
+        specifier: 'catalog:'
+        version: 0.1.0-experimental-0781ac8(rescript@12.3.1)
+    devDependencies:
+      '@axe-core/playwright':
+        specifier: 'catalog:'
+        version: 4.14.0(playwright-core@1.63.0)
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
+      '@e-cline/weft_vite_plugin':
+        specifier: workspace:*
+        version: link:../../tools/weft_vite_plugin
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.63.0
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -1018,6 +1097,37 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
 
+  packages/weft_ui:
+    dependencies:
+      '@e-cline/weft':
+        specifier: workspace:^
+        version: link:../weft
+      '@e-cline/weft_css':
+        specifier: workspace:^
+        version: link:../weft_css
+      '@e-cline/weft_dom':
+        specifier: workspace:^
+        version: link:../weft_dom
+    devDependencies:
+      '@e-cline/ppx_weft':
+        specifier: workspace:*
+        version: link:../../tools/ppx/weft
+      '@e-cline/weft_server':
+        specifier: workspace:*
+        version: link:../weft_server
+      '@rescript/runtime':
+        specifier: 'catalog:'
+        version: 12.3.1
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.3
+      rescript:
+        specifier: 'catalog:'
+        version: 12.3.1
+      rescript-vitest:
+        specifier: 'catalog:'
+        version: 3.0.1(@types/node@26.6.5)(@vitest/browser-preview@5.0.5)(@vitest/ui@5.0.5)(@voidzero-dev/vite-plus-core@1.3.0(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.0))(jsdom@30.1.3)(rescript@12.3.1)
+
   tools/benchmarking:
     dependencies:
       '@rescript/runtime':
@@ -1214,6 +1324,12 @@ packages:
   '@asamuzakjp/dom-selector@10.0.3':
     resolution: {integrity: sha512-3+777rEPsOOjoy5/sRmIzHnoRDaLpm3XWY2dmWn/N7f/XwDG0bcpnFaKL3X9FYJUbNwLmpcJC1bUYexJRxsFlw==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+
+  '@axe-core/playwright@4.14.0':
+    resolution: {integrity: sha512-SGUhG5PIHd2eMdpgBF2PyQLOhX+qyDR2PT4cmoS4Qk2ak+jX/rrSvst9l0PGv5WTHolKpUMvVmoHpr4cZgf1RQ==}
+    engines: {node: '>=22.12.0'}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -2334,6 +2450,10 @@ packages:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
     engines: {node: '>=12'}
 
+  axe-core@4.14.0:
+    resolution: {integrity: sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ==}
+    engines: {node: '>=4'}
+
   bidi-js@1.1.0:
     resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
 
@@ -2980,6 +3100,11 @@ snapshots:
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.3
+
+  '@axe-core/playwright@4.14.0(playwright-core@1.63.0)':
+    dependencies:
+      axe-core: 4.14.0
+      playwright-core: 1.63.0
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -3811,6 +3936,8 @@ snapshots:
       dequal: 2.0.3
 
   assertion-error@2.0.1: {}
+
+  axe-core@4.14.0: {}
 
   bidi-js@1.1.0:
     dependencies:

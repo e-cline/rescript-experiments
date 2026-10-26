@@ -22,6 +22,10 @@ let headSheets = html => {
 /** Whether any of `hrefs` is `file`'s sheet. */
 let hasSheet = (hrefs, file) => hrefs->Array.some(href => href->String.includes(sheetOf(file)))
 
+/** weft_ui's `file`'s sheet (`Table`), and whether any of `hrefs` is it. */
+let uiSheetOf = file => WeftCss.SheetId.ofFileId(`@e-cline/weft_ui/src/${file}.res`)
+let hasUiSheet = (hrefs, file) => hrefs->Array.some(href => href->String.includes(uiSheetOf(file)))
+
 describe("the store's styles", () => {
   testAsync(
     "are sent by what each page renders: the home page's in its head, the cart's when it's opened",
@@ -34,15 +38,15 @@ describe("the store's styles", () => {
       // The shell's: the theme, the frame around every page (`Ui`, server-only), the blocks.
       t->expect(head->hasSheet("shared/Theme"))->Expect.toBe(true)
       t->expect(head->hasSheet("server/Ui"))->Expect.toBe(true)
-      // Not what the home page doesn't render: the cart's lines, the checkout's form.
-      t->expect(head->hasSheet("client/CartLines"))->Expect.toBe(false)
+      // Not what the home page doesn't render: the cart's lines (weft_ui's table), the checkout's form.
+      t->expect(head->hasUiSheet("Table"))->Expect.toBe(false)
       t->expect(head->hasSheet("client/CheckoutForm"))->Expect.toBe(false)
       t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
       // Navigating to the cart brings its sheets, loaded by the client.
       await addToCart(app(), "p1-9", 1)
       await page->WeftTesting.navigate("/cart")
       await page->WeftTesting.waitFor(() => has(page, "[data-id=cart-lines]"))
-      t->expect(page->WeftTesting.stylesheets->hasSheet("client/CartLines"))->Expect.toBe(true)
+      t->expect(page->WeftTesting.stylesheets->hasUiSheet("Table"))->Expect.toBe(true)
       t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
     },
   )
@@ -69,10 +73,10 @@ describe("the store's styles", () => {
     let page = app()->open_("/")
     await page->WeftTesting.waitFor(() => has(page, "[data-id=blocks-home]"))
     await hydratedAsServed(page)
-    page->WeftTesting.holdStylesheets(~matching=sheetOf("client/CartLines"))
+    page->WeftTesting.holdStylesheets(~matching=uiSheetOf("Table"))
     let navigated = page->WeftTesting.navigate("/cart")
     await page->WeftTesting.settle
-    // The cart's page is in, but for its lines' sheet: the home page stays.
+    // The cart's page is in, but for its lines' sheet (weft_ui's table's): the home page stays.
     t->expect(has(page, "[data-id=blocks-home]"))->Expect.toBe(true)
     t->expect(has(page, "[data-id=cart-title]"))->Expect.toBe(false)
     t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])

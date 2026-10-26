@@ -21,7 +21,7 @@ let nest: (~parent: string, string) => string
 /** `@keyframes name { ... }`. */
 let keyframes: (~name: string, array<Css.frame>) => string
 
-/** `--name: value;` declarations on `:root`. */
+/** `--name: value;` declarations on `:where(:root)` (no specificity, so any other value wins). */
 let root: array<(string, string)> => string
 
 /** `text` in `@layer name { ... }`, indented. */

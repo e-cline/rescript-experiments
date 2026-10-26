@@ -45,7 +45,11 @@ describe("the first page", () => {
       // The page's own HTML, rendered on the server: the title, and each boundary's content once
       // its gate opened (swapped in by the page's runtime).
       t->expect(shell->String.includes(`<div id="root" data-weft-html="">`))->Expect.toBe(true)
-      t->expect(shell->String.includes(`<h1 data-id="title">Groceries</h1>`))->Expect.toBe(true)
+      t
+      ->expect(
+        shell->String.includes(`data-id="title"`) && shell->String.includes(`>Groceries</h1>`),
+      )
+      ->Expect.toBe(true)
       t->expect(shell->String.includes(`<template id="ws:`))->Expect.toBe(true)
       t->expect(shell->String.endsWith(`</body></html>`))->Expect.toBe(true)
       t->expect(shell->String.includes("(self.__weft||=[])"))->Expect.toBe(false)
@@ -194,7 +198,9 @@ describe("hydrating the first page", () => {
       // The editor is hydrated: it refuses an empty title.
       page->WeftTesting.input("[data-id=title-input]", "   ")
       page->WeftTesting.click("[data-id=save]")
-      await page->WeftTesting.waitFor(() => has(page, "[data-id=title-error]"))
+      await page->WeftTesting.waitFor(
+        () => fieldError(page, "[data-id=title-input]")->Option.isSome,
+      )
       await app()->release("body:1")
       await page->WeftTesting.waitFor(() => has(page, "[data-id=note-body]"))
       page->WeftTesting.releaseLoads
@@ -428,8 +434,10 @@ describe("posting", () => {
     let page = await openNote()
     page->WeftTesting.input("[data-id=title-input]", "   ")
     page->WeftTesting.click("[data-id=save]")
-    await page->WeftTesting.waitFor(() => has(page, "[data-id=title-error]"))
-    t->expect(text(page, "[data-id=title-error]"))->Expect.toBe("A title can't be empty.")
+    await page->WeftTesting.waitFor(() => fieldError(page, "[data-id=title-input]")->Option.isSome)
+    t
+    ->expect(fieldError(page, "[data-id=title-input]"))
+    ->Expect.toEqual(Some("A title can't be empty."))
     t->expect(text(page, "[data-id=title]"))->Expect.toBe("Groceries")
     t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
   })
@@ -443,8 +451,10 @@ describe("posting, through RPCs", () => {
     page->WeftTesting.input("[data-id=comment-author]", "Me")
     page->WeftTesting.input("[data-id=comment-text]", "   ")
     page->WeftTesting.click("[data-id=post-comment]")
-    await page->WeftTesting.waitFor(() => has(page, "[data-id=comment-error]"))
-    t->expect(text(page, "[data-id=comment-error]"))->Expect.toBe("Write something first.")
+    await page->WeftTesting.waitFor(() => fieldError(page, "[data-id=comment-text]")->Option.isSome)
+    t
+    ->expect(fieldError(page, "[data-id=comment-text]"))
+    ->Expect.toEqual(Some("Write something first."))
     t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1"])
     t->expect(await app()->commentCount(~noteId="1"))->Expect.toBe(1)
     // Fixed, it goes, and the error goes away.
@@ -453,7 +463,7 @@ describe("posting, through RPCs", () => {
     await page->WeftTesting.waitFor(
       () => text(page, "[data-id=comment-list]")->String.includes("Me: Now with words"),
     )
-    t->expect(has(page, "[data-id=comment-error]"))->Expect.toBe(false)
+    t->expect(fieldError(page, "[data-id=comment-text]"))->Expect.toEqual(None)
     t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/notes/1", rpc, "/notes/1"])
   })
 
@@ -462,10 +472,10 @@ describe("posting, through RPCs", () => {
     await app()->removeNote(~noteId="1")
     page->WeftTesting.input("[data-id=comment-text]", "Hello?")
     page->WeftTesting.click("[data-id=post-comment]")
-    await page->WeftTesting.waitFor(() => has(page, "[data-id=comment-error]"))
+    await page->WeftTesting.waitFor(() => formError(page, "comment-form")->Option.isSome)
     t
-    ->expect(text(page, "[data-id=comment-error]"))
-    ->Expect.toBe("This note doesn't exist any more.")
+    ->expect(formError(page, "comment-form"))
+    ->Expect.toEqual(Some("This note doesn't exist any more."))
     // Nothing was refreshed: the text is still there to try again with.
     t
     ->expect(page->WeftTesting.query("[data-id=comment-text]")->Option.map(Doc.value))
@@ -482,11 +492,11 @@ describe("posting, through RPCs", () => {
     )
     page->WeftTesting.input("[data-id=comment-text]", "short")
     page->WeftTesting.click("[data-id=post-comment]")
-    await page->WeftTesting.waitFor(() => has(page, "[data-id=comment-error]"))
+    await page->WeftTesting.waitFor(() => fieldError(page, "[data-id=comment-text]")->Option.isSome)
     app()->WeftTesting.stopRewriting
     t
-    ->expect(text(page, "[data-id=comment-error]"))
-    ->Expect.toBe("That's too long: 500 characters at most.")
+    ->expect(fieldError(page, "[data-id=comment-text]"))
+    ->Expect.toEqual(Some("That's too long: 500 characters at most."))
     t->expect(await app()->commentCount(~noteId="1"))->Expect.toBe(1)
   })
 
@@ -496,11 +506,11 @@ describe("posting, through RPCs", () => {
     app()->WeftTesting.rewriteBodies(rpc, _ => `{"note":"1","comment":"hi"}`)
     page->WeftTesting.input("[data-id=comment-text]", "hi")
     page->WeftTesting.click("[data-id=post-comment]")
-    await page->WeftTesting.waitFor(() => has(page, "[data-id=comment-error]"))
+    await page->WeftTesting.waitFor(() => formError(page, "comment-form")->Option.isSome)
     app()->WeftTesting.stopRewriting
     t
-    ->expect(text(page, "[data-id=comment-error]"))
-    ->Expect.toBe("The server couldn't read that: reload the page, and try again.")
+    ->expect(formError(page, "comment-form"))
+    ->Expect.toEqual(Some("The server couldn't read that: reload the page, and try again."))
     t->expect(await app()->commentCount(~noteId="1"))->Expect.toBe(1)
   })
 
@@ -645,6 +655,12 @@ let headSheets = html =>
 
 let hasSheet = (hrefs, file) => hrefs->Array.some(href => href->String.includes(sheetOf(file)))
 
+/** Whether any of `hrefs` is weft_ui's `file`'s sheet (`Field`, `Input`). */
+let hasUiSheet = (hrefs, file) =>
+  hrefs->Array.some(href =>
+    href->String.includes(WeftCss.SheetId.ofFileId(`@e-cline/weft_ui/src/${file}.res`))
+  )
+
 describe("the styles (weft_css)", () => {
   testAsync(
     "are sent by what each page renders: the list's in its head, a note's when it's opened",
@@ -652,18 +668,20 @@ describe("the styles (weft_css)", () => {
       let page = app()->open_("/")
       await page->WeftTesting.waitFor(() => has(page, "[data-id=notes]"))
       let head = headSheets(await page->WeftTesting.shell)
-      // The list's: the theme, the pages (server-only), the link and the date.
+      // The list's: the theme, the pages (server-only), and weft_ui's that it renders.
       t->expect(head->hasSheet("shared/Theme"))->Expect.toBe(true)
       t->expect(head->hasSheet("server/Pages"))->Expect.toBe(true)
-      // Not what the list doesn't render: a note's comment form, its like button.
-      t->expect(head->hasSheet("client/CommentForm"))->Expect.toBe(false)
-      t->expect(head->hasSheet("client/LikeButton"))->Expect.toBe(false)
+      t->expect(head->hasUiSheet("List"))->Expect.toBe(true)
+      t->expect(head->hasUiSheet("Tokens"))->Expect.toBe(true)
+      // Not what the list doesn't render: a note's comment form's fields.
+      t->expect(head->hasUiSheet("Field"))->Expect.toBe(false)
+      t->expect(head->hasUiSheet("Input"))->Expect.toBe(false)
       t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
       // Opening a note brings its sheets, loaded by the client.
       await openGates()
       await page->WeftTesting.navigate("/notes/1")
       await page->WeftTesting.waitFor(() => has(page, "[data-id=comment-form]"))
-      t->expect(page->WeftTesting.stylesheets->hasSheet("client/CommentForm"))->Expect.toBe(true)
+      t->expect(page->WeftTesting.stylesheets->hasUiSheet("Field"))->Expect.toBe(true)
       t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
     },
   )

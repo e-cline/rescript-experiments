@@ -17,7 +17,7 @@ module Styles = {
     padding: Pair(Px(36), Px(28)),
     borderRadius: Px(12),
     background: "linear-gradient(120deg, #f3dcc8, #e9c8a9)",
-    selectors: [("h1", Css.style({margin: Four(Zero, Zero, Px(6), Zero), fontSize: Px(32)}))],
+    selectors: [("p", Css.style({margin: Four(Px(6), Zero, Px(16), Zero)}))],
   })
   let heroCool = Css.class({background: "linear-gradient(120deg, #d7e3ee, #bfd2e3)"})
   let tiles = Css.class({
@@ -126,9 +126,9 @@ module Body = {
         className={Css.cx([Styles.hero, tone == "cool" ? Styles.heroCool : ""])}
         dataId={`hero-${block.id}`}
       >
-        <h1> {text(title)} </h1>
+        <WeftUi.Heading level=#h1 size=#xxl> {text(title)} </WeftUi.Heading>
         <p> {text(subtitle)} </p>
-        <Link className={Theme.cta} href> {text(label)} </Link>
+        <Link className={WeftUi.Button.className(~variant=#primary, ())} href> {text(label)} </Link>
       </div>
     | Rail({title, source, limit}) =>
       await Latency.wait(railGate(block.id, source), ~signal)
@@ -141,7 +141,7 @@ module Body = {
     | CategoryTiles({title}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
       <div className={Styles.tiles}>
-        <h2> {text(title)} </h2>
+        <WeftUi.Heading level=#h2 size=#lg> {text(title)} </WeftUi.Heading>
         <ul>
           {Db.categories
           ->Array.map(((slug, name)) =>
@@ -169,7 +169,7 @@ module Body = {
     | LiveDeals({title}) =>
       await Latency.wait(`block:${block.id}`, ~signal)
       <div className={Styles.liveDeals}>
-        <h2> {text(title)} </h2>
+        <WeftUi.Heading level=#h2 size=#lg> {text(title)} </WeftUi.Heading>
         <ul dataId="live-list">
           {Db.deals()
           ->Array.slice(~start=0, ~end=4)
@@ -189,8 +189,8 @@ module Body = {
     | Newsletter => <Newsletter />
     | Text({title, body}) =>
       <div dataId={`text-${block.id}`}>
-        <h2> {text(title)} </h2>
-        {body == "" ? WeftDom.Jsx.null : <p> {text(body)} </p>}
+        <WeftUi.Heading level=#h2 size=#lg> {text(title)} </WeftUi.Heading>
+        {body == "" ? WeftDom.Jsx.null : <WeftUi.Text> {text(body)} </WeftUi.Text>}
       </div>
     // Containers are rendered by `Block`.
     | Tabs(_) | Columns(_) | Experiment(_) => WeftDom.Jsx.null
@@ -225,9 +225,10 @@ for the variant it picked).
 let rec framed = (block: Cms.block, ~key=block.id, ~page: string, ~request: request) =>
   switch block.kind {
   | Tabs({tabs}) =>
-    <Tabs
+    <WeftUi.TabsEntry
       key
-      id={`tabs-${block.id}`}
+      dataId={`tabs-${block.id}`}
+      variant=#pills
       labels={tabs->Array.map(((label, _)) => label)}
       panels={tabs->Array.map(((_, blocks)) => blockList(blocks, ~page, ~request))}
     />

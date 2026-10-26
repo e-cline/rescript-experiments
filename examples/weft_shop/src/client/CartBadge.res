@@ -1,77 +1,63 @@
 /***
 The cart in the header: how many items (from `ShopContext`, so an RPC's answer shows at once), and a
-drawer listing them, rendered into `<body>` (a portal) while it's open.
+drawer listing them (weft_ui's `Drawer`: modal, Escape or a click outside closes it, the focus back
+on the button).
 */
 
 open Types
 
-open WeftCss
+module Ui = WeftUi
 
-module Styles = {
-  let drawer = Css.class({
-    position: Fixed,
-    top: Zero,
-    right: Zero,
-    bottom: Zero,
-    width: Px(320),
-    padding: Px(20),
-    backgroundColor: Named("white"),
-    borderLeft: Theme.hairline(),
-    boxShadow: "-8px 0 24px #0001",
-    overflow: Auto,
-  })
-}
-
-module Drawer = {
-  @weft.component
-  let make = (~cart: cart, ~onClose: unit => unit) => {
-    let {currency} = ShopContext.use()
-    WeftDom.Portal.create(
-      <aside dataId="cart-drawer" className=Styles.drawer role="dialog" ariaLabel="Cart">
-        <h2> {WeftDom.Jsx.string("Your cart")} </h2>
+@weft.component({kind: Entrypoint})
+let make = () => {
+  let {cart, currency} = ShopContext.use()
+  let (isOpen, setOpen) = Weft.Hooks.useState(() => false)
+  let navigation = WeftServer.Navigation.useNavigation()
+  <div dataId="cart-badge">
+    <Ui.Drawer.Root open_=isOpen onOpenChange={open_ => setOpen(_ => open_)}>
+      <Ui.Drawer.Trigger dataId="cart-button">
+        {WeftDom.Jsx.string(`Cart (${Int.toString(cart.count)})`)}
+      </Ui.Drawer.Trigger>
+      <Ui.Drawer.Popup dataId="cart-drawer">
+        <Ui.Drawer.Title> {WeftDom.Jsx.string("Your cart")} </Ui.Drawer.Title>
         {cart.lines == []
-          ? <p dataId="drawer-empty"> {WeftDom.Jsx.string("Nothing here yet.")} </p>
-          : <ul dataId="drawer-lines">
+          ? <Ui.EmptyState.Root dataId="drawer-empty">
+              <Ui.EmptyState.Title> {WeftDom.Jsx.string("Nothing here yet.")} </Ui.EmptyState.Title>
+            </Ui.EmptyState.Root>
+          : <Ui.List.Root divided=true dataId="drawer-lines">
               {cart.lines
               ->Array.map(line =>
-                <li key=line.sku dataId={`drawer-${line.sku}`}>
+                <Ui.List.Item key=line.sku dataId={`drawer-${line.sku}`}>
                   {WeftDom.Jsx.string(
                     `${line.name} (${line.variant}) × ${Int.toString(
                         line.quantity,
                       )}: ${Money.format(line.unitPrice * line.quantity, currency)}`,
                   )}
-                </li>
+                </Ui.List.Item>
               )
               ->WeftDom.Jsx.array}
-            </ul>}
-        <p dataId="drawer-subtotal">
+            </Ui.List.Root>}
+        <Ui.Text weight=#semibold dataId="drawer-subtotal">
           {WeftDom.Jsx.string(`Subtotal: ${Money.format(cart.subtotal, currency)}`)}
-        </p>
-        // Closing as the link is followed: the drawer is the badge's, which stays on the next page.
-        <div onClick={_ => onClose()}>
-          <Link dataId="drawer-cart-link" href="/cart"> {WeftDom.Jsx.string("View cart")} </Link>
-        </div>
-        <button dataId="drawer-close" onClick={_ => onClose()}>
-          {WeftDom.Jsx.string("Close")}
-        </button>
-      </aside>,
-      ~container=WeftDom.Dom.document->WeftDom.Dom.body,
-    )
-  }
-}
-
-@weft.component({kind: Entrypoint})
-let make = () => {
-  let {cart} = ShopContext.use()
-  let (isOpen, setOpen) = Weft.Hooks.useState(() => false)
-  <div dataId="cart-badge">
-    <button
-      dataId="cart-button"
-      ariaExpanded={isOpen ? "true" : "false"}
-      onClick={_ => setOpen(open_ => !open_)}
-    >
-      {WeftDom.Jsx.string(`Cart (${Int.toString(cart.count)})`)}
-    </button>
-    {isOpen ? <Drawer cart onClose={() => setOpen(_ => false)} /> : WeftDom.Jsx.null}
+        </Ui.Text>
+        <Ui.Drawer.Footer>
+          <Ui.Drawer.Close dataId="drawer-close" variant=#ghost>
+            {WeftDom.Jsx.string("Close")}
+          </Ui.Drawer.Close>
+          // Closing as the link is followed: the drawer is the badge's, which stays on the next page.
+          <a
+            dataId="drawer-cart-link"
+            className={Ui.Button.className(~variant=#primary, ())}
+            href="/cart"
+            onClick={event => {
+              setOpen(_ => false)
+              navigation->WeftServer.Navigation.followLink(event, ~href="/cart")->ignore
+            }}
+          >
+            {WeftDom.Jsx.string("View cart")}
+          </a>
+        </Ui.Drawer.Footer>
+      </Ui.Drawer.Popup>
+    </Ui.Drawer.Root>
   </div>
 }

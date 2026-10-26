@@ -6,6 +6,7 @@ import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Primitive_int from "@rescript/runtime/lib/es6/Primitive_int.js";
+import * as Toggle$WeftUi from "@e-cline/weft_ui/src/Toggle.res.js";
 import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 
@@ -46,13 +47,19 @@ let thumbnail = Css$WeftCss.Internal.class_("Gallery-Styles-thumbnail_w4du9ev", 
   newrecord.selectors = [[
       "&[aria-pressed=\"true\"]",
       {
-        outline: `2px solid ` + Theme$WeftShop.value(Theme$WeftShop.ink)
+        outline: `2px solid ` + Theme$WeftShop.value(Theme$WeftShop.ink),
+        outlineOffset: {
+          TAG: "Px",
+          _0: 2
+        }
       }
     ]];
   newrecord.borderRadius = {
     TAG: "Px",
     _0: 6
   };
+  newrecord.border = "none";
+  newrecord.padding = "Zero";
   newrecord.height = {
     TAG: "Px",
     _0: 42
@@ -106,13 +113,14 @@ function Gallery(props) {
       }),
       Jsx$WeftDom.Elements.jsx("div", {
         className: thumbnails,
-        children: views.map((view, index) => Jsx$WeftDom.Elements.jsxKeyed("button", {
+        children: views.map((view, index) => Jsx$WeftDom.jsxKeyed(Toggle$WeftUi.make, {
+          pressed: index === selected,
+          onPressedChange: param => setSelected(param => index),
+          label: view,
+          variant: "ghost",
           className: thumbnail,
           style: Theme$WeftShop.pictureVars(hue, index),
-          "aria-label": view,
-          "aria-pressed": index === selected ? "true" : "false",
-          "data-id": `thumb-` + index.toString(),
-          onClick: param => setSelected(param => index)
+          dataId: `thumb-` + index.toString()
         }, view, undefined))
       })
     ]

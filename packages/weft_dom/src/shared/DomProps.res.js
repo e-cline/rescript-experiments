@@ -33,8 +33,18 @@ function attributeName(prop) {
       return "inputmode";
     case "maxLength" :
       return "maxlength";
+    case "minLength" :
+      return "minlength";
+    case "noValidate" :
+      return "novalidate";
+    case "popoverTarget" :
+      return "popovertarget";
+    case "popoverTargetAction" :
+      return "popovertargetaction";
     case "readOnly" :
       return "readonly";
+    case "rowSpan" :
+      return "rowspan";
     case "tabIndex" :
       return "tabindex";
     default:

@@ -19,6 +19,7 @@ let badge = Css$WeftCss.Internal.class_("SaleBadge-Styles-badge_wic4oi7", undefi
       _0: 8
     }
   },
+  alignSelf: "start",
   fontSize: {
     TAG: "Px",
     _0: 12

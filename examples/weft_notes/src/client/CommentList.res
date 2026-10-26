@@ -3,33 +3,29 @@ The comments, which arrive as a promise (the server doesn't wait for them before
 rest): read with `Hooks.use`, under a fallback of this component's own.
 */
 
-open WeftCss
-
-module Styles = {
-  let author = Css.class({fontWeight: 600})
-}
+module Ui = WeftUi
 
 module Items = {
   @weft.component
   let make = (~comments: promise<array<Types.comment>>) =>
-    <ul dataId="comment-list" className=Theme.list>
+    <Ui.List.Root divided=true dataId="comment-list">
       {Weft.Hooks.use(comments)
       ->Array.map(comment =>
-        <li key=comment.id dataId={`comment-${comment.id}`}>
-          <b className=Styles.author> {WeftDom.Jsx.string(comment.author)} </b>
+        <Ui.List.Item key=comment.id dataId={`comment-${comment.id}`}>
+          <Ui.Text as_=#strong weight=#semibold> {WeftDom.Jsx.string(comment.author)} </Ui.Text>
           {WeftDom.Jsx.string(": " ++ comment.text)}
-        </li>
+        </Ui.List.Item>
       )
       ->WeftDom.Jsx.array}
-    </ul>
+    </Ui.List.Root>
 }
 
 @weft.component({kind: Entrypoint})
 let make = (~comments: promise<array<Types.comment>>) =>
   <Weft.Suspense
-    fallback={<p dataId="comment-list-loading" className=Theme.loading>
+    fallback={<Ui.Text dataId="comment-list-loading" tone=#muted italic=true>
       {WeftDom.Jsx.string("Loading comments…")}
-    </p>}
+    </Ui.Text>}
   >
     <Items comments />
   </Weft.Suspense>

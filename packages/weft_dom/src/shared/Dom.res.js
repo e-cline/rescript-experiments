@@ -5,6 +5,10 @@ function querySelectorAll(element, selector) {
   return Array.from(element.querySelectorAll(selector));
 }
 
+let Dialog = {};
+
+let Popover = {};
+
 function targetValue(event) {
   return event.target["value"];
 }
@@ -20,6 +24,8 @@ let Event = {
 
 export {
   querySelectorAll,
+  Dialog,
+  Popover,
   Event,
 }
 /* No side effect */

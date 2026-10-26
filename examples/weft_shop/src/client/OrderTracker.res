@@ -16,14 +16,6 @@ let rank = status =>
   | Delivered => 3
   }
 
-open WeftCss
-
-module Styles = {
-  let timeline = Css.class({display: Flex, gap: Px(18), padding: Zero, listStyle: None})
-  let done = Css.class({color: Hex("2f6b3a"), fontWeight: 600})
-  let todo = Css.class({color: Var(Theme.muted)})
-}
-
 @weft.component({kind: Entrypoint})
 let make = (~status: orderStatus, ~every: option<int>=?) => {
   let navigation = WeftServer.Navigation.useNavigation()
@@ -39,17 +31,20 @@ let make = (~status: orderStatus, ~every: option<int>=?) => {
       Some(() => clearInterval(timer))
     }
   , (status, every))
-  <ol dataId="timeline" className=Styles.timeline>
+  <WeftUi.Steps.Root ariaLabel="Delivery" dataId="timeline">
     {steps
     ->Array.map(step =>
-      <li
+      <WeftUi.Steps.Step
         key={statusLabel(step)}
-        className={rank(step) <= rank(status) ? Styles.done : Styles.todo}
-        ariaCurrent={step == status ? "step" : "false"}
+        status={step == status && step != Delivered
+          ? #current
+          : rank(step) <= rank(status)
+          ? #complete
+          : #upcoming}
       >
         {WeftDom.Jsx.string(statusLabel(step))}
-      </li>
+      </WeftUi.Steps.Step>
     )
     ->WeftDom.Jsx.array}
-  </ol>
+  </WeftUi.Steps.Root>
 }

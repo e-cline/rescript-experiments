@@ -7,7 +7,7 @@ Extract.start()
 let sheets = Extract.finish()
 ```
 
-One sheet per file, named by its sheet id (`SheetId`): its variables, on `:root`, and its globals in
+One sheet per file, named by its sheet id (`SheetId`): its variables, on `:where(:root)`, and its globals in
 the layer `weft.base` (unless given another), then its classes and keyframes in `weft.components`,
 each layer's rules in the order the file declares them. Each sheet starts with the layers' order,
 `layerOrder`: whichever sheet a page loads first, the base layer comes before the components'.

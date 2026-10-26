@@ -11,6 +11,9 @@ let app = useApp()
 
 let entrypoint = name => `@e-cline/weft_shop_example/src/client/${name}.res#`
 
+/** weft_ui's ready-made tabs, which the CMS's tab containers are. */
+let tabsEntry = "@e-cline/weft_ui/src/entrypoints/TabsEntry.res#"
+
 /** The ids of the home page's blocks, in order. */
 let blockIds: WeftTesting.page => array<string> = %raw(`page =>
   [...page.container.querySelectorAll('[data-id=blocks-home] > *')].map((node) => node.dataset.id)`)
@@ -113,7 +116,7 @@ describe("streaming", () => {
       t
       ->expect(mainChildren(page))
       ->Expect.toEqual(["<!--$-->", "div[data-id=blocks-home]", "<!--/$-->"])
-      t->expect(page->WeftTesting.renderCount(entrypoint("Tabs")))->Expect.toBe(0)
+      t->expect(page->WeftTesting.renderCount(tabsEntry))->Expect.toBe(0)
       page->WeftTesting.releaseLoads
       await hydratedAsServed(page)
       t
@@ -121,8 +124,8 @@ describe("streaming", () => {
       ->Expect.toEqual(["<!--$-->", "div[data-id=blocks-home]", "<!--/$-->"])
       t->expect(count("[data-id=tabs-tabs]"))->Expect.toBe(1)
       // And the tabs work.
-      page->WeftTesting.click("#tabs-tabs-tab-2")
-      t->expect(attribute(page, "#tabs-tabs-panel-2", "hidden"))->Expect.toBe(None)
+      page->WeftTesting.click("[data-id=tabs-tabs-tab-2]")
+      t->expect(attribute(page, "[data-id=tabs-tabs-panel-2]", "hidden"))->Expect.toBe(None)
     },
   )
 
@@ -173,11 +176,13 @@ describe("blocks", () => {
     t->expect(text(page, "[data-id=position-featured]"))->Expect.toBe("1–4 of 6")
     page->WeftTesting.click("[data-id=next-featured]")
     t->expect(text(page, "[data-id=position-featured]"))->Expect.toBe("5–6 of 6")
-    t->expect(attribute(page, "#tabs-tabs-panel-1", "hidden"))->Expect.toBe(Some(""))
-    page->WeftTesting.click("#tabs-tabs-tab-1")
-    t->expect(attribute(page, "#tabs-tabs-panel-1", "hidden"))->Expect.toBe(None)
-    t->expect(attribute(page, "#tabs-tabs-panel-0", "hidden"))->Expect.toBe(Some(""))
-    t->expect(attribute(page, "#tabs-tabs-tab-1", "aria-selected"))->Expect.toBe(Some("true"))
+    t->expect(attribute(page, "[data-id=tabs-tabs-panel-1]", "hidden"))->Expect.toBe(Some(""))
+    page->WeftTesting.click("[data-id=tabs-tabs-tab-1]")
+    t->expect(attribute(page, "[data-id=tabs-tabs-panel-1]", "hidden"))->Expect.toBe(None)
+    t->expect(attribute(page, "[data-id=tabs-tabs-panel-0]", "hidden"))->Expect.toBe(Some(""))
+    t
+    ->expect(attribute(page, "[data-id=tabs-tabs-tab-1]", "aria-selected"))
+    ->Expect.toBe(Some("true"))
     await page->WeftTesting.waitFor(
       ~timeout=3000,
       () => text(page, "[data-id=countdown-promo-a]") != countdown,
@@ -188,11 +193,11 @@ describe("blocks", () => {
     "change with the server's layout on a refresh: moved, added and removed, each keeping its state",
     async t => {
       let page = await openHome()
-      page->WeftTesting.click("#tabs-tabs-tab-1")
+      page->WeftTesting.click("[data-id=tabs-tabs-tab-1]")
       page->WeftTesting.click("[data-id=next-featured]")
       let tabs = page->WeftTesting.query("[data-id=tabs-tabs]")
       let featured = page->WeftTesting.query("[data-id=carousel-featured]")
-      let tabsRenders = page->WeftTesting.renderCount(entrypoint("Tabs"))
+      let tabsRenders = page->WeftTesting.renderCount(tabsEntry)
       await app()->move(~page="home", "tabs", 0)
       await app()->insertText(~page="home", "notice", 2, "Free returns, always")
       await app()->removeBlock(~page="home", "categories")
@@ -217,9 +222,11 @@ describe("blocks", () => {
       t
       ->expect(page->WeftTesting.query("[data-id=carousel-featured]") == featured)
       ->Expect.toBe(true)
-      t->expect(attribute(page, "#tabs-tabs-tab-1", "aria-selected"))->Expect.toBe(Some("true"))
+      t
+      ->expect(attribute(page, "[data-id=tabs-tabs-tab-1]", "aria-selected"))
+      ->Expect.toBe(Some("true"))
       t->expect(text(page, "[data-id=position-featured]"))->Expect.toBe("5–6 of 6")
-      t->expect(page->WeftTesting.renderCount(entrypoint("Tabs")) > tabsRenders)->Expect.toBe(true)
+      t->expect(page->WeftTesting.renderCount(tabsEntry) > tabsRenders)->Expect.toBe(true)
       t->expect(page->WeftTesting.pageRequests)->Expect.toEqual(["/", "/"])
       noWarnings(page)
     },
@@ -324,13 +331,15 @@ describe("personalised", () => {
       await page->WeftTesting.hydrated
       // Signing in, from the dialog.
       page->WeftTesting.click("[data-id=sign-in]")
-      await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+      await page->WeftTesting.waitFor(
+        () => Doc.find("[data-id=signin-dialog][open]")->Option.isSome,
+      )
       inputAnywhere("[data-id=signin-dialog] input", "Ada")
       submitAnywhere("[data-id=signin-dialog] form")
       await page->WeftTesting.waitFor(
         () => text(page, "[data-id=account-menu]")->String.includes("Hi, Ada"),
       )
-      t->expect(Doc.find("[data-id=signin-dialog]"))->Expect.toBe(None)
+      t->expect(Doc.find("[data-id=signin-dialog][open]"))->Expect.toBe(None)
       await page->WeftTesting.navigate("/")
       await page->WeftTesting.waitFor(
         () => has(page, "[data-id=hero-welcome]") && has(page, "[data-id=carousel-recent]"),
@@ -363,7 +372,9 @@ describe("personalised", () => {
       await page->WeftTesting.waitFor(() => has(page, "[data-id=hero-hero]"))
       await page->WeftTesting.hydrated
       page->WeftTesting.click("[data-id=sign-in]")
-      await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+      await page->WeftTesting.waitFor(
+        () => Doc.find("[data-id=signin-dialog][open]")->Option.isSome,
+      )
       inputAnywhere("[data-id=signin-dialog] input", "Grace")
       submitAnywhere("[data-id=signin-dialog] form")
       await page->WeftTesting.waitFor(() => has(page, "[data-id=block-error-for-you]"))

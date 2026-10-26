@@ -12,51 +12,58 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
   let add = WeftServer.Rpc.use(Api.addToCart)
   let most = Math.Int.min(stock, 10)
   let quantity = Math.Int.max(1, Math.Int.min(quantity, most))
-  let quantityId = Weft.Hooks.useId()
-  <div dataId="add-to-cart">
-    <label htmlFor=quantityId> {WeftDom.Jsx.string("Quantity")} </label>
-    <select
-      id=quantityId
-      disabled={stock == 0}
-      value={Int.toString(quantity)}
-      onChange={event => {
-        let value = WeftDom.Dom.Event.targetValue(event)
-        setQuantity(_ => Int.fromString(value)->Option.getOr(1))
-      }}
-    >
-      {Array.fromInitializer(~length=Math.Int.max(1, most), index => index + 1)
-      ->Array.map(count =>
-        <option key={Int.toString(count)} value={Int.toString(count)}>
-          {WeftDom.Jsx.string(Int.toString(count))}
-        </option>
-      )
-      ->WeftDom.Jsx.array}
-    </select>
-    <button
-      dataId="add"
-      disabled={stock == 0 || busy}
-      onClick={_ => {
-        setBusy(_ => true)
+  <WeftUi.Stack gap=#sm dataId="add-to-cart" align=#start>
+    <WeftUi.Stack direction=#row gap=#sm align=#end>
+      <WeftUi.Field label="Quantity">
+        <WeftUi.Select
+          size=#md
+          disabled={stock == 0}
+          value={Int.toString(quantity)}
+          onChange={event => {
+            let value = WeftDom.Dom.Event.targetValue(event)
+            setQuantity(_ => Int.fromString(value)->Option.getOr(1))
+          }}
+        >
+          {Array.fromInitializer(~length=Math.Int.max(1, most), index => index + 1)
+          ->Array.map(count =>
+            <WeftUi.Select.Option key={Int.toString(count)} value={Int.toString(count)}>
+              {WeftDom.Jsx.string(Int.toString(count))}
+            </WeftUi.Select.Option>
+          )
+          ->WeftDom.Jsx.array}
+        </WeftUi.Select>
+      </WeftUi.Field>
+      <WeftUi.Button
+        dataId="add"
+        variant=#primary
+        disabled={stock == 0}
+        busy
+        onClick={_ => {
+          setBusy(_ => true)
 
-        (
-          async () => {
-            switch await add({sku, quantity}) {
-            | Ok(cart) =>
-              setError(_ => None)
-              Store.setCart(cart)
-              Store.toast(`Added ${Int.toString(quantity)} × ${name} to your cart`)
-            | Error(error) => setError(_ => Some(Api.describe(error)))
+          (
+            async () => {
+              switch await add({sku, quantity}) {
+              | Ok(cart) =>
+                setError(_ => None)
+                Store.setCart(cart)
+                Store.toast(`Added ${Int.toString(quantity)} × ${name} to your cart`)
+              | Error(error) => setError(_ => Some(Api.describe(error)))
+              }
+              setBusy(_ => false)
             }
-            setBusy(_ => false)
-          }
-        )()->ignore
-      }}
-    >
-      {WeftDom.Jsx.string(stock == 0 ? "Sold out" : busy ? "Adding…" : "Add to cart")}
-    </button>
+          )()->ignore
+        }}
+      >
+        {WeftDom.Jsx.string(stock == 0 ? "Sold out" : busy ? "Adding…" : "Add to cart")}
+      </WeftUi.Button>
+    </WeftUi.Stack>
     {switch error {
-    | Some(message) => <p dataId="add-error" role="alert"> {WeftDom.Jsx.string(message)} </p>
+    | Some(message) =>
+      <WeftUi.Alert.Root tone=#danger dataId="add-error">
+        <WeftUi.Alert.Description> {WeftDom.Jsx.string(message)} </WeftUi.Alert.Description>
+      </WeftUi.Alert.Root>
     | None => WeftDom.Jsx.null
     }}
-  </div>
+  </WeftUi.Stack>
 }

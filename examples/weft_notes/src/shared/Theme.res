@@ -1,21 +1,40 @@
 /***
-The notes' look (with `weft_css`): its colours, as CSS variables, the page's own rules, and the
-looks server and client components share. Each component's own styles are beside it.
+The notes' look: weft_ui's components, in the notes' colours, which this file sets as weft_ui's
+tokens on `:root` (winning over weft_ui's defaults, on `:where(:root)`, whichever loads first).
+`root`, on the page's outermost element, is what brings this sheet to every page: a sheet is sent
+with the classes it has. The page's font and colours are the only rules for elements. The
+components' own styles are beside them.
 */
 open WeftCss
 
-let ink = Css.var("#22201d")
-let muted = Css.var("#6f6a63")
-let line = Css.var("#e4e0d9")
-let paper = Css.var("#fcfbf8")
-let accent = Css.var("#2f5d8a")
-let danger = Css.var("#a12a2a")
+module Tokens = WeftUi.Tokens
 
-/** A variable's value, for properties written as strings (`border`, `outline`, ...). */
-let value = var => `var(${Css.varName(var)})`
+/** The notes' palette, as weft_ui's tokens. */
+Css.global(
+  ~selector=":root",
+  {
+    vars: [
+      (Tokens.fg, "#22201d"),
+      (Tokens.fgMuted, "#6f6a63"),
+      (Tokens.border, "#e4e0d9"),
+      (Tokens.borderStrong, "#8a847b"),
+      (Tokens.bg, "#fcfbf8"),
+      (Tokens.surface, "#ffffff"),
+      (Tokens.surfaceMuted, "#f3f1ec"),
+      (Tokens.accent, "#2f5d8a"),
+      (Tokens.accentHover, "#254a6e"),
+      (Tokens.accentSoft, "#eef3f8"),
+      (Tokens.accentSoftFg, "#244867"),
+      (Tokens.focusRing, "#2f5d8a"),
+      (Tokens.danger, "#a12a2a"),
+      (Tokens.dangerSoft, "#fbf1f0"),
+      (Tokens.dangerSoftFg, "#8a2323"),
+    ],
+  },
+)
 
-/** A one-pixel border in the line colour. */
-let hairline = () => `1px solid ${value(line)}`
+/** The page's outermost element (which brings this sheet to every page). */
+let root = Css.class({display: Block})
 
 Css.global(~selector="*", {boxSizing: BorderBox})
 
@@ -24,53 +43,10 @@ Css.global(
   {
     margin: Zero,
     font: "16px/1.6 system-ui, sans-serif",
-    color: Var(ink),
-    backgroundColor: Var(paper),
+    color: Var(Tokens.fg),
+    backgroundColor: Var(Tokens.bg),
   },
 )
 
-Css.global(~selector="a", {color: Var(accent)})
-
-Css.global(~selector="h1, h2", {lineHeight: 1.25, margin: Pair(Zero, Zero)})
-
-Css.global(
-  ~selector="button, input",
-  {
-    font: "inherit",
-    border: hairline(),
-    borderRadius: Px(6),
-    padding: Pair(Px(6), Px(10)),
-    backgroundColor: Named("white"),
-    color: Raw("inherit"),
-  },
-)
-
-Css.global(
-  ~selector="button",
-  {
-    cursor: Pointer,
-    hover: Css.style({borderColor: Var(accent)}),
-  },
-)
-
-Css.global(
-  ~selector="input",
-  {focusVisible: Css.style({outline: `2px solid ${value(accent)}`, outlineOffset: Px(1)})},
-)
-
-/** Secondary text: a date, a hint. */
-let secondary = Css.class({color: Var(muted), fontSize: Rem(0.875)})
-
-/** Something still loading. */
-let loading = Css.class({color: Var(muted), fontStyle: Italic})
-
-/** What went wrong (a refused save, an RPC's error). */
-let error = Css.class({color: Var(danger), margin: Zero, flexBasis: Pct(100.)})
-
-/** A list with no bullets, its items one under the other, between hairlines. */
-let list = Css.class({
-  listStyle: None,
-  padding: Zero,
-  margin: Zero,
-  selectors: [("li", Css.style({padding: Pair(Px(10), Zero), borderBottom: hairline()}))],
-})
+/** A one-pixel border in the line colour, for the page's own rules. */
+let hairline = () => `1px solid ${Tokens.value(Tokens.border)}`

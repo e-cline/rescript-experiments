@@ -8,13 +8,17 @@ import * as Stdlib_JSON from "@rescript/runtime/lib/es6/Stdlib_JSON.js";
 import * as WeftTesting from "@e-cline/weft_vite_plugin/src/WeftTesting.res.js";
 import * as Atom$Signals from "@e-cline/signals/src/Atom.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as Toast$WeftUi from "@e-cline/weft_ui/src/Toast.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Stdlib_JsError from "@rescript/runtime/lib/es6/Stdlib_JsError.js";
 import * as Store$WeftShop from "../src/client/Store.res.js";
+import * as Testing$WeftUi from "@e-cline/weft_ui/src/Testing.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigation.res.js";
 
 let packageRoot = Nodepath.dirname(Nodepath.dirname(Nodeurl.fileURLToPath(import.meta.url)));
+
+Testing$WeftUi.installJsdomShims();
 
 function useApp() {
   let started = {
@@ -29,7 +33,7 @@ function useApp() {
     await WeftTesting.callServer(Stdlib_Option.getOrThrow(started.contents, "the harness hasn't started"), "tests/ShopControl.res.js", "reset", []);
     WeftTesting.clearCookies(Stdlib_Option.getOrThrow(started.contents, "the harness hasn't started"));
     Atom$Signals.set(Store$WeftShop.cart, undefined, undefined);
-    Atom$Signals.set(Store$WeftShop.toasts, undefined, []);
+    Toast$WeftUi.clear(undefined, undefined);
     return Atom$Signals.set(Store$WeftShop.signInOpen, undefined, false);
   });
   return app;
@@ -358,7 +362,7 @@ function noWarnings(page) {
 
 async function signIn(page, name) {
   WeftTesting.click(page, "[data-id=sign-in]");
-  await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(Primitive_option.fromNullable(document.querySelector("[data-id=signin-dialog]"))));
+  await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(Primitive_option.fromNullable(document.querySelector("[data-id=signin-dialog][open]"))));
   inputAnywhere("[data-id=signin-dialog] input", name);
   submitAnywhere("[data-id=signin-dialog] form");
   return await WeftTesting.waitFor(page, undefined, () => text(page, "[data-id=account-menu]").includes(`Hi, ` + name));

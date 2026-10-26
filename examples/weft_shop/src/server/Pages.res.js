@@ -4,29 +4,39 @@
 
 import * as Lazy$Weft from "@e-cline/weft/src/shared/Lazy.res.js";
 import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
+import * as Card$WeftUi from "@e-cline/weft_ui/src/Card.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Db$WeftShop from "./Db.res.js";
+import * as Grid$WeftUi from "@e-cline/weft_ui/src/Grid.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Query$Servy from "@e-cline/servy/src/Query.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
 import * as Ui$WeftShop from "./Ui.res.js";
 import * as Cms$WeftShop from "./Cms.res.js";
-import * as JsxCore$Weft from "@e-cline/weft/src/shared/JsxCore.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
 import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
+import * as Table$WeftUi from "@e-cline/weft_ui/src/Table.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Link$WeftShop from "../client/Link.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Suspense$Weft from "@e-cline/weft/src/shared/Suspense.res.js";
+import * as Heading$WeftUi from "@e-cline/weft_ui/src/Heading.res.js";
 import * as Price$WeftShop from "../client/Price.res.js";
-import * as Theme$WeftShop from "../shared/Theme.res.js";
 import * as Types$WeftShop from "../shared/Types.res.js";
 import * as Blocks$WeftShop from "./Blocks.res.js";
+import * as Accordion$WeftUi from "@e-cline/weft_ui/src/Accordion.res.js";
 import * as Gallery$WeftShop from "../client/Gallery.res.js";
 import * as Latency$WeftShop from "./Latency.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Primitive_string from "@rescript/runtime/lib/es6/Primitive_string.js";
 import * as Session$WeftShop from "./Session.res.js";
 import * as Carousel$WeftShop from "../client/Carousel.res.js";
+import * as EmptyState$WeftUi from "@e-cline/weft_ui/src/EmptyState.res.js";
 import * as AddToCart$WeftShop from "../client/AddToCart.res.js";
+import * as Breadcrumbs$WeftUi from "@e-cline/weft_ui/src/Breadcrumbs.res.js";
 import * as CartLines$WeftShop from "../client/CartLines.res.js";
+import * as Collapsible$WeftUi from "@e-cline/weft_ui/src/Collapsible.res.js";
 import * as PromoForm$WeftShop from "../client/PromoForm.res.js";
 import * as BlockFrame$WeftShop from "../client/BlockFrame.res.js";
 import * as FacetPanel$WeftShop from "../client/FacetPanel.res.js";
@@ -36,6 +46,7 @@ import * as ProductGrid$WeftShop from "../client/ProductGrid.res.js";
 import * as CheckoutForm$WeftShop from "../client/CheckoutForm.res.js";
 import * as OrderTracker$WeftShop from "../client/OrderTracker.res.js";
 import * as ProductOffer$WeftShop from "../client/ProductOffer.res.js";
+import * as DescriptionList$WeftUi from "@e-cline/weft_ui/src/DescriptionList.res.js";
 import * as WishlistButton$WeftShop from "../client/WishlistButton.res.js";
 import * as CartSummaryFrame$WeftShop from "../client/CartSummaryFrame.res.js";
 
@@ -43,73 +54,19 @@ let breadcrumbs = Css$WeftCss.Internal.class_("Pages-Styles-breadcrumbs_w3cm0rd"
   marginBottom: {
     TAG: "Px",
     _0: 12
-  },
-  fontSize: {
-    TAG: "Px",
-    _0: 13
-  },
-  color: {
-    TAG: "Var",
-    _0: Theme$WeftShop.muted
   }
 }));
 
-function twoColumns(columns, gap) {
-  return {
-    display: "grid",
-    gap: gap,
-    gridTemplateColumns: columns,
-    media: [Css$WeftCss.media("(max-width: 720px)", {
-        gridTemplateColumns: "1fr"
-      })]
-  };
-}
-
-let catalog = Css$WeftCss.Internal.class_("Pages-Styles-catalog_w3cm0rd", undefined, () => {
-  let newrecord = {...twoColumns("220px 1fr", {
-    TAG: "Px",
-    _0: 24
-  })};
-  newrecord.marginTop = {
+let catalog = Css$WeftCss.Internal.class_("Pages-Styles-catalog_w3cm0rd", undefined, () => ({
+  marginTop: {
     TAG: "Px",
     _0: 16
-  };
-  return newrecord;
-});
-
-let product = Css$WeftCss.Internal.class_("Pages-Styles-product_w3cm0rd", undefined, () => twoColumns("1fr 1fr", {
-  TAG: "Px",
-  _0: 32
-}));
-
-let cart = Css$WeftCss.Internal.class_("Pages-Styles-cart_w3cm0rd", undefined, () => twoColumns("1fr 300px", {
-  TAG: "Px",
-  _0: 24
-}));
-
-let summary = Css$WeftCss.Internal.class_("Pages-Styles-summary_w3cm0rd", undefined, () => ({
-  display: "grid",
-  gap: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 4
-    },
-    _1: {
-      TAG: "Px",
-      _0: 12
-    }
-  },
-  gridTemplateColumns: "1fr auto"
+  }
 }));
 
 let Styles = {
   breadcrumbs: breadcrumbs,
-  twoColumns: twoColumns,
-  catalog: catalog,
-  product: product,
-  cart: cart,
-  summary: summary
+  catalog: catalog
 };
 
 function viewerOf(request) {
@@ -120,30 +77,26 @@ function viewerOf(request) {
 }
 
 function Pages$Breadcrumbs(props) {
-  return Jsx$WeftDom.Elements.jsxs("nav", {
+  return Jsx$WeftDom.jsxs(Breadcrumbs$WeftUi.Root.make, {
     className: breadcrumbs,
-    "aria-label": "Breadcrumbs",
     children: [
-      Jsx$WeftDom.jsx(Link$WeftShop.make, {
-        href: "/",
-        children: Ui$WeftShop.text("Home")
+      Jsx$WeftDom.jsx(Breadcrumbs$WeftUi.Item.make, {
+        children: Primitive_option.some(Jsx$WeftDom.jsx(Link$WeftShop.make, {
+          href: "/",
+          children: Ui$WeftShop.text("Home")
+        }))
       }),
       props.trail.map(param => {
         let href = param[1];
-        return Jsx$WeftDom.jsxsKeyed(JsxCore$Weft.Fragment.make, {
-          children: [
-            Ui$WeftShop.text(" / "),
-            Jsx$WeftDom.jsx(Link$WeftShop.make, {
-              href: href,
-              children: Ui$WeftShop.text(param[0])
-            })
-          ]
+        return Jsx$WeftDom.jsxKeyed(Breadcrumbs$WeftUi.Item.make, {
+          children: Primitive_option.some(Jsx$WeftDom.jsx(Link$WeftShop.make, {
+            href: href,
+            children: Ui$WeftShop.text(param[0])
+          }))
         }, href, undefined);
       }),
-      Ui$WeftShop.text(" / "),
-      Jsx$WeftDom.Elements.jsx("span", {
-        "aria-current": "page",
-        children: Ui$WeftShop.text(props.current)
+      Jsx$WeftDom.jsx(Breadcrumbs$WeftUi.Current.make, {
+        children: Primitive_option.some(Ui$WeftShop.text(props.current))
       })
     ]
   });
@@ -310,7 +263,10 @@ function Pages$CategoryPage(props) {
           request: request
         })
       }),
-      Jsx$WeftDom.Elements.jsxs("div", {
+      Jsx$WeftDom.jsxs(Grid$WeftUi.make, {
+        template: "220px minmax(0, 1fr)",
+        gap: "xl",
+        stackBelow: "md",
         className: catalog,
         children: [
           Jsx$WeftDom.jsx(Suspense$Weft.make, {
@@ -368,9 +324,10 @@ function Pages$SearchPage(props) {
   return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
     request: request,
     children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "search-title",
-        children: Ui$WeftShop.text(`Results for “` + request.query + `”`)
+      Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+        level: "h1",
+        dataId: "search-title",
+        children: Primitive_option.some(Ui$WeftShop.text(`Results for “` + request.query + `”`))
       }),
       Jsx$WeftDom.jsx(Suspense$Weft.make, {
         fallback: Ui$WeftShop.loading("results-loading", "Searching…"),
@@ -393,9 +350,10 @@ function Pages$Offer(props) {
     await Latency$WeftShop.wait(`offer:` + sku, request.signal);
     let match = Db$WeftShop.findSku(sku);
     if (match === undefined) {
-      return Jsx$WeftDom.Elements.jsx("p", {
-        "data-id": "stock",
-        children: Ui$WeftShop.text("Not sold any more.")
+      return Jsx$WeftDom.jsx(Text$WeftUi.make, {
+        tone: "muted",
+        dataId: "stock",
+        children: Primitive_option.some(Ui$WeftShop.text("Not sold any more."))
       });
     }
     let variant = match[1];
@@ -409,12 +367,13 @@ function Pages$Offer(props) {
           compareAt: Stdlib_Option.map(product.summary.compareAt, was => was + variant.priceDelta | 0),
           dataId: "offer-price"
         }),
-        Jsx$WeftDom.Elements.jsx("p", {
-          className: Ui$WeftShop.stockClass(stock),
-          "data-id": "stock",
-          children: Ui$WeftShop.text(stock !== 0 ? (
+        Jsx$WeftDom.jsx(Text$WeftUi.make, {
+          tone: stock === 0 ? "danger" : "success",
+          size: "sm",
+          dataId: "stock",
+          children: Primitive_option.some(Ui$WeftShop.text(stock !== 0 ? (
               stock !== 1 ? variant.label + `: ` + stock.toString() + ` in stock` : variant.label + `: only 1 left`
-            ) : variant.label + `: sold out`)
+            ) : variant.label + `: sold out`))
         }),
         Jsx$WeftDom.jsx(AddToCart$WeftShop.make, {
           sku: sku,
@@ -469,27 +428,39 @@ function Pages$Questions(props) {
   return Lazy$Weft.fromPromise((async () => {
     await Latency$WeftShop.wait(`qa:` + id, request.signal);
     let name = Stdlib_Option.mapOr(Db$WeftShop.summary(id), "it", summary => summary.name);
-    return Jsx$WeftDom.Elements.jsxs("div", {
-      "data-id": "questions",
+    return Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "sm",
+      dataId: "questions",
       children: [
-        Jsx$WeftDom.Elements.jsx("h2", {
-          children: Ui$WeftShop.text("Questions")
+        Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+          level: "h2",
+          size: "lg",
+          children: Primitive_option.some(Ui$WeftShop.text("Questions"))
         }),
-        Jsx$WeftDom.Elements.jsxs("dl", {
-          children: [
-            Jsx$WeftDom.Elements.jsx("dt", {
-              children: Ui$WeftShop.text(`Is the ` + name + ` true to size?`)
-            }),
-            Jsx$WeftDom.Elements.jsx("dd", {
-              children: Ui$WeftShop.text("Yes: most shoppers take their usual size.")
-            }),
-            Jsx$WeftDom.Elements.jsx("dt", {
-              children: Ui$WeftShop.text("Can I return it?")
-            }),
-            Jsx$WeftDom.Elements.jsx("dd", {
-              children: Ui$WeftShop.text("Within 30 days, unworn.")
-            })
-          ]
+        Jsx$WeftDom.jsx(Accordion$WeftUi.Root.make, {
+          children: Primitive_option.some([
+            [
+              `Is the ` + name + ` true to size?`,
+              "Yes: most shoppers take their usual size."
+            ],
+            [
+              "Can I return it?",
+              "Within 30 days, unworn."
+            ]
+          ].map(param => {
+            let question = param[0];
+            return Jsx$WeftDom.jsxsKeyed(Accordion$WeftUi.Item.make, {
+              name: `questions-` + id,
+              children: [
+                Jsx$WeftDom.jsx(Collapsible$WeftUi.Trigger.make, {
+                  children: Primitive_option.some(Ui$WeftShop.text(question))
+                }),
+                Jsx$WeftDom.jsx(Collapsible$WeftUi.Panel.make, {
+                  children: Primitive_option.some(Ui$WeftShop.text(param[1]))
+                })
+              ]
+            }, question, undefined);
+          }))
         })
       ]
     });
@@ -527,89 +498,107 @@ let ProductPart = {
 };
 
 function Pages$ProductPage(props) {
-  let product$1 = props.product;
-  let summary = product$1.summary;
+  let product = props.product;
+  let summary = product.summary;
   let request = props.request;
-  let firstSku = Stdlib_Option.getOr(product$1.variants.find(variant => Db$WeftShop.stockOf(variant.sku) > 0), product$1.variants[0]);
-  return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
+  let firstSku = Stdlib_Option.getOr(product.variants.find(variant => Db$WeftShop.stockOf(variant.sku) > 0), product.variants[0]);
+  return Jsx$WeftDom.jsx(Ui$WeftShop.Shell.make, {
     request: request,
-    children: [
-      Jsx$WeftDom.jsx(Pages$Breadcrumbs, {
-        trail: [[
-            Db$WeftShop.categoryName(summary.category),
-            `/c/` + summary.category
-          ]],
-        current: summary.name
-      }),
-      Jsx$WeftDom.Elements.jsxs("div", {
-        className: product,
-        "data-id": `product-` + summary.id,
-        children: [
-          Jsx$WeftDom.jsx(Gallery$WeftShop.make, {
-            name: summary.name,
-            hue: summary.hue
-          }),
-          Jsx$WeftDom.Elements.jsxs("div", {
-            children: [
-              Jsx$WeftDom.Elements.jsx("h1", {
-                "data-id": "product-name",
-                children: Ui$WeftShop.text(summary.name)
-              }),
-              Jsx$WeftDom.jsx(WishlistButton$WeftShop.make, {
-                productId: summary.id,
-                saved: Ui$WeftShop.wishlist(request).has(summary.id)
-              }),
-              Jsx$WeftDom.Elements.jsx("p", {
-                "data-id": "rating",
-                children: Ui$WeftShop.text(`★ ` + summary.rating.toFixed(1))
-              }),
-              Jsx$WeftDom.jsx(ProductOffer$WeftShop.make, {
-                slug: summary.slug,
-                variants: product$1.variants,
-                selected: firstSku.sku,
-                children: Jsx$WeftDom.jsx(Pages$OfferPart, {
-                  sku: firstSku.sku,
-                  request: request
+    children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "xl",
+      children: [
+        Jsx$WeftDom.jsx(Pages$Breadcrumbs, {
+          trail: [[
+              Db$WeftShop.categoryName(summary.category),
+              `/c/` + summary.category
+            ]],
+          current: summary.name
+        }),
+        Jsx$WeftDom.jsxs(Grid$WeftUi.make, {
+          template: "1fr 1fr",
+          gap: "xxl",
+          stackBelow: "md",
+          dataId: `product-` + summary.id,
+          children: [
+            Jsx$WeftDom.jsx(Gallery$WeftShop.make, {
+              name: summary.name,
+              hue: summary.hue
+            }),
+            Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+              gap: "sm",
+              align: "start",
+              children: [
+                Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+                  direction: "row",
+                  gap: "sm",
+                  align: "center",
+                  children: [
+                    Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+                      level: "h1",
+                      dataId: "product-name",
+                      children: Primitive_option.some(Ui$WeftShop.text(summary.name))
+                    }),
+                    Jsx$WeftDom.jsx(WishlistButton$WeftShop.make, {
+                      productId: summary.id,
+                      saved: Ui$WeftShop.wishlist(request).has(summary.id)
+                    })
+                  ]
+                }),
+                Jsx$WeftDom.jsx(Text$WeftUi.make, {
+                  tone: "muted",
+                  dataId: "rating",
+                  children: Primitive_option.some(Ui$WeftShop.text(`★ ` + summary.rating.toFixed(1)))
+                }),
+                Jsx$WeftDom.jsx(ProductOffer$WeftShop.make, {
+                  slug: summary.slug,
+                  variants: product.variants,
+                  selected: firstSku.sku,
+                  children: Jsx$WeftDom.jsx(Pages$OfferPart, {
+                    sku: firstSku.sku,
+                    request: request
+                  })
+                }),
+                Jsx$WeftDom.jsx(Text$WeftUi.make, {
+                  dataId: "description",
+                  children: Primitive_option.some(Ui$WeftShop.text(product.description))
                 })
-              }),
-              Jsx$WeftDom.Elements.jsx("p", {
-                "data-id": "description",
-                children: Ui$WeftShop.text(product$1.description)
-              })
-            ]
+              ]
+            })
+          ]
+        }),
+        Jsx$WeftDom.Elements.jsxs("section", {
+          "data-id": "reviews-section",
+          children: [
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h2",
+              size: "lg",
+              children: Primitive_option.some(Ui$WeftShop.text("Reviews"))
+            }),
+            Jsx$WeftDom.jsx(ReviewList$WeftShop.make, {
+              reviews: Latency$WeftShop.after(`reviews:` + summary.id, request.signal, () => Db$WeftShop.reviewsOf(summary.id))
+            })
+          ]
+        }),
+        Jsx$WeftDom.jsx(BlockFrame$WeftShop.make, {
+          id: "also",
+          src: `/p/` + summary.slug + `/also`,
+          children: Jsx$WeftDom.jsx(Pages$ProductPart, {
+            part: "also",
+            id: summary.id,
+            request: request
           })
-        ]
-      }),
-      Jsx$WeftDom.Elements.jsxs("section", {
-        "data-id": "reviews-section",
-        children: [
-          Jsx$WeftDom.Elements.jsx("h2", {
-            children: Ui$WeftShop.text("Reviews")
-          }),
-          Jsx$WeftDom.jsx(ReviewList$WeftShop.make, {
-            reviews: Latency$WeftShop.after(`reviews:` + summary.id, request.signal, () => Db$WeftShop.reviewsOf(summary.id))
+        }),
+        Jsx$WeftDom.jsx(BlockFrame$WeftShop.make, {
+          id: "questions",
+          src: `/p/` + summary.slug + `/questions`,
+          children: Jsx$WeftDom.jsx(Pages$ProductPart, {
+            part: "questions",
+            id: summary.id,
+            request: request
           })
-        ]
-      }),
-      Jsx$WeftDom.jsx(BlockFrame$WeftShop.make, {
-        id: "also",
-        src: `/p/` + summary.slug + `/also`,
-        children: Jsx$WeftDom.jsx(Pages$ProductPart, {
-          part: "also",
-          id: summary.id,
-          request: request
         })
-      }),
-      Jsx$WeftDom.jsx(BlockFrame$WeftShop.make, {
-        id: "questions",
-        src: `/p/` + summary.slug + `/questions`,
-        children: Jsx$WeftDom.jsx(Pages$ProductPart, {
-          part: "questions",
-          id: summary.id,
-          request: request
-        })
-      })
-    ]
+      ]
+    })
   });
 }
 
@@ -623,47 +612,47 @@ function Pages$CartSummary(props) {
     await Latency$WeftShop.wait("block:summary", request.signal);
     let cart = Session$WeftShop.cart(request.session);
     let total = cart.subtotal - cart.discount | 0;
-    return Jsx$WeftDom.Elements.jsxs("dl", {
-      className: summary,
-      "data-id": "summary",
+    return Jsx$WeftDom.jsxs(DescriptionList$WeftUi.Root.make, {
+      detailsAlign: "end",
+      dataId: "summary",
       children: [
-        Jsx$WeftDom.Elements.jsx("dt", {
-          children: Ui$WeftShop.text("Subtotal")
+        Jsx$WeftDom.jsx(DescriptionList$WeftUi.Term.make, {
+          children: Primitive_option.some(Ui$WeftShop.text("Subtotal"))
         }),
-        Jsx$WeftDom.Elements.jsx("dd", {
-          children: Jsx$WeftDom.jsx(Price$WeftShop.make, {
+        Jsx$WeftDom.jsx(DescriptionList$WeftUi.Details.make, {
+          children: Primitive_option.some(Jsx$WeftDom.jsx(Price$WeftShop.make, {
             cents: cart.subtotal,
             dataId: "summary-subtotal"
-          })
+          }))
         }),
         cart.discount > 0 ? Jsx$WeftDom.jsxs(Jsx$WeftDom.jsxFragment, {
             children: [
-              Jsx$WeftDom.Elements.jsx("dt", {
-                children: Ui$WeftShop.text(`Discount (` + Stdlib_Option.getOr(cart.promo, "") + `)`)
+              Jsx$WeftDom.jsx(DescriptionList$WeftUi.Term.make, {
+                children: Primitive_option.some(Ui$WeftShop.text(`Discount (` + Stdlib_Option.getOr(cart.promo, "") + `)`))
               }),
-              Jsx$WeftDom.Elements.jsx("dd", {
-                children: Jsx$WeftDom.jsx(Price$WeftShop.make, {
+              Jsx$WeftDom.jsx(DescriptionList$WeftUi.Details.make, {
+                children: Primitive_option.some(Jsx$WeftDom.jsx(Price$WeftShop.make, {
                   cents: -cart.discount | 0,
                   dataId: "summary-discount"
-                })
+                }))
               })
             ]
           }) : Jsx$WeftDom.$$null,
-        Jsx$WeftDom.Elements.jsx("dt", {
-          children: Ui$WeftShop.text("Total")
+        Jsx$WeftDom.jsx(DescriptionList$WeftUi.Term.make, {
+          children: Primitive_option.some(Ui$WeftShop.text("Total"))
         }),
-        Jsx$WeftDom.Elements.jsx("dd", {
-          children: Jsx$WeftDom.jsx(Price$WeftShop.make, {
+        Jsx$WeftDom.jsx(DescriptionList$WeftUi.Details.make, {
+          children: Primitive_option.some(Jsx$WeftDom.jsx(Price$WeftShop.make, {
             cents: total,
             dataId: "summary-total"
-          })
+          }))
         }),
-        Jsx$WeftDom.Elements.jsx("dt", {
-          children: Ui$WeftShop.text("Points")
+        Jsx$WeftDom.jsx(DescriptionList$WeftUi.Term.make, {
+          children: Primitive_option.some(Ui$WeftShop.text("Points"))
         }),
-        Jsx$WeftDom.Elements.jsx("dd", {
-          "data-id": "summary-points",
-          children: Ui$WeftShop.text((total / 100 | 0).toString())
+        Jsx$WeftDom.jsx(DescriptionList$WeftUi.Details.make, {
+          dataId: "summary-points",
+          children: Primitive_option.some(Ui$WeftShop.text((total / 100 | 0).toString()))
         })
       ]
     });
@@ -689,38 +678,46 @@ let CartSummaryPart = {
 
 function Pages$CartPage(props) {
   let request = props.request;
-  return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
+  return Jsx$WeftDom.jsx(Ui$WeftShop.Shell.make, {
     request: request,
-    children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "cart-title",
-        children: Ui$WeftShop.text("Your cart")
-      }),
-      Jsx$WeftDom.Elements.jsxs("div", {
-        className: cart,
-        children: [
-          Jsx$WeftDom.jsx(CartLines$WeftShop.make, {}),
-          Jsx$WeftDom.Elements.jsxs("aside", {
-            children: [
-              Jsx$WeftDom.jsx(CartSummaryFrame$WeftShop.make, {
-                children: Jsx$WeftDom.jsx(Pages$CartSummaryPart, {
-                  request: request
+    children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "lg",
+      children: [
+        Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+          level: "h1",
+          dataId: "cart-title",
+          children: Primitive_option.some(Ui$WeftShop.text("Your cart"))
+        }),
+        Jsx$WeftDom.jsxs(Grid$WeftUi.make, {
+          template: "minmax(0, 1fr) 300px",
+          gap: "xl",
+          stackBelow: "md",
+          children: [
+            Jsx$WeftDom.jsx(CartLines$WeftShop.make, {}),
+            Jsx$WeftDom.jsxs(Card$WeftUi.Root.make, {
+              as_: "aside",
+              ariaLabel: "Summary",
+              children: [
+                Jsx$WeftDom.jsx(CartSummaryFrame$WeftShop.make, {
+                  children: Jsx$WeftDom.jsx(Pages$CartSummaryPart, {
+                    request: request
+                  })
+                }),
+                Jsx$WeftDom.jsx(PromoForm$WeftShop.make, {
+                  applied: request.session.promo
+                }),
+                Jsx$WeftDom.jsx(Link$WeftShop.make, {
+                  href: "/checkout",
+                  dataId: "checkout-link",
+                  className: Button$WeftUi.className("primary", undefined, undefined, true, undefined),
+                  children: Ui$WeftShop.text("Check out")
                 })
-              }),
-              Jsx$WeftDom.jsx(PromoForm$WeftShop.make, {
-                applied: request.session.promo
-              }),
-              Jsx$WeftDom.jsx(Link$WeftShop.make, {
-                href: "/checkout",
-                dataId: "checkout-link",
-                className: Theme$WeftShop.cta,
-                children: Ui$WeftShop.text("Check out")
-              })
-            ]
-          })
-        ]
-      })
-    ]
+              ]
+            })
+          ]
+        })
+      ]
+    })
   });
 }
 
@@ -734,9 +731,10 @@ function Pages$CheckoutPage(props) {
   return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
     request: request,
     children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "checkout-title",
-        children: Ui$WeftShop.text("Checkout")
+      Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+        level: "h1",
+        dataId: "checkout-title",
+        children: Primitive_option.some(Ui$WeftShop.text("Checkout"))
       }),
       Jsx$WeftDom.jsx(CheckoutForm$WeftShop.make, {
         total: cart.subtotal - cart.discount | 0,
@@ -769,9 +767,9 @@ function Pages$DeliveryEstimate(props) {
         tmp = "Delivered.";
         break;
     }
-    return Jsx$WeftDom.Elements.jsx("p", {
-      "data-id": "estimate",
-      children: Ui$WeftShop.text(tmp)
+    return Jsx$WeftDom.jsx(Text$WeftUi.make, {
+      dataId: "estimate",
+      children: Primitive_option.some(Ui$WeftShop.text(tmp))
     });
   })());
 }
@@ -787,44 +785,82 @@ let pollEvery = {
 function Pages$OrderPage(props) {
   let request = props.request;
   let order = props.order;
-  return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
+  return Jsx$WeftDom.jsx(Ui$WeftShop.Shell.make, {
     request: request,
-    children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "order-title",
-        children: Ui$WeftShop.text(`Order ` + order.id)
-      }),
-      Jsx$WeftDom.Elements.jsx("p", {
-        "data-id": "order-status",
-        children: Ui$WeftShop.text(`Status: ` + Types$WeftShop.statusLabel(order.status))
-      }),
-      Jsx$WeftDom.jsx(OrderTracker$WeftShop.make, {
-        status: order.status,
-        every: pollEvery.contents
-      }),
-      Jsx$WeftDom.Elements.jsx("ul", {
-        "data-id": "order-lines",
-        children: order.lines.map(line => Jsx$WeftDom.Elements.jsxKeyed("li", {
-          children: Ui$WeftShop.text(line.name + ` (` + line.variant + `) × ` + line.quantity.toString())
-        }, line.sku, undefined))
-      }),
-      Jsx$WeftDom.Elements.jsxs("p", {
-        children: [
-          Ui$WeftShop.text("Total: "),
-          Jsx$WeftDom.jsx(Price$WeftShop.make, {
-            cents: order.total,
-            dataId: "order-total"
+    children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "lg",
+      children: [
+        Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+          level: "h1",
+          dataId: "order-title",
+          children: Primitive_option.some(Ui$WeftShop.text(`Order ` + order.id))
+        }),
+        Jsx$WeftDom.jsx(Text$WeftUi.make, {
+          dataId: "order-status",
+          children: Primitive_option.some(Ui$WeftShop.text(`Status: ` + Types$WeftShop.statusLabel(order.status)))
+        }),
+        Jsx$WeftDom.jsx(OrderTracker$WeftShop.make, {
+          status: order.status,
+          every: pollEvery.contents
+        }),
+        Jsx$WeftDom.jsxs(Table$WeftUi.Root.make, {
+          dataId: "order-lines",
+          ariaLabel: "What's in it",
+          children: [
+            Jsx$WeftDom.jsx(Table$WeftUi.Head.make, {
+              children: Primitive_option.some(Jsx$WeftDom.jsxs(Table$WeftUi.Row.make, {
+                children: [
+                  Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                    children: Primitive_option.some(Ui$WeftShop.text("Item"))
+                  }),
+                  Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                    children: Primitive_option.some(Ui$WeftShop.text("Variant"))
+                  }),
+                  Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                    numeric: true,
+                    children: Primitive_option.some(Ui$WeftShop.text("Quantity"))
+                  })
+                ]
+              }))
+            }),
+            Jsx$WeftDom.jsx(Table$WeftUi.Body.make, {
+              children: Primitive_option.some(order.lines.map(line => Jsx$WeftDom.jsxsKeyed(Table$WeftUi.Row.make, {
+                children: [
+                  Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                    scope: "row",
+                    children: Primitive_option.some(Ui$WeftShop.text(line.name))
+                  }),
+                  Jsx$WeftDom.jsx(Table$WeftUi.Cell.make, {
+                    children: Primitive_option.some(Ui$WeftShop.text(line.variant))
+                  }),
+                  Jsx$WeftDom.jsx(Table$WeftUi.Cell.make, {
+                    numeric: true,
+                    children: Primitive_option.some(Ui$WeftShop.text(line.quantity.toString()))
+                  })
+                ]
+              }, line.sku, undefined)))
+            })
+          ]
+        }),
+        Jsx$WeftDom.jsxs(Text$WeftUi.make, {
+          weight: "semibold",
+          children: [
+            Ui$WeftShop.text("Total: "),
+            Jsx$WeftDom.jsx(Price$WeftShop.make, {
+              cents: order.total,
+              dataId: "order-total"
+            })
+          ]
+        }),
+        Jsx$WeftDom.jsx(Suspense$Weft.make, {
+          fallback: Ui$WeftShop.loading("estimate-loading", "Estimating delivery…"),
+          children: Jsx$WeftDom.jsx(Pages$DeliveryEstimate, {
+            order: order,
+            request: request
           })
-        ]
-      }),
-      Jsx$WeftDom.jsx(Suspense$Weft.make, {
-        fallback: Ui$WeftShop.loading("estimate-loading", "Estimating delivery…"),
-        children: Jsx$WeftDom.jsx(Pages$DeliveryEstimate, {
-          order: order,
-          request: request
         })
-      })
-    ]
+      ]
+    })
   });
 }
 
@@ -837,48 +873,103 @@ function Pages$AccountPage(props) {
   let name = props.name;
   let user = Db$WeftShop.user(name);
   let saved = Stdlib_Array.filterMap(user.wishlist.values().toArray(), Db$WeftShop.summary);
-  return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
+  return Jsx$WeftDom.jsx(Ui$WeftShop.Shell.make, {
     request: request,
-    children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "account-title",
-        children: Ui$WeftShop.text(name + `'s account`)
-      }),
-      Jsx$WeftDom.Elements.jsxs("section", {
-        "data-id": "orders",
-        children: [
-          Jsx$WeftDom.Elements.jsx("h2", {
-            children: Ui$WeftShop.text("Orders")
-          }),
-          Primitive_object.equal(user.orders, []) ? Jsx$WeftDom.Elements.jsx("p", {
-              "data-id": "no-orders",
-              children: Ui$WeftShop.text("No orders yet.")
-            }) : Jsx$WeftDom.Elements.jsx("ul", {
-              children: user.orders.map(id => Jsx$WeftDom.Elements.jsxKeyed("li", {
-                children: Jsx$WeftDom.jsx(Link$WeftShop.make, {
-                  href: `/orders/` + id,
-                  dataId: `order-link-` + id,
-                  children: Ui$WeftShop.text(id)
-                })
-              }, id, undefined))
-            })
-        ]
-      }),
-      Jsx$WeftDom.Elements.jsxs("section", {
-        "data-id": "wishlist",
-        children: [
-          Jsx$WeftDom.Elements.jsx("h2", {
-            children: Ui$WeftShop.text("Saved for later")
-          }),
-          Primitive_object.equal(saved, []) ? Jsx$WeftDom.Elements.jsx("p", {
-              "data-id": "no-saved",
-              children: Ui$WeftShop.text("Nothing saved yet.")
-            }) : Jsx$WeftDom.Elements.jsx("div", {
-              children: Ui$WeftShop.cards(saved, request)
-            })
-        ]
-      })
-    ]
+    children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+      gap: "xl",
+      children: [
+        Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+          level: "h1",
+          dataId: "account-title",
+          children: Primitive_option.some(Ui$WeftShop.text(name + `'s account`))
+        }),
+        Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+          as_: "section",
+          gap: "md",
+          dataId: "orders",
+          children: [
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h2",
+              size: "lg",
+              children: Primitive_option.some(Ui$WeftShop.text("Orders"))
+            }),
+            Primitive_object.equal(user.orders, []) ? Jsx$WeftDom.jsx(EmptyState$WeftUi.Root.make, {
+                bordered: true,
+                dataId: "no-orders",
+                children: Primitive_option.some(Jsx$WeftDom.jsx(EmptyState$WeftUi.Title.make, {
+                  children: Primitive_option.some(Ui$WeftShop.text("No orders yet."))
+                }))
+              }) : Jsx$WeftDom.jsxs(Table$WeftUi.Root.make, {
+                ariaLabel: "Orders",
+                children: [
+                  Jsx$WeftDom.jsx(Table$WeftUi.Head.make, {
+                    children: Primitive_option.some(Jsx$WeftDom.jsxs(Table$WeftUi.Row.make, {
+                      children: [
+                        Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                          children: Primitive_option.some(Ui$WeftShop.text("Order"))
+                        }),
+                        Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                          children: Primitive_option.some(Ui$WeftShop.text("Status"))
+                        }),
+                        Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                          numeric: true,
+                          children: Primitive_option.some(Ui$WeftShop.text("Total"))
+                        })
+                      ]
+                    }))
+                  }),
+                  Jsx$WeftDom.jsx(Table$WeftUi.Body.make, {
+                    children: Primitive_option.some(Stdlib_Array.filterMap(user.orders, Db$WeftShop.findOrder).map(order => Jsx$WeftDom.jsxsKeyed(Table$WeftUi.Row.make, {
+                      children: [
+                        Jsx$WeftDom.jsx(Table$WeftUi.HeaderCell.make, {
+                          scope: "row",
+                          children: Primitive_option.some(Jsx$WeftDom.jsx(Link$WeftShop.make, {
+                            href: `/orders/` + order.id,
+                            dataId: `order-link-` + order.id,
+                            children: Ui$WeftShop.text(order.id)
+                          }))
+                        }),
+                        Jsx$WeftDom.jsx(Table$WeftUi.Cell.make, {
+                          children: Primitive_option.some(Ui$WeftShop.text(Types$WeftShop.statusLabel(order.status)))
+                        }),
+                        Jsx$WeftDom.jsx(Table$WeftUi.Cell.make, {
+                          numeric: true,
+                          children: Primitive_option.some(Jsx$WeftDom.jsx(Price$WeftShop.make, {
+                            cents: order.total
+                          }))
+                        })
+                      ]
+                    }, order.id, undefined)))
+                  })
+                ]
+              })
+          ]
+        }),
+        Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+          as_: "section",
+          gap: "md",
+          dataId: "wishlist",
+          children: [
+            Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+              level: "h2",
+              size: "lg",
+              children: Primitive_option.some(Ui$WeftShop.text("Saved for later"))
+            }),
+            Primitive_object.equal(saved, []) ? Jsx$WeftDom.jsx(EmptyState$WeftUi.Root.make, {
+                bordered: true,
+                dataId: "no-saved",
+                children: Primitive_option.some(Jsx$WeftDom.jsx(EmptyState$WeftUi.Title.make, {
+                  children: Primitive_option.some(Ui$WeftShop.text("Nothing saved yet."))
+                }))
+              }) : Jsx$WeftDom.jsx(Grid$WeftUi.make, {
+                minItemWidth: "200px",
+                gap: "lg",
+                children: Primitive_option.some(Ui$WeftShop.cards(saved, request))
+              })
+          ]
+        })
+      ]
+    })
   });
 }
 
@@ -890,9 +981,10 @@ function Pages$SignInPage(props) {
   return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
     request: props.request,
     children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "signin-title",
-        children: Ui$WeftShop.text("Sign in")
+      Jsx$WeftDom.jsx(Heading$WeftUi.make, {
+        level: "h1",
+        dataId: "signin-title",
+        children: Primitive_option.some(Ui$WeftShop.text("Sign in"))
       }),
       Jsx$WeftDom.jsx(SignInForm$WeftShop.make, {
         next: props.next
@@ -906,18 +998,27 @@ let SignInPage = {
 };
 
 function Pages$NotFound(props) {
-  return Jsx$WeftDom.jsxs(Ui$WeftShop.Shell.make, {
+  return Jsx$WeftDom.jsx(Ui$WeftShop.Shell.make, {
     request: props.request,
-    children: [
-      Jsx$WeftDom.Elements.jsx("h1", {
-        "data-id": "not-found",
-        children: Ui$WeftShop.text("Not found")
-      }),
-      Jsx$WeftDom.jsx(Link$WeftShop.make, {
-        href: "/",
-        children: Ui$WeftShop.text("Back to the store")
-      })
-    ]
+    children: Jsx$WeftDom.jsxs(EmptyState$WeftUi.Root.make, {
+      children: [
+        Jsx$WeftDom.jsx(EmptyState$WeftUi.Title.make, {
+          level: "h1",
+          dataId: "not-found",
+          children: Primitive_option.some(Ui$WeftShop.text("Not found"))
+        }),
+        Jsx$WeftDom.jsx(EmptyState$WeftUi.Description.make, {
+          children: Primitive_option.some(Ui$WeftShop.text("There's nothing at this address."))
+        }),
+        Jsx$WeftDom.jsx(EmptyState$WeftUi.Action.make, {
+          children: Primitive_option.some(Jsx$WeftDom.jsx(Link$WeftShop.make, {
+            href: "/",
+            className: Button$WeftUi.className("primary", undefined, undefined, undefined, undefined),
+            children: Ui$WeftShop.text("Back to the store")
+          }))
+        })
+      ]
+    })
   });
 }
 
@@ -925,9 +1026,12 @@ let NotFound = {
   make: Pages$NotFound
 };
 
+let Ui;
+
 let pageSize = 4;
 
 export {
+  Ui,
   Styles,
   viewerOf,
   Breadcrumbs,

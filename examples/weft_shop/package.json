@@ -12,10 +12,12 @@
     "@e-cline/weft_dom": "workspace:*",
     "@e-cline/weft_server": "workspace:*",
     "@e-cline/weft_signals": "workspace:*",
+    "@e-cline/weft_ui": "workspace:*",
     "@rescript/runtime": "catalog:",
     "@rescript/webapi": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@e-cline/ppx_weft": "workspace:*",
     "@e-cline/weft_vite_plugin": "workspace:*",
     "@playwright/test": "catalog:",

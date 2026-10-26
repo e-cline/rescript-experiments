@@ -7,20 +7,6 @@ one is ready; the add to cart button inside keeps the quantity chosen.
 
 open Types
 
-open WeftCss
-
-module Styles = {
-  let variants = Css.class({display: Flex, flexWrap: Wrap, gap: Px(6), margin: Pair(Px(10), Zero)})
-  let variant = Css.class({
-    selectors: [
-      (
-        "&[aria-pressed=\"true\"]",
-        Css.style({backgroundColor: Var(Theme.ink), color: Named("white")}),
-      ),
-    ],
-  })
-}
-
 @weft.component({kind: Entrypoint})
 let make = (
   ~slug: string,
@@ -33,33 +19,38 @@ let make = (
     ~src=`/p/${slug}/offer?sku=${selected}`,
     children,
   )
-  <div dataId="product-offer">
+  <WeftUi.Stack gap=#md dataId="product-offer" align=#start>
     {Array.length(variants) > 1
-      ? <div dataId="variants" className=Styles.variants role="group" ariaLabel="Variant">
+      ? <WeftUi.ToggleGroup.Root
+          label="Variant"
+          dataId="variants"
+          value=[sku]
+          onValueChange={values =>
+            values
+            ->Array.get(0)
+            ->Option.forEach(next => {
+              setSku(_ => next)
+              offer.refetch(~url=`/p/${slug}/offer?sku=${next}`)->ignore
+            })}
+        >
           {variants
           ->Array.map(variant =>
-            <button
-              key=variant.sku
-              dataId={`variant-${variant.sku}`}
-              className={Styles.variant}
-              ariaPressed={variant.sku == sku ? "true" : "false"}
-              onClick={_ => {
-                setSku(_ => variant.sku)
-                offer.refetch(~url=`/p/${slug}/offer?sku=${variant.sku}`)->ignore
-              }}
+            <WeftUi.ToggleGroup.Item
+              key=variant.sku value=variant.sku dataId={`variant-${variant.sku}`}
             >
               {WeftDom.Jsx.string(variant.label)}
-            </button>
+            </WeftUi.ToggleGroup.Item>
           )
           ->WeftDom.Jsx.array}
-        </div>
+        </WeftUi.ToggleGroup.Root>
       : WeftDom.Jsx.null}
-    <div
+    <WeftUi.Stack
+      gap=#sm
       dataId="offer"
-      ariaBusy={offer.isPending ? "true" : "false"}
       className={offer.isPending ? Theme.stale : ""}
+      attrs={{ariaBusy: offer.isPending ? "true" : "false"}}
     >
       {offer.element}
-    </div>
-  </div>
+    </WeftUi.Stack>
+  </WeftUi.Stack>
 }

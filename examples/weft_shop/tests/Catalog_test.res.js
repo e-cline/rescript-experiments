@@ -174,8 +174,8 @@ Vitest.describe("a category page", undefined, undefined, undefined, undefined, u
   });
   Vitest.testAsync("narrows by price, and the range resets when the filters are cleared", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = await openCatalog(undefined);
-    let low = "[data-id=facet-price] input:first-of-type";
-    let high = "[data-id=facet-price] input:last-of-type";
+    let low = "[data-id=price-from]";
+    let high = "[data-id=price-to]";
     t.expect(Stdlib_Option.map(WeftTesting.query(page, low), prim => prim.value)).toEqual("59");
     WeftTesting.input(page, low, "80");
     WeftTesting.input(page, high, "130");

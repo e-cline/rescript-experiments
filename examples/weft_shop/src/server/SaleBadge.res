@@ -11,6 +11,8 @@ open WeftCss
 module Styles = {
   let badge = Css.class({
     display: InlineBlock,
+    // In a card's column, as wide as its text.
+    alignSelf: Start,
     padding: Pair(Px(2), Px(8)),
     borderRadius: Px(999),
     backgroundColor: Var(Theme.sale),

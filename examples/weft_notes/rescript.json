@@ -19,6 +19,7 @@
     "@e-cline/weft_css",
     "@e-cline/weft_dom",
     "@e-cline/weft_server",
+    "@e-cline/weft_ui",
     "@rescript/webapi"
   ],
   "ppx-flags": ["@e-cline/ppx_weft/ppx"]

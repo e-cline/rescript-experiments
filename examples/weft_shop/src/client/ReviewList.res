@@ -22,50 +22,68 @@ module Items = {
     let average =
       reviews->Array.reduce(0, (total, review) => total + review.stars)->Int.toFloat /.
         Int.toFloat(Math.Int.max(1, Array.length(reviews)))
-    <div dataId="reviews" className={isPending ? Theme.stale : ""}>
-      <p dataId="review-summary">
+    <WeftUi.Stack gap=#md dataId="reviews" className={isPending ? Theme.stale : ""} align=#start>
+      <WeftUi.Text dataId="review-summary" weight=#medium>
         {WeftDom.Jsx.string(
           `${Float.toFixed(average, ~digits=1)} out of 5, from ${Int.toString(
               Array.length(reviews),
             )} reviews`,
         )}
-      </p>
-      <select
-        dataId="review-order"
-        ariaLabel="Sort reviews"
-        value=order
-        onChange={event => {
-          let value = WeftDom.Dom.Event.targetValue(event)
-          startTransition(() => setOrder(_ => value))
-        }}
-      >
-        <option value="newest"> {WeftDom.Jsx.string("Newest")} </option>
-        <option value="highest"> {WeftDom.Jsx.string("Highest rated")} </option>
-        <option value="lowest"> {WeftDom.Jsx.string("Lowest rated")} </option>
-      </select>
-      <ul dataId="review-list">
+      </WeftUi.Text>
+      <WeftUi.Field label="Sort reviews">
+        <WeftUi.Select
+          size=#sm
+          dataId="review-order"
+          value=order
+          onChange={event => {
+            let value = WeftDom.Dom.Event.targetValue(event)
+            startTransition(() => setOrder(_ => value))
+          }}
+        >
+          <WeftUi.Select.Option value="newest">
+            {WeftDom.Jsx.string("Newest")}
+          </WeftUi.Select.Option>
+          <WeftUi.Select.Option value="highest">
+            {WeftDom.Jsx.string("Highest rated")}
+          </WeftUi.Select.Option>
+          <WeftUi.Select.Option value="lowest">
+            {WeftDom.Jsx.string("Lowest rated")}
+          </WeftUi.Select.Option>
+        </WeftUi.Select>
+      </WeftUi.Field>
+      <WeftUi.List.Root divided=true dataId="review-list">
         {shown
         ->Array.map(review =>
-          <li key=review.id dataId={`review-${review.id}`}>
-            <b> {WeftDom.Jsx.string(`${"★"->String.repeat(review.stars)} ${review.author}`)} </b>
+          <WeftUi.List.Item key=review.id dataId={`review-${review.id}`}>
+            <b>
+              <span ariaHidden="true">
+                {WeftDom.Jsx.string("★"->String.repeat(review.stars))}
+              </span>
+              <WeftUi.VisuallyHidden>
+                {WeftDom.Jsx.string(`${Int.toString(review.stars)} out of 5 stars, `)}
+              </WeftUi.VisuallyHidden>
+              {WeftDom.Jsx.string(` ${review.author}`)}
+            </b>
             {WeftDom.Jsx.string(": " ++ review.text)}
-          </li>
+          </WeftUi.List.Item>
         )
         ->WeftDom.Jsx.array}
-      </ul>
+      </WeftUi.List.Root>
       {!all && Array.length(reviews) > 3
-        ? <button dataId="all-reviews" onClick={_ => setAll(_ => true)}>
+        ? <WeftUi.Button size=#sm dataId="all-reviews" onClick={_ => setAll(_ => true)}>
             {WeftDom.Jsx.string(`Show all ${Int.toString(Array.length(reviews))}`)}
-          </button>
+          </WeftUi.Button>
         : WeftDom.Jsx.null}
-    </div>
+    </WeftUi.Stack>
   }
 }
 
 @weft.component({kind: Entrypoint})
 let make = (~reviews: promise<array<review>>) =>
   <Weft.Suspense
-    fallback={<p dataId="reviews-loading"> {WeftDom.Jsx.string("Loading reviews…")} </p>}
+    fallback={<WeftUi.Text tone=#muted italic=true dataId="reviews-loading">
+      {WeftDom.Jsx.string("Loading reviews…")}
+    </WeftUi.Text>}
   >
     <Items reviews />
   </Weft.Suspense>

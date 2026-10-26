@@ -1,18 +1,54 @@
 /***
-The store's look (with `weft_css`): its colours, as CSS variables, the page's own rules, and the
-looks both server and client components use. Each component's own styles are beside it.
+The store's look: weft_ui's components, in the store's colours, which this file sets as weft_ui's
+tokens on `:root` (winning over weft_ui's defaults, whichever loads first). `root`, on the page's
+outermost element, is what brings this sheet to every page. The page's font and colours are the
+only rules for elements; the looks the store's own components share (a product's picture, a
+placeholder, "stale") are here, and each component's own styles are beside it.
 */
 open WeftCss
 
-let ink = Css.var("#1d1b19")
-let muted = Css.var("#6b645c")
-let line = Css.var("#e6e0d8")
-let paper = Css.var("#fbf8f4")
-let accent = Css.var("#9a4b22")
-let sale = Css.var("#b3261e")
+module Tokens = WeftUi.Tokens
+
+Css.global(
+  ~selector=":root",
+  {
+    vars: [
+      (Tokens.fg, "#1d1b19"),
+      (Tokens.fgMuted, "#6b645c"),
+      (Tokens.border, "#e6e0d8"),
+      (Tokens.borderStrong, "#8c847a"),
+      (Tokens.bg, "#fbf8f4"),
+      (Tokens.surface, "#ffffff"),
+      (Tokens.surfaceMuted, "#f3eee7"),
+      (Tokens.accent, "#9a4b22"),
+      (Tokens.accentHover, "#7f3d1b"),
+      (Tokens.accentSoft, "#f8ece4"),
+      (Tokens.accentSoftFg, "#7a3a18"),
+      (Tokens.focusRing, "#9a4b22"),
+      (Tokens.danger, "#b3261e"),
+      (Tokens.dangerHover, "#951f19"),
+      (Tokens.dangerSoft, "#fdf1f0"),
+      (Tokens.dangerSoftFg, "#8f1e18"),
+      (Tokens.success, "#2f6b3a"),
+      (Tokens.successSoft, "#eef6ef"),
+      (Tokens.successSoftFg, "#285c32"),
+      (Tokens.radiusLg, "10px"),
+    ],
+  },
+)
+
+/** The page's outermost element (which brings this sheet to every page). */
+let root = Css.class({display: Block})
+
+// The store's colours by their old names, for its own styles.
+let ink = Tokens.fg
+let muted = Tokens.fgMuted
+let line = Tokens.border
+let accent = Tokens.accent
+let sale = Tokens.danger
 
 /** A variable's value, for properties written as strings (`border`, `outline`, ...). */
-let value = var => `var(${Css.varName(var)})`
+let value = Tokens.value
 
 /** A one-pixel border in the line colour. */
 let hairline = () => `1px solid ${value(line)}`
@@ -24,35 +60,14 @@ Css.global(
   {
     margin: Zero,
     font: "15px/1.5 system-ui, sans-serif",
-    color: Var(ink),
-    backgroundColor: Var(paper),
+    color: Var(Tokens.fg),
+    backgroundColor: Var(Tokens.bg),
   },
 )
 
+// The store's links are in the colour of what they're in, unless they're weft_ui's (`Link`, a
+// recipe), whose classes say otherwise.
 Css.global(~selector="a", {color: Raw("inherit")})
-
-Css.global(~selector="button, select, input, textarea", {font: "inherit"})
-
-Css.global(
-  ~selector="button",
-  {
-    cursor: Pointer,
-    border: hairline(),
-    backgroundColor: Named("white"),
-    borderRadius: Px(6),
-    padding: Pair(Px(4), Px(10)),
-    disabled: Css.style({opacity: 0.5, cursor: Default}),
-  },
-)
-
-/** Read by screen readers, not shown. */
-let visuallyHidden = Css.class({
-  position: Absolute,
-  width: Px(1),
-  height: Px(1),
-  overflow: Hidden,
-  clip: "rect(0 0 0 0)",
-})
 
 /** A picture's hue, and its gradient's angle: each picture sets its own (`pictureVars`). */
 let hue = Css.var("30")
@@ -73,7 +88,7 @@ let picture = Css.class({...gradient(), aspectRatio: "4 / 3", borderRadius: Px(8
 let pictureVars = (~hue as productHue, ~view=0) =>
   Css.vars([(hue, Int.toString(productHue)), (angle, `${Int.toString(135 + view * 40)}deg`)])
 
-/** Something still loading. */
+/** Something still loading: a placeholder that says what. */
 let placeholder = Css.class({
   color: Var(muted),
   padding: Px(12),
@@ -81,19 +96,5 @@ let placeholder = Css.class({
   background: "repeating-linear-gradient(90deg, #f1ece5, #f1ece5 10px, #f6f2ec 10px, #f6f2ec 20px)",
 })
 
-/** A call to action: a dark button-like link. */
-let cta = Css.class({
-  display: InlineBlock,
-  marginTop: Px(8),
-  padding: Pair(Px(8), Px(14)),
-  borderRadius: Px(6),
-  backgroundColor: Var(ink),
-  color: Named("white"),
-  textDecoration: None,
-})
-
 /** What's being fetched again: dimmed until it's in. */
 let stale = Css.class({opacity: 0.6})
-
-/** One of a list of options, on a line of its own. */
-let choice = Css.class({display: Block})

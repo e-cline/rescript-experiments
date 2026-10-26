@@ -1,0 +1,75 @@
+@@weft.server
+
+/***
+A component on show: its name, what it's for, and examples of it, each in a frame of its own, with
+a caption saying what it shows and the code it comes from (the gist of it, with `module Ui = WeftUi`
+opened: the gallery's own helpers and data left out).
+*/
+
+open WeftCss
+module Ui = WeftUi
+
+let text = WeftDom.Jsx.string
+
+module Styles = {
+  let frame = Css.class({
+    padding: Var(Ui.Tokens.spaceXl),
+    border: `1px solid ${Ui.Tokens.value(Ui.Tokens.border)}`,
+    borderRadius: Var(Ui.Tokens.radiusLg),
+    backgroundColor: Var(Ui.Tokens.surface),
+    overflowX: Auto,
+  })
+  let code = Css.class({
+    margin: Zero,
+    padding: Pair(Var(Ui.Tokens.spaceSm), Var(Ui.Tokens.spaceMd)),
+    borderRadius: Var(Ui.Tokens.radiusMd),
+    backgroundColor: Var(Ui.Tokens.surfaceMuted),
+    color: Var(Ui.Tokens.fg),
+    fontSize: Var(Ui.Tokens.textSm),
+    lineHeight: 1.5,
+    overflowX: Auto,
+  })
+}
+
+/** A component's name as an `id`: `DescriptionList` as `description-list`. */
+let slug = name => name->String.replaceRegExp(/([a-z])([A-Z])/g, "$1-$2")->String.toLowerCase
+
+module Section = {
+  @weft.component({kind: Server})
+  let make = (~name: string, ~summary: string, ~children) =>
+    <section dataId={`specimen-${slug(name)}`} ariaLabelledby={slug(name)}>
+      <Ui.Stack gap=#md>
+        <Ui.Stack gap=#xs>
+          <Ui.Heading level=#h2 id={slug(name)}> {text(name)} </Ui.Heading>
+          <Ui.Text tone=#muted> {text(summary)} </Ui.Text>
+        </Ui.Stack>
+        children
+      </Ui.Stack>
+    </section>
+}
+
+module Example = {
+  /** One example: what it shows, then it, in a frame, then its code. */
+  @weft.component({kind: Server})
+  let make = (~caption: string, ~code: string, ~children) =>
+    <Ui.Stack gap=#sm>
+      <Ui.Text as_=#p size=#sm weight=#medium> {text(caption)} </Ui.Text>
+      <div className=Styles.frame> children </div>
+      <pre className=Styles.code tabIndex=0 ariaLabel={`Code: ${caption}`}>
+        <code> {text(code)} </code>
+      </pre>
+    </Ui.Stack>
+}
+
+/** A group's page: its title and summary, then its components. */
+module Page = {
+  @weft.component({kind: Server})
+  let make = (~title: string, ~summary: string, ~children) =>
+    <Ui.Stack gap=#xxl>
+      <Ui.Stack gap=#xs>
+        <Ui.Heading level=#h1 dataId="page-title"> {text(title)} </Ui.Heading>
+        <Ui.Text tone=#muted size=#lg> {text(summary)} </Ui.Text>
+      </Ui.Stack>
+      children
+    </Ui.Stack>
+}

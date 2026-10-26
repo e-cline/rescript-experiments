@@ -37,7 +37,16 @@ function isNothing(value) {
   return value == null;
 }
 
-function restoreControlledState(element) {
+let otherRadios = (radio => {
+  if (radio.localName !== "input" || radio.type !== "radio" || !radio.name) return [];
+  const scope = radio.form ?? radio.getRootNode();
+  if (!scope.querySelectorAll) return [];
+  return [...scope.querySelectorAll('input[type="radio"]')].filter(
+    other => other !== radio && other.name === radio.name && other.form === radio.form,
+  );
+});
+
+function restoreOwnState(element) {
   let props = element.$$resFiberProps;
   if (props == null) {
     return;
@@ -51,6 +60,11 @@ function restoreControlledState(element) {
     element["checked"] = checked;
     return;
   }
+}
+
+function restoreControlledState(element) {
+  restoreOwnState(element);
+  otherRadios(element).forEach(restoreOwnState);
 }
 
 function setHandler(element, event, handler) {
@@ -608,6 +622,8 @@ export {
   runEvent,
   tableOf,
   isNothing,
+  otherRadios,
+  restoreOwnState,
   restoreControlledState,
   isEventProp,
   eventName,

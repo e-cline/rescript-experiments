@@ -3,10 +3,17 @@
 
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
+import * as Form$WeftUi from "@e-cline/weft_ui/src/Form.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Alert$WeftUi from "@e-cline/weft_ui/src/Alert.res.js";
 import * as Api$WeftShop from "../shared/Api.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Input$WeftUi from "@e-cline/weft_ui/src/Input.res.js";
+import * as Stack$WeftUi from "@e-cline/weft_ui/src/Stack.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
 function Newsletter(props) {
   let match = Hooks$Weft.useState(() => "");
@@ -15,18 +22,18 @@ function Newsletter(props) {
   let match$1 = Hooks$Weft.useState(() => "idle");
   let setStatus = match$1[1];
   let status = match$1[0];
-  let inputId = Hooks$Weft.useId();
   let subscribe = Rpc$WeftServer.use(Api$WeftShop.subscribe, undefined);
   if (typeof status !== "object" && status !== "sending" && status !== "idle") {
-    return Jsx$WeftDom.Elements.jsx("p", {
-      "data-id": "newsletter-done",
-      children: "Thanks: check your inbox."
+    return Jsx$WeftDom.jsx(Alert$WeftUi.Root.make, {
+      tone: "success",
+      dataId: "newsletter-done",
+      children: Primitive_option.some(Jsx$WeftDom.jsx(Alert$WeftUi.Description.make, {
+        children: "Thanks: check your inbox."
+      }))
     });
   }
-  return Jsx$WeftDom.Elements.jsxs("form", {
-    "data-id": "newsletter",
-    onSubmit: event => {
-      event.preventDefault();
+  return Jsx$WeftDom.jsx(Form$WeftUi.make, {
+    onSubmit: () => {
       setStatus(param => "sending");
       (async () => {
         let error = await subscribe(email);
@@ -40,39 +47,44 @@ function Newsletter(props) {
         }));
       })();
     },
-    children: [
-      Jsx$WeftDom.Elements.jsx("label", {
-        htmlFor: inputId,
-        children: "Get the newsletter"
-      }),
-      Jsx$WeftDom.Elements.jsx("input", {
-        id: inputId,
-        type: "email",
-        value: email,
-        autoComplete: "email",
-        inputMode: "email",
-        onInput: event => setEmail(param => Dom$WeftDom.Event.targetValue(event))
-      }),
-      Jsx$WeftDom.Elements.jsx("button", {
-        "data-id": "newsletter-submit",
-        type: "submit",
-        disabled: status === "sending",
-        children: "Subscribe"
-      }),
-      typeof status === "object" && status.NAME === "error" ? Jsx$WeftDom.Elements.jsx("p", {
-          role: "alert",
-          "data-id": "newsletter-error",
-          children: status.VAL
-        }) : Jsx$WeftDom.$$null
-    ]
+    busy: status === "sending",
+    dataId: "newsletter",
+    children: Primitive_option.some(Jsx$WeftDom.jsx(Field$WeftUi.make, {
+      label: "Get the newsletter",
+      error: typeof status === "object" && status.NAME === "error" ? status.VAL : undefined,
+      children: Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
+        direction: "row",
+        gap: "sm",
+        children: [
+          Jsx$WeftDom.jsx(Input$WeftUi.make, {
+            type_: "email",
+            value: email,
+            onInput: event => setEmail(param => Dom$WeftDom.Event.targetValue(event)),
+            placeholder: "you@example.com",
+            autoComplete: "email",
+            inputMode: "email"
+          }),
+          Jsx$WeftDom.jsx(Button$WeftUi.make, {
+            variant: "primary",
+            type_: "submit",
+            busy: status === "sending",
+            dataId: "newsletter-submit",
+            children: "Subscribe"
+          })
+        ]
+      })
+    }))
   });
 }
 
 Entrypoint$Weft.mark(Newsletter, "@e-cline/weft_shop_example/src/client/Newsletter.res#");
 
+let Ui;
+
 let make = Newsletter;
 
 export {
+  Ui,
   make,
 }
 /*  Not a pure module */

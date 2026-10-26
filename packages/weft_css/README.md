@@ -58,5 +58,6 @@ its `ppx-flags`. The modules are `WeftCss.Css` (the API), `WeftCss.SheetId` and 
   what changes at run time, use a CSS variable, a data attribute and a `selectors` rule, or a class
   per variant.
 - Classes are in the cascade layer `weft.components`, globals and variables in `weft.base` (or
-  `~layer`). Across files, rules in one layer have no order to rely on: compose fragments rather
-  than stacking conflicting classes.
+  `~layer`). A variable's initial value is declared on `:where(:root)`, so a value set for it
+  anywhere else wins, whichever sheet loads first. Across files, rules in one layer have no order to
+  rely on: compose fragments rather than stacking conflicting classes.

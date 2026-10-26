@@ -11,6 +11,10 @@ open Vitest
 
 let packageRoot = dirname(dirname(fileURLToPath(importMetaUrl)))
 
+// jsdom has no `<dialog>` methods or Popover API: weft_ui's stand-ins, for the sign-in dialog, the
+// cart's drawer and the account menu.
+WeftUi.Testing.installJsdomShims()
+
 /**
 Starts the app's server for the file's tests; before each, resets the server (every gate closed)
 and forgets the client's cookies (a new visitor).
@@ -28,7 +32,7 @@ let useApp = () => {
     // The client's store outlives a page (as it would a navigation): a new page in the tests is a
     // new page load in a browser, where it starts empty.
     Signals.Atom.set(Store.cart, None)
-    Signals.Atom.set(Store.toasts, [])
+    WeftUi.Toast.clear()
     Signals.Atom.set(Store.signInOpen, false)
   })
   app
@@ -274,7 +278,7 @@ let noWarnings = page =>
 /** Signs in as `name` through the header's dialog, and waits for the page to say so. */
 let signIn = async (page, name) => {
   page->WeftTesting.click("[data-id=sign-in]")
-  await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog]")->Option.isSome)
+  await page->WeftTesting.waitFor(() => Doc.find("[data-id=signin-dialog][open]")->Option.isSome)
   inputAnywhere("[data-id=signin-dialog] input", name)
   submitAnywhere("[data-id=signin-dialog] form")
   await page->WeftTesting.waitFor(() =>

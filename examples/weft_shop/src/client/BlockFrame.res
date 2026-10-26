@@ -16,12 +16,6 @@ module Styles = {
     margin: Four(Zero, Zero, Px(28), Zero),
     selectors: [("&[aria-busy=\"true\"]", Css.style({opacity: 0.7, transition: "opacity .2s"}))],
   })
-  let error = Css.class({
-    padding: Px(12),
-    border: "1px solid #f0c8c4",
-    backgroundColor: Hex("fdf1f0"),
-    borderRadius: Px(8),
-  })
 }
 
 @weft.component({kind: Entrypoint})
@@ -60,19 +54,24 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
     <Weft.ErrorBoundary
       fallback={(~error, ~reset as resetBoundary) => {
         reset.current = resetBoundary
-        <div className={Styles.error} dataId={`block-error-${id}`} role="alert">
-          <p> {WeftDom.Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))} </p>
-          <button
-            dataId={`retry-${id}`}
-            disabled=retrying
-            onClick={_ => {
-              setRetrying(_ => true)
-              refetch.current()->Promise.catch(_ => Promise.resolve())->ignore
-            }}
-          >
-            {WeftDom.Jsx.string(retrying ? "Retrying…" : "Retry")}
-          </button>
-        </div>
+        <WeftUi.Alert.Root tone=#danger dataId={`block-error-${id}`}>
+          <WeftUi.Alert.Title>
+            {WeftDom.Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))}
+          </WeftUi.Alert.Title>
+          <WeftUi.Alert.Action>
+            <WeftUi.Button
+              size=#sm
+              dataId={`retry-${id}`}
+              busy=retrying
+              onClick={_ => {
+                setRetrying(_ => true)
+                refetch.current()->Promise.catch(_ => Promise.resolve())->ignore
+              }}
+            >
+              {WeftDom.Jsx.string(retrying ? "Retrying…" : "Retry")}
+            </WeftUi.Button>
+          </WeftUi.Alert.Action>
+        </WeftUi.Alert.Root>
       }}
     >
       {block.element}

@@ -688,6 +688,82 @@ and randomChildren = (random, ~depth) => {
 }
 
 describe("the HTML, parsed", () => {
+  testAsync("writes the ARIA, data and popup attributes as a client render sets them", async t => {
+    let tree =
+      <div lang="en" dir="ltr" inert=true>
+        <input
+          ariaInvalid="true"
+          ariaRequired="true"
+          ariaErrormessage="e"
+          ariaAutocomplete="list"
+          ariaActivedescendant="o1"
+          minLength=2
+          pattern="[a-z]+"
+          size=10
+          form="f"
+        />
+        <select multiple=true ariaDisabled="false" />
+        <div
+          role="listbox"
+          ariaOrientation="vertical"
+          ariaMultiselectable="true"
+          ariaOwns="o1"
+          ariaReadonly="false"
+        >
+          <div role="option" id="o1" ariaSetsize=3 ariaPosinset=1 dataHighlighted=true />
+          <div role="option" dataHighlighted=false />
+        </div>
+        <div
+          role="slider" ariaValuemin=0. ariaValuemax=10. ariaValuenow=2.5 ariaValuetext="2.5 of 10"
+        />
+        <p ariaAtomic="true" ariaRelevant="additions" ariaRoledescription="note" />
+        <h2 role="heading" ariaLevel=2 />
+        <button
+          ariaHaspopup="menu"
+          popoverTarget="p"
+          popoverTargetAction="toggle"
+          dataState="closed"
+          dataOrientation="horizontal"
+          dataSide="bottom"
+          dataVariant="primary"
+        />
+        <div id="p" popover="auto" />
+        <form noValidate=true />
+        <details open_=true>
+          <summary />
+        </details>
+        <dialog open_=false />
+        <table>
+          <tbody>
+            <tr>
+              <th scope="row" rowSpan=2 ariaSort="ascending" />
+              <td headers="h" />
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    let markup = await html(tree)
+    t->expect(structure(page(markup)))->Expect.toEqual(structure(clientRender(tree)))
+    // By their HTML names.
+    [
+      `lang="en"`,
+      `inert=""`,
+      `aria-invalid="true"`,
+      `minlength="2"`,
+      `aria-setsize="3"`,
+      `aria-valuenow="2.5"`,
+      `popovertarget="p"`,
+      `popovertargetaction="toggle"`,
+      `data-state="closed"`,
+      `data-highlighted=""`,
+      `popover="auto"`,
+      `rowspan="2"`,
+      `<form novalidate="">`,
+      `<details open="">`,
+      `<dialog>`,
+    ]->Array.forEach(expected => t->expect(markup->String.includes(expected))->Expect.toBe(true))
+  })
+
   testAsync("is the DOM a client render of the same tree makes, for random trees", async t => {
     for seed in 1 to 150 {
       let random = Random.make(Int.toFloat(seed))

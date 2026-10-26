@@ -1,0 +1,32 @@
+{
+  "name": "@e-cline/weft_ui_gallery_example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Every @e-cline/weft_ui component, in every variant, on server-rendered pages: for looking at, and for checking accessibility.",
+  "type": "module",
+  "dependencies": {
+    "@e-cline/servy": "workspace:*",
+    "@e-cline/weft": "workspace:*",
+    "@e-cline/weft_css": "workspace:*",
+    "@e-cline/weft_dom": "workspace:*",
+    "@e-cline/weft_server": "workspace:*",
+    "@e-cline/weft_ui": "workspace:*",
+    "@rescript/runtime": "catalog:",
+    "@rescript/webapi": "catalog:"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@e-cline/ppx_weft": "workspace:*",
+    "@e-cline/weft_vite_plugin": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "jsdom": "catalog:",
+    "rescript": "catalog:",
+    "rescript-vitest": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -110,6 +110,20 @@ function text(page, selector) {
   return Stdlib_Option.getOr(WeftTesting.textOf(page, selector), "");
 }
 
+function fieldError(page, selector) {
+  return Stdlib_Option.flatMap(WeftTesting.query(page, selector), control => {
+    let match = Primitive_option.fromNullable(control.getAttribute("aria-invalid"));
+    let match$1 = Primitive_option.fromNullable(control.getAttribute("aria-describedby"));
+    if (match === "true" && match$1 !== undefined) {
+      return Stdlib_Option.flatMap(match$1.split(" ").at(-1), id => WeftTesting.textOf(page, `[id="` + id + `"]`));
+    }
+  });
+}
+
+function formError(page, form) {
+  return WeftTesting.textOf(page, `[data-id=` + form + `] > [role=alert]`);
+}
+
 function likes(app, noteId) {
   return WeftTesting.callServer(app, control, "likes", [noteId]).then(json => Stdlib_Option.mapOr(Stdlib_JSON.Decode.float(json), 0, prim => prim | 0));
 }
@@ -177,6 +191,8 @@ export {
   setLikes,
   waiterFor,
   text,
+  fieldError,
+  formError,
   has,
   likes,
   commentCount,

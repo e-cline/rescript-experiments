@@ -38,7 +38,7 @@ Vitest.describe("the first page", undefined, undefined, undefined, undefined, un
   t.expect(NotesSupport$WeftNotes.text(page, "[data-id=comment-list]")).toBe("Ada: Don't forget coffee.");
   let shell = await WeftTesting.shell(page);
   t.expect(shell.includes(`<div id="root" data-weft-html="">`)).toBe(true);
-  t.expect(shell.includes(`<h1 data-id="title">Groceries</h1>`)).toBe(true);
+  t.expect(shell.includes(`data-id="title"`) && shell.includes(`>Groceries</h1>`)).toBe(true);
   t.expect(shell.includes(`<template id="ws:`)).toBe(true);
   t.expect(shell.endsWith(`</body></html>`)).toBe(true);
   t.expect(shell.includes("(self.__weft||=[])")).toBe(false);
@@ -167,7 +167,7 @@ Vitest.describe("hydrating the first page", undefined, undefined, undefined, und
     t.expect(WeftTesting.renderCount(page, likeButton)).toBe(0);
     WeftTesting.input(page, "[data-id=title-input]", "   ");
     WeftTesting.click(page, "[data-id=save]");
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=title-error]"));
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(NotesSupport$WeftNotes.fieldError(page, "[data-id=title-input]")));
     await NotesSupport$WeftNotes.release(app(), "body:1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=note-body]"));
     WeftTesting.releaseLoads(page);
@@ -372,8 +372,8 @@ Vitest.describe("posting", undefined, undefined, undefined, undefined, undefined
     let page = await openNote(undefined, undefined);
     WeftTesting.input(page, "[data-id=title-input]", "   ");
     WeftTesting.click(page, "[data-id=save]");
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=title-error]"));
-    t.expect(NotesSupport$WeftNotes.text(page, "[data-id=title-error]")).toBe("A title can't be empty.");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(NotesSupport$WeftNotes.fieldError(page, "[data-id=title-input]")));
+    t.expect(NotesSupport$WeftNotes.fieldError(page, "[data-id=title-input]")).toEqual("A title can't be empty.");
     t.expect(NotesSupport$WeftNotes.text(page, "[data-id=title]")).toBe("Groceries");
     return t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
   });
@@ -386,14 +386,14 @@ Vitest.describe("posting, through RPCs", undefined, undefined, undefined, undefi
     WeftTesting.input(page, "[data-id=comment-author]", "Me");
     WeftTesting.input(page, "[data-id=comment-text]", "   ");
     WeftTesting.click(page, "[data-id=post-comment]");
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=comment-error]"));
-    t.expect(NotesSupport$WeftNotes.text(page, "[data-id=comment-error]")).toBe("Write something first.");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(NotesSupport$WeftNotes.fieldError(page, "[data-id=comment-text]")));
+    t.expect(NotesSupport$WeftNotes.fieldError(page, "[data-id=comment-text]")).toEqual("Write something first.");
     t.expect(WeftTesting.pageRequests(page)).toEqual(["/notes/1"]);
     t.expect(await NotesSupport$WeftNotes.commentCount(app(), "1")).toBe(1);
     WeftTesting.input(page, "[data-id=comment-text]", "Now with words");
     WeftTesting.click(page, "[data-id=post-comment]");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.text(page, "[data-id=comment-list]").includes("Me: Now with words"));
-    t.expect(NotesSupport$WeftNotes.has(page, "[data-id=comment-error]")).toBe(false);
+    t.expect(NotesSupport$WeftNotes.fieldError(page, "[data-id=comment-text]")).toEqual(undefined);
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/notes/1",
       rpc,
@@ -405,8 +405,8 @@ Vitest.describe("posting, through RPCs", undefined, undefined, undefined, undefi
     await NotesSupport$WeftNotes.removeNote(app(), "1");
     WeftTesting.input(page, "[data-id=comment-text]", "Hello?");
     WeftTesting.click(page, "[data-id=post-comment]");
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=comment-error]"));
-    t.expect(NotesSupport$WeftNotes.text(page, "[data-id=comment-error]")).toBe("This note doesn't exist any more.");
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(NotesSupport$WeftNotes.formError(page, "comment-form")));
+    t.expect(NotesSupport$WeftNotes.formError(page, "comment-form")).toEqual("This note doesn't exist any more.");
     t.expect(Stdlib_Option.map(WeftTesting.query(page, "[data-id=comment-text]"), prim => prim.value)).toEqual("Hello?");
     return t.expect(WeftTesting.pageRequests(page)).toEqual([
       "/notes/1",
@@ -418,9 +418,9 @@ Vitest.describe("posting, through RPCs", undefined, undefined, undefined, undefi
     WeftTesting.rewriteBodies(app(), rpc, body => body.replace(`"text":"short"`, `"text":"` + "x".repeat(501) + `"`));
     WeftTesting.input(page, "[data-id=comment-text]", "short");
     WeftTesting.click(page, "[data-id=post-comment]");
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=comment-error]"));
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(NotesSupport$WeftNotes.fieldError(page, "[data-id=comment-text]")));
     WeftTesting.stopRewriting(app());
-    t.expect(NotesSupport$WeftNotes.text(page, "[data-id=comment-error]")).toBe("That's too long: 500 characters at most.");
+    t.expect(NotesSupport$WeftNotes.fieldError(page, "[data-id=comment-text]")).toEqual("That's too long: 500 characters at most.");
     return t.expect(await NotesSupport$WeftNotes.commentCount(app(), "1")).toBe(1);
   });
   Vitest.testAsync("a request the server can't read is Invalid, and the page says so", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -428,9 +428,9 @@ Vitest.describe("posting, through RPCs", undefined, undefined, undefined, undefi
     WeftTesting.rewriteBodies(app(), rpc, param => `{"note":"1","comment":"hi"}`);
     WeftTesting.input(page, "[data-id=comment-text]", "hi");
     WeftTesting.click(page, "[data-id=post-comment]");
-    await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=comment-error]"));
+    await WeftTesting.waitFor(page, undefined, () => Stdlib_Option.isSome(NotesSupport$WeftNotes.formError(page, "comment-form")));
     WeftTesting.stopRewriting(app());
-    t.expect(NotesSupport$WeftNotes.text(page, "[data-id=comment-error]")).toBe("The server couldn't read that: reload the page, and try again.");
+    t.expect(NotesSupport$WeftNotes.formError(page, "comment-form")).toEqual("The server couldn't read that: reload the page, and try again.");
     return t.expect(await NotesSupport$WeftNotes.commentCount(app(), "1")).toBe(1);
   });
   Vitest.testAsync("liking is an RPC too", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -547,6 +547,10 @@ function hasSheet(hrefs, file) {
   return hrefs.some(href => href.includes(sheetOf(file)));
 }
 
+function hasUiSheet(hrefs, file) {
+  return hrefs.some(href => href.includes(SheetId$WeftCss.ofFileId(`@e-cline/weft_ui/src/` + file + `.res`)));
+}
+
 Vitest.describe("the styles (weft_css)", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
   Vitest.testAsync("are sent by what each page renders: the list's in its head, a note's when it's opened", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
     let page = NotesSupport$WeftNotes.open_(app(), undefined, undefined, "/");
@@ -554,13 +558,15 @@ Vitest.describe("the styles (weft_css)", undefined, undefined, undefined, undefi
     let head = headSheets(await WeftTesting.shell(page));
     t.expect(hasSheet(head, "shared/Theme")).toBe(true);
     t.expect(hasSheet(head, "server/Pages")).toBe(true);
-    t.expect(hasSheet(head, "client/CommentForm")).toBe(false);
-    t.expect(hasSheet(head, "client/LikeButton")).toBe(false);
+    t.expect(hasUiSheet(head, "List")).toBe(true);
+    t.expect(hasUiSheet(head, "Tokens")).toBe(true);
+    t.expect(hasUiSheet(head, "Field")).toBe(false);
+    t.expect(hasUiSheet(head, "Input")).toBe(false);
     t.expect(WeftTesting.unstyled(page)).toEqual([]);
     await openGates(undefined);
     await WeftTesting.navigate(page, "/notes/1");
     await WeftTesting.waitFor(page, undefined, () => NotesSupport$WeftNotes.has(page, "[data-id=comment-form]"));
-    t.expect(hasSheet(WeftTesting.stylesheets(page), "client/CommentForm")).toBe(true);
+    t.expect(hasUiSheet(WeftTesting.stylesheets(page), "Field")).toBe(true);
     return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
   Vitest.testAsync("show nothing unstyled while a note streams in, part by part", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -591,5 +597,6 @@ export {
   sheetOf,
   headSheets,
   hasSheet,
+  hasUiSheet,
 }
 /* app Not a pure module */

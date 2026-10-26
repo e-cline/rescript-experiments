@@ -254,6 +254,18 @@ type rec t = {
   visibility?: visibility,
   aspectRatio?: string,
   clip?: string,
+  insetInline?: length,
+  insetBlock?: length,
+  insetInlineStart?: length,
+  insetInlineEnd?: length,
+  insetBlockStart?: length,
+  insetBlockEnd?: length,
+  anchorName?: string,
+  positionAnchor?: string,
+  positionArea?: string,
+  positionTry?: string,
+  positionTryFallbacks?: string,
+  isolation?: string,
   // Size
   width?: length,
   height?: length,
@@ -261,6 +273,12 @@ type rec t = {
   maxWidth?: length,
   minHeight?: length,
   maxHeight?: length,
+  inlineSize?: length,
+  blockSize?: length,
+  minInlineSize?: length,
+  maxInlineSize?: length,
+  minBlockSize?: length,
+  maxBlockSize?: length,
   // Spacing
   margin?: length,
   marginTop?: length,
@@ -272,6 +290,18 @@ type rec t = {
   paddingRight?: length,
   paddingBottom?: length,
   paddingLeft?: length,
+  marginInline?: length,
+  marginBlock?: length,
+  marginInlineStart?: length,
+  marginInlineEnd?: length,
+  marginBlockStart?: length,
+  marginBlockEnd?: length,
+  paddingInline?: length,
+  paddingBlock?: length,
+  paddingInlineStart?: length,
+  paddingInlineEnd?: length,
+  paddingBlockStart?: length,
+  paddingBlockEnd?: length,
   gap?: length,
   rowGap?: length,
   columnGap?: length,
@@ -312,6 +342,12 @@ type rec t = {
   textDecoration?: textDecoration,
   textTransform?: string,
   whiteSpace?: whiteSpace,
+  textOverflow?: string,
+  textWrap?: string,
+  overflowWrap?: string,
+  textUnderlineOffset?: length,
+  verticalAlign?: string,
+  captionSide?: string,
   color?: color,
   // Box
   background?: string,
@@ -321,20 +357,40 @@ type rec t = {
   borderRight?: string,
   borderBottom?: string,
   borderLeft?: string,
+  borderInline?: string,
+  borderBlock?: string,
+  borderInlineStart?: string,
+  borderInlineEnd?: string,
+  borderBlockStart?: string,
+  borderBlockEnd?: string,
   borderColor?: color,
   borderWidth?: length,
   borderRadius?: length,
+  borderStartStartRadius?: length,
+  borderStartEndRadius?: length,
+  borderEndStartRadius?: length,
+  borderEndEndRadius?: length,
   outline?: string,
   outlineOffset?: length,
   boxShadow?: string,
   opacity?: float,
+  borderCollapse?: string,
+  borderSpacing?: length,
+  colorScheme?: string,
+  accentColor?: color,
   // Lists and interaction
   listStyle?: listStyle,
   cursor?: cursor,
   userSelect?: userSelect,
   pointerEvents?: pointerEvents,
+  appearance?: string,
+  overscrollBehavior?: string,
+  resize?: string,
   // Motion
   transform?: string,
+  translate?: string,
+  scale?: string,
+  transformOrigin?: string,
   transition?: string,
   animation?: string,
   animationName?: keyframes,
@@ -343,6 +399,8 @@ type rec t = {
   animationIterationCount?: string,
   // Generated content and SVG
   content?: string,
+  counterReset?: string,
+  counterIncrement?: string,
   fill?: color,
   stroke?: color,
   // Custom properties set by this block (`Theme.accent` to another variable's value, say)
@@ -385,7 +443,11 @@ external style: t => t = "%identity"
 /** Rules for `selector`, wherever the file's stylesheet is loaded (`body`, `*, *::before`, ...). */
 let global: (~selector: string, ~layer: string=?, t) => unit
 
-/** A CSS custom property, declared on `:root` with the value `initial`. */
+/**
+A CSS custom property, declared on `:where(:root)` with the value `initial`: with no specificity,
+so a value set for it anywhere else (`:root` in another file's sheet, an element's class or `style`)
+wins whatever order the sheets load in. A component library's defaults, overridden by an app's.
+*/
 let var: string => var
 
 /** An animation's keyframes, and its name, for `animationName`. */

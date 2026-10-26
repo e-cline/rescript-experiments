@@ -731,23 +731,143 @@ function randomChildren(random, depth) {
   return children;
 }
 
-Vitest.describe("the HTML, parsed", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => Vitest.testAsync("is the DOM a client render of the same tree makes, for random trees", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
-  for (let seed = 1; seed <= 150; ++seed) {
-    let random = DomSupport$WeftDom.Random.make(seed);
-    let tree = Jsx$WeftDom.Elements.jsx("div", {
-      children: randomChildren(random, 4)
+Vitest.describe("the HTML, parsed", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {
+  Vitest.testAsync("writes the ARIA, data and popup attributes as a client render sets them", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let tree = Jsx$WeftDom.Elements.jsxs("div", {
+      lang: "en",
+      dir: "ltr",
+      inert: true,
+      children: [
+        Jsx$WeftDom.Elements.jsx("input", {
+          "aria-invalid": "true",
+          "aria-required": "true",
+          "aria-errormessage": "e",
+          "aria-activedescendant": "o1",
+          "aria-autocomplete": "list",
+          minLength: 2,
+          pattern: "[a-z]+",
+          size: 10,
+          form: "f"
+        }),
+        Jsx$WeftDom.Elements.jsx("select", {
+          "aria-disabled": "false",
+          multiple: true
+        }),
+        Jsx$WeftDom.Elements.jsxs("div", {
+          role: "listbox",
+          "aria-readonly": "false",
+          "aria-orientation": "vertical",
+          "aria-multiselectable": "true",
+          "aria-owns": "o1",
+          children: [
+            Jsx$WeftDom.Elements.jsx("div", {
+              id: "o1",
+              role: "option",
+              "aria-setsize": 3,
+              "aria-posinset": 1,
+              "data-highlighted": true
+            }),
+            Jsx$WeftDom.Elements.jsx("div", {
+              role: "option",
+              "data-highlighted": false
+            })
+          ]
+        }),
+        Jsx$WeftDom.Elements.jsx("div", {
+          role: "slider",
+          "aria-valuemin": 0,
+          "aria-valuemax": 10,
+          "aria-valuenow": 2.5,
+          "aria-valuetext": "2.5 of 10"
+        }),
+        Jsx$WeftDom.Elements.jsx("p", {
+          "aria-atomic": "true",
+          "aria-relevant": "additions",
+          "aria-roledescription": "note"
+        }),
+        Jsx$WeftDom.Elements.jsx("h2", {
+          role: "heading",
+          "aria-level": 2
+        }),
+        Jsx$WeftDom.Elements.jsx("button", {
+          "aria-haspopup": "menu",
+          "data-state": "closed",
+          "data-orientation": "horizontal",
+          "data-side": "bottom",
+          "data-variant": "primary",
+          popoverTarget: "p",
+          popoverTargetAction: "toggle"
+        }),
+        Jsx$WeftDom.Elements.jsx("div", {
+          id: "p",
+          popover: "auto"
+        }),
+        Jsx$WeftDom.Elements.jsx("form", {
+          noValidate: true
+        }),
+        Jsx$WeftDom.Elements.jsx("details", {
+          open: true,
+          children: Jsx$WeftDom.Elements.jsx("summary", {})
+        }),
+        Jsx$WeftDom.Elements.jsx("dialog", {
+          open: false
+        }),
+        Jsx$WeftDom.Elements.jsx("table", {
+          children: Jsx$WeftDom.Elements.jsx("tbody", {
+            children: Jsx$WeftDom.Elements.jsxs("tr", {
+              children: [
+                Jsx$WeftDom.Elements.jsx("th", {
+                  "aria-sort": "ascending",
+                  rowSpan: 2,
+                  scope: "row"
+                }),
+                Jsx$WeftDom.Elements.jsx("td", {
+                  headers: "h"
+                })
+              ]
+            })
+          })
+        })
+      ]
     });
-    let fromHtml = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(tree, undefined, undefined));
-    let fromClient = DomSupport$WeftDom.clientRender(tree);
-    t.expect([
-      seed,
-      DomSupport$WeftDom.structure(fromHtml)
-    ]).toEqual([
-      seed,
-      DomSupport$WeftDom.structure(fromClient)
-    ]);
-  }
-}));
+    let markup = await Html$WeftDom.renderToString(tree, undefined, undefined);
+    t.expect(DomSupport$WeftDom.structure(DomSupport$WeftDom.page(markup))).toEqual(DomSupport$WeftDom.structure(DomSupport$WeftDom.clientRender(tree)));
+    [
+      `lang="en"`,
+      `inert=""`,
+      `aria-invalid="true"`,
+      `minlength="2"`,
+      `aria-setsize="3"`,
+      `aria-valuenow="2.5"`,
+      `popovertarget="p"`,
+      `popovertargetaction="toggle"`,
+      `data-state="closed"`,
+      `data-highlighted=""`,
+      `popover="auto"`,
+      `rowspan="2"`,
+      `<form novalidate="">`,
+      `<details open="">`,
+      `<dialog>`
+    ].forEach(expected => t.expect(markup.includes(expected)).toBe(true));
+  });
+  Vitest.testAsync("is the DOM a client render of the same tree makes, for random trees", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    for (let seed = 1; seed <= 150; ++seed) {
+      let random = DomSupport$WeftDom.Random.make(seed);
+      let tree = Jsx$WeftDom.Elements.jsx("div", {
+        children: randomChildren(random, 4)
+      });
+      let fromHtml = DomSupport$WeftDom.page(await Html$WeftDom.renderToString(tree, undefined, undefined));
+      let fromClient = DomSupport$WeftDom.clientRender(tree);
+      t.expect([
+        seed,
+        DomSupport$WeftDom.structure(fromHtml)
+      ]).toEqual([
+        seed,
+        DomSupport$WeftDom.structure(fromClient)
+      ]);
+    }
+  });
+});
 
 let Hooks;
 

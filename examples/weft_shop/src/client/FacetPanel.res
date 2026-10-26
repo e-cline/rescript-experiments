@@ -25,52 +25,49 @@ let changed = (query, change) => {
   params->paramsToString
 }
 
-open WeftCss
-
-module Styles = {
-  let facet = Css.class({
-    border: "none",
-    padding: Zero,
-    margin: Four(Zero, Zero, Px(14), Zero),
-    selectors: [("legend", Css.style({fontWeight: 600}))],
-  })
-}
+module Ui = WeftUi
 
 module RangeFacet = {
   @weft.component
   let make = (~name, ~label, ~min, ~max, ~low, ~high, ~apply: (int, int) => unit) => {
     let (from, setFrom) = Weft.Hooks.useState(() => Int.toString(low))
     let (to, setTo) = Weft.Hooks.useState(() => Int.toString(high))
-    let fromId = Weft.Hooks.useId()
-    let toId = Weft.Hooks.useId()
-    <fieldset className={Styles.facet} dataId={`facet-${name}`}>
-      <legend> {WeftDom.Jsx.string(label)} </legend>
-      <label htmlFor=fromId> {WeftDom.Jsx.string("From")} </label>
-      <input
-        id=fromId
-        type_="number"
-        min={Int.toString(min)}
-        max={Int.toString(max)}
-        value=from
-        onInput={event => setFrom(_ => WeftDom.Dom.Event.targetValue(event))}
-      />
-      <label htmlFor=toId> {WeftDom.Jsx.string("To")} </label>
-      <input
-        id=toId
-        type_="number"
-        min={Int.toString(min)}
-        max={Int.toString(max)}
-        value=to
-        onInput={event => setTo(_ => WeftDom.Dom.Event.targetValue(event))}
-      />
-      <button
-        dataId={`apply-${name}`}
-        onClick={_ =>
-          apply(Int.fromString(from)->Option.getOr(min), Int.fromString(to)->Option.getOr(max))}
-      >
-        {WeftDom.Jsx.string("Apply")}
-      </button>
-    </fieldset>
+    <Ui.Fieldset legend=label gap=#sm dataId={`facet-${name}`}>
+      <Ui.Grid columns=2 gap=#sm>
+        <Ui.Field label="From">
+          <Ui.Input
+            type_=#number
+            size=#sm
+            dataId={`${name}-from`}
+            min={Int.toString(min)}
+            max={Int.toString(max)}
+            value=from
+            onInput={event => setFrom(_ => WeftDom.Dom.Event.targetValue(event))}
+          />
+        </Ui.Field>
+        <Ui.Field label="To">
+          <Ui.Input
+            type_=#number
+            size=#sm
+            dataId={`${name}-to`}
+            min={Int.toString(min)}
+            max={Int.toString(max)}
+            value=to
+            onInput={event => setTo(_ => WeftDom.Dom.Event.targetValue(event))}
+          />
+        </Ui.Field>
+      </Ui.Grid>
+      <div>
+        <Ui.Button
+          size=#sm
+          dataId={`apply-${name}`}
+          onClick={_ =>
+            apply(Int.fromString(from)->Option.getOr(min), Int.fromString(to)->Option.getOr(max))}
+        >
+          {WeftDom.Jsx.string("Apply")}
+        </Ui.Button>
+      </div>
+    </Ui.Fieldset>
   }
 }
 
@@ -101,12 +98,16 @@ let make = (
     )()->ignore
   }
   let sort = pending ? params->getParam("sort")->Option.getOr("featured") : sort
-  <aside
-    dataId="facets" ariaBusy={pending ? "true" : "false"} className={pending ? Theme.stale : ""}
+  <Ui.Stack
+    as_=#aside
+    gap=#lg
+    dataId="facets"
+    ariaLabel="Filters"
+    className={pending ? Theme.stale : ""}
+    attrs={{ariaBusy: pending ? "true" : "false"}}
   >
-    <label>
-      {WeftDom.Jsx.string("Sort by ")}
-      <select
+    <Ui.Field label="Sort by">
+      <Ui.Select
         dataId="sort"
         value=sort
         onChange={event => {
@@ -121,46 +122,44 @@ let make = (
           ("rating", "Rating"),
         ]
         ->Array.map(((value, label)) =>
-          <option key=value value> {WeftDom.Jsx.string(label)} </option>
+          <Ui.Select.Option key=value value> {WeftDom.Jsx.string(label)} </Ui.Select.Option>
         )
         ->WeftDom.Jsx.array}
-      </select>
-    </label>
+      </Ui.Select>
+    </Ui.Field>
     {facets
     ->Array.map(facet =>
       switch facet {
       | Choices({name, label, options, selected}) =>
         let selected = pending ? params->getAll(name) : selected
-        <fieldset key=name className={Styles.facet} dataId={`facet-${name}`}>
-          <legend> {WeftDom.Jsx.string(label)} </legend>
+        <Ui.Fieldset key=name legend=label gap=#sm dataId={`facet-${name}`}>
           {options
           ->Array.map(((value, count)) =>
-            <label key=value className={Theme.choice}>
-              <input
-                type_="checkbox"
-                dataId={`${name}-${value}`}
-                checked={selected->Array.includes(value)}
-                onChange={_ =>
-                  go(
-                    changed(
-                      query,
-                      params => {
-                        let current = params->getAll(name)
-                        params->deleteParam(name)
-                        let next =
-                          current->Array.includes(value)
-                            ? current->Array.filter(other => other != value)
-                            : [...current, value]
-                        next->Array.forEach(value => params->appendParam(name, value))
-                      },
-                    ),
-                  )}
-              />
-              {WeftDom.Jsx.string(` ${value} (${Int.toString(count)})`)}
-            </label>
+            <Ui.Checkbox
+              key=value
+              dataId={`${name}-${value}`}
+              checked={selected->Array.includes(value)}
+              onCheckedChange={_ =>
+                go(
+                  changed(
+                    query,
+                    params => {
+                      let current = params->getAll(name)
+                      params->deleteParam(name)
+                      let next =
+                        current->Array.includes(value)
+                          ? current->Array.filter(other => other != value)
+                          : [...current, value]
+                      next->Array.forEach(value => params->appendParam(name, value))
+                    },
+                  ),
+                )}
+            >
+              {WeftDom.Jsx.string(`${value} (${Int.toString(count)})`)}
+            </Ui.Checkbox>
           )
           ->WeftDom.Jsx.array}
-        </fieldset>
+        </Ui.Fieldset>
       | Range({name, label, min, max, low, high}) =>
         let picked = (param, fallback) =>
           params
@@ -187,27 +186,28 @@ let make = (
         />
       | Toggle({name, label, on}) =>
         let on = pending ? params->getParam(name) == Some("1") : on
-        <label key=name className={Styles.facet} dataId={`facet-${name}`}>
-          <input
-            type_="checkbox"
-            dataId={`toggle-${name}`}
-            checked=on
-            onChange={_ =>
-              go(
-                changed(query, params =>
-                  on ? params->deleteParam(name) : params->setParam(name, "1")
-                ),
-              )}
-          />
-          {WeftDom.Jsx.string(" " ++ label)}
-        </label>
+        <Ui.Switch
+          key=name
+          dataId={`toggle-${name}`}
+          checked=on
+          onCheckedChange={_ =>
+            go(
+              changed(query, params =>
+                on ? params->deleteParam(name) : params->setParam(name, "1")
+              ),
+            )}
+        >
+          {WeftDom.Jsx.string(label)}
+        </Ui.Switch>
       }
     )
     ->WeftDom.Jsx.array}
     {query == ""
       ? WeftDom.Jsx.null
-      : <button dataId="clear-filters" onClick={_ => go("")}>
-          {WeftDom.Jsx.string("Clear all")}
-        </button>}
-  </aside>
+      : <div>
+          <Ui.Button variant=#ghost size=#sm dataId="clear-filters" onClick={_ => go("")}>
+            {WeftDom.Jsx.string("Clear all")}
+          </Ui.Button>
+        </div>}
+  </Ui.Stack>
 }

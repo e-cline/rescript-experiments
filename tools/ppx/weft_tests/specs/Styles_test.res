@@ -74,7 +74,7 @@ describe("extracting the fixtures", () => {
         id: stylesId,
         css: `@layer weft.base, weft.components;
 @layer weft.base {
-  :root {
+  :where(:root) {
     --Styles-ink_${stylesId}: #1d1b19;
   }
   body {

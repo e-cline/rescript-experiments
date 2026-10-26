@@ -1,0 +1,53 @@
+{
+  "name": "@e-cline/weft_ui",
+  "version": "0.0.1",
+  "description": "Accessible, styled UI components for @e-cline/weft: layout, text, cards, tables, forms, dialogs, menus and more, customizable through tokens, variants and className.",
+  "keywords": [
+    "accessibility",
+    "components",
+    "rescript",
+    "ui",
+    "weft"
+  ],
+  "homepage": "https://github.com/e-cline/rescript-experiments/tree/main/packages/weft_ui#readme",
+  "bugs": {
+    "url": "https://github.com/e-cline/rescript-experiments/issues"
+  },
+  "license": "MIT",
+  "author": "Ethan Cline",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/e-cline/rescript-experiments.git",
+    "directory": "packages/weft_ui"
+  },
+  "files": [
+    "rescript.json",
+    "src/**/*.res",
+    "src/**/*.resi"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@e-cline/weft": "workspace:^",
+    "@e-cline/weft_css": "workspace:^",
+    "@e-cline/weft_dom": "workspace:^"
+  },
+  "devDependencies": {
+    "@e-cline/ppx_weft": "workspace:*",
+    "@e-cline/weft_server": "workspace:*",
+    "@rescript/runtime": "catalog:",
+    "jsdom": "catalog:",
+    "rescript": "catalog:",
+    "rescript-vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@rescript/runtime": ">=12.0.0 <13",
+    "rescript": ">=12.0.0 <13"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

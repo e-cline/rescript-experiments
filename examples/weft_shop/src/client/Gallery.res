@@ -12,8 +12,13 @@ module Styles = {
     width: Px(56),
     height: Px(42),
     borderRadius: Px(6),
+    border: "none",
+    padding: Zero,
     selectors: [
-      ("&[aria-pressed=\"true\"]", Css.style({outline: `2px solid ${Theme.value(Theme.ink)}`})),
+      (
+        "&[aria-pressed=\"true\"]",
+        Css.style({outline: `2px solid ${Theme.value(Theme.ink)}`, outlineOffset: Px(2)}),
+      ),
     ],
   })
 }
@@ -43,14 +48,15 @@ let make = (~name: string, ~hue: int) => {
     <div className={Styles.thumbnails}>
       {views
       ->Array.mapWithIndex((view, index) =>
-        <button
+        <WeftUi.Toggle
           key=view
+          label=view
+          variant=#ghost
           dataId={`thumb-${Int.toString(index)}`}
           className={Styles.thumbnail}
-          ariaLabel=view
-          ariaPressed={index == selected ? "true" : "false"}
+          pressed={index == selected}
+          onPressedChange={_ => setSelected(_ => index)}
           style={Theme.pictureVars(~hue, ~view=index)}
-          onClick={_ => setSelected(_ => index)}
         />
       )
       ->WeftDom.Jsx.array}

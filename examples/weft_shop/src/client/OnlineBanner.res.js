@@ -4,6 +4,8 @@
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Alert$WeftUi from "@e-cline/weft_ui/src/Alert.res.js";
+import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
 function subscribe(onChange) {
   addEventListener("online", onChange);
@@ -17,23 +19,8 @@ function subscribe(onChange) {
 let offline = Css$WeftCss.Internal.class_("OnlineBanner-Styles-offline_wqe1oyu", undefined, () => ({
   position: "sticky",
   top: "Zero",
-  margin: "Zero",
-  padding: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 8
-    },
-    _1: {
-      TAG: "Px",
-      _0: 16
-    }
-  },
-  textAlign: "center",
-  backgroundColor: {
-    TAG: "Hex",
-    _0: "fff3cd"
-  }
+  zIndex: 10,
+  borderRadius: "Zero"
 }));
 
 let Styles = {
@@ -45,11 +32,13 @@ function OnlineBanner(props) {
   if (online) {
     return Jsx$WeftDom.$$null;
   } else {
-    return Jsx$WeftDom.Elements.jsx("p", {
+    return Jsx$WeftDom.jsx(Alert$WeftUi.Root.make, {
+      tone: "warning",
       className: offline,
-      role: "alert",
-      "data-id": "offline",
-      children: "You're offline: prices and stock may be out of date."
+      dataId: "offline",
+      children: Primitive_option.some(Jsx$WeftDom.jsx(Alert$WeftUi.Description.make, {
+        children: "You're offline: prices and stock may be out of date."
+      }))
     });
   }
 }

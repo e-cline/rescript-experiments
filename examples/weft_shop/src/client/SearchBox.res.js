@@ -6,10 +6,12 @@ import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Dom$WeftDom from "@e-cline/weft_dom/src/shared/Dom.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Text$WeftUi from "@e-cline/weft_ui/src/Text.res.js";
 import * as Api$WeftShop from "../shared/Api.res.js";
-import * as Link$WeftShop from "./Link.res.js";
+import * as Field$WeftUi from "@e-cline/weft_ui/src/Field.res.js";
+import * as Button$WeftUi from "@e-cline/weft_ui/src/Button.res.js";
 import * as Rpc$WeftServer from "@e-cline/weft_server/src/shared/Rpc.res.js";
-import * as Theme$WeftShop from "../shared/Theme.res.js";
+import * as Combobox$WeftUi from "@e-cline/weft_ui/src/Combobox.res.js";
 import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 import * as Primitive_object from "@rescript/runtime/lib/es6/Primitive_object.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
@@ -17,7 +19,6 @@ import * as Navigation$WeftServer from "@e-cline/weft_server/src/shared/Navigati
 
 let search = Css$WeftCss.Internal.class_("SearchBox-Styles-search_w4gezlo", undefined, () => ({
   display: "flex",
-  position: "relative",
   minWidth: {
     TAG: "Px",
     _0: 200
@@ -26,98 +27,17 @@ let search = Css$WeftCss.Internal.class_("SearchBox-Styles-search_w4gezlo", unde
     TAG: "Px",
     _0: 6
   },
-  flex: "1"
-}));
-
-let input = Css$WeftCss.Internal.class_("SearchBox-Styles-input_w4gezlo", undefined, () => ({
-  padding: {
-    TAG: "Pair",
-    _0: {
-      TAG: "Px",
-      _0: 6
-    },
-    _1: {
-      TAG: "Px",
-      _0: 10
-    }
-  },
   flex: "1",
-  border: Theme$WeftShop.hairline(),
-  borderRadius: {
-    TAG: "Px",
-    _0: 6
-  }
+  alignItems: "center"
 }));
 
-let suggestions = Css$WeftCss.Internal.class_("SearchBox-Styles-suggestions_w4gezlo", undefined, () => ({
-  position: "absolute",
-  top: {
-    TAG: "Pct",
-    _0: 100
-  },
-  right: "Zero",
-  left: "Zero",
-  zIndex: 5,
-  margin: {
-    TAG: "Four",
-    _0: {
-      TAG: "Px",
-      _0: 4
-    },
-    _1: "Zero",
-    _2: "Zero",
-    _3: "Zero"
-  },
-  padding: {
-    TAG: "Px",
-    _0: 4
-  },
-  backgroundColor: {
-    TAG: "Named",
-    _0: "white"
-  },
-  border: Theme$WeftShop.hairline(),
-  borderRadius: {
-    TAG: "Px",
-    _0: 6
-  },
-  listStyle: "none",
-  selectors: [[
-      "li",
-      {
-        display: "flex",
-        padding: {
-          TAG: "Pair",
-          _0: {
-            TAG: "Px",
-            _0: 4
-          },
-          _1: {
-            TAG: "Px",
-            _0: 6
-          }
-        },
-        justifyContent: "space-between"
-      }
-    ]]
-}));
-
-let category = Css$WeftCss.Internal.class_("SearchBox-Styles-category_w4gezlo", undefined, () => ({
-  fontSize: {
-    TAG: "Px",
-    _0: 13
-  },
-  color: {
-    TAG: "Var",
-    _0: Theme$WeftShop.muted
-  }
+let field = Css$WeftCss.Internal.class_("SearchBox-Styles-field_w4gezlo", undefined, () => ({
+  flex: "1"
 }));
 
 let Styles = {
   search: search,
-  input: input,
-  suggestions: suggestions,
-  category: category
+  field: field
 };
 
 function SearchBox$Suggestions(props) {
@@ -155,29 +75,31 @@ function SearchBox$Suggestions(props) {
       controller.abort();
     };
   }, [query]);
-  let suggestions$1 = found[1];
-  if (Primitive_object.equal(suggestions$1, []) || found[0] !== query.trim()) {
+  let suggestions = found[1];
+  if (Primitive_object.equal(suggestions, []) || found[0] !== query.trim()) {
     return Jsx$WeftDom.$$null;
   } else {
-    return Jsx$WeftDom.Elements.jsx("ul", {
-      id: props.listId,
-      className: suggestions,
-      role: "listbox",
-      children: suggestions$1.map(suggestion => Jsx$WeftDom.Elements.jsxsKeyed("li", {
-        role: "option",
-        onClick: param => onPick(),
+    return Jsx$WeftDom.jsx(Combobox$WeftUi.Popup.make, {
+      ariaLabel: "Suggestions",
+      children: Primitive_option.some(suggestions.map(suggestion => Jsx$WeftDom.jsxsKeyed(Combobox$WeftUi.Item.make, {
+        value: suggestion.slug,
+        onSelect: () => {
+          onPick();
+          Navigation$WeftServer.navigate(navigation, `/p/` + suggestion.slug);
+        },
+        dataId: `suggestion-` + suggestion.slug,
         children: [
-          Jsx$WeftDom.jsx(Link$WeftShop.make, {
-            href: `/p/` + suggestion.slug,
-            dataId: `suggestion-` + suggestion.slug,
+          Jsx$WeftDom.Elements.jsx("span", {
             children: suggestion.name
           }),
-          Jsx$WeftDom.Elements.jsx("span", {
-            className: category,
-            children: suggestion.category
+          Jsx$WeftDom.jsx(Text$WeftUi.make, {
+            as_: "span",
+            tone: "muted",
+            size: "xs",
+            children: Primitive_option.some(suggestion.category)
           })
         ]
-      }, suggestion.slug, undefined))
+      }, suggestion.slug, undefined)))
     });
   }
 }
@@ -193,10 +115,8 @@ function SearchBox(props) {
   let text = match[0];
   let match$1 = Hooks$Weft.useState(() => false);
   let setShowing = match$1[1];
-  let showing = match$1[0];
   let deferred = Hooks$Weft.useDeferredValue(text);
   let navigation = Navigation$WeftServer.useNavigation();
-  let listId = Hooks$Weft.useId();
   return Jsx$WeftDom.Elements.jsxs("form", {
     className: search,
     role: "search",
@@ -207,42 +127,49 @@ function SearchBox(props) {
       Navigation$WeftServer.navigate(navigation, `/search?q=` + encodeURIComponent(text.trim()));
     },
     children: [
-      Jsx$WeftDom.Elements.jsx("input", {
-        className: input,
-        role: "combobox",
-        "aria-label": "Search",
-        "aria-expanded": showing ? "true" : "false",
-        "aria-controls": listId,
-        "data-id": "search-input",
-        type: "search",
-        value: text,
-        placeholder: "Search the store",
-        autoComplete: "off",
-        onInput: event => {
-          let value = Dom$WeftDom.Event.targetValue(event);
-          setText(param => value);
-          setShowing(param => true);
-        }
+      Jsx$WeftDom.jsx(Field$WeftUi.make, {
+        label: "Search",
+        hideLabel: true,
+        className: field,
+        children: Jsx$WeftDom.jsxs(Combobox$WeftUi.Root.make, {
+          children: [
+            Jsx$WeftDom.jsx(Combobox$WeftUi.Input.make, {
+              value: text,
+              onInput: event => {
+                let value = Dom$WeftDom.Event.targetValue(event);
+                setText(param => value);
+                setShowing(param => true);
+              },
+              type_: "search",
+              size: "sm",
+              placeholder: "Search the store",
+              dataId: "search-input"
+            }),
+            match$1[0] ? Jsx$WeftDom.jsx(SearchBox$Suggestions, {
+                query: deferred,
+                onPick: () => setShowing(param => false)
+              }) : Jsx$WeftDom.$$null
+          ]
+        })
       }),
-      Jsx$WeftDom.Elements.jsx("button", {
-        "data-id": "search-submit",
-        type: "submit",
+      Jsx$WeftDom.jsx(Button$WeftUi.make, {
+        size: "sm",
+        type_: "submit",
+        dataId: "search-submit",
         children: "Search"
-      }),
-      showing ? Jsx$WeftDom.jsx(SearchBox$Suggestions, {
-          query: deferred,
-          listId: listId,
-          onPick: () => setShowing(param => false)
-        }) : Jsx$WeftDom.$$null
+      })
     ]
   });
 }
 
 Entrypoint$Weft.mark(SearchBox, "@e-cline/weft_shop_example/src/client/SearchBox.res#");
 
+let Ui;
+
 let make = SearchBox;
 
 export {
+  Ui,
   Styles,
   Suggestions,
   make,

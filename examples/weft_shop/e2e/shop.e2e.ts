@@ -107,10 +107,10 @@ test("blocks arriving while an entrypoint's chunk is still loading are hydrated 
   await expect(page.locator('[data-id=newsletter]')).toBeVisible();
   await expect(page.locator('[data-id=blocks-home]')).toHaveCount(1);
   releaseTabs();
-  await hydrated(page, '#tabs-tabs-tab-1');
-  await page.locator('#tabs-tabs-tab-1').click();
-  await expect(page.locator('#tabs-tabs-panel-1')).toBeVisible();
-  await expect(page.locator('#tabs-tabs-panel-0')).toBeHidden();
+  await hydrated(page, '[data-id=tabs-tabs-tab-1]');
+  await page.locator('[data-id=tabs-tabs-tab-1]').click();
+  await expect(page.locator('[data-id=tabs-tabs-panel-1]')).toBeVisible();
+  await expect(page.locator('[data-id=tabs-tabs-panel-0]')).toBeHidden();
   await expect(page.locator('[data-id=blocks-home]')).toHaveCount(1);
   await expect(page.locator('[data-id=tabs-tabs]')).toHaveCount(1);
 });
@@ -144,14 +144,15 @@ test('shopping, start to finish: a filter, a product, a variant, the cart, a pro
   await expect(page.locator('[data-id=toasts]')).toContainText(
     'Added 2 × Hiking Boot to your cart',
   );
-  // The drawer, in a portal at the end of the body.
+  // The drawer: a modal dialog, the focus in it.
   await page.locator('[data-id=cart-button]').click();
-  await expect(page.locator('body > [data-id=cart-drawer]')).toContainText(
+  await expect(page.locator('[data-id=cart-drawer]')).toBeVisible();
+  await expect(page.locator('[data-id=cart-drawer]')).toContainText(
     'Hiking Boot (Size 9) × 2: $338.00',
   );
   await page.locator('[data-id=drawer-cart-link]').click();
   await expect(page.locator('[data-id=cart-title]')).toBeVisible();
-  await expect(page.locator('[data-id=cart-drawer]')).toHaveCount(0);
+  await expect(page.locator('[data-id=cart-drawer]')).toBeHidden();
   await page.locator('[data-id=promo] input').fill('loom20');
   await page.locator('[data-id=apply-promo]').click();
   await expect(page.locator('[data-id=summary-discount]')).toHaveText(
@@ -196,12 +197,12 @@ test('the sign-in dialog takes focus, closes on Escape, and signing in personali
   await page.goto('/');
   await hydrated(page, '[data-id=sign-in]');
   await page.locator('[data-id=sign-in]').click();
-  await expect(
-    page.locator('body > [data-id=signin-overlay] [data-id=signin-dialog]'),
-  ).toBeVisible();
+  await expect(page.locator('[data-id=signin-dialog]')).toBeVisible();
   await expect(page.locator('[data-id=signin-dialog] input')).toBeFocused();
   await page.keyboard.press('Escape');
-  await expect(page.locator('[data-id=signin-dialog]')).toHaveCount(0);
+  await expect(page.locator('[data-id=signin-dialog]')).toBeHidden();
+  // Closed, the focus is back on what opened it.
+  await expect(page.locator('[data-id=sign-in]')).toBeFocused();
   await page.locator('[data-id=sign-in]').click();
   await page.locator('[data-id=signin-dialog] input').fill('Ada');
   await page.keyboard.press('Enter');
@@ -234,13 +235,15 @@ test('a link to a page that redirects lands at the URL the redirect leads to, in
   await page.locator('[data-id=sign-in]').click();
   await page.locator('[data-id=signin-dialog] input').fill('Ada');
   await page.keyboard.press('Enter');
-  await hydrated(page, '[data-id=account-link]');
+  await hydrated(page, '[data-id=account-trigger]');
   // Signed out behind the page's back: its account link now redirects to sign in.
   await page.context().clearCookies();
   // Gone if the page loads again: the link should navigate in place.
   await page.evaluate(() => {
     (window as {stayed?: boolean}).stayed = true;
   });
+  // The account's link is in the account menu.
+  await page.locator('[data-id=account-trigger]').click();
   await page.locator('[data-id=account-link]').click();
   await expect(page.locator('[data-id=signin-page]')).toBeVisible();
   expect(where()).toBe('/signin?next=/account');

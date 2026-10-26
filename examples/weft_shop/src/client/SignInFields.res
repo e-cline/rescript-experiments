@@ -1,23 +1,18 @@
 /***
 Signing in (the `auth.signIn` RPC): a name, and no password (it's a demo). Used by the dialog and by
-the sign-in page. Its label is linked by an ID from `useId`.
+the sign-in page. What's wrong with the name (empty, too long) is the field's error, linked to its
+input.
 */
 
-open WeftCss
-
-module Styles = {
-  let form = Css.class({display: Grid, gap: Px(8)})
-}
+module Ui = WeftUi
 
 @weft.component
 let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
   let (name, setName) = Weft.Hooks.useState(() => "")
   let (error, setError) = Weft.Hooks.useState(() => None)
   let (busy, setBusy) = Weft.Hooks.useState(() => false)
-  let inputId = Weft.Hooks.useId()
   let signIn = WeftServer.Rpc.use(Api.signIn)
-  let submit = event => {
-    WeftDom.Dom.Event.preventDefault(event)
+  let submit = () => {
     setBusy(_ => true)
 
     (
@@ -33,21 +28,17 @@ let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
       }
     )()->ignore
   }
-  <form className={Styles.form} onSubmit=submit>
-    <label htmlFor=inputId> {WeftDom.Jsx.string("Your name")} </label>
-    <input
-      id=inputId
-      value=name
-      autoFocus
-      autoComplete="name"
-      onInput={event => setName(_ => WeftDom.Dom.Event.targetValue(event))}
-    />
-    <button type_="submit" disabled=busy>
+  <Ui.Form onSubmit=submit busy>
+    <Ui.Field label="Your name" ?error>
+      <Ui.Input
+        value=name
+        autoFocus
+        autoComplete="name"
+        onInput={event => setName(_ => WeftDom.Dom.Event.targetValue(event))}
+      />
+    </Ui.Field>
+    <Ui.Button type_=#submit variant=#primary busy>
       {WeftDom.Jsx.string(busy ? "Signing in…" : "Sign in")}
-    </button>
-    {switch error {
-    | Some(message) => <p role="alert"> {WeftDom.Jsx.string(message)} </p>
-    | None => WeftDom.Jsx.null
-    }}
-  </form>
+    </Ui.Button>
+  </Ui.Form>
 }

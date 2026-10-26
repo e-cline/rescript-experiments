@@ -320,6 +320,38 @@ Vitest.describe("Events", undefined, undefined, undefined, undefined, undefined,
       children: option
     }, option, undefined))
   });
+  Vitest.test("controlled radio buttons keep the one their state checks, whichever is clicked", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let clicked = {
+      contents: undefined
+    };
+    let match = mount(Jsx$WeftDom.Elements.jsx("div", {
+      children: [
+        "a",
+        "b",
+        "c"
+      ].map(value => Jsx$WeftDom.Elements.jsxKeyed("input", {
+        id: value,
+        type: "radio",
+        name: "choice",
+        checked: value === "b",
+        onChange: param => {
+          clicked.contents = value;
+        }
+      }, value, undefined))
+    }));
+    let container = match[0];
+    find(container, "#a").click();
+    t.expect(clicked.contents).toEqual("a");
+    t.expect([
+      "a",
+      "b",
+      "c"
+    ].map(id => find(container, `#` + id)["checked"])).toEqual([
+      false,
+      true,
+      false
+    ]);
+  });
   Vitest.test("a select's value picks its option once the option is there", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let match = mount(select("b", ["b"]));
     let root = match[1];
@@ -609,6 +641,63 @@ Vitest.describe("More DOM cases", undefined, undefined, undefined, undefined, un
     });
     Client$WeftDom.act(() => Client$WeftDom.render(root, element$1));
     t.expect(Primitive_object.equal(document.activeElement, other)).toBe(true);
+  });
+  Vitest.test("the focus, pointer, toggle and dialog props listen for their events", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+    let heard = [];
+    let match = mount(Jsx$WeftDom.Elements.jsx("div", {
+      id: "d",
+      onFocusIn: extra => {
+        heard.push("focusin");
+      },
+      onFocusOut: extra => {
+        heard.push("focusout");
+      },
+      onPointerDown: extra => {
+        heard.push("pointerdown");
+      },
+      onPointerUp: extra => {
+        heard.push("pointerup");
+      },
+      onPointerMove: extra => {
+        heard.push("pointermove");
+      },
+      onPointerEnter: extra => {
+        heard.push("pointerenter");
+      },
+      onPointerLeave: extra => {
+        heard.push("pointerleave");
+      },
+      onToggle: extra => {
+        heard.push("toggle");
+      },
+      onBeforeToggle: extra => {
+        heard.push("beforetoggle");
+      },
+      onClose: extra => {
+        heard.push("close");
+      },
+      onCancel: extra => {
+        heard.push("cancel");
+      }
+    }));
+    let container = match[0];
+    let names = [
+      "focusin",
+      "focusout",
+      "pointerdown",
+      "pointerup",
+      "pointermove",
+      "pointerenter",
+      "pointerleave",
+      "toggle",
+      "beforetoggle",
+      "close",
+      "cancel"
+    ];
+    names.forEach(name => {
+      find(container, "#d").dispatchEvent(new Event(name, {}));
+    });
+    t.expect(heard).toEqual(names);
   });
   Vitest.test("removing the value prop empties the input", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let match = mount(Jsx$WeftDom.Elements.jsx("input", {

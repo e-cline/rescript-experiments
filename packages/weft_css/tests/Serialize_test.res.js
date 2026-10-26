@@ -109,6 +109,54 @@ Vitest.describe("declarations", undefined, undefined, undefined, undefined, unde
       "stroke: context-stroke"
     ]);
   });
+  Vitest.test("writes logical properties, anchor positioning and the rest", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => t.expect(Serialize$WeftCss.declarations({
+    insetInlineEnd: "Zero",
+    anchorName: "--trigger",
+    positionAnchor: "--trigger",
+    positionArea: "bottom span-right",
+    positionTryFallbacks: "flip-block",
+    inlineSize: {
+      TAG: "Pct",
+      _0: 100
+    },
+    maxBlockSize: {
+      TAG: "Vh",
+      _0: 80
+    },
+    marginBlockStart: {
+      TAG: "Rem",
+      _0: 1
+    },
+    paddingInline: {
+      TAG: "Px",
+      _0: 12
+    },
+    textOverflow: "ellipsis",
+    borderInlineStart: "2px solid",
+    borderStartEndRadius: "Zero",
+    accentColor: {
+      TAG: "Hex",
+      _0: "2563eb"
+    },
+    appearance: "none",
+    translate: "0 4px"
+  })).toEqual([
+    "inset-inline-end: 0",
+    "anchor-name: --trigger",
+    "position-anchor: --trigger",
+    "position-area: bottom span-right",
+    "position-try-fallbacks: flip-block",
+    "inline-size: 100%",
+    "max-block-size: 80vh",
+    "margin-block-start: 1rem",
+    "padding-inline: 12px",
+    "text-overflow: ellipsis",
+    "border-inline-start: 2px solid",
+    "border-start-end-radius: 0",
+    "accent-color: #2563eb",
+    "appearance: none",
+    "translate: 0 4px"
+  ]));
   Vitest.test("puts the block's own custom properties first", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let ink = "--Theme-ink_waaaaaa";
     t.expect(Serialize$WeftCss.declarations({

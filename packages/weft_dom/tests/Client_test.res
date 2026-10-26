@@ -227,6 +227,36 @@ describe("Events", () => {
       ->Jsx.array}
     </select>
 
+  test("controlled radio buttons keep the one their state checks, whichever is clicked", t => {
+    let clicked = ref(None)
+    let (container, _) = mount(
+      <div>
+        {["a", "b", "c"]
+        ->Array.map(
+          value =>
+            <input
+              key=value
+              id=value
+              type_="radio"
+              name="choice"
+              checked={value == "b"}
+              onChange={_ => clicked := Some(value)}
+            />,
+        )
+        ->Jsx.array}
+      </div>,
+    )
+    Dom.click(find(container, "#a"))
+    t->expect(clicked.contents)->Expect.toEqual(Some("a"))
+    t
+    ->expect(
+      ["a", "b", "c"]->Array.map(
+        id => toBool(Dom.getProperty(find(container, `#${id}`), "checked")),
+      ),
+    )
+    ->Expect.toEqual([false, true, false])
+  })
+
   test("a select's value picks its option once the option is there", t => {
     let (container, root) = mount(select(~value="b", ["b"]))
     // The value changes first, to an option that isn't there yet...
@@ -438,6 +468,42 @@ describe("More DOM cases", () => {
       </div>,
     )
     t->expect(Dom.activeElement(Dom.document) == Nullable.make(other))->Expect.toBe(true)
+  })
+
+  test("the focus, pointer, toggle and dialog props listen for their events", t => {
+    let heard = []
+    let hear = (name, _) => heard->Array.push(name)
+    let (container, _) = mount(
+      <div
+        id="d"
+        onFocusIn={hear("focusin", ...)}
+        onFocusOut={hear("focusout", ...)}
+        onPointerDown={hear("pointerdown", ...)}
+        onPointerUp={hear("pointerup", ...)}
+        onPointerMove={hear("pointermove", ...)}
+        onPointerEnter={hear("pointerenter", ...)}
+        onPointerLeave={hear("pointerleave", ...)}
+        onToggle={hear("toggle", ...)}
+        onBeforeToggle={hear("beforetoggle", ...)}
+        onClose={hear("close", ...)}
+        onCancel={hear("cancel", ...)}
+      />,
+    )
+    let names = [
+      "focusin",
+      "focusout",
+      "pointerdown",
+      "pointerup",
+      "pointermove",
+      "pointerenter",
+      "pointerleave",
+      "toggle",
+      "beforetoggle",
+      "close",
+      "cancel",
+    ]
+    names->Array.forEach(name => Dom.dispatchEvent(find(container, "#d"), Dom.Event.make(name, {})))
+    t->expect(heard)->Expect.toEqual(names)
   })
 
   test("removing the value prop empties the input", t => {

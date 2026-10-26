@@ -94,8 +94,10 @@ can: the HTML streaming, a chunk loaded once a page needs it and only once, focu
 across a refetch, the back button, a comment posted through its RPC (the request as the browser
 sends it, `Origin` and all), a boundary's content painted before the bootstrap's chunk has loaded, a
 click and typing before then done once it has, and the page readable with JavaScript off; each over
-a hydrated page, with nothing in the console. With `WEFT_NOTES_TEST_ROUTES=1`, the server has routes
-that open the gates, for these tests. Run them (they need Chromium:
+a hydrated page, with nothing in the console. [`e2e/a11y.e2e.ts`](e2e/a11y.e2e.ts) runs
+[axe](https://github.com/dequelabs/axe-core-npm) (WCAG 2.1, A and AA) on the list and on a note's
+page, all of it in and with a comment refused. With `WEFT_NOTES_TEST_ROUTES=1`, the server has
+routes that open the gates, for these tests. Run them (they need Chromium:
 `pnpm --filter @e-cline/weft_notes_example exec playwright install chromium`):
 
 ```bash

@@ -155,7 +155,7 @@ function post(idOpt, headersOpt, methodOpt, body) {
       method: method,
       headers: headers,
       body: body
-    })), id);
+    })), id, undefined);
 }
 
 function contentType(response) {
@@ -271,7 +271,7 @@ Vitest.describe("the router", undefined, undefined, undefined, undefined, undefi
         method: "POST",
         headers: headers,
         body: `"a"`
-      }), "notes.small");
+      }), "notes.small", undefined);
     };
     t.expect((await call("http://app.test")).status).toBe(200);
     return t.expect((await call(origin)).status).toBe(403);
@@ -301,7 +301,7 @@ Vitest.describe("the router", undefined, undefined, undefined, undefined, undefi
     let response = await RpcServer$WeftServer.respond(router, request(origin, {
       "content-type": "application/json",
       "x-weft-rpc": "1"
-    }, bytes), "notes.small");
+    }, bytes), "notes.small", undefined);
     return t.expect(response.status).toBe(400);
   });
   Vitest.testAsync("answers a handler that throws with a 500 and an error row, through onError", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
@@ -500,7 +500,7 @@ function fakeFetch(url, init) {
     headers: init.headers,
     body: init.body,
     signal: init.signal
-  }), id);
+  }), id, undefined);
   let signal = init.signal;
   if (signal === undefined) {
     return response;

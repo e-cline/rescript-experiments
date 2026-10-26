@@ -23,6 +23,7 @@ import * as Latency$WeftShop from "./Latency.res.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 import * as Session$WeftShop from "./Session.res.js";
 import * as CartBadge$WeftShop from "../client/CartBadge.res.js";
+import * as SaleBadge$WeftShop from "./SaleBadge.res.js";
 import * as SearchBox$WeftShop from "../client/SearchBox.res.js";
 import * as ShopShell$WeftShop from "../client/ShopShell.res.js";
 import * as AccountMenu$WeftShop from "../client/AccountMenu.res.js";
@@ -192,6 +193,9 @@ function Ui$ProductCard(props) {
             children: summary.name
           })
         ]
+      }),
+      Jsx$WeftDom.jsx(SaleBadge$WeftShop.make, {
+        summary: summary
       }),
       Jsx$WeftDom.jsxs(Stack$WeftUi.make, {
         direction: "row",

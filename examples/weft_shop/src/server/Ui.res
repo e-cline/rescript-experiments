@@ -82,6 +82,7 @@ module ProductCard = {
         <div className={Theme.picture} style={Theme.pictureVars(~hue=summary.hue)} />
         <h3 className={Styles.cardName}> {text(summary.name)} </h3>
       </Link>
+      <SaleBadge summary />
       <WeftUi.Stack direction=#row justify=#between align=#center gap=#sm>
         <Price cents=summary.price compareAt=?summary.compareAt />
         <WishlistButton productId=summary.id saved />

@@ -333,3 +333,105 @@ describe("Navigation, with sheets", () => {
     t->expect(TestRenderer.findById(renderer, "styled")->Option.isSome)->Expect.toBe(true)
   })
 })
+
+// An RPC's answer, through the router in process: its elements bring their sheets, as a page's do.
+
+let cards: Rpc.t<string, string, Weft.Element.t, unit> = Rpc.make(
+  ~id="shop.cards",
+  ~request=Rpc.Codec.string,
+)
+/** An answer whose stock comes later, in a row of its own: once a test resolves `stockReady`. */
+let stocked: Rpc.t<string, string, Weft.Element.t, unit> = Rpc.make(
+  ~id="shop.stocked",
+  ~request=Rpc.Codec.string,
+)
+let stockReady = ref(Promise.withResolvers())
+
+let cardsRouter = RpcServer.router([
+  RpcServer.handler(cards, async (label, ~http as _) => Ok(
+    <p id="card" className="D-z_wdddddd"> {text(label)} </p>,
+  )),
+  RpcServer.handler(stocked, async (label, ~http as _) => Ok(
+    <div id="card" className="A-x_waaaaaa">
+      {text(label)}
+      <Weft.Suspense fallback={text("checking")}>
+        <PageSupport.Later ready=stockReady.contents.promise>
+          <i id="stock" className="D-z_wdddddd" />
+        </PageSupport.Later>
+      </Weft.Suspense>
+    </div>,
+  )),
+])
+
+type requestInit = {method: string, headers: dict<string>, body: string}
+@new external makeRequest: (string, requestInit) => Request.t = "Request"
+
+let globalFetch: unknown = %raw(`globalThis.fetch`)
+let setFetch: unknown => unit = %raw(`fetch => { globalThis.fetch = fetch }`)
+external toUnknown: 'a => unknown = "%identity"
+
+/** A `fetch` answering RPCs with `cardsRouter`, given `assets` (or none). */
+let fetchWith = (~assets=?) =>
+  (url: string, init: requestInit) =>
+    cardsRouter->RpcServer.respond(
+      makeRequest(`http://shop.test${url}`, init),
+      ~id=url->String.split("/")->Array.at(-1)->Option.getOr(""),
+      ~assets?,
+    )
+
+describe("RPCs, with sheets", () => {
+  afterEach(() => setFetch(globalFetch))
+
+  testAsync("hold the answer back until its elements' sheets have loaded", async t => {
+    setFetch(toUnknown(fetchWith(~assets=pageAssets())))
+    let sheets = FakeSheets.make()
+    let answer = Rpc.call(cards, ~client=clientWith(sheets), "more")
+    t->expect(await isSettled(answer))->Expect.toBe(false)
+    t->expect(sheets.asked)->Expect.toEqual(["/d.css"])
+    sheets->FakeSheets.release(["/d.css"])
+    switch await answer {
+    | Ok(element) =>
+      let renderer = TestRenderer.create()
+      TestRenderer.render(renderer, element)
+      t->expect(TestRenderer.findById(renderer, "card")->Option.isSome)->Expect.toBe(true)
+    | Error(_) => JsError.throwWithMessage("the RPC failed")
+    }
+  })
+
+  testAsync(
+    "keep a boundary's fallback until a later row's sheets have loaded, after the answer",
+    async t => {
+      setFetch(toUnknown(fetchWith(~assets=pageAssets())))
+      stockReady := Promise.withResolvers()
+      let sheets = FakeSheets.make()
+      sheets->FakeSheets.release(["/cycle.css", "/base.css", "/a.css"])
+      // The answer's own sheets have loaded: the call resolves at once, its stock still to come.
+      let answer = Rpc.call(stocked, ~client=clientWith(sheets), "more")
+      t->expect(await isSettled(answer))->Expect.toBe(true)
+      let renderer = TestRenderer.create()
+      switch await answer {
+      | Ok(element) => TestRenderer.render(renderer, element)
+      | Error(_) => JsError.throwWithMessage("the RPC failed")
+      }
+      await settle()
+      t->expect(TestRenderer.toString(renderer))->Expect.String.toContain("checking")
+      stockReady.contents.resolve()
+      await settle()
+      // The stock's row is in, but its sheet isn't: the fallback stays.
+      t->expect(sheets.asked)->Expect.toEqual(["/d.css"])
+      t->expect(TestRenderer.toString(renderer))->Expect.String.toContain("checking")
+      t->expect(TestRenderer.findById(renderer, "stock")->Option.isSome)->Expect.toBe(false)
+      sheets->FakeSheets.release(["/d.css"])
+      await settle()
+      t->expect(TestRenderer.findById(renderer, "stock")->Option.isSome)->Expect.toBe(true)
+    },
+  )
+
+  testAsync("without the assets, send no sheets, and wait for none", async t => {
+    setFetch(toUnknown(fetchWith()))
+    let sheets = FakeSheets.make()
+    let answer = Rpc.call(cards, ~client=clientWith(sheets), "more")
+    t->expect(await isSettled(answer))->Expect.toBe(true)
+    t->expect(sheets.asked)->Expect.toEqual([])
+  })
+})

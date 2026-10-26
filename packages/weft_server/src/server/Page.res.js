@@ -368,6 +368,7 @@ function respond(request, element, assets, html, title, head, onError) {
 }
 
 export {
+  stylesOf,
   toStream,
   rowScript,
   wantsPayload,

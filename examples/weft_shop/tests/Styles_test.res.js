@@ -82,6 +82,34 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
     await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=cart-title]"));
     return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
+  Vitest.testAsync("bring the sheets of what an RPC renders: \"Load more\" shows its cards once their sheets load", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    await ShopSupport$WeftShop.releaseAll(app());
+    let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/c/shoes?sort=price-desc");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=load-more]"));
+    await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id^=sale-]")).toBe(false);
+    let head = headSheets(await WeftTesting.shell(page));
+    t.expect(hasSheet(head, "server/SaleBadge")).toBe(false);
+    t.expect(hasSheet(WeftTesting.stylesheets(page), "server/SaleBadge")).toBe(false);
+    WeftTesting.holdStylesheets(page, sheetOf("server/SaleBadge"));
+    WeftTesting.click(page, "[data-id=load-more]");
+    await WeftTesting.waitFor(page, undefined, () => {
+      if (hasSheet(WeftTesting.stylesheets(page), "server/SaleBadge")) {
+        return true;
+      } else {
+        return ShopSupport$WeftShop.has(page, "[data-id=card-p6]");
+      }
+    });
+    await WeftTesting.settle(page);
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=load-more]")).toBe("Loading…");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=card-p6]")).toBe(false);
+    t.expect(WeftTesting.unstyled(page)).toEqual([]);
+    WeftTesting.releaseStylesheets(page);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=sale-p6]"));
+    t.expect(ShopSupport$WeftShop.text(page, "[data-id=sale-p6]")).toBe("20% off");
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=sale-p3]")).toBe(true);
+    return t.expect(WeftTesting.unstyled(page)).toEqual([]);
+  });
 });
 
 export {

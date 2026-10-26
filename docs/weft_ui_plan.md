@@ -26,9 +26,10 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phases 0 to 3 are done, on the branch
-`claude/weft-base-ui-components-c99930`. Phase 0's findings and the notes on phases 1 to 3 ("as
-built") are after Phases. The design below is already corrected by them. Phase 4 (overlays) is next.
+Reviewed. The questions are settled (Decisions). Phases 0 to 4 are done, on the branch
+`claude/weft-base-ui-components-c99930`. Phase 0's findings and the notes on phases 1 to 4 ("as
+built") are after Phases. The design below is already corrected by them. Phase 5 (tabs, accordion,
+collapsible, combobox) is next.
 
 ## What was checked before writing this
 
@@ -728,6 +729,60 @@ A commit each:
     long as its `root` class is on the page. That's what the notes do now (a commit of its own), and
     what weft_ui's README and `Tokens` recommend.
 - The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
+
+### Phase 4: as built
+
+A commit each:
+
+- **`attrs` under a part's props** (68d6c46). This is the fix phase 3 asked for: `Host.withAttrs`
+  rebuilds a part's host element, through `Weft.Element.classify` and `fromNode`, with `attrs` under
+  its props, and only the props the part set override them.
+- **The overlays, their entrypoints, and the jsdom shim** (86f77c2), as §6 has them, with what
+  building them settled:
+  - **`Dialog`** opens its `<dialog>` with `showModal()` from a layout effect. Its `close` event
+    (from its close button, Escape, or the backdrop) closes the state and focuses the trigger. The
+    popup's content fills the dialog, so a click on the dialog element itself is on its backdrop.
+    `AlertDialog` and `Drawer` are `Dialog`'s parts with another popup.
+  - **`Popover` and `Menu`** are `auto` popovers that their trigger opens by `popovertarget`, so
+    before hydration too. Their `toggle` events (from anything: the trigger, Escape, a click
+    outside) set the state, so a controlled open state only calls `showPopover`/`hidePopover` when
+    the page's differs (`Anchored.usePopover`).
+  - **A popup's own `display` hid nothing.** The browser hides a closed popover with
+    `display: none`, which any `display` on the popover's own class overrides. So Popover's and
+    Menu's panels showed while closed until their layout moved under `:popover-open`. The browser
+    probe found it: several popovers on screen at once, and in WebKit one over the next trigger.
+  - **`Tooltip`'s trigger is a button of its own** (`Button`'s look, or `IconButton`'s with a
+    `label`), since its `aria-describedby` and its events have to be on the focusable element.
+    Wrapping a link isn't possible yet.
+  - **`Toast`** is a store read with `useSyncExternalStore`, with a `Viewport` that renders the
+    toasts. The plan's `Root`, `Title`, `Description`, `Action` and `Close` parts became the toast
+    record's fields (`title`, `description`, `tone`, `duration`, `action`); parts can come later if
+    an app wants its own toast markup.
+  - **The jsdom shim** (`Testing.installJsdomShims`) lives in weft_ui: its tests and the apps' test
+    modules call it, and the plugin needs no change. It must show the popovers it opens: jsdom's
+    default stylesheet hides every `[popover]` (it never matches `:popover-open`), and its `focus()`
+    refuses an element under `display: none`. Its own rule needed `!important`, since jsdom's
+    cascade weighs the default stylesheet's more specific selector over it.
+  - **Not done:** scroll locking under a modal dialog (the page behind still scrolls), and
+    right-to-left drawers (a drawer at the start slides in from the left).
+  - **Tests**: 17 more, in jsdom.
+- **The gallery's overlays page** (76ad9d5): the ready-made entrypoints rendered by its server
+  component, and the rest as gallery entrypoints, with `ToastViewport` in the frame. Its harness
+  tests add a toast and choose from the menu (13 in all).
+- **Checked in Chromium, Firefox and WebKit**, by a probe against the built gallery:
+  - **Dialog**: modal, the page behind it taking no clicks, the focus in it, and Escape closing it
+    with the focus back on the trigger (WebKit too).
+  - **AlertDialog**: its focus on Cancel, and a click outside not closing it.
+  - **Drawer**: pinned at the end, the window's full height, and closed by its backdrop.
+  - **Popover**: 4px below its trigger, the focus in it, and Escape putting the focus back.
+  - **Menu**: opened by ArrowDown on its first item, the arrows skipping the disabled one,
+    typeahead, and Enter choosing, closing it and putting the focus back.
+  - **Tooltip**: shown on focus, below its trigger (or flipped above it near the window's bottom),
+    and hidden by Escape.
+  - **Toast**: at the bottom end.
+  - Nothing logged.
+- The whole workspace's tests pass, and `pnpm check` is clean but for the plugin's three earlier
+  warnings.
 
 ## Decisions
 

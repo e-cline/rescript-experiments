@@ -1,10 +1,10 @@
 # @e-cline/weft_ui
 
-Accessible, styled UI components for [Weft](../weft): layout, text, cards, tables, buttons, forms
-and toggles, and (as the [plan](../../docs/weft_ui_plan.md)'s phases land) dialogs, menus, tabs,
-toasts and a combobox. They're styled with [`weft_css`](../weft_css), so a page is sent only the
-stylesheets of the components it renders, and each can be restyled through theme tokens, variant
-props, `className` and state attributes.
+Accessible, styled UI components for [Weft](../weft): layout, text, cards, tables, buttons, forms,
+toggles, dialogs, drawers, popovers, menus, tooltips and toasts, and (as the
+[plan](../../docs/weft_ui_plan.md)'s phases land) tabs, an accordion and a combobox. They're styled
+with [`weft_css`](../weft_css), so a page is sent only the stylesheets of the components it renders,
+and each can be restyled through theme tokens, variant props, `className` and state attributes.
 
 ```rescript
 module Ui = WeftUi
@@ -39,10 +39,12 @@ sent like your own.
   handlers (`onClick`) are optional, and work once they're inside an entrypoint.
 - **Interactive** components keep state, or read a context, so they render inside an entrypoint's
   tree: Field, Fieldset, Form, Input, Textarea, Select, Checkbox, RadioGroup, Switch, NumberField,
-  Toggle and ToggleGroup (and, in later phases, the overlays, tabs and the combobox). Their state is
-  controlled (`value` and `onValueChange`, `checked` and `onCheckedChange`, ...) or, without it,
-  their own (from `defaultValue`). A few also come as ready-made entrypoints, for a server component
-  to use as they are.
+  Toggle, ToggleGroup, Dialog, AlertDialog, Drawer, Popover, Menu, Tooltip and Toast (and, in later
+  phases, tabs and the combobox). Their state is controlled (`value` and `onValueChange`, `open_`
+  and `onOpenChange`, ...) or, without it, their own (from `defaultValue`, `defaultOpen`).
+- **Ready-made entrypoints**, for a server component to render as they are, with data props and
+  state of their own: `DialogEntry`, `DrawerEntry`, `PopoverEntry` and `ToastViewport` (render it
+  once; client code calls `Toast.add`).
 
 Each module's doc comment says which it is.
 
@@ -91,3 +93,10 @@ inputs).
 - A `Table` that scrolls is a labelled, focusable region.
 - `Steps` and `Breadcrumbs` mark the current item.
 - `Spinner` and `Skeleton` say what's loading, or stay out of the way.
+
+## Testing with jsdom
+
+jsdom has neither `<dialog>`'s `showModal` and `close` nor the Popover API. Call
+`WeftUi.Testing.installJsdomShims()` once, before rendering (at the top of a test file, or in the
+module a suite's pages share), for weft_ui's overlays to open, close and move the focus as they do
+in a browser. It doesn't lay anything out, or make anything inert: those are for browser tests.

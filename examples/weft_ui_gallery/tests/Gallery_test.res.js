@@ -51,6 +51,14 @@ let pages = [
     "Overlays"
   ],
   [
+    "/disclosure",
+    "Disclosure"
+  ],
+  [
+    "/search",
+    "Search"
+  ],
+  [
     "/actions",
     "Actions and status"
   ]
@@ -123,6 +131,28 @@ Vitest.describe("the gallery", undefined, undefined, undefined, undefined, undef
     WeftTesting.click(page, "[data-id=menu-sign-out]");
     await WeftTesting.waitFor(page, undefined, () => GallerySupport$WeftUiGallery.text(page, "[data-id=menu-last]") === "Chose: Sign out");
     return t.expect(attribute("[data-id=menu-open]", "aria-expanded")).toEqual("false");
+  });
+  Vitest.testAsync("the server's tabs switch once hydrated, and the combobox chooses with the keyboard", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    let page = WeftTesting.open_(app$1(), GallerySupport$WeftUiGallery.rootElement(), undefined, undefined, "/disclosure");
+    await WeftTesting.waitFor(page, undefined, () => WeftTesting.has(page, "[data-id=product-tabs-tab-2]"));
+    await WeftTesting.hydrated(page, undefined);
+    WeftTesting.click(page, "[data-id=product-tabs-tab-2]");
+    let hidden = selector => Stdlib_Option.map(WeftTesting.query(page, selector), panel => Stdlib_Option.isSome(Primitive_option.fromNullable(panel.getAttribute("hidden"))));
+    await WeftTesting.waitFor(page, undefined, () => Primitive_object.equal(hidden("[data-id=product-tabs-panel-2]"), false));
+    t.expect(hidden("[data-id=product-tabs-panel-0]")).toEqual(true);
+    let search = WeftTesting.open_(app$1(), GallerySupport$WeftUiGallery.rootElement(), undefined, undefined, "/search");
+    await WeftTesting.waitFor(search, undefined, () => WeftTesting.has(search, "[data-id=fruit]"));
+    await WeftTesting.hydrated(search, undefined);
+    WeftTesting.input(search, "[data-id=fruit]", "berr");
+    await WeftTesting.waitFor(search, undefined, () => WeftTesting.has(search, "[data-id=fruit-list] [role=option]"));
+    let input = Stdlib_Option.getOrThrow(WeftTesting.query(search, "[data-id=fruit]"), undefined);
+    let key = key$1 => {
+      input.dispatchEvent(((key) => new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true}))(key$1));
+    };
+    key("ArrowDown");
+    key("ArrowDown");
+    key("Enter");
+    return await WeftTesting.waitFor(search, undefined, () => GallerySupport$WeftUiGallery.text(search, "[data-id=fruit-chosen]") === "Chose: blueberry");
   });
 });
 

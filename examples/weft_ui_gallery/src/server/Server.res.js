@@ -14,9 +14,11 @@ import * as HomePage$WeftUiGallery from "./HomePage.res.js";
 import * as TextPage$WeftUiGallery from "./TextPage.res.js";
 import * as FormsPage$WeftUiGallery from "./FormsPage.res.js";
 import * as LayoutPage$WeftUiGallery from "./LayoutPage.res.js";
+import * as SearchPage$WeftUiGallery from "./SearchPage.res.js";
 import * as ActionsPage$WeftUiGallery from "./ActionsPage.res.js";
 import * as OverlaysPage$WeftUiGallery from "./OverlaysPage.res.js";
 import * as SurfacesPage$WeftUiGallery from "./SurfacesPage.res.js";
+import * as DisclosurePage$WeftUiGallery from "./DisclosurePage.res.js";
 
 function respond(ctx, title, element) {
   return Page$WeftServer.respond(ctx.request, element, Assets, undefined, title + ` · weft_ui`, undefined, undefined);
@@ -29,6 +31,10 @@ function groupPage(group) {
       return Jsx$WeftDom.jsx(DataPage$WeftUiGallery.make, {
         group: group
       });
+    case "disclosure" :
+      return Jsx$WeftDom.jsx(DisclosurePage$WeftUiGallery.make, {
+        group: group
+      });
     case "forms" :
       return Jsx$WeftDom.jsx(FormsPage$WeftUiGallery.make, {
         group: group
@@ -39,6 +45,10 @@ function groupPage(group) {
       });
     case "overlays" :
       return Jsx$WeftDom.jsx(OverlaysPage$WeftUiGallery.make, {
+        group: group
+      });
+    case "search" :
+      return Jsx$WeftDom.jsx(SearchPage$WeftUiGallery.make, {
         group: group
       });
     case "surfaces" :

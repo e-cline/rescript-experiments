@@ -20,6 +20,8 @@ let pages = [
   ("/data", "Data"),
   ("/forms", "Forms"),
   ("/overlays", "Overlays"),
+  ("/disclosure", "Disclosure"),
+  ("/search", "Search"),
   ("/actions", "Actions and status"),
 ]
 
@@ -119,4 +121,44 @@ describe("the gallery", () => {
     await page->WeftTesting.waitFor(() => text(page, "[data-id=menu-last]") == "Chose: Sign out")
     t->expect(attribute("[data-id=menu-open]", "aria-expanded"))->Expect.toEqual(Some("false"))
   })
+
+  testAsync(
+    "the server's tabs switch once hydrated, and the combobox chooses with the keyboard",
+    async t => {
+      let page = app()->WeftTesting.open_(~container=rootElement(), "/disclosure")
+      await page->WeftTesting.waitFor(() => page->WeftTesting.has("[data-id=product-tabs-tab-2]"))
+      await page->WeftTesting.hydrated
+      page->WeftTesting.click("[data-id=product-tabs-tab-2]")
+      let hidden = selector =>
+        page
+        ->WeftTesting.query(selector)
+        ->Option.map(
+          panel => WeftDom.Dom.getAttribute(panel, "hidden")->Nullable.toOption->Option.isSome,
+        )
+      await page->WeftTesting.waitFor(() => hidden("[data-id=product-tabs-panel-2]") == Some(false))
+      t->expect(hidden("[data-id=product-tabs-panel-0]"))->Expect.toEqual(Some(true))
+
+      let search = app()->WeftTesting.open_(~container=rootElement(), "/search")
+      await search->WeftTesting.waitFor(() => search->WeftTesting.has("[data-id=fruit]"))
+      await search->WeftTesting.hydrated
+      search->WeftTesting.input("[data-id=fruit]", "berr")
+      await search->WeftTesting.waitFor(
+        () => search->WeftTesting.has("[data-id=fruit-list] [role=option]"),
+      )
+      let input = search->WeftTesting.query("[data-id=fruit]")->Option.getOrThrow
+      let key = key =>
+        WeftDom.Dom.dispatchEvent(
+          input,
+          %raw(`(key) => new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true})`)(
+            key,
+          ),
+        )
+      key("ArrowDown")
+      key("ArrowDown")
+      key("Enter")
+      await search->WeftTesting.waitFor(
+        () => text(search, "[data-id=fruit-chosen]") == "Chose: blueberry",
+      )
+    },
+  )
 })

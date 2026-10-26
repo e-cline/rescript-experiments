@@ -82,6 +82,22 @@ let all = [
     ]
   },
   {
+    slug: "disclosure",
+    title: "Disclosure",
+    summary: "Tabs, accordions and collapsible sections.",
+    components: [
+      "Tabs",
+      "Accordion",
+      "Collapsible"
+    ]
+  },
+  {
+    slug: "search",
+    title: "Search",
+    summary: "A text input with suggestions.",
+    components: ["Combobox"]
+  },
+  {
     slug: "actions",
     title: "Actions and status",
     summary: "Buttons, icon buttons, and saying something's working.",

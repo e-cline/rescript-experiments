@@ -22,6 +22,8 @@ let groupPage = (group: Groups.group) =>
   | "data" => <DataPage group />
   | "forms" => <FormsPage group />
   | "overlays" => <OverlaysPage group />
+  | "disclosure" => <DisclosurePage group />
+  | "search" => <SearchPage group />
   | _ => <ActionsPage group />
   }
 

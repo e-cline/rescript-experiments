@@ -133,6 +133,7 @@ Vitest.describe("declarations", undefined, undefined, undefined, undefined, unde
     },
     textOverflow: "ellipsis",
     borderInlineStart: "2px solid",
+    borderStartEndRadius: "Zero",
     accentColor: {
       TAG: "Hex",
       _0: "2563eb"
@@ -151,6 +152,7 @@ Vitest.describe("declarations", undefined, undefined, undefined, undefined, unde
     "padding-inline: 12px",
     "text-overflow: ellipsis",
     "border-inline-start: 2px solid",
+    "border-start-end-radius: 0",
     "accent-color: #2563eb",
     "appearance: none",
     "translate: 0 4px"

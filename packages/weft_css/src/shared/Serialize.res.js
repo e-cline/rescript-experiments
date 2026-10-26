@@ -209,6 +209,10 @@ function declarations(css) {
   add("border-color", css.borderColor, color);
   add("border-width", css.borderWidth, length);
   add("border-radius", css.borderRadius, length);
+  add("border-start-start-radius", css.borderStartStartRadius, length);
+  add("border-start-end-radius", css.borderStartEndRadius, length);
+  add("border-end-start-radius", css.borderEndStartRadius, length);
+  add("border-end-end-radius", css.borderEndEndRadius, length);
   add("outline", css.outline, text);
   add("outline-offset", css.outlineOffset, length);
   add("box-shadow", css.boxShadow, text);

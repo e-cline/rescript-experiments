@@ -4,7 +4,7 @@
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Tokens$WeftUi from "@e-cline/weft_ui/src/Tokens.res.js";
 
-let root = Css$WeftCss.Internal.class_("Theme-root_wkl5pr9", undefined, () => ({
+Css$WeftCss.Internal.global_("Theme-global0_wkl5pr9", ":root", undefined, () => ({
   vars: [
     [
       Tokens$WeftUi.fg,
@@ -69,20 +69,24 @@ let root = Css$WeftCss.Internal.class_("Theme-root_wkl5pr9", undefined, () => ({
   ]
 }));
 
-Css$WeftCss.Internal.global_("Theme-global0_wkl5pr9", "*", undefined, () => ({
+let root = Css$WeftCss.Internal.class_("Theme-root_wkl5pr9", undefined, () => ({
+  display: "block"
+}));
+
+Css$WeftCss.Internal.global_("Theme-global1_wkl5pr9", "*", undefined, () => ({
   boxSizing: "border-box"
 }));
 
-Css$WeftCss.Internal.global_("Theme-global1_wkl5pr9", "body", undefined, () => ({
+Css$WeftCss.Internal.global_("Theme-global2_wkl5pr9", "body", undefined, () => ({
   margin: "Zero",
   font: "16px/1.6 system-ui, sans-serif",
   color: {
-    TAG: "Raw",
-    _0: "#22201d"
+    TAG: "Var",
+    _0: Tokens$WeftUi.fg
   },
   backgroundColor: {
-    TAG: "Raw",
-    _0: "#fcfbf8"
+    TAG: "Var",
+    _0: Tokens$WeftUi.bg
   }
 }));
 
@@ -97,4 +101,4 @@ export {
   root,
   hairline,
 }
-/* root Not a pure module */
+/*  Not a pure module */

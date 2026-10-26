@@ -2,11 +2,12 @@
 The theme: CSS variables every component's styles use, named for what they're for (`surface`,
 `fgMuted`), not what they look like, so another theme (a dark one, a brand's) is only other values.
 
-An app sets the ones it wants on a class it puts on its outermost element, which also brings the
-values' stylesheet to every page that renders it:
+An app sets the ones it wants on `:root`, in a style file with a class its outermost element wears
+(a page is sent a sheet with the classes it has), so `<body>` sees them too:
 
 ```rescript
-let root = Css.class({vars: [(WeftUi.Tokens.accent, "#9a4b22"), (WeftUi.Tokens.radiusMd, "4px")]})
+Css.global(~selector=":root", {vars: [(WeftUi.Tokens.accent, "#9a4b22")]})
+let root = Css.class({display: Block}) // on the page's outermost element
 ```
 
 The defaults are declared on `:where(:root)`, so a value set anywhere else wins, whichever

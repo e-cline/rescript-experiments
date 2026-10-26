@@ -51,14 +51,17 @@ Each module's doc comment says which it is.
 From broadest to narrowest:
 
 1. **Tokens** (`WeftUi.Tokens`): CSS variables for colours, radii, space, text sizes, shadows and
-   durations, named for what they're for. Set them on a class on your outermost element, which
-   brings their stylesheet to every page that renders it:
+   durations, named for what they're for. Set them on `:root` in a style file with a class your
+   outermost element wears (a sheet is sent to a page with the classes it has), so the page's `body`
+   sees them too:
 
    ```rescript
-   let root = Css.class({vars: [(WeftUi.Tokens.accent, "#9a4b22"), (WeftUi.Tokens.radiusMd, "4px")]})
+   Css.global(~selector=":root", {vars: [(WeftUi.Tokens.accent, "#9a4b22")]})
+   let root = Css.class({display: Block}) // on the page's outermost element
    ```
 
-   The defaults are on `:where(:root)`, so a value set anywhere wins, whichever sheet loads first.
+   The defaults are on `:where(:root)`, so yours win, whichever sheet loads first. For part of a
+   page, set them on a class of that part instead.
 
 2. **Variants**: `variant`, `tone`, `size` and the like, as polymorphic variants (`#primary`).
 3. **`className`**, added after the component's own classes. weft_ui's rules are in the cascade

@@ -692,8 +692,8 @@ A commit each:
 
 **`weft_notes` on `weft_ui`** (b5e16d6), in one commit.
 
-- **The theme** is the notes' colours as weft_ui's tokens, on a class on the page's outermost
-  element (`Theme.root`, on the `Container`).
+- **The theme** is the notes' colours as weft_ui's tokens, set on `:root` by the theme file, whose
+  `root` class (on the `Container`) brings its sheet to every page.
   - The element rules for buttons, inputs, links and headings are gone.
   - What's left of the notes' own styles: the page's frame (the nav's rule, the comments section's
     rule), the note's body, and the related chips' row.
@@ -721,11 +721,12 @@ A commit each:
     `Stack`), where the part's own absent `style` wiped it. The compiler can't catch it. Phase 4
     should fix it rather than document it: merge only the explicit props that are set over `attrs`,
     in `Host`, and use that for every part's element.
-  - **Tokens set on the outermost element don't reach `<body>`.** So the page's background and text
-    colour are the palette's values written again in the `body` rule. A `Css.global` setting the
-    tokens on `:root` would reach it, but its sheet is only sent with a class from the same file,
-    which the theme's `root` class is. So a theme file could set its tokens on `:root` and still get
-    its sheet sent. The README could say so.
+  - **Tokens go on `:root`, in a sheet a class brings.** The first draft set the palette on the
+    outermost element's class, which `<body>` can't see, so the page's background and text colour
+    were the palette's values written again. Since a sheet is sent with the classes it has, the
+    theme file's global can set the tokens on `:root` (winning over weft_ui's `:where(:root)`) as
+    long as its `root` class is on the page. That's what the notes do now (a commit of its own), and
+    what weft_ui's README and `Tokens` recommend.
 - The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
 
 ## Decisions

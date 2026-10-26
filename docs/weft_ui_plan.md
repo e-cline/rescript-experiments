@@ -26,10 +26,9 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phases 0 to 2 are done, on the branch
-`claude/weft-base-ui-components-c99930`. Phase 0's findings and the notes on phases 1 and 2 ("as
-built") are after Phases. The design below is already corrected by them. Phase 3 (`weft_notes`
-migrated) is next.
+Reviewed. The questions are settled (Decisions). Phases 0 to 3 are done, on the branch
+`claude/weft-base-ui-components-c99930`. Phase 0's findings and the notes on phases 1 to 3 ("as
+built") are after Phases. The design below is already corrected by them. Phase 4 (overlays) is next.
 
 ## What was checked before writing this
 
@@ -688,6 +687,46 @@ A commit each:
   in Chromium. That found the choices' alignment, a gap under a fieldset, and a two-field grid
   leaving a column empty.
 - The whole workspace's tests pass. `pnpm check` has only the plugin's three earlier warnings.
+
+### Phase 3: as built
+
+**`weft_notes` on `weft_ui`** (b5e16d6), in one commit.
+
+- **The theme** is the notes' colours as weft_ui's tokens, on a class on the page's outermost
+  element (`Theme.root`, on the `Container`).
+  - The element rules for buttons, inputs, links and headings are gone.
+  - What's left of the notes' own styles: the page's frame (the nav's rule, the comments section's
+    rule), the note's body, and the related chips' row.
+- **The pages:**
+  - The layout is a `Container` and `Stack`s. The note list is a divided `List`, and the comments
+    are one too.
+  - The related notes are a `List` of links wearing
+    `Badge.className(~variant=#outline, ~link=true, ())`.
+  - The error box is an `Alert`, and the loading texts are muted, italic `Text`.
+  - The navigating `Link` (the app's entrypoint) wears `Link.className()`.
+- **The forms:**
+  - The comment form and the title editor are `Form`s with `Field`s. The comment's name and text
+    have visible labels now, and the hint is the text field's description.
+  - A refused comment or title says why on its own field when it's about it (empty, too long), or at
+    the form's top for anything else (the note's gone, a request the server couldn't read).
+  - The tests find errors as assistive technology does: by the input's `aria-invalid` and the last
+    id in its `aria-describedby` (`fieldError`), or by the form's alert (`formError`).
+- **The tests**: the harness tests (29) and the browser tests (10) pass. Two of them pinned what
+  weft_ui changed: the title's `<h1>` markup, and the comment form's own stylesheet, which is
+  weft_ui's `Field` and `Input` sheets now.
+- **Checked by eye** in Chromium: the list, a note, and a refused comment. A flex column's
+  stretching made the like button full width, so it's in a `div`.
+- **What it taught about the library:**
+  - **The `attrs` rule bites.** Twice the first draft put `style` in `attrs` (on a `Container` and a
+    `Stack`), where the part's own absent `style` wiped it. The compiler can't catch it. Phase 4
+    should fix it rather than document it: merge only the explicit props that are set over `attrs`,
+    in `Host`, and use that for every part's element.
+  - **Tokens set on the outermost element don't reach `<body>`.** So the page's background and text
+    colour are the palette's values written again in the `body` rule. A `Css.global` setting the
+    tokens on `:root` would reach it, but its sheet is only sent with a class from the same file,
+    which the theme's `root` class is. So a theme file could set its tokens on `:root` and still get
+    its sheet sent. The README could say so.
+- The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
 
 ## Decisions
 

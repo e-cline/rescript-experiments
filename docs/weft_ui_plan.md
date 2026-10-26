@@ -26,10 +26,10 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Phases 0 to 5 are done, on the branch
-`claude/weft-base-ui-components-c99930`: every v1 component is built. Phase 0's findings and the
-notes on phases 1 to 5 ("as built") are after Phases. The design below is already corrected by them.
-Phase 6 (`weft_shop` migrated, axe in the e2e suites) is next.
+Reviewed. The questions are settled (Decisions). Phases 0 to 6 are done, on the branch
+`claude/weft-base-ui-components-c99930`: every v1 component is built, and both demo apps are on
+them. Phase 0's findings and the notes on phases 1 to 6 ("as built") are after Phases. The design
+below is already corrected by them. Phase 7 (READMEs, changesets, the gallery finished) is next.
 
 ## What was checked before writing this
 
@@ -825,6 +825,61 @@ A commit each:
     input, Enter chooses (filling the input, and closing), its `Empty` shows, Escape closes, and a
     click chooses.
   - Nothing logged.
+- The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
+
+### Phase 6: as built
+
+A commit each:
+
+- **`Toast.clear`** (8c324f0), which takes every toast away: the shop's tests reset the page's
+  toasts with it between tests, where they used to reset the shop's own atom.
+- **`weft_shop` on weft_ui** (5fc4bb9):
+  - **Its look** is weft_ui's tokens in the store's colours, set on `:root` in `Theme.res`, whose
+    `root` class on the page's outermost element brings the sheet to every page. Its old names for
+    the colours (`ink`, `muted`, `line`, ...) point at the tokens, for its own styles.
+  - **Gone:** its `Tabs` (now `TabsEntry`, rendered by the blocks' server component) and `Toaster`
+    (now `Toast` and `ToastViewport`), and the `visuallyHidden`, `cta` and `choice` classes.
+  - **The rest** is weft_ui's: product cards are `Card`s, stock is a `Badge`, breadcrumbs, the
+    catalog's and the cart's layouts are `Breadcrumbs` and `Grid`s, order lines and the account's
+    orders are `Table`s, the cart lines a `Table` with `IconButton`s, the checkout `Steps`, a `Form`
+    of `Field`s and a `RadioGroup`, the facets `Checkbox`es, `NumberField`-style inputs and a
+    `Switch`, the gallery's thumbnails and the wishlist button `Toggle`s, the variants a
+    `ToggleGroup`, errors `Alert`s and "nothing here" `EmptyState`s.
+  - **Behaviour changes:**
+    - The sign-in dialog and the cart drawer are native modal dialogs (they were portals, with no
+      browser-made modality): the page behind them is inert, Escape closes them, and the focus goes
+      back.
+    - The account's links are a `Menu` behind the "Hi, <name>" button.
+    - The search's suggestions are a `Combobox`, with the arrows and Enter.
+    - The product's questions are an exclusive `Accordion`.
+    - Every field has a label (some hidden), errors are tied to their fields, and the quantity
+      buttons say what they do ("One fewer Trail runner").
+    - The cart drawer's link is a plain `<a>` that closes the drawer and follows the link, since the
+      shop's `Link` is an entrypoint and can't take a callback.
+  - **Tests:** the shop's 48 harness tests pass. Most changes are selectors (`data-id`s in place of
+    generated ids, `[open]` for dialogs) and the tabs' entrypoint id.
+  - **A render count that depended on the test order.** The promo form's count was 2 when another
+    test ran first: the harness counts every `make` call, and Weft redoes a render when hydration is
+    interrupted (nothing was replaced, and nothing logged). The test now counts from after the cart
+    opens.
+  - **Found by looking at it:** stock badges stretched in a card's column (wrapped), the browser's
+    blue links (the store's `a` rule keeps the colour inherited), and the product page's sections
+    with no space between them (a `Stack`).
+- **axe in the browser tests** (4166d97), with `@axe-core/playwright` in the catalog:
+  - **The apps:** every page of `weft_notes` and `weft_shop`, each overlay while it's open (the
+    drawer, the search's listbox, the sign-in dialog, the account menu), each checkout step, and the
+    forms refusing what's typed, against WCAG 2.1 A and AA.
+  - **The gallery** gets browser tests of its own (`vp run e2e`): axe on its ten pages and its open
+    overlays, and the keyboard checks from phases 4 and 5 (modal dialogs and the focus, an alert
+    dialog's Cancel, the drawer's size and backdrop, a popover's and a combobox's placement, the
+    menu's keys, the tooltip, tabs, the accordion).
+  - **axe must wait for what's animating in:** mid-fade, a dialog's or a toast's colours fail
+    contrast. The helper waits for every finite animation to finish (a spinner's is infinite).
+  - **A check that axe checks:** run against a page with an unlabelled button and pale text, it
+    reported `button-name` and `color-contrast`.
+  - axe found nothing on any page once they were waited for.
+  - **Counts** of each whole browser suite, in Chromium, Firefox and WebKit: the shop 26, the notes
+    12, the gallery 57.
 - The whole workspace's tests and `pnpm check` pass (with the plugin's three earlier warnings).
 
 ## Decisions

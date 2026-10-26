@@ -41,7 +41,7 @@ Vitest.describe("conventions", undefined, undefined, undefined, undefined, undef
     }));
     t.expect(Support$WeftUi.attribute(Support$WeftUi.find(container, "button"), "class")).toEqual(Button$WeftUi.className("primary", "sm", undefined, undefined, undefined));
   });
-  Vitest.test("attrs adds what a part doesn't take; its own props win", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+  Vitest.test("attrs adds to a part's props; those the part sets win, those it leaves unset don't", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
     let container = Support$WeftUi.mount(Jsx$WeftDom.jsx(Button$WeftUi.make, {
       dataId: "mine",
       attrs: {
@@ -54,8 +54,30 @@ Vitest.describe("conventions", undefined, undefined, undefined, undefined, undef
     let button = Support$WeftUi.find(container, "button");
     t.expect(Support$WeftUi.attribute(button, "data-id")).toEqual("mine");
     t.expect(Support$WeftUi.attribute(button, "aria-hidden")).toEqual("false");
-    t.expect(Support$WeftUi.attribute(button, "title")).toEqual(undefined);
+    t.expect(Support$WeftUi.attribute(button, "title")).toEqual("from attrs");
   });
+});
+
+Vitest.test("attrs reach a part built from a record too (style, given to a Grid that sets its own)", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, t => {
+  let grid = Support$WeftUi.find(Support$WeftUi.mount(Jsx$WeftDom.jsx(Grid$WeftUi.make, {
+    columns: 2,
+    attrs: {
+      style: {
+        color: "red"
+      },
+      title: "grid"
+    }
+  })), "div");
+  t.expect(Support$WeftUi.attribute(grid, "title")).toEqual("grid");
+  t.expect(Stdlib_Option.getOr(Support$WeftUi.attribute(grid, "style"), "").includes("red")).toBe(false);
+  let stack = Support$WeftUi.find(Support$WeftUi.mount(Jsx$WeftDom.jsx(Stack$WeftUi.make, {
+    attrs: {
+      style: {
+        color: "red"
+      }
+    }
+  })), "div");
+  t.expect(Stdlib_Option.getOr(Support$WeftUi.attribute(stack, "style"), "").includes("red")).toBe(true);
 });
 
 Vitest.describe("layout", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, () => {

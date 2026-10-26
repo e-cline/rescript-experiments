@@ -70,39 +70,41 @@ let make = (
   let field = FieldContext.use()
   let invalid = invalid->Option.getOr(field.invalid)
   let required = required->Option.getOr(field.required)
-  <input
-    {...attrs}
-    id=?{id->Option.orElse(field.controlId)}
-    type_={(type_ :> string)}
-    className={Host.classes(
-      type_ == #search ? [className(~size, ()), Styles.search] : [className(~size, ())],
-      extra,
-    )}
-    ?style
-    ?dataId
-    ?value
-    ?onInput
-    ?onChange
-    ?onBlur
-    ?onFocus
-    ?onKeyDown
-    ?name
-    ?placeholder
-    ?autoComplete
-    ?inputMode
-    ?min
-    ?max
-    ?step
-    ?minLength
-    ?maxLength
-    ?pattern
-    ?readOnly
-    ?autoFocus
-    required
-    disabled={disabled->Option.getOr(field.disabled)}
-    ariaInvalid=?{invalid ? Some("true") : None}
-    ariaRequired=?{required ? Some("true") : None}
-    ?ariaLabel
-    ariaDescribedby=?{FieldContext.describedBy(ariaDescribedby, field.describedBy)}
-  />
+  Host.withAttrs(
+    attrs,
+    <input
+      id=?{id->Option.orElse(field.controlId)}
+      type_={(type_ :> string)}
+      className={Host.classes(
+        type_ == #search ? [className(~size, ()), Styles.search] : [className(~size, ())],
+        extra,
+      )}
+      ?style
+      ?dataId
+      ?value
+      ?onInput
+      ?onChange
+      ?onBlur
+      ?onFocus
+      ?onKeyDown
+      ?name
+      ?placeholder
+      ?autoComplete
+      ?inputMode
+      ?min
+      ?max
+      ?step
+      ?minLength
+      ?maxLength
+      ?pattern
+      ?readOnly
+      ?autoFocus
+      required
+      disabled={disabled->Option.getOr(field.disabled)}
+      ariaInvalid=?{invalid ? Some("true") : None}
+      ariaRequired=?{required ? Some("true") : None}
+      ?ariaLabel
+      ariaDescribedby=?{FieldContext.describedBy(ariaDescribedby, field.describedBy)}
+    />,
+  )
 }

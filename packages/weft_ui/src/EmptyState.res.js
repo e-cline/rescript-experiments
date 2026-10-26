@@ -92,11 +92,16 @@ function EmptyState$Root(props) {
   let __bordered = props.bordered;
   let __bordered_value = __bordered !== undefined ? __bordered : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsx("div", (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes(__bordered_value ? [
-      root,
-      bordered
-    ] : [root], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("div", {
+    id: props.id,
+    className: Host$WeftUi.classes(__bordered_value ? [
+        root,
+        bordered
+      ] : [root], props.className),
+    style: props.style,
+    "data-id": props.dataId,
+    children: props.children
+  }));
 }
 
 let Root = {
@@ -104,7 +109,7 @@ let Root = {
 };
 
 function EmptyState$Title(props) {
-  return Host$WeftUi.element(Stdlib_Option.mapOr(props.level, "p", prim => prim), {
+  return Host$WeftUi.element(undefined, Stdlib_Option.mapOr(props.level, "p", prim => prim), {
     id: props.id,
     className: Host$WeftUi.classes([title], props.className),
     "data-id": props.dataId,

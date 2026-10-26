@@ -79,11 +79,16 @@ function DescriptionList$Root(props) {
   let __layout_value = __layout !== undefined ? __layout : "grid";
   let __detailsAlign_value = __detailsAlign !== undefined ? __detailsAlign : "start";
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsx("dl", (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([
-    list,
-    __layout_value === "grid" ? grid : stacked
-  ].concat(__detailsAlign_value === "end" ? [detailsEnd] : []), props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("dl", {
+    id: props.id,
+    className: Host$WeftUi.classes([
+      list,
+      __layout_value === "grid" ? grid : stacked
+    ].concat(__detailsAlign_value === "end" ? [detailsEnd] : []), props.className),
+    style: props.style,
+    "data-id": props.dataId,
+    children: props.children
+  }));
 }
 
 let Root = {

@@ -121,22 +121,24 @@ module Root = {
       ariaLabel=?scrollLabel
       tabIndex=?{scrollLabel->Option.map(_ => 0)}
     >
-      <table
-        {...attrs}
-        ?id
-        className={Host.classes(
-          Array.concat(
-            density == #compact ? [Styles.table, Styles.compact] : [Styles.table],
-            striped ? [Styles.striped] : [],
-          ),
-          className,
-        )}
-        ?style
-        ?dataId
-        ?ariaLabel
-        ?ariaLabelledby
-        ?children
-      />
+      {Host.withAttrs(
+        attrs,
+        <table
+          ?id
+          className={Host.classes(
+            Array.concat(
+              density == #compact ? [Styles.table, Styles.compact] : [Styles.table],
+              striped ? [Styles.striped] : [],
+            ),
+            className,
+          )}
+          ?style
+          ?dataId
+          ?ariaLabel
+          ?ariaLabelledby
+          ?children
+        />,
+      )}
     </div>
 }
 

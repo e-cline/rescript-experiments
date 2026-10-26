@@ -94,9 +94,9 @@ let make = (
   ~children=?,
 ) =>
   Host.element(
+    ~attrs,
     (as_ :> string),
     {
-      ...attrs,
       ?id,
       className: Host.classes(
         [className(~tone, ~size?, ~weight?, ~italic, ~numeric, ~truncate, ())],

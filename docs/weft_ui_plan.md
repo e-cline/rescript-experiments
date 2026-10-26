@@ -271,10 +271,10 @@ Both are under "Not in v1".
 - **Common props on every part:** `?id`, `?className` (merged after the defaults), `?style`,
   `?dataId` (so the apps' tests keep finding elements), `?children`, plus the ARIA props that part
   needs (`?ariaLabel`, ...). Because ReScript has no rest props, the escape hatch for anything else
-  is `?attrs: WeftDom.DomProps.props`, spread first onto the part's element (Decision 4). **`attrs`
-  is only for props the part doesn't take itself**: the part's explicit props are assigned after the
-  spread even when they're absent, so an absent `?dataId` writes `undefined` over `attrs.dataId`
-  (phase 0). The docs say so, and each part's tests pin it.
+  is `?attrs: WeftDom.DomProps.props`, under the part's element's props (Decision 4). **What the
+  part sets wins; what it leaves unset leaves `attrs`'.** As first built (a JSX spread), an absent
+  `?style` wrote `undefined` over `attrs.style` (phase 0), which bit twice in phase 3; phase 4's
+  first commit merges them in `Host.withAttrs` instead.
 - **Recipes:** each styled component also exposes its classes as a function:
   - `Button.className(~variant=#primary, ~size=#sm, ())`
   - `Badge.className(~tone=#muted, ())`
@@ -719,8 +719,8 @@ A commit each:
 - **What it taught about the library:**
   - **The `attrs` rule bites.** Twice the first draft put `style` in `attrs` (on a `Container` and a
     `Stack`), where the part's own absent `style` wiped it. The compiler can't catch it. Phase 4
-    should fix it rather than document it: merge only the explicit props that are set over `attrs`,
-    in `Host`, and use that for every part's element.
+    should fix it rather than document it (and did: `Host.withAttrs`): merge only the explicit props
+    that are set over `attrs`, in `Host`, and use that for every part's element.
   - **Tokens go on `:root`, in a sheet a class brings.** The first draft set the palette on the
     outermost element's class, which `<body>` can't see, so the page's background and text colour
     were the palette's values written again. Since a sheet is sent with the classes it has, the

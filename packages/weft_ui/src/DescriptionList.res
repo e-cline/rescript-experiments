@@ -45,20 +45,22 @@ module Root = {
     ~attrs: WeftDom.DomProps.props={},
     ~children=?,
   ) =>
-    <dl
-      {...attrs}
-      ?id
-      className={Host.classes(
-        Array.concat(
-          [Styles.list, layout == #grid ? Styles.grid : Styles.stacked],
-          detailsAlign == #end ? [Styles.detailsEnd] : [],
-        ),
-        className,
-      )}
-      ?style
-      ?dataId
-      ?children
-    />
+    Host.withAttrs(
+      attrs,
+      <dl
+        ?id
+        className={Host.classes(
+          Array.concat(
+            [Styles.list, layout == #grid ? Styles.grid : Styles.stacked],
+            detailsAlign == #end ? [Styles.detailsEnd] : [],
+          ),
+          className,
+        )}
+        ?style
+        ?dataId
+        ?children
+      />,
+    )
 }
 
 module Term = {

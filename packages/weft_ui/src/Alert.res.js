@@ -165,17 +165,24 @@ function Alert$Root(props) {
     ) : (
       __tone_value === "danger" || __tone_value === "warning" ? "alert" : "status"
     );
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsx("div", (newrecord.children = props.children, newrecord["data-variant"] = __tone_value, newrecord["data-id"] = props.dataId, newrecord.role = role$1, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([
-    root,
-    __tone_value === "neutral" ? neutral : (
-        __tone_value === "warning" ? warning : (
-            __tone_value === "danger" ? danger : (
-                __tone_value === "success" ? success : info
-              )
-          )
-      )
-  ], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("div", {
+    id: props.id,
+    className: Host$WeftUi.classes([
+      root,
+      __tone_value === "neutral" ? neutral : (
+          __tone_value === "warning" ? warning : (
+              __tone_value === "danger" ? danger : (
+                  __tone_value === "success" ? success : info
+                )
+            )
+        )
+    ], props.className),
+    style: props.style,
+    role: role$1,
+    "data-id": props.dataId,
+    "data-variant": __tone_value,
+    children: props.children
+  }));
 }
 
 let Root = {

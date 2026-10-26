@@ -111,8 +111,13 @@ function Heading(props) {
   let __level = props.level;
   let __level_value = __level !== undefined ? __level : "h2";
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Host$WeftUi.element(__level_value, (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([className(Stdlib_Option.getOr(props.size, sizeOf(__level_value)), undefined)], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.element(__attrs_value, __level_value, {
+    id: props.id,
+    className: Host$WeftUi.classes([className(Stdlib_Option.getOr(props.size, sizeOf(__level_value)), undefined)], props.className),
+    style: props.style,
+    "data-id": props.dataId,
+    children: props.children
+  });
 }
 
 let make = Heading;

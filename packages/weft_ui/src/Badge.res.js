@@ -315,8 +315,15 @@ function Badge(props) {
   let __size_value = __size !== undefined ? __size : "md";
   let __shape_value = __shape !== undefined ? __shape : "pill";
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsx("span", (newrecord.children = props.children, newrecord["data-variant"] = __tone_value, newrecord["data-id"] = props.dataId, newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([className(__tone_value, __variant_value, __size_value, __shape_value, undefined, undefined)], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("span", {
+    id: props.id,
+    className: Host$WeftUi.classes([className(__tone_value, __variant_value, __size_value, __shape_value, undefined, undefined)], props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "data-id": props.dataId,
+    "data-variant": __tone_value,
+    children: props.children
+  }));
 }
 
 let make = Badge;

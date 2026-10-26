@@ -141,13 +141,15 @@ let make = (
   ~attrs: WeftDom.DomProps.props={},
   ~children=?,
 ) =>
-  <span
-    {...attrs}
-    ?id
-    className={Host.classes([className(~tone, ~variant, ~size, ~shape, ())], extra)}
-    ?style
-    ?dataId
-    ?ariaLabel
-    dataVariant={(tone :> string)}
-    ?children
-  />
+  Host.withAttrs(
+    attrs,
+    <span
+      ?id
+      className={Host.classes([className(~tone, ~variant, ~size, ~shape, ())], extra)}
+      ?style
+      ?dataId
+      ?ariaLabel
+      dataVariant={(tone :> string)}
+      ?children
+    />,
+  )

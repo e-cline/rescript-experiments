@@ -75,8 +75,8 @@ like it: `Button.className(~variant=#primary, ())` on an app's navigating link,
 `Badge.className(~link=true, ())` on a chip.
 
 Each part takes `id`, `className`, `style`, `dataId` and the ARIA props it needs. For anything else,
-`attrs` (a `WeftDom.DomProps.props`) is spread onto its element first. It's only for props the part
-doesn't take itself: those are written after it, even when absent.
+`attrs` (a `WeftDom.DomProps.props`) goes under its element's props: what the part sets itself wins,
+and what it leaves unset (its own `style`, say, when you don't give one) leaves `attrs`'.
 
 ## Accessibility
 

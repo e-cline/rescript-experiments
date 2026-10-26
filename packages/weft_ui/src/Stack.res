@@ -115,9 +115,9 @@ let make = (
   ~children=?,
 ) =>
   Host.element(
+    ~attrs,
     tag(as_),
     {
-      ...attrs,
       ?id,
       className: Host.classes([className(~direction, ~gap, ~align?, ~justify?, ~wrap, ())], extra),
       ?style,

@@ -59,22 +59,24 @@ let make = (
     None
   }, [indeterminate])
   Choice.render(
-    ~control=<input
-      {...attrs}
-      ref
-      type_="checkbox"
-      ?id
-      className=Styles.box
-      ?dataId
-      ?checked
-      onChange=?{Choice.onChange(~onChange, ~onCheckedChange)}
-      ?name
-      ?value
-      required
-      disabled
-      ariaChecked=?{indeterminate ? Some("mixed") : None}
-      ariaDescribedby=?{description->Option.map(_ => descriptionId)}
-    />,
+    ~control=Host.withAttrs(
+      attrs,
+      <input
+        ref
+        type_="checkbox"
+        ?id
+        className=Styles.box
+        ?dataId
+        ?checked
+        onChange=?{Choice.onChange(~onChange, ~onCheckedChange)}
+        ?name
+        ?value
+        required
+        disabled
+        ariaChecked=?{indeterminate ? Some("mixed") : None}
+        ariaDescribedby=?{description->Option.map(_ => descriptionId)}
+      />,
+    ),
     ~children,
     ~description,
     ~descriptionId,

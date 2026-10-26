@@ -50,11 +50,40 @@ function Input(props) {
   let field = FieldContext$WeftUi.use();
   let invalid = Stdlib_Option.getOr(props.invalid, field.invalid);
   let required = Stdlib_Option.getOr(props.required, field.required);
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsx("input", (newrecord.onBlur = props.onBlur, newrecord.onFocus = props.onFocus, newrecord.onChange = props.onChange, newrecord.onInput = props.onInput, newrecord.onKeyDown = props.onKeyDown, newrecord.pattern = props.pattern, newrecord.minLength = props.minLength, newrecord.step = props.step, newrecord.max = props.max, newrecord.min = props.min, newrecord.maxLength = props.maxLength, newrecord.inputMode = props.inputMode, newrecord.autoComplete = props.autoComplete, newrecord.required = required, newrecord.autoFocus = props.autoFocus, newrecord.readOnly = props.readOnly, newrecord.placeholder = props.placeholder, newrecord.disabled = Stdlib_Option.getOr(props.disabled, field.disabled), newrecord.value = props.value, newrecord.name = props.name, newrecord.type = __type__value, newrecord["data-id"] = props.dataId, newrecord["aria-required"] = required ? "true" : undefined, newrecord["aria-invalid"] = invalid ? "true" : undefined, newrecord["aria-describedby"] = FieldContext$WeftUi.describedBy(props.ariaDescribedby, field.describedBy), newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes(__type__value === "search" ? [
-      className(__size_value, undefined),
-      search
-    ] : [className(__size_value, undefined)], props.className), newrecord.id = Stdlib_Option.orElse(props.id, field.controlId), newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("input", {
+    id: Stdlib_Option.orElse(props.id, field.controlId),
+    className: Host$WeftUi.classes(__type__value === "search" ? [
+        className(__size_value, undefined),
+        search
+      ] : [className(__size_value, undefined)], props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "aria-describedby": FieldContext$WeftUi.describedBy(props.ariaDescribedby, field.describedBy),
+    "aria-invalid": invalid ? "true" : undefined,
+    "aria-required": required ? "true" : undefined,
+    "data-id": props.dataId,
+    type: __type__value,
+    name: props.name,
+    value: props.value,
+    disabled: Stdlib_Option.getOr(props.disabled, field.disabled),
+    placeholder: props.placeholder,
+    readOnly: props.readOnly,
+    autoFocus: props.autoFocus,
+    required: required,
+    autoComplete: props.autoComplete,
+    inputMode: props.inputMode,
+    maxLength: props.maxLength,
+    min: props.min,
+    max: props.max,
+    step: props.step,
+    minLength: props.minLength,
+    pattern: props.pattern,
+    onKeyDown: props.onKeyDown,
+    onInput: props.onInput,
+    onChange: props.onChange,
+    onFocus: props.onFocus,
+    onBlur: props.onBlur
+  }));
 }
 
 let make = Input;

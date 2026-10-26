@@ -3,6 +3,7 @@
 
 import * as Hooks$Weft from "@e-cline/weft/src/shared/Hooks.res.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
+import * as Host$WeftUi from "./internal/Host.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
 import * as Choice$WeftUi from "./internal/Choice.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
@@ -60,8 +61,19 @@ function Switch(props) {
   let __disabled_value = __disabled !== undefined ? __disabled : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
   let descriptionId = Hooks$Weft.useId() + `-description`;
-  let newrecord = {...__attrs_value};
-  return Choice$WeftUi.render(Jsx$WeftDom.Elements.jsx("input", (newrecord.onChange = Choice$WeftUi.onChange(props.onChange, props.onCheckedChange), newrecord.disabled = __disabled_value, newrecord.checked = props.checked, newrecord.value = props.value, newrecord.name = props.name, newrecord.type = "checkbox", newrecord["data-id"] = props.dataId, newrecord["aria-describedby"] = Stdlib_Option.map(description, param => descriptionId), newrecord.role = "switch", newrecord.className = track, newrecord.id = props.id, newrecord)), props.children, description, descriptionId, props.className, props.style);
+  return Choice$WeftUi.render(Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("input", {
+    id: props.id,
+    className: track,
+    role: "switch",
+    "aria-describedby": Stdlib_Option.map(description, param => descriptionId),
+    "data-id": props.dataId,
+    type: "checkbox",
+    name: props.name,
+    value: props.value,
+    checked: props.checked,
+    disabled: __disabled_value,
+    onChange: Choice$WeftUi.onChange(props.onChange, props.onCheckedChange)
+  })), props.children, description, descriptionId, props.className, props.style);
 }
 
 let make = Switch;

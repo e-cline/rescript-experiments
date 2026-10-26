@@ -65,20 +65,22 @@ let make = (
 ) => {
   let descriptionId = `${Weft.Hooks.useId()}-description`
   Choice.render(
-    ~control=<input
-      {...attrs}
-      type_="checkbox"
-      role="switch"
-      ?id
-      className=Styles.track
-      ?dataId
-      ?checked
-      onChange=?{Choice.onChange(~onChange, ~onCheckedChange)}
-      ?name
-      ?value
-      disabled
-      ariaDescribedby=?{description->Option.map(_ => descriptionId)}
-    />,
+    ~control=Host.withAttrs(
+      attrs,
+      <input
+        type_="checkbox"
+        role="switch"
+        ?id
+        className=Styles.track
+        ?dataId
+        ?checked
+        onChange=?{Choice.onChange(~onChange, ~onCheckedChange)}
+        ?name
+        ?value
+        disabled
+        ariaDescribedby=?{description->Option.map(_ => descriptionId)}
+      />,
+    ),
     ~children,
     ~description,
     ~descriptionId,

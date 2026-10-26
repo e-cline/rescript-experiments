@@ -29,21 +29,31 @@ function Form(props) {
   let __busy = props.busy;
   let __busy_value = __busy !== undefined ? __busy : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsxs("form", (newrecord.children = [
-    error !== undefined ? Jsx$WeftDom.jsx(Alert$WeftUi.Root.make, {
-        tone: "danger",
-        children: Primitive_option.some(Jsx$WeftDom.jsx(Alert$WeftUi.Description.make, {
-          children: Primitive_option.some(error)
-        }))
-      }) : Jsx$WeftDom.$$null,
-    Stdlib_Option.getOr(props.children, Jsx$WeftDom.$$null)
-  ], newrecord.onSubmit = Stdlib_Option.map(props.onSubmit, onSubmit => (event => {
-    event.preventDefault();
-    if (!__busy_value) {
-      return onSubmit();
-    }
-  })), newrecord.noValidate = true, newrecord["data-id"] = props.dataId, newrecord["aria-busy"] = __busy_value ? "true" : undefined, newrecord["aria-labelledby"] = props.ariaLabelledby, newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([form], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsxs("form", {
+    id: props.id,
+    className: Host$WeftUi.classes([form], props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "aria-labelledby": props.ariaLabelledby,
+    "aria-busy": __busy_value ? "true" : undefined,
+    "data-id": props.dataId,
+    noValidate: true,
+    onSubmit: Stdlib_Option.map(props.onSubmit, onSubmit => (event => {
+      event.preventDefault();
+      if (!__busy_value) {
+        return onSubmit();
+      }
+    })),
+    children: [
+      error !== undefined ? Jsx$WeftDom.jsx(Alert$WeftUi.Root.make, {
+          tone: "danger",
+          children: Primitive_option.some(Jsx$WeftDom.jsx(Alert$WeftUi.Description.make, {
+            children: Primitive_option.some(error)
+          }))
+        }) : Jsx$WeftDom.$$null,
+      Stdlib_Option.getOr(props.children, Jsx$WeftDom.$$null)
+    ]
+  }));
 }
 
 let make = Form;

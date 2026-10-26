@@ -35,31 +35,33 @@ let make = (
   ~attrs: WeftDom.DomProps.props={},
   ~children=?,
 ) =>
-  <form
-    {...attrs}
-    ?id
-    className={Host.classes([Styles.form], className)}
-    ?style
-    ?dataId
-    ?ariaLabel
-    ?ariaLabelledby
-    noValidate=true
-    ariaBusy=?{busy ? Some("true") : None}
-    onSubmit=?{onSubmit->Option.map(onSubmit =>
-      event => {
-        WeftDom.Dom.Event.preventDefault(event)
-        if !busy {
-          onSubmit()
+  Host.withAttrs(
+    attrs,
+    <form
+      ?id
+      className={Host.classes([Styles.form], className)}
+      ?style
+      ?dataId
+      ?ariaLabel
+      ?ariaLabelledby
+      noValidate=true
+      ariaBusy=?{busy ? Some("true") : None}
+      onSubmit=?{onSubmit->Option.map(onSubmit =>
+        event => {
+          WeftDom.Dom.Event.preventDefault(event)
+          if !busy {
+            onSubmit()
+          }
         }
-      }
-    )}
-  >
-    {switch error {
-    | Some(error) =>
-      <Alert.Root tone=#danger>
-        <Alert.Description> {WeftDom.Jsx.string(error)} </Alert.Description>
-      </Alert.Root>
-    | None => WeftDom.Jsx.null
-    }}
-    {children->Option.getOr(WeftDom.Jsx.null)}
-  </form>
+      )}
+    >
+      {switch error {
+      | Some(error) =>
+        <Alert.Root tone=#danger>
+          <Alert.Description> {WeftDom.Jsx.string(error)} </Alert.Description>
+        </Alert.Root>
+      | None => WeftDom.Jsx.null
+      }}
+      {children->Option.getOr(WeftDom.Jsx.null)}
+    </form>,
+  )

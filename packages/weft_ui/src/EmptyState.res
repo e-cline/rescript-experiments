@@ -57,14 +57,19 @@ module Root = {
     ~attrs: WeftDom.DomProps.props={},
     ~children=?,
   ) =>
-    <div
-      {...attrs}
-      ?id
-      className={Host.classes(bordered ? [Styles.root, Styles.bordered] : [Styles.root], className)}
-      ?style
-      ?dataId
-      ?children
-    />
+    Host.withAttrs(
+      attrs,
+      <div
+        ?id
+        className={Host.classes(
+          bordered ? [Styles.root, Styles.bordered] : [Styles.root],
+          className,
+        )}
+        ?style
+        ?dataId
+        ?children
+      />,
+    )
 }
 
 module Title = {

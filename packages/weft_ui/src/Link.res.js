@@ -119,13 +119,24 @@ function Link(props) {
   let __underline_value = __underline !== undefined ? __underline : "always";
   let __external__value = __external_ !== undefined ? __external_ : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsxs("a", (newrecord.children = [
-    children !== undefined ? Primitive_option.valFromOption(children) : Jsx$WeftDom.$$null,
-    __external__value ? Jsx$WeftDom.jsx(VisuallyHidden$WeftUi.make, {
-        children: " (opens in a new tab)"
-      }) : Jsx$WeftDom.$$null
-  ], newrecord.onClick = props.onClick, newrecord.rel = __external__value ? "noopener noreferrer" : undefined, newrecord.target = __external__value ? "_blank" : undefined, newrecord.href = props.href, newrecord["data-id"] = props.dataId, newrecord["aria-current"] = props.ariaCurrent, newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([className(__tone_value, __underline_value, undefined)], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsxs("a", {
+    id: props.id,
+    className: Host$WeftUi.classes([className(__tone_value, __underline_value, undefined)], props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "aria-current": props.ariaCurrent,
+    "data-id": props.dataId,
+    href: props.href,
+    target: __external__value ? "_blank" : undefined,
+    rel: __external__value ? "noopener noreferrer" : undefined,
+    onClick: props.onClick,
+    children: [
+      children !== undefined ? Primitive_option.valFromOption(children) : Jsx$WeftDom.$$null,
+      __external__value ? Jsx$WeftDom.jsx(VisuallyHidden$WeftUi.make, {
+          children: " (opens in a new tab)"
+        }) : Jsx$WeftDom.$$null
+    ]
+  }));
 }
 
 let make = Link;

@@ -53,7 +53,7 @@ function VisuallyHidden(props) {
   let __as_ = props.as_;
   let __as__value = __as_ !== undefined ? __as_ : "span";
   let __focusable_value = __focusable !== undefined ? __focusable : false;
-  return Host$WeftUi.element(__as__value, {
+  return Host$WeftUi.element(undefined, __as__value, {
     id: props.id,
     className: __focusable_value ? focusable : hidden,
     "data-id": props.dataId,

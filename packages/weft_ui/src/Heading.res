@@ -58,9 +58,9 @@ let make = (
   ~children=?,
 ) =>
   Host.element(
+    ~attrs,
     Variants.levelTag(level),
     {
-      ...attrs,
       ?id,
       className: Host.classes([className(~size=size->Option.getOr(sizeOf(level)), ())], extra),
       ?style,

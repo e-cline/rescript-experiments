@@ -159,18 +159,25 @@ function Table$Root(props) {
   let __density_value = __density !== undefined ? __density : "comfortable";
   let __striped_value = __striped !== undefined ? __striped : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
   return Jsx$WeftDom.Elements.jsx("div", {
     className: scroll,
     role: Stdlib_Option.map(scrollLabel, param => "region"),
     tabIndex: Stdlib_Option.map(scrollLabel, param => 0),
     "aria-label": scrollLabel,
-    children: Jsx$WeftDom.Elements.jsx("table", (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord["aria-labelledby"] = props.ariaLabelledby, newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes((
-      __density_value === "compact" ? [
-          table,
-          compact
-        ] : [table]
-    ).concat(__striped_value ? [striped] : []), props.className), newrecord.id = props.id, newrecord))
+    children: Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("table", {
+      id: props.id,
+      className: Host$WeftUi.classes((
+        __density_value === "compact" ? [
+            table,
+            compact
+          ] : [table]
+      ).concat(__striped_value ? [striped] : []), props.className),
+      style: props.style,
+      "aria-label": props.ariaLabel,
+      "aria-labelledby": props.ariaLabelledby,
+      "data-id": props.dataId,
+      children: props.children
+    }))
   });
 }
 

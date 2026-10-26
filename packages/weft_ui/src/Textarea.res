@@ -46,28 +46,30 @@ let make = (
   let field = FieldContext.use()
   let invalid = invalid->Option.getOr(field.invalid)
   let required = required->Option.getOr(field.required)
-  <textarea
-    {...attrs}
-    id=?{id->Option.orElse(field.controlId)}
-    rows
-    className={Host.classes([Styles.textarea], className)}
-    ?style
-    ?dataId
-    ?value
-    ?onInput
-    ?onChange
-    ?onBlur
-    ?onKeyDown
-    ?name
-    ?placeholder
-    ?maxLength
-    ?readOnly
-    ?autoFocus
-    required
-    disabled={disabled->Option.getOr(field.disabled)}
-    ariaInvalid=?{invalid ? Some("true") : None}
-    ariaRequired=?{required ? Some("true") : None}
-    ?ariaLabel
-    ariaDescribedby=?{FieldContext.describedBy(ariaDescribedby, field.describedBy)}
-  />
+  Host.withAttrs(
+    attrs,
+    <textarea
+      id=?{id->Option.orElse(field.controlId)}
+      rows
+      className={Host.classes([Styles.textarea], className)}
+      ?style
+      ?dataId
+      ?value
+      ?onInput
+      ?onChange
+      ?onBlur
+      ?onKeyDown
+      ?name
+      ?placeholder
+      ?maxLength
+      ?readOnly
+      ?autoFocus
+      required
+      disabled={disabled->Option.getOr(field.disabled)}
+      ariaInvalid=?{invalid ? Some("true") : None}
+      ariaRequired=?{required ? Some("true") : None}
+      ?ariaLabel
+      ariaDescribedby=?{FieldContext.describedBy(ariaDescribedby, field.describedBy)}
+    />,
+  )
 }

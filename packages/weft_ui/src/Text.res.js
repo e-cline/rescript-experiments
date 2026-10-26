@@ -182,8 +182,15 @@ function Text(props) {
   let __numeric_value = __numeric !== undefined ? __numeric : false;
   let __truncate_value = __truncate !== undefined ? __truncate : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Host$WeftUi.element(__as__value, (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord["aria-live"] = props.ariaLive, newrecord.role = props.role, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([className(__tone_value, props.size, props.weight, __italic_value, __numeric_value, __truncate_value, undefined)], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.element(__attrs_value, __as__value, {
+    id: props.id,
+    className: Host$WeftUi.classes([className(__tone_value, props.size, props.weight, __italic_value, __numeric_value, __truncate_value, undefined)], props.className),
+    style: props.style,
+    role: props.role,
+    "aria-live": props.ariaLive,
+    "data-id": props.dataId,
+    children: props.children
+  });
 }
 
 let make = Text;

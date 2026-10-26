@@ -194,8 +194,14 @@ function Stack(props) {
   let __gap_value = __gap !== undefined ? __gap : "md";
   let __wrap_value = __wrap !== undefined ? __wrap : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Host$WeftUi.element(__as__value, (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([className(__direction_value, __gap_value, props.align, props.justify, __wrap_value, undefined)], props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.element(__attrs_value, __as__value, {
+    id: props.id,
+    className: Host$WeftUi.classes([className(__direction_value, __gap_value, props.align, props.justify, __wrap_value, undefined)], props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "data-id": props.dataId,
+    children: props.children
+  });
 }
 
 let make = Stack;

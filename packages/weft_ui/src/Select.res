@@ -82,35 +82,37 @@ let make = (
   let invalid = invalid->Stdlib.Option.getOr(field.invalid)
   let required = required->Stdlib.Option.getOr(field.required)
   <span className=Styles.wrapper>
-    <select
-      {...attrs}
-      id=?{id->Stdlib.Option.orElse(field.controlId)}
-      className={Host.classes(
-        [
-          Styles.select,
-          switch size {
-          | #sm => Styles.sm
-          | #md => Styles.md
-          | #lg => Styles.lg
-          },
-          Styles.room,
-        ],
-        className,
-      )}
-      ?style
-      ?dataId
-      ?value
-      ?onChange
-      ?onBlur
-      ?name
-      ?autoComplete
-      required
-      disabled={disabled->Stdlib.Option.getOr(field.disabled)}
-      ariaInvalid=?{invalid ? Some("true") : None}
-      ariaRequired=?{required ? Some("true") : None}
-      ?ariaLabel
-      ariaDescribedby=?{FieldContext.describedBy(ariaDescribedby, field.describedBy)}
-      ?children
-    />
+    {Host.withAttrs(
+      attrs,
+      <select
+        id=?{id->Stdlib.Option.orElse(field.controlId)}
+        className={Host.classes(
+          [
+            Styles.select,
+            switch size {
+            | #sm => Styles.sm
+            | #md => Styles.md
+            | #lg => Styles.lg
+            },
+            Styles.room,
+          ],
+          className,
+        )}
+        ?style
+        ?dataId
+        ?value
+        ?onChange
+        ?onBlur
+        ?name
+        ?autoComplete
+        required
+        disabled={disabled->Stdlib.Option.getOr(field.disabled)}
+        ariaInvalid=?{invalid ? Some("true") : None}
+        ariaRequired=?{required ? Some("true") : None}
+        ?ariaLabel
+        ariaDescribedby=?{FieldContext.describedBy(ariaDescribedby, field.describedBy)}
+        ?children
+      />,
+    )}
   </span>
 }

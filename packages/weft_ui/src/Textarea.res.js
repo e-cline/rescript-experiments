@@ -43,8 +43,29 @@ function Textarea(props) {
   let field = FieldContext$WeftUi.use();
   let invalid = Stdlib_Option.getOr(props.invalid, field.invalid);
   let required = Stdlib_Option.getOr(props.required, field.required);
-  let newrecord = {...__attrs_value};
-  return Jsx$WeftDom.Elements.jsx("textarea", (newrecord.onBlur = props.onBlur, newrecord.onChange = props.onChange, newrecord.onInput = props.onInput, newrecord.onKeyDown = props.onKeyDown, newrecord.rows = __rows_value, newrecord.maxLength = props.maxLength, newrecord.required = required, newrecord.autoFocus = props.autoFocus, newrecord.readOnly = props.readOnly, newrecord.placeholder = props.placeholder, newrecord.disabled = Stdlib_Option.getOr(props.disabled, field.disabled), newrecord.value = props.value, newrecord.name = props.name, newrecord["data-id"] = props.dataId, newrecord["aria-required"] = required ? "true" : undefined, newrecord["aria-invalid"] = invalid ? "true" : undefined, newrecord["aria-describedby"] = FieldContext$WeftUi.describedBy(props.ariaDescribedby, field.describedBy), newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([textarea], props.className), newrecord.id = Stdlib_Option.orElse(props.id, field.controlId), newrecord));
+  return Host$WeftUi.withAttrs(__attrs_value, Jsx$WeftDom.Elements.jsx("textarea", {
+    id: Stdlib_Option.orElse(props.id, field.controlId),
+    className: Host$WeftUi.classes([textarea], props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "aria-describedby": FieldContext$WeftUi.describedBy(props.ariaDescribedby, field.describedBy),
+    "aria-invalid": invalid ? "true" : undefined,
+    "aria-required": required ? "true" : undefined,
+    "data-id": props.dataId,
+    name: props.name,
+    value: props.value,
+    disabled: Stdlib_Option.getOr(props.disabled, field.disabled),
+    placeholder: props.placeholder,
+    readOnly: props.readOnly,
+    autoFocus: props.autoFocus,
+    required: required,
+    maxLength: props.maxLength,
+    rows: __rows_value,
+    onKeyDown: props.onKeyDown,
+    onInput: props.onInput,
+    onChange: props.onChange,
+    onBlur: props.onBlur
+  }));
 }
 
 let make = Textarea;

@@ -17,7 +17,7 @@ describe("conventions", () => {
     ->Expect.toEqual(Some(Button.className(~variant=#primary, ~size=#sm, ())))
   })
 
-  test("attrs adds what a part doesn't take; its own props win", t => {
+  test("attrs adds to a part's props; those the part sets win, those it leaves unset don't", t => {
     let container = mount(
       <Button dataId="mine" attrs={{title: "from attrs", dataId: "theirs", ariaHidden: "false"}}>
         {text("Go")}
@@ -26,9 +26,21 @@ describe("conventions", () => {
     let button = find(container, "button")
     t->expect(attribute(button, "data-id"))->Expect.toEqual(Some("mine"))
     t->expect(attribute(button, "aria-hidden"))->Expect.toEqual(Some("false"))
-    // `title` is one of Button's own props: absent, it wipes `attrs.title` (see the plan, §4).
-    t->expect(attribute(button, "title"))->Expect.toEqual(None)
+    // `title` is one of Button's own props, but it's unset, so `attrs`' stays.
+    t->expect(attribute(button, "title"))->Expect.toEqual(Some("from attrs"))
   })
+})
+
+test("attrs reach a part built from a record too (style, given to a Grid that sets its own)", t => {
+  let grid = find(
+    mount(<Grid columns=2 attrs={{title: "grid", style: dict{"color": "red"}}} />),
+    "div",
+  )
+  t->expect(attribute(grid, "title"))->Expect.toEqual(Some("grid"))
+  // The grid's own style (its columns' variable) wins over the one in `attrs`, being set.
+  t->expect(attribute(grid, "style")->Option.getOr("")->String.includes("red"))->Expect.toBe(false)
+  let stack = find(mount(<Stack attrs={{style: dict{"color": "red"}}} />), "div")
+  t->expect(attribute(stack, "style")->Option.getOr("")->String.includes("red"))->Expect.toBe(true)
 })
 
 describe("layout", () => {

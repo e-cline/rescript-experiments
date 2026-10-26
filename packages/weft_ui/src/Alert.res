@@ -106,28 +106,30 @@ module Root = {
     | (None, #danger | #warning) => Some("alert")
     | (None, _) => Some("status")
     }
-    <div
-      {...attrs}
-      ?id
-      className={Host.classes(
-        [
-          Styles.root,
-          switch tone {
-          | #neutral => Styles.neutral
-          | #info => Styles.info
-          | #success => Styles.success
-          | #warning => Styles.warning
-          | #danger => Styles.danger
-          },
-        ],
-        className,
-      )}
-      ?style
-      ?dataId
-      ?role
-      dataVariant={(tone :> string)}
-      ?children
-    />
+    Host.withAttrs(
+      attrs,
+      <div
+        ?id
+        className={Host.classes(
+          [
+            Styles.root,
+            switch tone {
+            | #neutral => Styles.neutral
+            | #info => Styles.info
+            | #success => Styles.success
+            | #warning => Styles.warning
+            | #danger => Styles.danger
+            },
+          ],
+          className,
+        )}
+        ?style
+        ?dataId
+        ?role
+        dataVariant={(tone :> string)}
+        ?children
+      />,
+    )
   }
 }
 

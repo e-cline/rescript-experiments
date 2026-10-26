@@ -87,14 +87,20 @@ function Grid(props) {
             ]]
         ]
     );
-  let newrecord = {...__attrs_value};
-  return Host$WeftUi.element(__as__value, (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord["aria-label"] = props.ariaLabel, newrecord.style = Host$WeftUi.style(Css$WeftCss.vars(match[1]), props.style), newrecord.className = Host$WeftUi.classes([
-    grid,
-    match[0],
-    Stack$WeftUi.gapClass(__gap_value)
-  ].concat(__stackBelow_value === "sm" ? [stackBelowSm] : (
-      __stackBelow_value === "never" ? [] : [stackBelowMd]
-    )), props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.element(__attrs_value, __as__value, {
+    id: props.id,
+    className: Host$WeftUi.classes([
+      grid,
+      match[0],
+      Stack$WeftUi.gapClass(__gap_value)
+    ].concat(__stackBelow_value === "sm" ? [stackBelowSm] : (
+        __stackBelow_value === "never" ? [] : [stackBelowMd]
+      )), props.className),
+    style: Host$WeftUi.style(Css$WeftCss.vars(match[1]), props.style),
+    "aria-label": props.ariaLabel,
+    "data-id": props.dataId,
+    children: props.children
+  });
 }
 
 let make = Grid;

@@ -42,9 +42,9 @@ module Root = {
     ~children=?,
   ) =>
     Host.element(
+      ~attrs,
       (as_ :> string),
       {
-        ...attrs,
         ?id,
         className: Host.classes(
           Array.concat(

@@ -203,35 +203,37 @@ let render = (
   ~attrs: WeftDom.DomProps.props,
   ~children: Weft.Element.t,
 ) =>
-  <button
-    {...attrs}
-    ?id
-    className
-    ?style
-    ?dataId
-    type_={(type_ :> string)}
-    disabled
-    ariaDisabled=?{busy ? Some("true") : None}
-    ariaBusy=?{busy ? Some("true") : None}
-    ?ariaLabel
-    ?ariaDescribedby
-    ?ariaExpanded
-    ?ariaControls
-    ?ariaHaspopup
-    ?ariaPressed
-    ?name
-    ?value
-    ?title
-    // While busy, a click does nothing: not the handler, and not a submit button's submitting.
-    onClick=?{switch (onClick, busy, type_) {
-    | (Some(onClick), false, _) => Some(onClick)
-    | (_, true, #submit | #reset) => Some(WeftDom.Dom.Event.preventDefault)
-    | (_, true, #button) | (None, false, _) => None
-    }}
-  >
-    {busy ? Spinner.picture(~size=#sm) : WeftDom.Jsx.null}
-    children
-  </button>
+  Host.withAttrs(
+    attrs,
+    <button
+      ?id
+      className
+      ?style
+      ?dataId
+      type_={(type_ :> string)}
+      disabled
+      ariaDisabled=?{busy ? Some("true") : None}
+      ariaBusy=?{busy ? Some("true") : None}
+      ?ariaLabel
+      ?ariaDescribedby
+      ?ariaExpanded
+      ?ariaControls
+      ?ariaHaspopup
+      ?ariaPressed
+      ?name
+      ?value
+      ?title
+      // While busy, a click does nothing: not the handler, and not a submit button's submitting.
+      onClick=?{switch (onClick, busy, type_) {
+      | (Some(onClick), false, _) => Some(onClick)
+      | (_, true, #submit | #reset) => Some(WeftDom.Dom.Event.preventDefault)
+      | (_, true, #button) | (None, false, _) => None
+      }}
+    >
+      {busy ? Spinner.picture(~size=#sm) : WeftDom.Jsx.null}
+      children
+    </button>,
+  )
 
 @weft.component
 let make = (

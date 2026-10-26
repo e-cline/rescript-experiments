@@ -3,10 +3,43 @@
 import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
 import * as Css$WeftCss from "@e-cline/weft_css/src/shared/Css.res.js";
 import * as Jsx$WeftDom from "@e-cline/weft_dom/src/shared/Jsx.res.js";
+import * as Element$Weft from "@e-cline/weft/src/shared/Element.res.js";
 import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 
-function element(tag, props) {
-  return Jsx$WeftDom.Elements.jsx(tag, props);
+let merge = ((attrs, own) => {
+  const props = {...attrs};
+  for (const key in own) if (own[key] !== undefined) props[key] = own[key];
+  return props;
+});
+
+function withAttrs(attrs, element) {
+  let node = Element$Weft.classify(element);
+  if (typeof node !== "object") {
+    return element;
+  }
+  if (node.TAG !== "Node") {
+    return element;
+  }
+  let node$1 = node._0;
+  if (node$1.kind === "Host") {
+    return {
+      kind: node$1.kind,
+      elementType: node$1.elementType,
+      key: node$1.key,
+      props: merge(attrs, node$1.props)
+    };
+  } else {
+    return element;
+  }
+}
+
+function element(attrs, tag, props) {
+  let element$1 = Jsx$WeftDom.Elements.jsx(tag, props);
+  if (attrs !== undefined) {
+    return withAttrs(attrs, element$1);
+  } else {
+    return element$1;
+  }
 }
 
 function classes(classes$1, className) {
@@ -33,6 +66,8 @@ function ariaBool(value) {
 }
 
 export {
+  merge,
+  withAttrs,
   element,
   classes,
   style,

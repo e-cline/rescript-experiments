@@ -155,18 +155,26 @@ function Card$Root(props) {
   let __padding_value = __padding !== undefined ? __padding : "md";
   let __interactive_value = __interactive !== undefined ? __interactive : false;
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Host$WeftUi.element(__as__value, (newrecord.children = props.children, newrecord["data-variant"] = __variant_value, newrecord["data-id"] = props.dataId, newrecord["aria-labelledby"] = props.ariaLabelledby, newrecord["aria-label"] = props.ariaLabel, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes([
-    root,
-    __variant_value === "ghost" ? ghost : (
-        __variant_value === "elevated" ? elevated : outline
-      ),
-    __padding_value === "lg" ? paddingLg : (
-        __padding_value === "md" ? paddingMd : (
-            __padding_value === "sm" ? paddingSm : paddingNone
-          )
-      )
-  ].concat(__interactive_value ? [interactive] : []), props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.element(__attrs_value, __as__value, {
+    id: props.id,
+    className: Host$WeftUi.classes([
+      root,
+      __variant_value === "ghost" ? ghost : (
+          __variant_value === "elevated" ? elevated : outline
+        ),
+      __padding_value === "lg" ? paddingLg : (
+          __padding_value === "md" ? paddingMd : (
+              __padding_value === "sm" ? paddingSm : paddingNone
+            )
+        )
+    ].concat(__interactive_value ? [interactive] : []), props.className),
+    style: props.style,
+    "aria-label": props.ariaLabel,
+    "aria-labelledby": props.ariaLabelledby,
+    "data-id": props.dataId,
+    "data-variant": __variant_value,
+    children: props.children
+  });
 }
 
 let Root = {
@@ -189,7 +197,7 @@ let Header = {
 function Card$Title(props) {
   let __level = props.level;
   let __level_value = __level !== undefined ? __level : "h3";
-  return Host$WeftUi.element(__level_value, {
+  return Host$WeftUi.element(undefined, __level_value, {
     id: props.id,
     className: Host$WeftUi.classes([title], props.className),
     "data-id": props.dataId,

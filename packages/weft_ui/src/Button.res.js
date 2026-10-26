@@ -328,11 +328,6 @@ function className(variantOpt, sizeOpt, shapeOpt, fullWidthOpt, param) {
 }
 
 function render(className, type_, busy, disabled, onClick, id, style, dataId, ariaLabel, ariaDescribedby, ariaExpanded, ariaControls, ariaHaspopup, ariaPressed, name, value, title, attrs, children) {
-  let newrecord = {...attrs};
-  newrecord.children = [
-    busy ? Spinner$WeftUi.picture("sm", undefined) : Jsx$WeftDom.$$null,
-    children
-  ];
   let tmp;
   let exit = 0;
   if (onClick !== undefined) {
@@ -351,8 +346,30 @@ function render(className, type_, busy, disabled, onClick, id, style, dataId, ar
         prim.preventDefault();
       } : undefined;
   }
-  newrecord.onClick = tmp;
-  return Jsx$WeftDom.Elements.jsxs("button", (newrecord.disabled = disabled, newrecord.value = value, newrecord.name = name, newrecord.type = type_, newrecord["data-id"] = dataId, newrecord["aria-haspopup"] = ariaHaspopup, newrecord["aria-disabled"] = busy ? "true" : undefined, newrecord["aria-busy"] = busy ? "true" : undefined, newrecord["aria-controls"] = ariaControls, newrecord["aria-expanded"] = ariaExpanded, newrecord["aria-describedby"] = ariaDescribedby, newrecord["aria-pressed"] = ariaPressed, newrecord["aria-label"] = ariaLabel, newrecord.title = title, newrecord.style = style, newrecord.className = className, newrecord.id = id, newrecord));
+  return Host$WeftUi.withAttrs(attrs, Jsx$WeftDom.Elements.jsxs("button", {
+    id: id,
+    className: className,
+    style: style,
+    title: title,
+    "aria-label": ariaLabel,
+    "aria-pressed": ariaPressed,
+    "aria-describedby": ariaDescribedby,
+    "aria-expanded": ariaExpanded,
+    "aria-controls": ariaControls,
+    "aria-busy": busy ? "true" : undefined,
+    "aria-disabled": busy ? "true" : undefined,
+    "aria-haspopup": ariaHaspopup,
+    "data-id": dataId,
+    type: type_,
+    name: name,
+    value: value,
+    disabled: disabled,
+    onClick: tmp,
+    children: [
+      busy ? Spinner$WeftUi.picture("sm", undefined) : Jsx$WeftDom.$$null,
+      children
+    ]
+  }));
 }
 
 function Button(props) {

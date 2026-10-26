@@ -83,24 +83,26 @@ let make = (
   ~attrs: WeftDom.DomProps.props={},
   ~children=?,
 ) =>
-  <a
-    {...attrs}
-    href
-    ?id
-    className={Host.classes([className(~tone, ~underline, ())], extra)}
-    ?style
-    ?dataId
-    ?onClick
-    ?ariaCurrent
-    ?ariaLabel
-    target=?{external_ ? Some("_blank") : None}
-    rel=?{external_ ? Some("noopener noreferrer") : None}
-  >
-    {switch children {
-    | Some(children) => children
-    | None => WeftDom.Jsx.null
-    }}
-    {external_
-      ? <VisuallyHidden> {WeftDom.Jsx.string(" (opens in a new tab)")} </VisuallyHidden>
-      : WeftDom.Jsx.null}
-  </a>
+  Host.withAttrs(
+    attrs,
+    <a
+      href
+      ?id
+      className={Host.classes([className(~tone, ~underline, ())], extra)}
+      ?style
+      ?dataId
+      ?onClick
+      ?ariaCurrent
+      ?ariaLabel
+      target=?{external_ ? Some("_blank") : None}
+      rel=?{external_ ? Some("noopener noreferrer") : None}
+    >
+      {switch children {
+      | Some(children) => children
+      | None => WeftDom.Jsx.null
+      }}
+      {external_
+        ? <VisuallyHidden> {WeftDom.Jsx.string(" (opens in a new tab)")} </VisuallyHidden>
+        : WeftDom.Jsx.null}
+    </a>,
+  )

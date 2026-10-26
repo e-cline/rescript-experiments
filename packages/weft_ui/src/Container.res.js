@@ -61,26 +61,31 @@ function Container(props) {
   let __as__value = __as_ !== undefined ? __as_ : "div";
   let __size_value = __size !== undefined ? __size : "lg";
   let __attrs_value = __attrs !== undefined ? __attrs : ({});
-  let newrecord = {...__attrs_value};
-  return Host$WeftUi.element(__as__value, (newrecord.children = props.children, newrecord["data-id"] = props.dataId, newrecord.style = props.style, newrecord.className = Host$WeftUi.classes(__size_value === "lg" ? [
-      container,
-      lg
-    ] : (
-      __size_value === "md" ? [
-          container,
-          md
-        ] : (
-          __size_value === "sm" ? [
-              container,
-              sm
-            ] : (
-              __size_value === "xl" ? [
-                  container,
-                  xl
-                ] : [container]
-            )
-        )
-    ), props.className), newrecord.id = props.id, newrecord));
+  return Host$WeftUi.element(__attrs_value, __as__value, {
+    id: props.id,
+    className: Host$WeftUi.classes(__size_value === "lg" ? [
+        container,
+        lg
+      ] : (
+        __size_value === "md" ? [
+            container,
+            md
+          ] : (
+            __size_value === "sm" ? [
+                container,
+                sm
+              ] : (
+                __size_value === "xl" ? [
+                    container,
+                    xl
+                  ] : [container]
+              )
+          )
+      ), props.className),
+    style: props.style,
+    "data-id": props.dataId,
+    children: props.children
+  });
 }
 
 let make = Container;

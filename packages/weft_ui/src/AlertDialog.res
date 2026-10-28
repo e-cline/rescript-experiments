@@ -25,6 +25,7 @@ module Trigger = Dialog.Trigger
 module Title = Dialog.Title
 module Description = Dialog.Description
 module Footer = Dialog.Footer
+module Jsx = WeftDom.Jsx
 
 module Popup = {
   @weft.component
@@ -34,7 +35,7 @@ module Popup = {
     ~className=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = Dialog.use()
     let ref = Weft.Hooks.useRef(Nullable.null)
@@ -58,7 +59,7 @@ module Popup = {
 module Cancel = {
   /** Closes the dialog, deciding nothing: where the focus starts. */
   @weft.component
-  let make = (~className=?, ~dataId=?, ~children=WeftDom.Jsx.null) =>
+  let make = (~className=?, ~dataId=?, ~children=Jsx.null) =>
     <Dialog.Close autoFocus=true ?className ?dataId> children </Dialog.Close>
 }
 
@@ -70,6 +71,6 @@ module Action = {
     ~onClick: option<WeftDom.Dom.event => unit>=?,
     ~className=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => <Dialog.Close variant ?onClick ?className ?dataId> children </Dialog.Close>
 }

@@ -297,7 +297,10 @@ let Increment = {
   make: NumberField$Increment
 };
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   context,
   Provider,

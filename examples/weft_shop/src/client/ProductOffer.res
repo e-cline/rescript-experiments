@@ -6,6 +6,7 @@ one is ready; the add to cart button inside keeps the quantity chosen.
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 @weft.component({kind: Entrypoint})
 let make = (
@@ -38,12 +39,12 @@ let make = (
             <WeftUi.ToggleGroup.Item
               key=variant.sku value=variant.sku dataId={`variant-${variant.sku}`}
             >
-              {WeftDom.Jsx.string(variant.label)}
+              {Jsx.string(variant.label)}
             </WeftUi.ToggleGroup.Item>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </WeftUi.ToggleGroup.Root>
-      : WeftDom.Jsx.null}
+      : Jsx.null}
     <WeftUi.Stack
       gap=#sm
       dataId="offer"

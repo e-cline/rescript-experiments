@@ -1,5 +1,7 @@
 /*** A product's pictures (gradients standing in for photos): a main view and thumbnails, or the arrow keys. */
 
+module Jsx = WeftDom.Jsx
+
 let views = ["Front", "Side", "Back", "Detail"]
 
 open WeftCss
@@ -43,7 +45,7 @@ let make = (~name: string, ~hue: int) => {
       className={Css.cx([Theme.picture, Styles.main])}
       style={Theme.pictureVars(~hue, ~view=selected)}
     >
-      <span dataId="view-label"> {WeftDom.Jsx.string(views->Array.getUnsafe(selected))} </span>
+      <span dataId="view-label"> {Jsx.string(views->Array.getUnsafe(selected))} </span>
     </div>
     <div className={Styles.thumbnails}>
       {views
@@ -59,7 +61,7 @@ let make = (~name: string, ~hue: int) => {
           style={Theme.pictureVars(~hue, ~view=index)}
         />
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </div>
   </div>
 }

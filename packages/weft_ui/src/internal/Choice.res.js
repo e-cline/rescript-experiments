@@ -88,7 +88,10 @@ function render(control, children, description$1, descriptionId, className, styl
   });
 }
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   onChange,
   render,

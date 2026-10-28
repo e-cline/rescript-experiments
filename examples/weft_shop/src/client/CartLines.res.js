@@ -194,11 +194,14 @@ function CartLines(props) {
 
 Entrypoint$Weft.mark(CartLines, "@e-cline/weft_shop_example/src/client/CartLines.res#");
 
+let Jsx;
+
 let Ui;
 
 let make = CartLines;
 
 export {
+  Jsx,
   reducer,
   Ui,
   make,

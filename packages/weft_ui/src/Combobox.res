@@ -8,7 +8,7 @@ input. What's typed is the app's (the `Input`'s `value` and `onInput`), and so a
   <Combobox.Root onSelect={slug => navigate(`/p/${slug}`)}>
     <Combobox.Input value=text onInput placeholder="Search the store" />
     {suggestions == []
-      ? WeftDom.Jsx.null
+      ? Jsx.null
       : <Combobox.Popup>
           {suggestions->Array.map(s => <Combobox.Item key=s.slug value=s.slug> ... </Combobox.Item>)}
         </Combobox.Popup>}
@@ -32,6 +32,7 @@ under the input (CSS anchor positioning), and only open while the app renders it
 Interactive: it keeps state, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -164,7 +165,7 @@ module Root = {
       }}
     >
       <div ?id className={Host.classes([Styles.root], className)} ?style ?dataId>
-        {children->Option.getOr(WeftDom.Jsx.null)}
+        {children->Option.getOr(Jsx.null)}
       </div>
     </Provider>
   }

@@ -426,10 +426,13 @@ function DataPage(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = DataPage;
 
 export {
   Ui,
+  Jsx,
   text,
   orders,
   money,

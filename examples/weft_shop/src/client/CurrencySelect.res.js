@@ -50,9 +50,12 @@ function CurrencySelect(props) {
 
 Entrypoint$Weft.mark(CurrencySelect, "@e-cline/weft_shop_example/src/client/CurrencySelect.res#");
 
+let Jsx;
+
 let make = CurrencySelect;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

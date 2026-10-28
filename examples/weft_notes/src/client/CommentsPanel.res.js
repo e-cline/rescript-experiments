@@ -36,10 +36,13 @@ Entrypoint$Weft.mark(CommentsPanel, "@e-cline/weft_notes_example/src/client/Comm
 
 let Ui;
 
+let Jsx;
+
 let make = CommentsPanel;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

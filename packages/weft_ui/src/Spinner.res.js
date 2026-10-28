@@ -128,9 +128,12 @@ function Spinner(props) {
   }
 }
 
+let Jsx;
+
 let make = Spinner;
 
 export {
+  Jsx,
   Styles,
   picture,
   make,

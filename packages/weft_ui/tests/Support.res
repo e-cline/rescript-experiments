@@ -1,8 +1,9 @@
 /*** What the components' tests share: rendering in jsdom, finding elements, and events. */
 
 module Dom = WeftDom.Dom
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 /** `element`, rendered into a fresh container in the document. */
 let mount = (element: Weft.Element.t) => {

@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 @weft.component({kind: Server})
 let make = (~group: Groups.group) =>
@@ -36,7 +37,7 @@ let make = (~group: Groups.group) =>
           ->Array.map(tone =>
             <Ui.Text key={(tone :> string)} tone> {text(`tone=#${(tone :> string)}`)} </Ui.Text>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Stack>
       </Specimen.Example>
       <Specimen.Example

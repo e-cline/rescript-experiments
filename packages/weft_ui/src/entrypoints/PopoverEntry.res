@@ -3,6 +3,8 @@ A popover a server component can render as it is: a trigger (its content, `trigg
 server-rendered `children` beside it, with an optional `title`. Its state is its own.
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (
   ~trigger: Weft.Element.t,
@@ -17,8 +19,8 @@ let make = (
     <Popover.Trigger variant=triggerVariant ?dataId> trigger </Popover.Trigger>
     <Popover.Popup>
       {switch title {
-      | Some(title) => <Popover.Title> {WeftDom.Jsx.string(title)} </Popover.Title>
-      | None => WeftDom.Jsx.null
+      | Some(title) => <Popover.Title> {Jsx.string(title)} </Popover.Title>
+      | None => Jsx.null
       }}
       children
     </Popover.Popup>

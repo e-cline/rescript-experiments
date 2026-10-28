@@ -23,6 +23,7 @@ module Title = Dialog.Title
 module Description = Dialog.Description
 module Footer = Dialog.Footer
 module Close = Dialog.Close
+module Jsx = WeftDom.Jsx
 
 module Popup = {
   @weft.component
@@ -33,7 +34,7 @@ module Popup = {
     ~className=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = Dialog.use()
     let ref = Weft.Hooks.useRef(Nullable.null)

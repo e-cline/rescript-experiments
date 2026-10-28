@@ -164,11 +164,14 @@ function SearchBox(props) {
 
 Entrypoint$Weft.mark(SearchBox, "@e-cline/weft_shop_example/src/client/SearchBox.res#");
 
+let Jsx;
+
 let Ui;
 
 let make = SearchBox;
 
 export {
+  Jsx,
   Ui,
   Styles,
   Suggestions,

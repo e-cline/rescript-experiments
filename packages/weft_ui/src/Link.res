@@ -7,6 +7,7 @@ A link. An app's own links that navigate in place (with `WeftServer.Navigation`)
 Static: a server component can render it (without `onClick`).
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -99,10 +100,10 @@ let make = (
     >
       {switch children {
       | Some(children) => children
-      | None => WeftDom.Jsx.null
+      | None => Jsx.null
       }}
       {external_
-        ? <VisuallyHidden> {WeftDom.Jsx.string(" (opens in a new tab)")} </VisuallyHidden>
-        : WeftDom.Jsx.null}
+        ? <VisuallyHidden> {Jsx.string(" (opens in a new tab)")} </VisuallyHidden>
+        : Jsx.null}
     </a>,
   )

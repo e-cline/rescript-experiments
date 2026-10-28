@@ -1,8 +1,9 @@
 /*** The overlays page's interactive examples: entrypoints, since overlays keep state. */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module ConfirmDelete = {
   /** An alert dialog: a decision, Cancel first, and a toast once it's done. */

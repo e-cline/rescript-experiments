@@ -389,9 +389,12 @@ let Viewport = {
   make: Toast$Viewport
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   createManager,
   defaultManager,

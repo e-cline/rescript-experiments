@@ -11,6 +11,7 @@ their blocks the same way, so a block deep in a tab streams, fails and refetches
 open Types
 open Ui
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let hero = Css.class({
@@ -134,7 +135,7 @@ module Body = {
       await Latency.wait(railGate(block.id, source), ~signal)
       let items = railItems(source, request)->unique->Array.slice(~start=0, ~end=limit)
       switch items {
-      | [] => WeftDom.Jsx.null
+      | [] => Jsx.null
       | items =>
         <Carousel id=block.id title count={Array.length(items)}> {cards(items, request)} </Carousel>
       }
@@ -151,7 +152,7 @@ module Body = {
               </Link>
             </li>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </ul>
       </div>
     | Promo({code, text: offer, endsInMinutes}) =>
@@ -183,17 +184,17 @@ module Body = {
               </span>
             </li>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </ul>
       </div>
     | Newsletter => <Newsletter />
     | Text({title, body}) =>
       <div dataId={`text-${block.id}`}>
         <WeftUi.Heading level=#h2 size=#lg> {text(title)} </WeftUi.Heading>
-        {body == "" ? WeftDom.Jsx.null : <WeftUi.Text> {text(body)} </WeftUi.Text>}
+        {body == "" ? Jsx.null : <WeftUi.Text> {text(body)} </WeftUi.Text>}
       </div>
     // Containers are rendered by `Block`.
-    | Tabs(_) | Columns(_) | Experiment(_) => WeftDom.Jsx.null
+    | Tabs(_) | Columns(_) | Experiment(_) => Jsx.null
     }
   }
 }
@@ -238,7 +239,7 @@ let rec framed = (block: Cms.block, ~key=block.id, ~page: string, ~request: requ
       ->Array.mapWithIndex((blocks, index) =>
         <div key={Int.toString(index)}> {blockList(blocks, ~page, ~request)} </div>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </div>
   | Experiment({a, b}) => framed(request.session.bucket == "b" ? b : a, ~key, ~page, ~request)
   | LiveDeals({everySeconds}) =>
@@ -256,4 +257,4 @@ let rec framed = (block: Cms.block, ~key=block.id, ~page: string, ~request: requ
     </BlockFrame>
   }
 and blockList = (blocks: array<Cms.block>, ~page, ~request) =>
-  blocks->Array.map(child => framed(child, ~page, ~request))->WeftDom.Jsx.array
+  blocks->Array.map(child => framed(child, ~page, ~request))->Jsx.array

@@ -140,9 +140,12 @@ function Skeleton(props) {
   }
 }
 
+let Jsx;
+
 let make = Skeleton;
 
 export {
+  Jsx,
   Styles,
   make,
 }

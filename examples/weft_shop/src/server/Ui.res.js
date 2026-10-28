@@ -364,7 +364,10 @@ function loading(id, message) {
   });
 }
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   stockTone,
   text,

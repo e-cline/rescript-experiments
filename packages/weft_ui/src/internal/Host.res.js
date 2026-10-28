@@ -65,7 +65,10 @@ function ariaBool(value) {
   }
 }
 
+let Jsx;
+
 export {
+  Jsx,
   merge,
   withAttrs,
   element,

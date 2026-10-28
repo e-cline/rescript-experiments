@@ -166,8 +166,11 @@ let Page = {
 
 let Ui;
 
+let Jsx;
+
 export {
   Ui,
+  Jsx,
   text,
   Styles,
   slug,

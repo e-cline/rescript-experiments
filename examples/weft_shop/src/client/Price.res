@@ -4,6 +4,7 @@ on the page, with nothing fetched. A sale shows the price it was, struck through
 */
 
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let was = Css.class({color: Var(Theme.muted)})
@@ -17,11 +18,11 @@ let make = (~cents: Types.cents, ~compareAt: option<Types.cents>=?, ~dataId: opt
     {switch compareAt {
     | Some(was) =>
       <>
-        <s className={Styles.was}> {WeftDom.Jsx.string(Money.format(was, currency))} </s>
-        {WeftDom.Jsx.string(" ")}
-        <span className={Styles.sale}> {WeftDom.Jsx.string(Money.format(cents, currency))} </span>
+        <s className={Styles.was}> {Jsx.string(Money.format(was, currency))} </s>
+        {Jsx.string(" ")}
+        <span className={Styles.sale}> {Jsx.string(Money.format(cents, currency))} </span>
       </>
-    | None => <span> {WeftDom.Jsx.string(Money.format(cents, currency))} </span>
+    | None => <span> {Jsx.string(Money.format(cents, currency))} </span>
     }}
   </data>
 }

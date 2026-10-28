@@ -3,6 +3,8 @@ The likes, from the server, and whether you just liked it (liking is the `notes.
 survives the page being fetched again, or another note's page in the same place.
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~likes: int) => {
   let (justLiked, setJustLiked) = Weft.Hooks.useState(() => false)
@@ -17,6 +19,6 @@ let make = (~noteId: string, ~likes: int) => {
       like(noteId)->ignore
     }}
   >
-    {WeftDom.Jsx.string(`${Int.toString(likes)} likes${justLiked ? " (you liked this)" : ""}`)}
+    {Jsx.string(`${Int.toString(likes)} likes${justLiked ? " (you liked this)" : ""}`)}
   </WeftUi.Button>
 }

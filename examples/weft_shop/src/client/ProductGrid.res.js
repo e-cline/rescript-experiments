@@ -145,9 +145,12 @@ function ProductGrid(props) {
 
 Entrypoint$Weft.mark(ProductGrid, "@e-cline/weft_shop_example/src/client/ProductGrid.res#");
 
+let Jsx;
+
 let make = ProductGrid;
 
 export {
+  Jsx,
   Styles,
   make,
 }

@@ -129,9 +129,12 @@ function ReviewList(props) {
 
 Entrypoint$Weft.mark(ReviewList, "@e-cline/weft_shop_example/src/client/ReviewList.res#");
 
+let Jsx;
+
 let make = ReviewList;
 
 export {
+  Jsx,
   Items,
   make,
 }

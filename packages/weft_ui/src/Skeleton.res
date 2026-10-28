@@ -11,6 +11,7 @@ assistive technology.
 Static: a server component can render it.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -63,7 +64,7 @@ let make = (
     <span className={Host.classes([Styles.lines], className)} style=sizes ariaHidden="true" ?dataId>
       {Array.fromInitializer(~length=Math.Int.max(1, lines), index =>
         <span key={Int.toString(index)} className={Css.cx([Styles.skeleton, Styles.text])} />
-      )->WeftDom.Jsx.array}
+      )->Jsx.array}
     </span>
   | #rect | #circle =>
     <span

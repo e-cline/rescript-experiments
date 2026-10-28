@@ -504,11 +504,14 @@ function CheckoutForm(props) {
 
 Entrypoint$Weft.mark(CheckoutForm, "@e-cline/weft_shop_example/src/client/CheckoutForm.res#");
 
+let Jsx;
+
 let Ui;
 
 let make = CheckoutForm;
 
 export {
+  Jsx,
   reducer,
   Ui,
   Styles,

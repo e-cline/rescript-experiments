@@ -138,10 +138,13 @@ function Shell(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = Shell;
 
 export {
   Ui,
+  Jsx,
   text,
   Styles,
   make,

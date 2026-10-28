@@ -6,6 +6,7 @@ which, and nothing is charged; otherwise it's on to the order's page.
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 type step = Address | Delivery | Review
 
@@ -124,10 +125,10 @@ let make = (~total: cents, ~count: int) => {
       {[(Address, "Address", 0), (Delivery, "Delivery", 1), (Review, "Review", 2)]
       ->Array.map(((step, label, rank)) =>
         <Ui.Steps.Step key=label status={stepStatus(step, ~rank)}>
-          {WeftDom.Jsx.string(label)}
+          {Jsx.string(label)}
         </Ui.Steps.Step>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </Ui.Steps.Root>
     <Ui.Form
       dataId="checkout-form"
@@ -182,10 +183,10 @@ let make = (~total: cents, ~count: int) => {
               <Ui.RadioGroup.Radio
                 key=value value dataId={`delivery-${value}`} description={`${days}, ${cost}`}
               >
-                {WeftDom.Jsx.string(label)}
+                {Jsx.string(label)}
               </Ui.RadioGroup.Radio>
             })
-            ->WeftDom.Jsx.array}
+            ->Jsx.array}
           </Ui.RadioGroup.Root>
           <Ui.Field
             label="Gift note"
@@ -202,19 +203,19 @@ let make = (~total: cents, ~count: int) => {
       | Review =>
         <Ui.Card.Root dataId="review-step">
           <Ui.DescriptionList.Root>
-            <Ui.DescriptionList.Term> {WeftDom.Jsx.string("To")} </Ui.DescriptionList.Term>
+            <Ui.DescriptionList.Term> {Jsx.string("To")} </Ui.DescriptionList.Term>
             <Ui.DescriptionList.Details dataId="review-address">
-              {WeftDom.Jsx.string(
+              {Jsx.string(
                 `${details.name}, ${details.street}, ${details.city} ${details.postcode}`,
               )}
             </Ui.DescriptionList.Details>
-            <Ui.DescriptionList.Term> {WeftDom.Jsx.string("Items")} </Ui.DescriptionList.Term>
+            <Ui.DescriptionList.Term> {Jsx.string("Items")} </Ui.DescriptionList.Term>
             <Ui.DescriptionList.Details dataId="review-items">
-              {WeftDom.Jsx.string(`${Int.toString(count)} items`)}
+              {Jsx.string(`${Int.toString(count)} items`)}
             </Ui.DescriptionList.Details>
-            <Ui.DescriptionList.Term> {WeftDom.Jsx.string("Total")} </Ui.DescriptionList.Term>
+            <Ui.DescriptionList.Term> {Jsx.string("Total")} </Ui.DescriptionList.Term>
             <Ui.DescriptionList.Details dataId="review-total">
-              {WeftDom.Jsx.string(
+              {Jsx.string(
                 `Total: ${Money.format(total + deliveryCost(details.delivery), currency)}`,
               )}
             </Ui.DescriptionList.Details>
@@ -224,18 +225,18 @@ let make = (~total: cents, ~count: int) => {
       {switch state.error {
       | Some(message) =>
         <Ui.Alert.Root tone=#danger dataId="checkout-error">
-          <Ui.Alert.Description> {WeftDom.Jsx.string(message)} </Ui.Alert.Description>
+          <Ui.Alert.Description> {Jsx.string(message)} </Ui.Alert.Description>
         </Ui.Alert.Root>
-      | None => WeftDom.Jsx.null
+      | None => Jsx.null
       }}
       <Ui.Stack direction=#row gap=#sm>
         {state.step == Address
-          ? WeftDom.Jsx.null
+          ? Jsx.null
           : <Ui.Button dataId="checkout-back" onClick={_ => dispatch(Back)}>
-              {WeftDom.Jsx.string("Back")}
+              {Jsx.string("Back")}
             </Ui.Button>}
         <Ui.Button dataId="checkout-next" type_=#submit variant=#primary busy=state.placing>
-          {WeftDom.Jsx.string(
+          {Jsx.string(
             switch state.step {
             | Review => state.placing ? "Placing…" : "Place order"
             | _ => "Continue"

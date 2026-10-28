@@ -9,6 +9,7 @@ technology, so it's required. The icon itself is hidden from it.
 Static: a server component can render it (without `onClick`).
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -53,7 +54,7 @@ let make = (
   ~ariaPressed=?,
   ~title=?,
   ~attrs: WeftDom.DomProps.props={},
-  ~children=WeftDom.Jsx.null,
+  ~children=Jsx.null,
 ) =>
   Button.render(
     ~className=Host.classes([className(~variant, ~size, ~shape, ())], extra),
@@ -74,7 +75,5 @@ let make = (
     ~value=None,
     ~title,
     ~attrs,
-    ~children=busy
-      ? WeftDom.Jsx.null
-      : <span className=Styles.icon ariaHidden="true"> children </span>,
+    ~children=busy ? Jsx.null : <span className=Styles.icon ariaHidden="true"> children </span>,
   )

@@ -60,9 +60,12 @@ function SaleBadge(props) {
   });
 }
 
+let Jsx;
+
 let make = SaleBadge;
 
 export {
+  Jsx,
   Styles,
   make,
 }

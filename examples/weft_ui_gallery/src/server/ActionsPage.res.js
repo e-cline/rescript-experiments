@@ -253,10 +253,13 @@ function ActionsPage(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = ActionsPage;
 
 export {
   Ui,
+  Jsx,
   text,
   variants,
   make,

@@ -49,10 +49,13 @@ Entrypoint$Weft.mark(CommentList, "@e-cline/weft_notes_example/src/client/Commen
 
 let Ui;
 
+let Jsx;
+
 let make = CommentList;
 
 export {
   Ui,
+  Jsx,
   Items,
   make,
 }

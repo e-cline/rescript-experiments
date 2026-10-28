@@ -34,6 +34,8 @@ let Footer;
 
 let Close;
 
+let Jsx;
+
 export {
   Root,
   Trigger,
@@ -41,6 +43,7 @@ export {
   Description,
   Footer,
   Close,
+  Jsx,
   Popup,
 }
 /* Hooks-Weft Not a pure module */

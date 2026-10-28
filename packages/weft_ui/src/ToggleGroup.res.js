@@ -151,7 +151,10 @@ let Item = {
   make: ToggleGroup$Item
 };
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   context,
   Provider,

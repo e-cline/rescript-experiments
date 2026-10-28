@@ -1,5 +1,7 @@
 /*** A rail of cards (rendered on the server, as `children`), a page of four at a time. */
 
+module Jsx = WeftDom.Jsx
+
 let pageSize = 4
 
 open WeftCss
@@ -29,7 +31,7 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
   let first = page * pageSize
   <div dataId={`carousel-${id}`}>
     <div className={Styles.head}>
-      <WeftUi.Heading level=#h2 size=#lg> {WeftDom.Jsx.string(title)} </WeftUi.Heading>
+      <WeftUi.Heading level=#h2 size=#lg> {Jsx.string(title)} </WeftUi.Heading>
       {pages > 1
         ? <WeftUi.Stack direction=#row gap=#sm align=#center>
             <WeftUi.IconButton
@@ -40,10 +42,10 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
               disabled={page == 0}
               onClick={_ => setPage(_ => page - 1)}
             >
-              {WeftDom.Jsx.string("‹")}
+              {Jsx.string("‹")}
             </WeftUi.IconButton>
             <WeftUi.Text as_=#span tone=#muted size=#sm numeric=true dataId={`position-${id}`}>
-              {WeftDom.Jsx.string(
+              {Jsx.string(
                 `${Int.toString(first + 1)}–${Int.toString(
                     Math.Int.min(count, first + pageSize),
                   )} of ${Int.toString(count)}`,
@@ -57,10 +59,10 @@ let make = (~id: string, ~title: string, ~count: int, ~children: Weft.Element.t)
               disabled={page == pages - 1}
               onClick={_ => setPage(_ => page + 1)}
             >
-              {WeftDom.Jsx.string("›")}
+              {Jsx.string("›")}
             </WeftUi.IconButton>
           </WeftUi.Stack>
-        : WeftDom.Jsx.null}
+        : Jsx.null}
     </div>
     <div className={Styles.window}>
       <div

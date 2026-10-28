@@ -373,8 +373,11 @@ let NotePage = {
 
 let Ui;
 
+let Jsx;
+
 export {
   Ui,
+  Jsx,
   text,
   Styles,
   Layout,

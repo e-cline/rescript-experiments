@@ -453,9 +453,12 @@ let Close = {
   make: Dialog$Close
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   Styles,
   context,

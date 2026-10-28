@@ -10,6 +10,8 @@ anything more (controlled, tabs with more than text), use `Tabs` in an entrypoin
 Each tab's and panel's `data-id` is `dataId`'s, with `-tab-<index>` or `-panel-<index>` after it.
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (
   ~labels: array<string>,
@@ -28,10 +30,10 @@ let make = (
         <Tabs.Tab
           key={Int.toString(index)} value={Int.toString(index)} dataId=?{part("tab", index)}
         >
-          {WeftDom.Jsx.string(text)}
+          {Jsx.string(text)}
         </Tabs.Tab>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </Tabs.List>
     {panels
     ->Array.mapWithIndex((panel, index) =>
@@ -41,6 +43,6 @@ let make = (
         panel
       </Tabs.Panel>
     )
-    ->WeftDom.Jsx.array}
+    ->Jsx.array}
   </Tabs.Root>
 }

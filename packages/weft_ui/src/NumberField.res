@@ -23,6 +23,7 @@ Without `value`, it keeps its own (from `defaultValue`).
 Interactive: it keeps state, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -130,7 +131,7 @@ module Root = {
     }
     <Provider value={{value: current, min, max, step, size, disabled, set}}>
       <div ?id className={Host.classes([Styles.group], className)} ?style ?dataId>
-        {children->Option.getOr(WeftDom.Jsx.null)}
+        {children->Option.getOr(Jsx.null)}
       </div>
     </Provider>
   }
@@ -225,7 +226,7 @@ let stepper = (~steps: float, ~label: string, ~symbol: string, ~className, ~data
     ?dataId
     onClick={_ => number.set(number.value +. steps *. number.step)}
   >
-    {WeftDom.Jsx.string(symbol)}
+    {Jsx.string(symbol)}
   </IconButton>
 }
 

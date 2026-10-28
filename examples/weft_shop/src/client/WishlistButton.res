@@ -5,6 +5,8 @@ says no. Signed out, it opens the sign-in dialog instead. The server's answer (w
 another page) wins over what was shown.
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (~productId: string, ~saved as serverSaved: bool) => {
   let {user} = ShopContext.use()
@@ -39,6 +41,6 @@ let make = (~productId: string, ~saved as serverSaved: bool) => {
       }
     }}
   >
-    {WeftDom.Jsx.string(saved ? "♥" : "♡")}
+    {Jsx.string(saved ? "♥" : "♡")}
   </WeftUi.Toggle>
 }

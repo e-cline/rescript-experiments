@@ -4,6 +4,7 @@ in, a menu (weft_ui's `Menu`) with the account's page and signing out.
 */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 @weft.component({kind: Entrypoint})
 let make = () => {
@@ -14,9 +15,7 @@ let make = () => {
     {switch user {
     | Some(name) =>
       <Ui.Menu.Root align=#end>
-        <Ui.Menu.Trigger dataId="account-trigger">
-          {WeftDom.Jsx.string(`Hi, ${name}`)}
-        </Ui.Menu.Trigger>
+        <Ui.Menu.Trigger dataId="account-trigger"> {Jsx.string(`Hi, ${name}`)} </Ui.Menu.Trigger>
         <Ui.Menu.Popup>
           <Ui.Menu.LinkItem
             href="/account"
@@ -24,7 +23,7 @@ let make = () => {
             onClick={event =>
               navigation->WeftServer.Navigation.followLink(event, ~href="/account")->ignore}
           >
-            {WeftDom.Jsx.string("Your account")}
+            {Jsx.string("Your account")}
           </Ui.Menu.LinkItem>
           <Ui.Menu.Separator />
           <Ui.Menu.Item
@@ -40,13 +39,13 @@ let make = () => {
                   }
               )()->ignore}
           >
-            {WeftDom.Jsx.string("Sign out")}
+            {Jsx.string("Sign out")}
           </Ui.Menu.Item>
         </Ui.Menu.Popup>
       </Ui.Menu.Root>
     | None =>
       <Ui.Button dataId="sign-in" onClick={_ => Store.openSignIn()}>
-        {WeftDom.Jsx.string("Sign in")}
+        {Jsx.string("Sign in")}
       </Ui.Button>
     }}
   </div>

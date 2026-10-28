@@ -97,10 +97,13 @@ function property(element, name) {
 
 let Dom;
 
+let Jsx;
+
 let findAll = Dom$WeftDom.querySelectorAll;
 
 export {
   Dom,
+  Jsx,
   text,
   mount,
   find,

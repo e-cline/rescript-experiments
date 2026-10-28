@@ -3,6 +3,7 @@ What a checkbox, a radio button and a switch share: a label around the control a
 an optional description under the text, and the click target the whole label.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -50,13 +51,11 @@ let render = (
   <label className={Host.classes([Styles.choice], className)} ?style>
     control
     <span className=Styles.text>
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
       {switch description {
       | Some(description) =>
-        <span id=descriptionId className=Styles.description>
-          {WeftDom.Jsx.string(description)}
-        </span>
-      | None => WeftDom.Jsx.null
+        <span id=descriptionId className=Styles.description> {Jsx.string(description)} </span>
+      | None => Jsx.null
       }}
     </span>
   </label>

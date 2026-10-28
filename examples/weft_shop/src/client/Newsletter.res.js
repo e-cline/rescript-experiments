@@ -81,10 +81,13 @@ Entrypoint$Weft.mark(Newsletter, "@e-cline/weft_shop_example/src/client/Newslett
 
 let Ui;
 
+let Jsx;
+
 let make = Newsletter;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

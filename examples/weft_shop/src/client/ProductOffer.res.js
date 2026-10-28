@@ -52,9 +52,12 @@ function ProductOffer(props) {
 
 Entrypoint$Weft.mark(ProductOffer, "@e-cline/weft_shop_example/src/client/ProductOffer.res#");
 
+let Jsx;
+
 let make = ProductOffer;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

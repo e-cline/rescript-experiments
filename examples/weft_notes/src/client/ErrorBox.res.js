@@ -24,10 +24,13 @@ Entrypoint$Weft.mark(ErrorBox, "@e-cline/weft_notes_example/src/client/ErrorBox.
 
 let Ui;
 
+let Jsx;
+
 let make = ErrorBox;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

@@ -44,9 +44,12 @@ function DialogEntry(props) {
 
 Entrypoint$Weft.mark(DialogEntry, "@e-cline/weft_ui/src/entrypoints/DialogEntry.res#");
 
+let Jsx;
+
 let make = DialogEntry;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

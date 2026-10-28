@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 @weft.component({kind: Server})
 let make = (~group: Groups.group) =>
@@ -42,7 +43,7 @@ let make = (~group: Groups.group) =>
               </Ui.Card.Footer>
             </Ui.Card.Root>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Grid>
       </Specimen.Example>
     </Specimen.Section>
@@ -110,10 +111,10 @@ let make = (~group: Groups.group) =>
                   {text(`${(variant :> string)} ${(tone :> string)}`)}
                 </Ui.Badge>
               )
-              ->WeftDom.Jsx.array}
+              ->Jsx.array}
             </Ui.Stack>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Stack>
       </Specimen.Example>
       <Specimen.Example

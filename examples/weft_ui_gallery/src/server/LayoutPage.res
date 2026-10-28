@@ -2,8 +2,9 @@
 
 open WeftCss
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module Styles = {
   /** A box to lay out, so the layout shows. */
@@ -66,7 +67,7 @@ let make = (~group: Groups.group) =>
               {box("C")}
             </Ui.Stack>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Stack>
       </Specimen.Example>
     </Specimen.Section>
@@ -90,7 +91,7 @@ let make = (~group: Groups.group) =>
         <Ui.Grid minItemWidth="140px">
           {Array.fromInitializer(~length=7, index =>
             <div key={Int.toString(index)}> {box(Int.toString(index + 1))} </div>
-          )->WeftDom.Jsx.array}
+          )->Jsx.array}
         </Ui.Grid>
       </Specimen.Example>
       <Specimen.Example

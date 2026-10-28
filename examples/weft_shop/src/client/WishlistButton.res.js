@@ -52,9 +52,12 @@ function WishlistButton(props) {
 
 Entrypoint$Weft.mark(WishlistButton, "@e-cline/weft_shop_example/src/client/WishlistButton.res#");
 
+let Jsx;
+
 let make = WishlistButton;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

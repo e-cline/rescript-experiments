@@ -3,6 +3,8 @@ A banner while the browser is offline: `navigator.onLine`, read with `useSyncExt
 server snapshot (online) is what the HTML shows, and the first render hydrating it.
 */
 
+module Jsx = WeftDom.Jsx
+
 @val external navigatorOnLine: bool = "navigator.onLine"
 @val external addWindowListener: (string, unit => unit) => unit = "addEventListener"
 @val external removeWindowListener: (string, unit => unit) => unit = "removeEventListener"
@@ -30,10 +32,10 @@ let make = () => {
     ~getServerSnapshot=() => true,
   )
   online
-    ? WeftDom.Jsx.null
+    ? Jsx.null
     : <WeftUi.Alert.Root tone=#warning dataId="offline" className=Styles.offline>
         <WeftUi.Alert.Description>
-          {WeftDom.Jsx.string("You're offline: prices and stock may be out of date.")}
+          {Jsx.string("You're offline: prices and stock may be out of date.")}
         </WeftUi.Alert.Description>
       </WeftUi.Alert.Root>
 }

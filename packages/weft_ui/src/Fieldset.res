@@ -12,6 +12,7 @@ A group of controls with a name (`legend`): an address's fields, a filter's choi
 Interactive: it uses `useId`, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -72,18 +73,18 @@ let make = (
     ariaDescribedby=?describedBy
   >
     <legend className={hideLegend ? VisuallyHidden.className : Styles.legend}>
-      {WeftDom.Jsx.string(legend)}
+      {Jsx.string(legend)}
     </legend>
     {switch description {
     | Some(description) =>
-      <p id=descriptionId className=Styles.description> {WeftDom.Jsx.string(description)} </p>
-    | None => WeftDom.Jsx.null
+      <p id=descriptionId className=Styles.description> {Jsx.string(description)} </p>
+    | None => Jsx.null
     }}
     <div className={gap == #sm ? Css.cx([Styles.items, Styles.gapSm]) : Styles.items}>
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
     </div>
     <p id=errorId className=Field.Styles.error ariaLive="polite">
-      {WeftDom.Jsx.string(error->Option.getOr(""))}
+      {Jsx.string(error->Option.getOr(""))}
     </p>
   </fieldset>
 }

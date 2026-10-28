@@ -4,8 +4,9 @@ The forms page's examples: entrypoints, since form controls keep state (or read 
 
 module Ui = WeftUi
 module Event = WeftDom.Dom.Event
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module SignUp = {
   /** A form that checks itself on submit, shows each field's error, then is busy, then done. */
@@ -168,7 +169,7 @@ module Choices = {
             {text(topping)}
           </Ui.Checkbox>
         )
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </Ui.Fieldset>
       <Ui.RadioGroup.Root
         legend="Delivery" value=delivery onValueChange={value => setDelivery(_ => value)}
@@ -240,14 +241,14 @@ module Toggles = {
             {text(size)}
           </Ui.ToggleGroup.Item>
         )
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </Ui.ToggleGroup.Root>
       <Ui.ToggleGroup.Root label="Extras" type_=#multiple variant=#ghost size=#sm>
         {["Gift wrap", "Card", "Ribbon"]
         ->Array.map(extra =>
           <Ui.ToggleGroup.Item key=extra value=extra> {text(extra)} </Ui.ToggleGroup.Item>
         )
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </Ui.ToggleGroup.Root>
     </Ui.Stack>
   }

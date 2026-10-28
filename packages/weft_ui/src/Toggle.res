@@ -12,6 +12,7 @@ text. Without `pressed`, it keeps its own (from `defaultPressed`).
 Interactive: it keeps state, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -54,7 +55,7 @@ let make = (
   ~dataId=?,
   ~ariaDescribedby=?,
   ~attrs: WeftDom.DomProps.props={},
-  ~children=WeftDom.Jsx.null,
+  ~children=Jsx.null,
 ) => {
   let (pressed, setPressed) = Controllable.use(
     ~value=pressed,

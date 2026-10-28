@@ -7,6 +7,7 @@ query it's navigating to), not the server's, which would put a ticked box back u
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 type params
 @new external makeParams: string => params = "URLSearchParams"
@@ -64,7 +65,7 @@ module RangeFacet = {
           onClick={_ =>
             apply(Int.fromString(from)->Option.getOr(min), Int.fromString(to)->Option.getOr(max))}
         >
-          {WeftDom.Jsx.string("Apply")}
+          {Jsx.string("Apply")}
         </Ui.Button>
       </div>
     </Ui.Fieldset>
@@ -122,9 +123,9 @@ let make = (
           ("rating", "Rating"),
         ]
         ->Array.map(((value, label)) =>
-          <Ui.Select.Option key=value value> {WeftDom.Jsx.string(label)} </Ui.Select.Option>
+          <Ui.Select.Option key=value value> {Jsx.string(label)} </Ui.Select.Option>
         )
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </Ui.Select>
     </Ui.Field>
     {facets
@@ -155,10 +156,10 @@ let make = (
                   ),
                 )}
             >
-              {WeftDom.Jsx.string(`${value} (${Int.toString(count)})`)}
+              {Jsx.string(`${value} (${Int.toString(count)})`)}
             </Ui.Checkbox>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Fieldset>
       | Range({name, label, min, max, low, high}) =>
         let picked = (param, fallback) =>
@@ -197,16 +198,16 @@ let make = (
               ),
             )}
         >
-          {WeftDom.Jsx.string(label)}
+          {Jsx.string(label)}
         </Ui.Switch>
       }
     )
-    ->WeftDom.Jsx.array}
+    ->Jsx.array}
     {query == ""
-      ? WeftDom.Jsx.null
+      ? Jsx.null
       : <div>
           <Ui.Button variant=#ghost size=#sm dataId="clear-filters" onClick={_ => go("")}>
-            {WeftDom.Jsx.string("Clear all")}
+            {Jsx.string("Clear all")}
           </Ui.Button>
         </div>}
   </Ui.Stack>

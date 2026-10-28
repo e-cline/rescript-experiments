@@ -18,6 +18,7 @@ button saying what it is).
 Interactive: it uses `useId`, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -87,19 +88,19 @@ let make = (
   }
   <div className={Host.classes([Styles.field], className)} ?style ?dataId>
     <label htmlFor=controlId className={hideLabel ? VisuallyHidden.className : Styles.label}>
-      {WeftDom.Jsx.string(label)}
+      {Jsx.string(label)}
       {required
-        ? <span className=Styles.required ariaHidden="true"> {WeftDom.Jsx.string("*")} </span>
-        : WeftDom.Jsx.null}
+        ? <span className=Styles.required ariaHidden="true"> {Jsx.string("*")} </span>
+        : Jsx.null}
     </label>
     <FieldContext.Provider value> children </FieldContext.Provider>
     {switch description {
     | Some(description) =>
-      <p id=descriptionId className=Styles.description> {WeftDom.Jsx.string(description)} </p>
-    | None => WeftDom.Jsx.null
+      <p id=descriptionId className=Styles.description> {Jsx.string(description)} </p>
+    | None => Jsx.null
     }}
     <p id=errorId className=Styles.error ariaLive="polite">
-      {WeftDom.Jsx.string(error->Option.getOr(""))}
+      {Jsx.string(error->Option.getOr(""))}
     </p>
   </div>
 }

@@ -37,9 +37,12 @@ function PopoverEntry(props) {
 
 Entrypoint$Weft.mark(PopoverEntry, "@e-cline/weft_ui/src/entrypoints/PopoverEntry.res#");
 
+let Jsx;
+
 let make = PopoverEntry;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

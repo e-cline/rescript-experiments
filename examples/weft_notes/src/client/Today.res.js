@@ -18,9 +18,12 @@ function Today(props) {
 
 Entrypoint$Weft.mark(Today, "@e-cline/weft_notes_example/src/client/Today.res#");
 
+let Jsx;
+
 let make = Today;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

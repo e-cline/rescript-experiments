@@ -4,6 +4,8 @@ so the header's count changes at once, with a toast. The quantity is this button
 when the offer around it is fetched again for another variant (and clamped to what's in stock).
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (~sku: string, ~name: string, ~stock: int) => {
   let (quantity, setQuantity) = Weft.Hooks.useState(() => 1)
@@ -27,10 +29,10 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
           {Array.fromInitializer(~length=Math.Int.max(1, most), index => index + 1)
           ->Array.map(count =>
             <WeftUi.Select.Option key={Int.toString(count)} value={Int.toString(count)}>
-              {WeftDom.Jsx.string(Int.toString(count))}
+              {Jsx.string(Int.toString(count))}
             </WeftUi.Select.Option>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </WeftUi.Select>
       </WeftUi.Field>
       <WeftUi.Button
@@ -55,15 +57,15 @@ let make = (~sku: string, ~name: string, ~stock: int) => {
           )()->ignore
         }}
       >
-        {WeftDom.Jsx.string(stock == 0 ? "Sold out" : busy ? "Adding…" : "Add to cart")}
+        {Jsx.string(stock == 0 ? "Sold out" : busy ? "Adding…" : "Add to cart")}
       </WeftUi.Button>
     </WeftUi.Stack>
     {switch error {
     | Some(message) =>
       <WeftUi.Alert.Root tone=#danger dataId="add-error">
-        <WeftUi.Alert.Description> {WeftDom.Jsx.string(message)} </WeftUi.Alert.Description>
+        <WeftUi.Alert.Description> {Jsx.string(message)} </WeftUi.Alert.Description>
       </WeftUi.Alert.Root>
-    | None => WeftDom.Jsx.null
+    | None => Jsx.null
     }}
   </WeftUi.Stack>
 }

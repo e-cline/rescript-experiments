@@ -126,9 +126,12 @@ function Fieldset(props) {
   });
 }
 
+let Jsx;
+
 let make = Fieldset;
 
 export {
+  Jsx,
   Styles,
   make,
 }

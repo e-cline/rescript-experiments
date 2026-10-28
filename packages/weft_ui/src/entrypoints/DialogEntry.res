@@ -9,6 +9,8 @@ entrypoint of the app's.
 ```
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (
   ~trigger: Weft.Element.t,
@@ -23,15 +25,14 @@ let make = (
   <Dialog.Root>
     <Dialog.Trigger variant=triggerVariant ?dataId> trigger </Dialog.Trigger>
     <Dialog.Popup size>
-      <Dialog.Title> {WeftDom.Jsx.string(title)} </Dialog.Title>
+      <Dialog.Title> {Jsx.string(title)} </Dialog.Title>
       {switch description {
-      | Some(description) =>
-        <Dialog.Description> {WeftDom.Jsx.string(description)} </Dialog.Description>
-      | None => WeftDom.Jsx.null
+      | Some(description) => <Dialog.Description> {Jsx.string(description)} </Dialog.Description>
+      | None => Jsx.null
       }}
       children
       <Dialog.Footer>
-        <Dialog.Close> {WeftDom.Jsx.string(closeLabel)} </Dialog.Close>
+        <Dialog.Close> {Jsx.string(closeLabel)} </Dialog.Close>
       </Dialog.Footer>
     </Dialog.Popup>
   </Dialog.Root>

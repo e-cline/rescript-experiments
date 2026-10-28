@@ -8,6 +8,7 @@ form's top.
 
 open WeftCss
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   /** The draft and its button, side by side, the button at the input's foot. */
@@ -62,7 +63,7 @@ let make = (~noteId: string, ~title: string, ~children: Weft.Element.t) => {
         />
       </Ui.Field>
       <Ui.Button dataId="save" type_=#submit busy=saved.isPending>
-        {WeftDom.Jsx.string(saved.isPending ? "Saving…" : "Save")}
+        {Jsx.string(saved.isPending ? "Saving…" : "Save")}
       </Ui.Button>
     </div>
   </Ui.Form>

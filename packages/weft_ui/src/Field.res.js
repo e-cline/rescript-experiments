@@ -153,11 +153,14 @@ function Field(props) {
   });
 }
 
+let Jsx;
+
 let make = Field;
 
 let use = FieldContext$WeftUi.use;
 
 export {
+  Jsx,
   Styles,
   make,
   use,

@@ -8,6 +8,7 @@ under a boundary of its own.
 
 open Types
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let app = Css.class({paddingBlockEnd: Px(48)})
@@ -51,7 +52,7 @@ type request = {
   query: string,
 }
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 let wishlist = (request: request) =>
   request.session.user->Option.mapOr(Set.make(), name => Db.user(name).wishlist)
@@ -113,7 +114,7 @@ let cards = (summaries: array<summary>, request) => {
   ->Array.map(summary =>
     <ProductCard key=summary.id summary saved={saved->Set.has(summary.id)} signal=request.signal />
   )
-  ->WeftDom.Jsx.array
+  ->Jsx.array
 }
 
 /** A grid's items: the cards, and the names the client filters them by. */
@@ -151,7 +152,7 @@ module Header = {
               </Link>
             </WeftUi.List.Item>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </WeftUi.List.Root>
       </nav>
       <SearchBox initial=query />

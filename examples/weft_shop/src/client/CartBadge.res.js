@@ -85,11 +85,14 @@ function CartBadge(props) {
 
 Entrypoint$Weft.mark(CartBadge, "@e-cline/weft_shop_example/src/client/CartBadge.res#");
 
+let Jsx;
+
 let Ui;
 
 let make = CartBadge;
 
 export {
+  Jsx,
   Ui,
   make,
 }

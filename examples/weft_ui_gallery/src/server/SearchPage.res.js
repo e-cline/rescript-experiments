@@ -23,7 +23,7 @@ function SearchPage(props) {
       : <Combobox.Popup>
           {matches->Array.map(fruit =>
             <Combobox.Item key=fruit.id value=fruit.id> {text(fruit.name)} </Combobox.Item>
-          )->WeftDom.Jsx.array}
+          )->Jsx.array}
         </Combobox.Popup>}
   </Combobox.Root>
 </Field>`,
@@ -33,9 +33,12 @@ function SearchPage(props) {
   });
 }
 
+let Jsx;
+
 let make = SearchPage;
 
 export {
+  Jsx,
   make,
 }
 /* Jsx-WeftDom Not a pure module */

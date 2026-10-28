@@ -15,6 +15,7 @@ While `busy`, it's `aria-busy`, and a submit does nothing.
 Interactive: its submit handler is client code, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -58,10 +59,10 @@ let make = (
       {switch error {
       | Some(error) =>
         <Alert.Root tone=#danger>
-          <Alert.Description> {WeftDom.Jsx.string(error)} </Alert.Description>
+          <Alert.Description> {Jsx.string(error)} </Alert.Description>
         </Alert.Root>
-      | None => WeftDom.Jsx.null
+      | None => Jsx.null
       }}
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
     </form>,
   )

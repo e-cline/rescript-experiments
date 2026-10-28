@@ -6,6 +6,7 @@ button).
 Static: a server component can render it.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -59,6 +60,6 @@ let make = (
   announce
     ? <span ?id className=Styles.status role="status" ?dataId>
         {picture(~size, ~className?)}
-        <VisuallyHidden> {WeftDom.Jsx.string(label)} </VisuallyHidden>
+        <VisuallyHidden> {Jsx.string(label)} </VisuallyHidden>
       </span>
     : <span ?id className=Styles.status ?dataId> {picture(~size, ~className?)} </span>

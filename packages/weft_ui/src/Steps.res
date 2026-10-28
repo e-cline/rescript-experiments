@@ -14,6 +14,7 @@ technology.
 Static: a server component can render it.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -123,11 +124,11 @@ module Step = {
       <span>
         {switch children {
         | Some(children) => children
-        | None => WeftDom.Jsx.null
+        | None => Jsx.null
         }}
         {status == #complete
-          ? <VisuallyHidden> {WeftDom.Jsx.string(" (done)")} </VisuallyHidden>
-          : WeftDom.Jsx.null}
+          ? <VisuallyHidden> {Jsx.string(" (done)")} </VisuallyHidden>
+          : Jsx.null}
       </span>
     </li>
 }

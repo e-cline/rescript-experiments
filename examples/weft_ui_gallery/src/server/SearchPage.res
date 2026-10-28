@@ -1,5 +1,7 @@
 @@weft.server
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Server})
 let make = (~group: Groups.group) =>
   <Specimen.Page title=group.title summary=group.summary>
@@ -17,7 +19,7 @@ let make = (~group: Groups.group) =>
       : <Combobox.Popup>
           {matches->Array.map(fruit =>
             <Combobox.Item key=fruit.id value=fruit.id> {text(fruit.name)} </Combobox.Item>
-          )->WeftDom.Jsx.array}
+          )->Jsx.array}
         </Combobox.Popup>}
   </Combobox.Root>
 </Field>`}

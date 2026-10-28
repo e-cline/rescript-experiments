@@ -105,12 +105,15 @@ let RequestContext;
 
 let Route;
 
+let Jsx;
+
 let $$default = app;
 
 export {
   App,
   RequestContext,
   Route,
+  Jsx,
   respond,
   theme,
   groupPage,

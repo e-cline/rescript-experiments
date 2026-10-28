@@ -4,6 +4,7 @@ again by themselves (`useRefetchable`), and says so while it's at it.
 */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 @weft.component({kind: Entrypoint})
 let make = (~noteId: string, ~children: Weft.Element.t) => {
@@ -15,7 +16,7 @@ let make = (~noteId: string, ~children: Weft.Element.t) => {
       title={comments.isPending ? "pending" : "idle"}
       onClick={_ => comments.refetch()->ignore}
     >
-      {WeftDom.Jsx.string(comments.isPending ? "Reloading…" : "Reload comments")}
+      {Jsx.string(comments.isPending ? "Reloading…" : "Reload comments")}
     </Ui.Button>
     <div ariaBusy={comments.isPending ? "true" : "false"}> {comments.element} </div>
   </Ui.Stack>

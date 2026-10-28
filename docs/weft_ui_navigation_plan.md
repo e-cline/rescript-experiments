@@ -6,8 +6,9 @@ apps and into shared code, styled by `weft_ui` where they have a look.
 
 ## Status
 
-Draft, for review. Nothing is built. The questions are under "Decisions", each with a
-recommendation.
+**Tabled** (2026-10-28). Nothing is built, and the decisions below haven't been reviewed. It's one
+of weft_ui's next steps (the [weft_ui plan](weft_ui_plan.md)'s "Not in v1"). When it's picked up
+again, this draft is the starting point: review its decisions, then start phase 0.
 
 ## What's there now
 

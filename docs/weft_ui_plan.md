@@ -31,7 +31,9 @@ the READMEs, changesets and gallery are finished. Phase 0's findings and the not
 ("as built") are after Phases. The design below is already corrected by them.
 
 **Next steps** are under "Not in v1", most likely first. The first, dark mode, has a draft plan
-([weft_ui_dark_mode_plan.md](weft_ui_dark_mode_plan.md)), tabled for now. Also still open: a manual
+([weft_ui_dark_mode_plan.md](weft_ui_dark_mode_plan.md)), tabled for now. So does a shared
+navigating link and a refetching error frame, from "More ready-made entrypoints"
+([weft_ui_navigation_plan.md](weft_ui_navigation_plan.md)), also tabled. Also still open: a manual
 pass with VoiceOver over Dialog, Menu, Combobox, Tabs and Toast (§8), and the gaps the phases' notes
 list as not done (scroll locking under a modal dialog, right-to-left drawers, the combobox's popup
 width, Escape clearing it, and inline autocompletion).
@@ -990,7 +992,10 @@ What was decided not to build now, and might be wanted later, most likely first:
    ready-made entrypoints.
 3. **More ready-made entrypoints**: a menu of links (needs in-place navigation, so a small optional
    package that depends on `weft_server`, or navigation that `weft_ui` can reach some other way), a
-   tooltip, and a collapsible with remembered state.
+   tooltip, and a collapsible with remembered state. The navigating pieces (a link, a styled
+   `NavLink`, and an error frame whose Retry refetches, which the demo apps each write for
+   themselves) have a draft plan, tabled for now:
+   [weft_ui_navigation_plan.md](weft_ui_navigation_plan.md).
 4. **A custom listbox `Select`**, or `appearance: base-select` once it's Baseline: for options with
    icons or descriptions, and a styled popup.
 5. **Components left out:**

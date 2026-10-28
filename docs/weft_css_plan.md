@@ -896,7 +896,7 @@ Settled in review: each recommendation below was taken.
 
 ## Follow-ups
 
-What's left, most useful first. The first two are the gaps in what's sent (the first is done):
+What's left, most useful first. The first two were the gaps in what's sent (both done):
 
 1. **Sheets for RPC responses** (done). `RpcServer` encoded without `~styles`, so an element an RPC
    returned (`weft_shop`'s "Load more" cards) was styled only by sheets already loaded.
@@ -916,9 +916,36 @@ What's left, most useful first. The first two are the gaps in what's sent (the f
    `weft_shop`'s `Styles_test` (the grid keeps its old cards, "Loading…", until the badge's sheet
    loads, and nothing is ever unstyled). Both fail with the styles left out.
 
-2. **Style modules loaded some other way** (a `Weft.Lazy` around an `import()`, in a `weft()` app)
-   bring no sheets: entrypoints' come with the rows using them, but nothing registers a module's own
-   when the client runs it (§4's "client code's own sheets"). Small.
+2. **Style modules loaded some other way** (done): a `Weft.Lazy` around an `import()`, in a `weft()`
+   app, brought no sheets. Entrypoints' come with the rows using them, but nothing loaded the sheets
+   of code the app imports itself.
+
+   **As built.** Not as §4 planned ("each style module registers its sheet when it's evaluated"):
+   registering alone would let what the module renders show before its sheet, and a first try, each
+   style module waiting for its sheets with a top-level `await`, hung anything that imports client
+   modules outside a browser (`weft_shop`'s tests import the store, in plain jsdom, where no
+   stylesheet ever loads). Instead, the wait is at the `import()`, as Vite's own preload does for a
+   chunk's CSS: in a `weft()` app's client code (every environment but the server's, as `weft()` has
+   it: the browser's, the server-side render's, a test's), the plugin rewrites each `import()` of
+   one of the app's compiled files to resolve once that file's sheets have loaded too (those of
+   every style file it imports, at any depth, and the sheets they depend on, first), through
+   `Sheets.load`, at the URLs the server sends: written in, in development (a `?url` import is empty
+   in a test's environment), and imported in a build (`virtual:weft/css/<id>.css?url`, for the
+   hashed file), at the end of the file so no line moves. A module's own evaluation is untouched,
+   and Weft's `import()`s of entrypoints (in a virtual module, not the app's code) aren't rewritten.
+   `weftCss()` apps needed nothing: their modules import their sheets, which Vite loads with the
+   chunk. Tests: the plugin's dev test (the rewrite, at the server's URLs, and nothing on the
+   server) and build test (`basic`'s new `Popover`, which `Likes` imports dynamically: Likes' chunk
+   waits for its sheets, at the manifest's URLs), `weft_shop`'s `Styles_test` (the product page's
+   size guide, `SizeGuide`, loaded when it's first opened: its fallback stays until its sheet loads,
+   and nothing is ever unstyled; it fails with `main`'s plugin), and its flash test opening the
+   guide in the three browsers.
+
+   **Learned.** Vite+'s module cache (`node_modules/.vitest-cache`) keeps a test's transformed
+   modules across runs, keyed by the module and not by the plugins: after changing the plugin, an
+   app's tests ran the old transforms (and, with a stale one from a half-finished ReScript build,
+   hung loading their files) until the cache was cleared.
+
 3. **Inline small sheets** in the first page's HTML (`<style data-href>`, adopted by `Sheets`), as
    SvelteKit and Astro do. Small.
 4. **Group sheets** that always load together (an entrypoint's, a layout's) into one asset. Medium.

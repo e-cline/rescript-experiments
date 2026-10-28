@@ -110,6 +110,23 @@ Vitest.describe("the store's styles", undefined, undefined, undefined, undefined
     t.expect(ShopSupport$WeftShop.has(page, "[data-id=sale-p3]")).toBe(true);
     return t.expect(WeftTesting.unstyled(page)).toEqual([]);
   });
+  Vitest.testAsync("bring the sheets of code loaded with import(): the size guide shows once its sheet loads", undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async t => {
+    await ShopSupport$WeftShop.releaseAll(app());
+    let page = ShopSupport$WeftShop.open_(app(), undefined, undefined, "/p/trail-runner");
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=size-guide-button]"));
+    await ShopSupport$WeftShop.hydratedAsServed(page, undefined);
+    t.expect(hasSheet(WeftTesting.stylesheets(page), "client/SizeGuide")).toBe(false);
+    WeftTesting.holdStylesheets(page, sheetOf("client/SizeGuide"));
+    WeftTesting.click(page, "[data-id=size-guide-button]");
+    await WeftTesting.waitFor(page, undefined, () => hasSheet(WeftTesting.stylesheets(page), "client/SizeGuide"));
+    await WeftTesting.settle(page);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=size-guide-loading]")).toBe(true);
+    t.expect(ShopSupport$WeftShop.has(page, "[data-id=size-guide]")).toBe(false);
+    t.expect(WeftTesting.unstyled(page)).toEqual([]);
+    WeftTesting.releaseStylesheets(page);
+    await WeftTesting.waitFor(page, undefined, () => ShopSupport$WeftShop.has(page, "[data-id=size-guide]"));
+    return t.expect(WeftTesting.unstyled(page)).toEqual([]);
+  });
 });
 
 export {

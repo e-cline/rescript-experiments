@@ -6,7 +6,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import type {AddressInfo} from 'node:net';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
 import {createBuilder} from 'vite';
@@ -152,6 +152,7 @@ describe('a build of the basic fixture', () => {
     const theme = sheetId(`${basic}/src/Theme.res`);
     const notes = sheetId(`${basic}/src/Notes.res`);
     const widget = sheetId(`${widgets}/src/Widget.res`);
+    const popover = sheetId(`${basic}/src/Popover.res`);
     // The fixture's server answers `/assets.json` with its `virtual:weft/assets`.
     const server = await import(
       pathToFileURL(join(root, 'dist/server/index.js')).href
@@ -161,7 +162,7 @@ describe('a build of the basic fixture', () => {
     );
     const assets = (await response.json()) as Assets;
     expect(Object.keys(assets.sheets).sort()).toEqual(
-      [theme, notes, widget].sort(),
+      [theme, notes, widget, popover].sort(),
     );
     // Notes' rules use Theme's variable.
     expect(assets.sheets[notes]!.dependencies).toEqual([theme]);
@@ -176,6 +177,38 @@ describe('a build of the basic fixture', () => {
       [`${basic}/src/Likes.res`]: [theme],
       [`${widgets}/src/Widget.res`]: [widget],
     });
+  });
+
+  test("has the client's import() of a style module wait for its sheets, at the server's URLs", async () => {
+    const handler = (await import(join(root, 'dist/server/index.js'))) as {
+      default: (request: Request) => Promise<Response>;
+    };
+    const assets = (await (
+      await handler.default(new Request('http://localhost/assets.json'))
+    ).json()) as Assets;
+    const popover = sheetId(`${basic}/src/Popover.res`);
+    const theme = sheetId(`${basic}/src/Theme.res`);
+    // Popover is in a chunk of its own (Likes only imports it dynamically), and Likes' import()
+    // of it waits for its sheet and Theme's, as the server names them.
+    expect(manifest['src/Popover.res.js']?.isDynamicEntry).toBe(true);
+    const likes = chunkOf('src/Likes.res.js');
+    expect(likes).toMatch(
+      // (With Vite's own preload around the import(), inside.)
+      /__weftImport\([^,]*import\("\.\/Popover\.res-[^"]+\.js"\)/,
+    );
+    // (Each sheet's URL is a module of its own, which the sheets' entry imports too.)
+    const imported = [...likes.matchAll(/from "\.\/([^"]+\.js)"/g)]
+      .map(([, file]) =>
+        readFileSync(
+          join(clientDir, dirname(manifest['src/Likes.res.js']!.file), file!),
+          'utf8',
+        ),
+      )
+      .join('\n');
+    for (const sheet of [popover, theme]) {
+      expect(imported).toContain(JSON.stringify(assets.sheets[sheet]!.href));
+    }
+    expect(chunkOf('src/Popover.res.js')).not.toContain('__weftLoadSheet');
   });
 
   test('keeps the export names the client walks to, `$$Error` included', () => {

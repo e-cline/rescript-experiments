@@ -2,7 +2,8 @@
 // slowed down: nothing is ever on screen without its CSS. A probe (every frame, and every task) looks
 // at each element with a `weft_css` class (a name ending in a sheet id) and checks the sheet it's in
 // has been applied (its link has its `sheet`), while the page streams in, block by block, and as
-// the shopper navigates, adds to the cart and changes a quantity.
+// the shopper navigates, opens the size guide (code loaded with `import()`), adds to the cart and
+// changes a quantity.
 
 import {
   expect,
@@ -170,6 +171,10 @@ test('nothing shows without its CSS: streaming, navigating, the cart and its tot
   await hydrated(page, '[data-id=grid] article > a');
   await page.locator('[data-id=grid] article > a').first().click();
   await expect(page.locator('[data-id=product-name]')).toBeVisible();
+  // The size guide, code loaded with import() when it's first opened, with its sheet.
+  await hydrated(page, '[data-id=size-guide-button]');
+  await page.locator('[data-id=size-guide-button]').click();
+  await expect(page.locator('[data-id=size-guide]')).toBeVisible();
   await hydrated(page, '[data-id=add]');
   await page.locator('[data-id=add]').click();
   await expect(page.locator('[data-id=cart-button]')).toHaveText('Cart (1)');

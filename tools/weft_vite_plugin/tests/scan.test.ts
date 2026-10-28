@@ -72,8 +72,8 @@ describe('scan', () => {
     const own = [...scanned.files.values()].filter(
       ({id}) => id.startsWith(basic) || id.startsWith(widgets),
     );
-    // (Theme, with styles and no other directive, is one.)
-    expect(own).toHaveLength(8);
+    // (Theme and Popover, with styles and no other directive, are two.)
+    expect(own).toHaveLength(9);
     // And weft_server's own server-only modules, which an app's client mustn't import either.
     expect(
       [...scanned.files.values()]
@@ -187,6 +187,7 @@ describe('style files', () => {
     expect(styleFiles(scanned).map(({id, sheet}) => [id, sheet])).toEqual(
       [
         `${basic}/src/Notes.res`,
+        `${basic}/src/Popover.res`,
         `${basic}/src/Theme.res`,
         `${widgets}/src/Widget.res`,
       ].map((id) => [id, sheetId(id)]),

@@ -6,6 +6,10 @@ import * as Entrypoint$Weft from "@e-cline/weft/src/shared/Entrypoint.res.js";
 import * as Theme$FixtureBasic from "./Theme.res.js";
 import * as Shared$FixtureBasic from "./Shared.res.js";
 
+function popover() {
+  return import("./Popover.res.js").then(m => m.view);
+}
+
 function Likes(props) {
   return Jsx$WeftDom.Elements.jsx("span", {
     className: Theme$FixtureBasic.badge,
@@ -18,6 +22,7 @@ Entrypoint$Weft.mark(Likes, "@e-cline/weft_vite_plugin_fixture_basic/src/Likes.r
 let make = Likes;
 
 export {
+  popover,
   make,
 }
 /*  Not a pure module */

@@ -117,4 +117,29 @@ describe("the store's styles", () => {
       t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
     },
   )
+
+  testAsync(
+    "bring the sheets of code loaded with import(): the size guide shows once its sheet loads",
+    async t => {
+      await app()->releaseAll
+      let page = app()->open_("/p/trail-runner")
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=size-guide-button]"))
+      await hydratedAsServed(page)
+      // Nothing the page rendered needs the guide's sheet, so nothing sent it.
+      t->expect(page->WeftTesting.stylesheets->hasSheet("client/SizeGuide"))->Expect.toBe(false)
+      page->WeftTesting.holdStylesheets(~matching=sheetOf("client/SizeGuide"))
+      page->WeftTesting.click("[data-id=size-guide-button]")
+      await page->WeftTesting.waitFor(
+        () => page->WeftTesting.stylesheets->hasSheet("client/SizeGuide"),
+      )
+      await page->WeftTesting.settle
+      // Its module is in, but waits for its sheet: the fallback stays.
+      t->expect(has(page, "[data-id=size-guide-loading]"))->Expect.toBe(true)
+      t->expect(has(page, "[data-id=size-guide]"))->Expect.toBe(false)
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+      page->WeftTesting.releaseStylesheets
+      await page->WeftTesting.waitFor(() => has(page, "[data-id=size-guide]"))
+      t->expect(page->WeftTesting.unstyled)->Expect.toEqual([])
+    },
+  )
 })

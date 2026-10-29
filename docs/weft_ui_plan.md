@@ -26,11 +26,17 @@ open WeftUi
 
 ## Status
 
-Reviewed. The questions are settled (Decisions). Every phase (0 to 7) is done, on the branch
-`claude/weft-base-ui-components-c99930`: every v1 component is built, both demo apps are on them,
-and the READMEs, changesets and gallery are finished. Phase 0's findings and the notes on phases 1
-to 7 ("as built") are after Phases. The design below is already corrected by them. What's left is
-the PR (the branch is to be brought up to date with `main` first, which has had PR #16 since).
+Done: merged as PR #17 (2026-10-26). Every v1 component is built, both demo apps are on them, and
+the READMEs, changesets and gallery are finished. Phase 0's findings and the notes on phases 1 to 7
+("as built") are after Phases. The design below is already corrected by them.
+
+**Next steps** are under "Not in v1", most likely first. The first, dark mode, has a draft plan
+([weft_ui_dark_mode_plan.md](weft_ui_dark_mode_plan.md)), tabled for now. So does a shared
+navigating link and a refetching error frame, from "More ready-made entrypoints"
+([weft_ui_navigation_plan.md](weft_ui_navigation_plan.md)), also tabled. Also still open: a manual
+pass with VoiceOver over Dialog, Menu, Combobox, Tabs and Toast (§8), and the gaps the phases' notes
+list as not done (scroll locking under a modal dialog, right-to-left drawers, the combobox's popup
+width, Escape clearing it, and inline autocompletion).
 
 ## What was checked before writing this
 
@@ -975,16 +981,21 @@ Settled in review. The recommendations below were taken, and the questions answe
 
 What was decided not to build now, and might be wanted later, most likely first:
 
-1. **Dark mode.** A second set of token values under `prefers-color-scheme: dark`, and a
-   `data-theme` attribute to force either. The tokens are named for it (§5), so it needs no
-   component changes. It does need a contrast check of every tone in both themes, and the demo apps'
-   palettes in dark versions. The gallery's theme switcher is where it would show first.
+1. **Dark mode: the next step.** A dark value for each colour token, a way for a page to follow the
+   system's scheme or force one, and the demo apps' palettes in dark versions. The tokens are named
+   for it (§5), so it needs no component changes. It does need a contrast check of every tone in
+   both themes. The gallery's theme switcher is where it would show first. Its draft plan, tabled
+   for now: [weft_ui_dark_mode_plan.md](weft_ui_dark_mode_plan.md). The plan recommends
+   `light-dark()` values with `color-scheme`, opted into per page.
 2. **`useId` and `useContext` in server renders** (`weft_server`). Interactive components could then
    render their initial HTML from server components, which would remove most of the need for
    ready-made entrypoints.
 3. **More ready-made entrypoints**: a menu of links (needs in-place navigation, so a small optional
    package that depends on `weft_server`, or navigation that `weft_ui` can reach some other way), a
-   tooltip, and a collapsible with remembered state.
+   tooltip, and a collapsible with remembered state. The navigating pieces (a link, a styled
+   `NavLink`, and an error frame whose Retry refetches, which the demo apps each write for
+   themselves) have a draft plan, tabled for now:
+   [weft_ui_navigation_plan.md](weft_ui_navigation_plan.md).
 4. **A custom listbox `Select`**, or `appearance: base-select` once it's Baseline: for options with
    icons or descriptions, and a styled popup.
 5. **Components left out:**

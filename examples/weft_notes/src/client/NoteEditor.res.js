@@ -129,10 +129,13 @@ Entrypoint$Weft.mark(NoteEditor, "@e-cline/weft_notes_example/src/client/NoteEdi
 
 let Ui;
 
+let Jsx;
+
 let make = NoteEditor;
 
 export {
   Ui,
+  Jsx,
   Styles,
   make,
 }

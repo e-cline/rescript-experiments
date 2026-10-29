@@ -49,10 +49,13 @@ Entrypoint$Weft.mark(SaveDemo, "@e-cline/weft_ui_gallery_example/src/client/Save
 
 let Ui;
 
+let Jsx;
+
 let make = SaveDemo;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

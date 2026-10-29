@@ -13,6 +13,7 @@ the tooltip shows that label to sighted pointer users; otherwise the tooltip des
 Interactive: it keeps state, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -72,7 +73,7 @@ module Popup = {
       className={Css.cx([Anchored.Styles.anchored, Styles.tooltip])}
       style={Anchored.popupStyle(~anchor=state.anchor, ~side=state.side, ~align=#center, None)}
     >
-      {WeftDom.Jsx.string(state.content)}
+      {Jsx.string(state.content)}
     </div>
   }
 }
@@ -112,7 +113,7 @@ module Root = {
         side,
       }}
     >
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
       <Popup />
     </Provider>
   }
@@ -133,7 +134,7 @@ module Trigger = {
     ~className=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = Weft.Hooks.useContext(context)
     Button.render(

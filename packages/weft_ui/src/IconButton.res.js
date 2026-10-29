@@ -59,9 +59,12 @@ function IconButton(props) {
     }));
 }
 
+let Jsx;
+
 let make = IconButton;
 
 export {
+  Jsx,
   Styles,
   className,
   make,

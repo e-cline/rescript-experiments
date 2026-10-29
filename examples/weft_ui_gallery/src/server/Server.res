@@ -8,6 +8,7 @@ export). `/` lists the groups of components, and `/<group>` shows one.
 module App = Servy.App
 module RequestContext = Servy.RequestContext
 module Route = Servy.Route
+module Jsx = WeftDom.Jsx
 
 @module("virtual:weft/assets") external assets: WeftServer.Page.assets = "default"
 
@@ -57,7 +58,7 @@ let app = App.build()->App.router([
       respond(
         ctx,
         ~title="Not found",
-        <Shell theme={theme(ctx)}> {WeftDom.Jsx.string("Not found")} </Shell>,
+        <Shell theme={theme(ctx)}> {Jsx.string("Not found")} </Shell>,
       )
     }
   ),

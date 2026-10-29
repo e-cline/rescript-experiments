@@ -122,10 +122,13 @@ Entrypoint$Weft.mark(CommentForm, "@e-cline/weft_notes_example/src/client/Commen
 
 let Ui;
 
+let Jsx;
+
 let make = CommentForm;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

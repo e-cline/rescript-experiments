@@ -5,6 +5,7 @@ the next page (navigated to or reloaded) in it.
 */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 /** Puts `theme` on the page's outermost element, and keeps it in the cookie. */
 let apply: (string, string, string) => unit = %raw(`(theme, className, cookieName) => {
@@ -28,9 +29,9 @@ let make = (~current: string) => {
     {Theme.themes
     ->Array.map(((name, title)) =>
       <Ui.ToggleGroup.Item key=name value=name dataId={`theme-${name}`}>
-        {WeftDom.Jsx.string(title)}
+        {Jsx.string(title)}
       </Ui.ToggleGroup.Item>
     )
-    ->WeftDom.Jsx.array}
+    ->Jsx.array}
   </Ui.ToggleGroup.Root>
 }

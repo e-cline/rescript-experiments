@@ -21,9 +21,12 @@ function Outer(props) {
 
 Entrypoint$Weft.mark(Outer, "@e-cline/weft_split_example/src/Outer.res#");
 
+let Jsx;
+
 let make = Outer;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

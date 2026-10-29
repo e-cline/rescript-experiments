@@ -26,6 +26,7 @@ goes back to what opened it.
 Interactive: it keeps state, so it renders inside an entrypoint (`DialogEntry` is one ready-made).
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -176,7 +177,7 @@ module Root = {
         trigger,
       }}
     >
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
     </Provider>
   }
 }
@@ -237,7 +238,7 @@ module Trigger = {
     ~className=?,
     ~dataId=?,
     ~attrs: WeftDom.DomProps.props={},
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = use()
     trigger(
@@ -336,7 +337,7 @@ module Popup = {
     ~className=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = use()
     let ref = Weft.Hooks.useRef(Nullable.null)
@@ -403,7 +404,7 @@ module Close = {
     ~autoFocus=?,
     ~className=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = use()
     Button.render(

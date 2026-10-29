@@ -4,6 +4,8 @@ Picks the currency prices are shown in: at once, for every price on the page (th
 `prefs.setCurrency` RPC). If saving fails, it goes back, and says so.
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = () => {
   let {currency, setCurrency} = ShopContext.use()
@@ -34,10 +36,10 @@ let make = () => {
       {Money.currencies
       ->Array.map(option =>
         <WeftUi.Select.Option key={Money.code(option)} value={Money.code(option)}>
-          {WeftDom.Jsx.string(`${Money.symbol(option)} ${Money.code(option)}`)}
+          {Jsx.string(`${Money.symbol(option)} ${Money.code(option)}`)}
         </WeftUi.Select.Option>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </WeftUi.Select>
   </WeftUi.Field>
 }

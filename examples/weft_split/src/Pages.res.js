@@ -95,7 +95,10 @@ let Other = {
   make: Pages$Other
 };
 
+let Jsx;
+
 export {
+  Jsx,
   Nav,
   Home,
   Other,

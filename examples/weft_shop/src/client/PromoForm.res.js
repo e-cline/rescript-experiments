@@ -83,10 +83,13 @@ Entrypoint$Weft.mark(PromoForm, "@e-cline/weft_shop_example/src/client/PromoForm
 
 let Ui;
 
+let Jsx;
+
 let make = PromoForm;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

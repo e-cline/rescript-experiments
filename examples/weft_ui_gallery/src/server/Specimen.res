@@ -8,8 +8,9 @@ opened: the gallery's own helpers and data left out).
 
 open WeftCss
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module Styles = {
   let frame = Css.class({

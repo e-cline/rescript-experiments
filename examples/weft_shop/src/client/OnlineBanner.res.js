@@ -43,9 +43,12 @@ function OnlineBanner(props) {
   }
 }
 
+let Jsx;
+
 let make = OnlineBanner;
 
 export {
+  Jsx,
   subscribe,
   Styles,
   make,

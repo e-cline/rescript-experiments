@@ -66,10 +66,13 @@ Entrypoint$Weft.mark(AccountMenu, "@e-cline/weft_shop_example/src/client/Account
 
 let Ui;
 
+let Jsx;
+
 let make = AccountMenu;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /*  Not a pure module */

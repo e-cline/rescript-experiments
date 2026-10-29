@@ -19,6 +19,7 @@ Toasts go to a manager: the default one, which `add` and `Viewport` use unless g
 The viewport is interactive (it keeps state), so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -208,11 +209,10 @@ module Item = {
       dataVariant={(toast.tone :> string)}
     >
       <div className=Styles.text>
-        <span className=Styles.title> {WeftDom.Jsx.string(toast.title)} </span>
+        <span className=Styles.title> {Jsx.string(toast.title)} </span>
         {switch toast.description {
-        | Some(description) =>
-          <span className=Styles.description> {WeftDom.Jsx.string(description)} </span>
-        | None => WeftDom.Jsx.null
+        | Some(description) => <span className=Styles.description> {Jsx.string(description)} </span>
+        | None => Jsx.null
         }}
       </div>
       <div className=Styles.actions>
@@ -227,9 +227,9 @@ module Item = {
               dismiss(~manager, toast.id)
             }}
           >
-            {WeftDom.Jsx.string(label)}
+            {Jsx.string(label)}
           </Button>
-        | None => WeftDom.Jsx.null
+        | None => Jsx.null
         }}
         <IconButton
           label="Dismiss"
@@ -237,7 +237,7 @@ module Item = {
           className=Styles.dismiss
           onClick={_ => dismiss(~manager, toast.id)}
         >
-          {WeftDom.Jsx.string("×")}
+          {Jsx.string("×")}
         </IconButton>
       </div>
     </li>
@@ -277,7 +277,7 @@ module Viewport = {
       >
         {toasts
         ->Array.map(toast => <Item key={Int.toString(toast.id)} toast manager paused />)
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </ol>
     </section>
   }

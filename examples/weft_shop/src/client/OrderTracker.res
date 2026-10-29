@@ -5,6 +5,7 @@ refresh that fails is tried again next time.
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 let steps = [Placed, Packed, Shipped, Delivered]
 
@@ -42,9 +43,9 @@ let make = (~status: orderStatus, ~every: option<int>=?) => {
           ? #complete
           : #upcoming}
       >
-        {WeftDom.Jsx.string(statusLabel(step))}
+        {Jsx.string(statusLabel(step))}
       </WeftUi.Steps.Step>
     )
-    ->WeftDom.Jsx.array}
+    ->Jsx.array}
   </WeftUi.Steps.Root>
 }

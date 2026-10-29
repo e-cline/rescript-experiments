@@ -12,6 +12,7 @@ refresh with the same filters keeps the pages loaded.
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 open WeftCss
 
@@ -59,9 +60,7 @@ let make = (
         />
       </WeftUi.Field>
       <WeftUi.Text tone=#muted size=#sm dataId="result-count" role="status">
-        {WeftDom.Jsx.string(
-          `Showing ${Int.toString(Array.length(shown))} of ${Int.toString(total)}`,
-        )}
+        {Jsx.string(`Showing ${Int.toString(Array.length(shown))} of ${Int.toString(total)}`)}
       </WeftUi.Text>
     </WeftUi.Stack>
     <ul
@@ -70,15 +69,13 @@ let make = (
     >
       {shown
       ->Array.map(item => <li key=item.key> {item.card} </li>)
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </ul>
     {shown == []
       ? <WeftUi.EmptyState.Root bordered=true dataId="no-results">
-          <WeftUi.EmptyState.Title>
-            {WeftDom.Jsx.string("Nothing matches.")}
-          </WeftUi.EmptyState.Title>
+          <WeftUi.EmptyState.Title> {Jsx.string("Nothing matches.")} </WeftUi.EmptyState.Title>
         </WeftUi.EmptyState.Root>
-      : WeftDom.Jsx.null}
+      : Jsx.null}
     {switch next {
     | Some(page) =>
       <div>
@@ -101,10 +98,10 @@ let make = (
             )()->ignore
           }}
         >
-          {WeftDom.Jsx.string(loading ? "Loading…" : "Load more")}
+          {Jsx.string(loading ? "Loading…" : "Load more")}
         </WeftUi.Button>
       </div>
-    | None => WeftDom.Jsx.null
+    | None => Jsx.null
     }}
   </WeftUi.Stack>
 }

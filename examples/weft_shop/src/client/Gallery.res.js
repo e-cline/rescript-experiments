@@ -129,9 +129,12 @@ function Gallery(props) {
 
 Entrypoint$Weft.mark(Gallery, "@e-cline/weft_shop_example/src/client/Gallery.res#");
 
+let Jsx;
+
 let make = Gallery;
 
 export {
+  Jsx,
   views,
   Styles,
   make,

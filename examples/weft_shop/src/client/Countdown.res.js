@@ -48,9 +48,12 @@ function Countdown(props) {
 
 Entrypoint$Weft.mark(Countdown, "@e-cline/weft_shop_example/src/client/Countdown.res#");
 
+let Jsx;
+
 let make = Countdown;
 
 export {
+  Jsx,
   format,
   Styles,
   make,

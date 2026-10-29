@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 @weft.component({kind: Server})
 let make = () =>
@@ -30,10 +31,10 @@ let make = () =>
             ->Array.map(name =>
               <Ui.Badge key=name size=#sm shape=#rounded> {text(name)} </Ui.Badge>
             )
-            ->WeftDom.Jsx.array}
+            ->Jsx.array}
           </Ui.Card.Footer>
         </Ui.Card.Root>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </Ui.Grid>
   </Specimen.Page>

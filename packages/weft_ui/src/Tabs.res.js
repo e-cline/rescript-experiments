@@ -345,9 +345,12 @@ let Panel = {
   make: Tabs$Panel
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   Styles,
   context,

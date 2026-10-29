@@ -108,9 +108,12 @@ function BlockFrame(props) {
 
 Entrypoint$Weft.mark(BlockFrame, "@e-cline/weft_shop_example/src/client/BlockFrame.res#");
 
+let Jsx;
+
 let make = BlockFrame;
 
 export {
+  Jsx,
   Styles,
   make,
 }

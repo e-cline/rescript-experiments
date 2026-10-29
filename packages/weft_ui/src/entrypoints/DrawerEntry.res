@@ -3,6 +3,8 @@ A drawer a server component can render as it is: as `DialogEntry`, with the dial
 `side` of the window.
 */
 
+module Jsx = WeftDom.Jsx
+
 @weft.component({kind: Entrypoint})
 let make = (
   ~trigger: Weft.Element.t,
@@ -17,15 +19,14 @@ let make = (
   <Drawer.Root>
     <Drawer.Trigger variant=triggerVariant ?dataId> trigger </Drawer.Trigger>
     <Drawer.Popup side>
-      <Drawer.Title> {WeftDom.Jsx.string(title)} </Drawer.Title>
+      <Drawer.Title> {Jsx.string(title)} </Drawer.Title>
       {switch description {
-      | Some(description) =>
-        <Drawer.Description> {WeftDom.Jsx.string(description)} </Drawer.Description>
-      | None => WeftDom.Jsx.null
+      | Some(description) => <Drawer.Description> {Jsx.string(description)} </Drawer.Description>
+      | None => Jsx.null
       }}
       children
       <Drawer.Footer>
-        <Drawer.Close> {WeftDom.Jsx.string(closeLabel)} </Drawer.Close>
+        <Drawer.Close> {Jsx.string(closeLabel)} </Drawer.Close>
       </Drawer.Footer>
     </Drawer.Popup>
   </Drawer.Root>

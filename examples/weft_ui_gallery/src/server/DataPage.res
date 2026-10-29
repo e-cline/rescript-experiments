@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 let orders = [
   ("A-1042", "Oct 2", "Delivered", 4800),
@@ -66,7 +67,7 @@ let make = (~group: Groups.group) =>
                 <Ui.Table.Cell numeric=true> {text(money(total))} </Ui.Table.Cell>
               </Ui.Table.Row>
             )
-            ->WeftDom.Jsx.array}
+            ->Jsx.array}
           </Ui.Table.Body>
           <Ui.Table.Foot>
             <Ui.Table.Row>
@@ -98,7 +99,7 @@ let make = (~group: Groups.group) =>
                 <Ui.Table.Cell numeric=true> {text(chest)} </Ui.Table.Cell>
               </Ui.Table.Row>
             )
-            ->WeftDom.Jsx.array}
+            ->Jsx.array}
           </Ui.Table.Body>
         </Ui.Table.Root>
       </Specimen.Example>

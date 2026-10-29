@@ -46,10 +46,13 @@ Entrypoint$Weft.mark(ThemeSwitcher, "@e-cline/weft_ui_gallery_example/src/client
 
 let Ui;
 
+let Jsx;
+
 let make = ThemeSwitcher;
 
 export {
   Ui,
+  Jsx,
   apply,
   make,
 }

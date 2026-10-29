@@ -52,10 +52,13 @@ function SignInDialog(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = SignInDialog;
 
 export {
   Ui,
+  Jsx,
   make,
 }
 /* Jsx-WeftDom Not a pure module */

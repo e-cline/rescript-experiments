@@ -66,9 +66,12 @@ function Toggle(props) {
     }) : __children_value);
 }
 
+let Jsx;
+
 let make = Toggle;
 
 export {
+  Jsx,
   Styles,
   className,
   make,

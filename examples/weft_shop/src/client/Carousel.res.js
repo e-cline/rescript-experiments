@@ -118,11 +118,14 @@ function Carousel(props) {
 
 Entrypoint$Weft.mark(Carousel, "@e-cline/weft_shop_example/src/client/Carousel.res#");
 
+let Jsx;
+
 let pageSize = 4;
 
 let make = Carousel;
 
 export {
+  Jsx,
   pageSize,
   Styles,
   make,

@@ -256,9 +256,12 @@ let Close = {
   make: Popover$Close
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   Styles,
   context,

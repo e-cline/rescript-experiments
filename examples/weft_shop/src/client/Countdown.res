@@ -3,6 +3,8 @@ The time left on an offer, ticking. The first render uses the server's clock (`n
 HTML and the render hydrating it say the same; from then on, the browser's.
 */
 
+module Jsx = WeftDom.Jsx
+
 let format = ms => {
   let seconds = Math.Int.max(0, Float.toInt(ms /. 1000.0))
   let pad = n => Int.toString(n)->String.padStart(2, "0")
@@ -24,6 +26,6 @@ let make = (~id: string, ~endsAt: float, ~now as serverNow: float) => {
     Some(() => clearInterval(timer))
   })
   <span className={Styles.countdown} dataId=id>
-    {WeftDom.Jsx.string(endsAt <= now ? "Ended" : `Ends in ${format(endsAt -. now)}`)}
+    {Jsx.string(endsAt <= now ? "Ended" : `Ends in ${format(endsAt -. now)}`)}
   </span>
 }

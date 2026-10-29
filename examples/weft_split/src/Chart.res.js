@@ -29,9 +29,12 @@ function Chart(props) {
 
 Entrypoint$Weft.mark(Chart, "@e-cline/weft_split_example/src/Chart.res#");
 
+let Jsx;
+
 let make = Chart;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 let variants: array<Ui.Button.variant> = [#primary, #secondary, #outline, #ghost, #danger, #link]
 
@@ -27,7 +28,7 @@ let make = (~group: Groups.group) =>
           ->Array.map(variant =>
             <Ui.Button key={(variant :> string)} variant> {text((variant :> string))} </Ui.Button>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Stack>
       </Specimen.Example>
       <Specimen.Example

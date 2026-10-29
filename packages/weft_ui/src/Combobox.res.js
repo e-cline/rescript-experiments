@@ -399,9 +399,12 @@ let Empty = {
   make: Combobox$Empty
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   Styles,
   context,

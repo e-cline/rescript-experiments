@@ -1,6 +1,7 @@
 /*** Tabs, Accordion, Collapsible and Combobox: their ARIA, their state and the keyboard. */
 open Vitest
 open Support
+module Jsx = WeftDom.Jsx
 
 Testing.installJsdomShims()
 
@@ -149,15 +150,15 @@ describe("Combobox", () => {
               onInput={event => setText(_ => WeftDom.Dom.Event.targetValue(event))}
             />
             {found == []
-              ? WeftDom.Jsx.null
+              ? Jsx.null
               : <Combobox.Popup>
                   {found
                   ->Array.map(name =>
                     <Combobox.Item key=name value=name disabled={name == "Apricot"}>
-                      {WeftDom.Jsx.string(name)}
+                      {Jsx.string(name)}
                     </Combobox.Item>
                   )
-                  ->WeftDom.Jsx.array}
+                  ->Jsx.array}
                 </Combobox.Popup>}
           </Combobox.Root>
         </Field>

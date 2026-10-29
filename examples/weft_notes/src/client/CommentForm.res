@@ -7,6 +7,7 @@ an ID from `useId` (the same in the server's HTML as once hydrated).
 */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 /** What the RPC said no with: about the comment itself, or about the form as a whole. */
 type error = Comment(string) | Form(string)
@@ -66,7 +67,7 @@ let make = (~noteId: string) => {
     </Ui.Grid>
     <Ui.Stack direction=#row>
       <Ui.Button dataId="post-comment" variant=#primary type_=#submit>
-        {WeftDom.Jsx.string("Post")}
+        {Jsx.string("Post")}
       </Ui.Button>
     </Ui.Stack>
   </Ui.Form>

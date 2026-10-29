@@ -227,10 +227,13 @@ Toast.add(~title="Note deleted", ~action=("Undo", undo), ())`,
 
 let Ui;
 
+let Jsx;
+
 let make = OverlaysPage;
 
 export {
   Ui,
+  Jsx,
   text,
   make,
 }

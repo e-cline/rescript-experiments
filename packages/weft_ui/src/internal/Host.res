@@ -4,6 +4,8 @@ element is a prop, `as_`), class lists with the caller's `className` last, and s
 the caller's.
 */
 
+module Jsx = WeftDom.Jsx
+
 /** `attrs`, with `own`'s props over them: those `own` sets, not those it leaves `undefined`. */
 let merge: (WeftDom.DomProps.props, unknown) => unknown = %raw(`(attrs, own) => {
   const props = {...attrs};
@@ -24,7 +26,7 @@ let withAttrs = (attrs: WeftDom.DomProps.props, element: Weft.Element.t) =>
 
 /** A host element, `<tag {...props}>`, with `attrs` under its props (see `withAttrs`). */
 let element = (~attrs=?, tag: string, props: WeftDom.DomProps.props) => {
-  let element = WeftDom.Jsx.Elements.jsx(tag, props)
+  let element = Jsx.Elements.jsx(tag, props)
   switch attrs {
   | Some(attrs) => withAttrs(attrs, element)
   | None => element

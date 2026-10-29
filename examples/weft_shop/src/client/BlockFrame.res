@@ -10,6 +10,7 @@ again), so what renders is the newly fetched block: another failure is caught ag
 */
 
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let block = Css.class({
@@ -56,7 +57,7 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
         reset.current = resetBoundary
         <WeftUi.Alert.Root tone=#danger dataId={`block-error-${id}`}>
           <WeftUi.Alert.Title>
-            {WeftDom.Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))}
+            {Jsx.string("Couldn't load this: " ++ Weft.ErrorBoundary.message(error))}
           </WeftUi.Alert.Title>
           <WeftUi.Alert.Action>
             <WeftUi.Button
@@ -68,7 +69,7 @@ let make = (~id: string, ~src: string, ~refreshEvery: option<int>=?, ~children: 
                 refetch.current()->Promise.catch(_ => Promise.resolve())->ignore
               }}
             >
-              {WeftDom.Jsx.string(retrying ? "Retrying…" : "Retry")}
+              {Jsx.string(retrying ? "Retrying…" : "Retry")}
             </WeftUi.Button>
           </WeftUi.Alert.Action>
         </WeftUi.Alert.Root>

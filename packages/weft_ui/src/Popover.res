@@ -20,6 +20,7 @@ As it opens, the focus goes into it; as it closes, back to the trigger.
 Interactive: it keeps state, so it renders inside an entrypoint (`PopoverEntry` is one ready-made).
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -111,7 +112,7 @@ module Root = {
         trigger,
       }}
     >
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
     </Provider>
   }
 }
@@ -126,7 +127,7 @@ module Trigger = {
     ~className=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = use()
     Dialog.trigger(
@@ -212,7 +213,7 @@ let popup = (
 
 module Popup = {
   @weft.component
-  let make = (~ariaLabel=?, ~className=?, ~style=?, ~dataId=?, ~children=WeftDom.Jsx.null) => {
+  let make = (~ariaLabel=?, ~className=?, ~style=?, ~dataId=?, ~children=Jsx.null) => {
     let state = use()
     let ref = Weft.Hooks.useRef(Nullable.null)
     let shown = Weft.Hooks.useRef(false)
@@ -263,7 +264,7 @@ module Close = {
     ~onClick: option<Dom.event => unit>=?,
     ~className=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = use()
     <Button

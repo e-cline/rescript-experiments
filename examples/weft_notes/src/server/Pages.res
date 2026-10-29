@@ -10,8 +10,9 @@ stops.
 
 open WeftCss
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module Styles = {
   let app = Css.class({paddingBlock: Px(24)})
@@ -65,7 +66,7 @@ module NoteList = {
               </Link>
             </Ui.List.Item>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.List.Root>
       </Ui.Stack>
     </Layout>
@@ -113,7 +114,7 @@ module NoteBody = {
   @weft.component({kind: Server})
   let make = async (~id, ~signal) => {
     let body = await Db.body(id, ~signal)
-    <article dataId="note-body" className=Styles.body> {WeftDom.Jsx.string(body)} </article>
+    <article dataId="note-body" className=Styles.body> {Jsx.string(body)} </article>
   }
 }
 
@@ -140,7 +141,7 @@ module Related = {
           </Link>
         </Ui.List.Item>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
     </Ui.List.Root>
   }
 }

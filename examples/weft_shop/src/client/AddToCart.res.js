@@ -101,9 +101,12 @@ function AddToCart(props) {
 
 Entrypoint$Weft.mark(AddToCart, "@e-cline/weft_shop_example/src/client/AddToCart.res#");
 
+let Jsx;
+
 let make = AddToCart;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

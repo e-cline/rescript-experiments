@@ -1,8 +1,9 @@
 /*** The disclosure and search pages' interactive examples. */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module Settings = {
   /** Vertical tabs, selected only on Enter or Space (manual activation), in pills. */
@@ -75,7 +76,7 @@ module FruitSearch = {
             onInput={event => setQuery(_ => WeftDom.Dom.Event.targetValue(event))}
           />
           {needle == ""
-            ? WeftDom.Jsx.null
+            ? Jsx.null
             : <Ui.Combobox.Popup dataId="fruit-list">
                 {found == []
                   ? <Ui.Combobox.Empty> {text("No fruit matches")} </Ui.Combobox.Empty>
@@ -86,7 +87,7 @@ module FruitSearch = {
                         <Ui.Text as_=#span tone=#muted size=#xs> {text(kind)} </Ui.Text>
                       </Ui.Combobox.Item>
                     )
-                    ->WeftDom.Jsx.array}
+                    ->Jsx.array}
               </Ui.Combobox.Popup>}
         </Ui.Combobox.Root>
       </Ui.Field>

@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 @weft.component({kind: Server})
 let make = (~group: Groups.group) =>
@@ -38,7 +39,7 @@ let make = (~group: Groups.group) =>
                   <Ui.Table.Cell numeric=true> {text(chest)} </Ui.Table.Cell>
                 </Ui.Table.Row>
               )
-              ->WeftDom.Jsx.array}
+              ->Jsx.array}
             </Ui.Table.Body>
           </Ui.Table.Root>
         </Ui.DialogEntry>

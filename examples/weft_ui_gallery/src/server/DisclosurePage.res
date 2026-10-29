@@ -1,8 +1,9 @@
 @@weft.server
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 let questions = [
   ("Is it true to size?", "Yes: most shoppers take their usual size."),
@@ -72,7 +73,7 @@ let make = (~group: Groups.group) =>
               <Ui.Accordion.Panel> {text(answer)} </Ui.Accordion.Panel>
             </Ui.Accordion.Item>
           )
-          ->WeftDom.Jsx.array}
+          ->Jsx.array}
         </Ui.Accordion.Root>
       </Specimen.Example>
     </Specimen.Section>

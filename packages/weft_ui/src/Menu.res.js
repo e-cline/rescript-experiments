@@ -451,9 +451,12 @@ let Group = {
   make: Menu$Group
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   Styles,
   context,

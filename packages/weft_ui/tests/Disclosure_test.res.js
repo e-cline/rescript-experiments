@@ -347,7 +347,10 @@ Vitest.describe("Combobox", undefined, undefined, undefined, undefined, undefine
   });
 });
 
+let Jsx;
+
 export {
+  Jsx,
   focused,
 }
 /*  Not a pure module */

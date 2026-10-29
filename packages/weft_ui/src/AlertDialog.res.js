@@ -63,12 +63,15 @@ let Description;
 
 let Footer;
 
+let Jsx;
+
 export {
   Root,
   Trigger,
   Title,
   Description,
   Footer,
+  Jsx,
   Popup,
   Cancel,
   Action,

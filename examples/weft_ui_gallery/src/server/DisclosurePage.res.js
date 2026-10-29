@@ -140,10 +140,13 @@ function DisclosurePage(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = DisclosurePage;
 
 export {
   Ui,
+  Jsx,
   text,
   questions,
   make,

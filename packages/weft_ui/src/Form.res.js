@@ -56,9 +56,12 @@ function Form(props) {
   }));
 }
 
+let Jsx;
+
 let make = Form;
 
 export {
+  Jsx,
   Styles,
   make,
 }

@@ -4,8 +4,9 @@
 
 open WeftCss
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
-let text = WeftDom.Jsx.string
+let text = Jsx.string
 
 module Styles = {
   let header = Css.class({
@@ -56,7 +57,7 @@ let make = (~current: option<string>=?, ~theme="default", ~children) =>
                 </NavLink>
               </Ui.List.Item>
             )
-            ->WeftDom.Jsx.array}
+            ->Jsx.array}
           </Ui.List.Root>
         </nav>
         <main dataId="main" className=Styles.main> children </main>

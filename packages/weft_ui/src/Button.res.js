@@ -394,9 +394,12 @@ function Button(props) {
   return render(Host$WeftUi.classes([className(__variant_value, __size_value, __shape_value, __fullWidth_value, undefined)], props.className), __type__value, __busy_value, __disabled_value, props.onClick, props.id, props.style, props.dataId, props.ariaLabel, props.ariaDescribedby, props.ariaExpanded, props.ariaControls, props.ariaHaspopup, props.ariaPressed, props.name, props.value, props.title, __attrs_value, __children_value);
 }
 
+let Jsx;
+
 let make = Button;
 
 export {
+  Jsx,
   Styles,
   className,
   render,

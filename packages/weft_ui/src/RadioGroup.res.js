@@ -144,7 +144,10 @@ let Radio = {
   make: RadioGroup$Radio
 };
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   context,
   Provider,

@@ -1,6 +1,7 @@
 /*** Signing up for the newsletter (the `newsletter.subscribe` RPC, which checks the address on both sides). */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 @weft.component({kind: Entrypoint})
 let make = () => {
@@ -10,9 +11,7 @@ let make = () => {
   switch status {
   | #done =>
     <Ui.Alert.Root tone=#success dataId="newsletter-done">
-      <Ui.Alert.Description>
-        {WeftDom.Jsx.string("Thanks: check your inbox.")}
-      </Ui.Alert.Description>
+      <Ui.Alert.Description> {Jsx.string("Thanks: check your inbox.")} </Ui.Alert.Description>
     </Ui.Alert.Root>
   | #idle | #sending | #error(_) =>
     <Ui.Form
@@ -49,7 +48,7 @@ let make = () => {
           <Ui.Button
             dataId="newsletter-submit" type_=#submit variant=#primary busy={status == #sending}
           >
-            {WeftDom.Jsx.string("Subscribe")}
+            {Jsx.string("Subscribe")}
           </Ui.Button>
         </Ui.Stack>
       </Ui.Field>

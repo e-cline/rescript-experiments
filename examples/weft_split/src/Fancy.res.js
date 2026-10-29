@@ -14,9 +14,12 @@ function Fancy(props) {
 
 Entrypoint$Weft.mark(Fancy, "@e-cline/weft_split_example/src/Fancy.res#");
 
+let Jsx;
+
 let make = Fancy;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

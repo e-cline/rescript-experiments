@@ -1,6 +1,7 @@
 /*** A button that's busy for a moment when pressed, then says it's done: `busy` in use. */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 @weft.component({kind: Entrypoint})
 let make = () => {
@@ -20,10 +21,10 @@ let make = () => {
       busy={state == #saving}
       onClick={_ => setState(_ => #saving)}
     >
-      {WeftDom.Jsx.string(state == #saving ? "Saving…" : "Save")}
+      {Jsx.string(state == #saving ? "Saving…" : "Save")}
     </Ui.Button>
     <Ui.Text as_=#span tone=#success role="status" dataId="save-demo-status">
-      {WeftDom.Jsx.string(state == #saved ? "Saved" : "")}
+      {Jsx.string(state == #saved ? "Saved" : "")}
     </Ui.Text>
   </Ui.Stack>
 }

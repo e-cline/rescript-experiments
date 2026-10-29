@@ -5,6 +5,7 @@ input.
 */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 @weft.component
 let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
@@ -38,7 +39,7 @@ let make = (~onSignedIn: string => unit, ~autoFocus=false) => {
       />
     </Ui.Field>
     <Ui.Button type_=#submit variant=#primary busy>
-      {WeftDom.Jsx.string(busy ? "Signing in…" : "Sign in")}
+      {Jsx.string(busy ? "Signing in…" : "Sign in")}
     </Ui.Button>
   </Ui.Form>
 }

@@ -65,9 +65,12 @@ function OrderTracker(props) {
 
 Entrypoint$Weft.mark(OrderTracker, "@e-cline/weft_shop_example/src/client/OrderTracker.res#");
 
+let Jsx;
+
 let make = OrderTracker;
 
 export {
+  Jsx,
   steps,
   rank,
   make,

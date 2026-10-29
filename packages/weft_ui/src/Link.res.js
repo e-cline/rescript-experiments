@@ -139,9 +139,12 @@ function Link(props) {
   }));
 }
 
+let Jsx;
+
 let make = Link;
 
 export {
+  Jsx,
   Styles,
   className,
   make,

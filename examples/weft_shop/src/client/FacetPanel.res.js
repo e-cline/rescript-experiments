@@ -250,11 +250,14 @@ function FacetPanel(props) {
 
 Entrypoint$Weft.mark(FacetPanel, "@e-cline/weft_shop_example/src/client/FacetPanel.res#");
 
+let Jsx;
+
 let Ui;
 
 let make = FacetPanel;
 
 export {
+  Jsx,
   changed,
   Ui,
   RangeFacet,

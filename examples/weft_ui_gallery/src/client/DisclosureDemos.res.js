@@ -228,8 +228,11 @@ let FruitSearch = {
 
 let Ui;
 
+let Jsx;
+
 export {
   Ui,
+  Jsx,
   text,
   Settings,
   FruitSearch,

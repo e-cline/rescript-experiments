@@ -14,6 +14,7 @@ its focus and stays in the tab order, unlike `disabled`).
 Static: a server component can render it (without `onClick`).
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -230,7 +231,7 @@ let render = (
       | (_, true, #button) | (None, false, _) => None
       }}
     >
-      {busy ? Spinner.picture(~size=#sm) : WeftDom.Jsx.null}
+      {busy ? Spinner.picture(~size=#sm) : Jsx.null}
       children
     </button>,
   )
@@ -259,7 +260,7 @@ let make = (
   ~value=?,
   ~title=?,
   ~attrs: WeftDom.DomProps.props={},
-  ~children=WeftDom.Jsx.null,
+  ~children=Jsx.null,
 ) =>
   render(
     ~className=Host.classes([className(~variant, ~size, ~shape, ~fullWidth, ())], extra),

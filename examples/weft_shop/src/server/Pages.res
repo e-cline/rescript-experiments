@@ -10,6 +10,7 @@ when the shopper navigates away stops.
 open Types
 open Ui
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Ui = WeftUi
 
@@ -36,7 +37,7 @@ module Breadcrumbs = {
           <Link href> {text(label)} </Link>
         </Ui.Breadcrumbs.Item>
       )
-      ->WeftDom.Jsx.array}
+      ->Jsx.array}
       <Ui.Breadcrumbs.Current> {text(current)} </Ui.Breadcrumbs.Current>
     </Ui.Breadcrumbs.Root>
 }
@@ -257,7 +258,7 @@ module Questions = {
             <Ui.Accordion.Panel> {text(answer)} </Ui.Accordion.Panel>
           </Ui.Accordion.Item>
         )
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </Ui.Accordion.Root>
     </Ui.Stack>
   }
@@ -350,7 +351,7 @@ module CartSummary = {
               <Price dataId="summary-discount" cents={-cart.discount} />
             </Ui.DescriptionList.Details>
           </>
-        : WeftDom.Jsx.null}
+        : Jsx.null}
       <Ui.DescriptionList.Term> {text("Total")} </Ui.DescriptionList.Term>
       <Ui.DescriptionList.Details>
         <Price dataId="summary-total" cents=total />
@@ -453,7 +454,7 @@ module OrderPage = {
                 <Ui.Table.Cell numeric=true> {text(Int.toString(line.quantity))} </Ui.Table.Cell>
               </Ui.Table.Row>
             )
-            ->WeftDom.Jsx.array}
+            ->Jsx.array}
           </Ui.Table.Body>
         </Ui.Table.Root>
         <Ui.Text weight=#semibold>
@@ -505,7 +506,7 @@ module AccountPage = {
                       </Ui.Table.Cell>
                     </Ui.Table.Row>
                   )
-                  ->WeftDom.Jsx.array}
+                  ->Jsx.array}
                 </Ui.Table.Body>
               </Ui.Table.Root>}
         </Ui.Stack>

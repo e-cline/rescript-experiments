@@ -5,6 +5,7 @@ re-sorts without blocking the select), and a few show until "Show all".
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 module Items = {
   @weft.component
@@ -24,7 +25,7 @@ module Items = {
         Int.toFloat(Math.Int.max(1, Array.length(reviews)))
     <WeftUi.Stack gap=#md dataId="reviews" className={isPending ? Theme.stale : ""} align=#start>
       <WeftUi.Text dataId="review-summary" weight=#medium>
-        {WeftDom.Jsx.string(
+        {Jsx.string(
           `${Float.toFixed(average, ~digits=1)} out of 5, from ${Int.toString(
               Array.length(reviews),
             )} reviews`,
@@ -40,15 +41,11 @@ module Items = {
             startTransition(() => setOrder(_ => value))
           }}
         >
-          <WeftUi.Select.Option value="newest">
-            {WeftDom.Jsx.string("Newest")}
-          </WeftUi.Select.Option>
+          <WeftUi.Select.Option value="newest"> {Jsx.string("Newest")} </WeftUi.Select.Option>
           <WeftUi.Select.Option value="highest">
-            {WeftDom.Jsx.string("Highest rated")}
+            {Jsx.string("Highest rated")}
           </WeftUi.Select.Option>
-          <WeftUi.Select.Option value="lowest">
-            {WeftDom.Jsx.string("Lowest rated")}
-          </WeftUi.Select.Option>
+          <WeftUi.Select.Option value="lowest"> {Jsx.string("Lowest rated")} </WeftUi.Select.Option>
         </WeftUi.Select>
       </WeftUi.Field>
       <WeftUi.List.Root divided=true dataId="review-list">
@@ -56,24 +53,22 @@ module Items = {
         ->Array.map(review =>
           <WeftUi.List.Item key=review.id dataId={`review-${review.id}`}>
             <b>
-              <span ariaHidden="true">
-                {WeftDom.Jsx.string("★"->String.repeat(review.stars))}
-              </span>
+              <span ariaHidden="true"> {Jsx.string("★"->String.repeat(review.stars))} </span>
               <WeftUi.VisuallyHidden>
-                {WeftDom.Jsx.string(`${Int.toString(review.stars)} out of 5 stars, `)}
+                {Jsx.string(`${Int.toString(review.stars)} out of 5 stars, `)}
               </WeftUi.VisuallyHidden>
-              {WeftDom.Jsx.string(` ${review.author}`)}
+              {Jsx.string(` ${review.author}`)}
             </b>
-            {WeftDom.Jsx.string(": " ++ review.text)}
+            {Jsx.string(": " ++ review.text)}
           </WeftUi.List.Item>
         )
-        ->WeftDom.Jsx.array}
+        ->Jsx.array}
       </WeftUi.List.Root>
       {!all && Array.length(reviews) > 3
         ? <WeftUi.Button size=#sm dataId="all-reviews" onClick={_ => setAll(_ => true)}>
-            {WeftDom.Jsx.string(`Show all ${Int.toString(Array.length(reviews))}`)}
+            {Jsx.string(`Show all ${Int.toString(Array.length(reviews))}`)}
           </WeftUi.Button>
-        : WeftDom.Jsx.null}
+        : Jsx.null}
     </WeftUi.Stack>
   }
 }
@@ -82,7 +77,7 @@ module Items = {
 let make = (~reviews: promise<array<review>>) =>
   <Weft.Suspense
     fallback={<WeftUi.Text tone=#muted italic=true dataId="reviews-loading">
-      {WeftDom.Jsx.string("Loading reviews…")}
+      {Jsx.string("Loading reviews…")}
     </WeftUi.Text>}
   >
     <Items reviews />

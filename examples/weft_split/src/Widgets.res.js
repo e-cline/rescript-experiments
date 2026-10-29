@@ -41,7 +41,10 @@ let $$Error = {
   make: Widgets$Error
 };
 
+let Jsx;
+
 export {
+  Jsx,
   Toggle,
   $$Error,
 }

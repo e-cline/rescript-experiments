@@ -7,6 +7,7 @@ their own), so a page sends them only if it shows something on sale.
 
 open Types
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let badge = Css.class({
@@ -29,7 +30,7 @@ let make = (~summary: summary) =>
   | Some(was) if was > summary.price =>
     let off = Math.round(Int.toFloat(was - summary.price) /. Int.toFloat(was) *. 100.0)
     <span className={Styles.badge} dataId={`sale-${summary.id}`}>
-      {WeftDom.Jsx.string(`${Float.toString(off)}% off`)}
+      {Jsx.string(`${Float.toString(off)}% off`)}
     </span>
-  | _ => WeftDom.Jsx.null
+  | _ => Jsx.null
   }

@@ -6,6 +6,7 @@ context (the navigation it refreshes, the RPC client).
 */
 
 module Ui = WeftUi
+module Jsx = WeftDom.Jsx
 
 @weft.component
 let make = () => {
@@ -15,9 +16,9 @@ let make = () => {
     open_=isOpen onOpenChange={open_ => open_ ? Store.openSignIn() : Store.closeSignIn()}
   >
     <Ui.Dialog.Popup size=#sm dataId="signin-dialog">
-      <Ui.Dialog.Title> {WeftDom.Jsx.string("Sign in")} </Ui.Dialog.Title>
+      <Ui.Dialog.Title> {Jsx.string("Sign in")} </Ui.Dialog.Title>
       <Ui.Dialog.Description>
-        {WeftDom.Jsx.string("With your name: there's no password, it's a demo.")}
+        {Jsx.string("With your name: there's no password, it's a demo.")}
       </Ui.Dialog.Description>
       <SignInFields
         autoFocus=true
@@ -29,7 +30,7 @@ let make = () => {
       />
       <Ui.Dialog.Footer>
         <Ui.Dialog.Close dataId="signin-close" variant=#ghost>
-          {WeftDom.Jsx.string("Close")}
+          {Jsx.string("Close")}
         </Ui.Dialog.Close>
       </Ui.Dialog.Footer>
     </Ui.Dialog.Popup>

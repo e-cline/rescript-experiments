@@ -17,9 +17,12 @@ function Counter(props) {
 
 Entrypoint$Weft.mark(Counter, "@e-cline/weft_split_example/src/Counter.res#");
 
+let Jsx;
+
 let make = Counter;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

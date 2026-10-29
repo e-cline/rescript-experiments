@@ -14,9 +14,12 @@ function Plain(props) {
 
 Entrypoint$Weft.mark(Plain, "@e-cline/weft_split_example/src/Plain.res#");
 
+let Jsx;
+
 let make = Plain;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

@@ -31,9 +31,12 @@ function LikeButton(props) {
 
 Entrypoint$Weft.mark(LikeButton, "@e-cline/weft_notes_example/src/client/LikeButton.res#");
 
+let Jsx;
+
 let make = LikeButton;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

@@ -45,9 +45,12 @@ function DrawerEntry(props) {
 
 Entrypoint$Weft.mark(DrawerEntry, "@e-cline/weft_ui/src/entrypoints/DrawerEntry.res#");
 
+let Jsx;
+
 let make = DrawerEntry;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

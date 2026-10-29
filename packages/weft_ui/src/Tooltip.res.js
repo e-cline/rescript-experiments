@@ -175,9 +175,12 @@ let Trigger = {
   make: Tooltip$Trigger
 };
 
+let Jsx;
+
 let Dom;
 
 export {
+  Jsx,
   Dom,
   Styles,
   context,

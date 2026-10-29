@@ -266,10 +266,13 @@ function SurfacesPage(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = SurfacesPage;
 
 export {
   Ui,
+  Jsx,
   text,
   make,
 }

@@ -22,6 +22,7 @@ the first tab, once it has hydrated: give a `defaultValue` for the server's HTML
 Interactive: it keeps state, so it renders inside an entrypoint (`TabsEntry` is one ready-made).
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -193,7 +194,7 @@ module Root = {
         ?dataId
         dataOrientation={Variants.orientationName(orientation)}
       >
-        {children->Option.getOr(WeftDom.Jsx.null)}
+        {children->Option.getOr(Jsx.null)}
       </div>
     </Provider>
   }
@@ -276,7 +277,7 @@ module Panel = {
     let state = Weft.Hooks.useContext(context)
     let selected = state.value == Some(value)
     !selected && !keepMounted
-      ? WeftDom.Jsx.null
+      ? Jsx.null
       : <div
           role="tabpanel"
           id={panelId(state, value)}

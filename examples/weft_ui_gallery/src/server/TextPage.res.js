@@ -213,10 +213,13 @@ function TextPage(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = TextPage;
 
 export {
   Ui,
+  Jsx,
   text,
   make,
 }

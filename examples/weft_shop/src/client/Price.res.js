@@ -57,9 +57,12 @@ function Price(props) {
 
 Entrypoint$Weft.mark(Price, "@e-cline/weft_shop_example/src/client/Price.res#");
 
+let Jsx;
+
 let make = Price;
 
 export {
+  Jsx,
   Styles,
   make,
 }

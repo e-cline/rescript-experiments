@@ -41,9 +41,12 @@ function TabsEntry(props) {
 
 Entrypoint$Weft.mark(TabsEntry, "@e-cline/weft_ui/src/entrypoints/TabsEntry.res#");
 
+let Jsx;
+
 let make = TabsEntry;
 
 export {
+  Jsx,
   make,
 }
 /*  Not a pure module */

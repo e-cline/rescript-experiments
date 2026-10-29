@@ -26,6 +26,7 @@ positioning), flipped when there's no room.
 Interactive: it keeps state, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Dom = WeftDom.Dom
 
@@ -167,7 +168,7 @@ module Root = {
         focusLast,
       }}
     >
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      {children->Option.getOr(Jsx.null)}
     </Provider>
   }
 }
@@ -182,7 +183,7 @@ module Trigger = {
     ~className=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let state = use()
     Button.render(
@@ -246,7 +247,7 @@ let itemStartingWith = (popup, ~current, letter) => {
 
 module Popup = {
   @weft.component
-  let make = (~className=?, ~style=?, ~dataId=?, ~children=WeftDom.Jsx.null) => {
+  let make = (~className=?, ~style=?, ~dataId=?, ~children=Jsx.null) => {
     let state = use()
     let shown = Weft.Hooks.useRef(false)
     Popover.popup(
@@ -398,8 +399,8 @@ module Group = {
   let make = (~label: string, ~children=?) => {
     let id = Weft.Hooks.useId()
     <div role="group" ariaLabelledby=id>
-      <div id className=Styles.groupLabel ariaHidden="true"> {WeftDom.Jsx.string(label)} </div>
-      {children->Option.getOr(WeftDom.Jsx.null)}
+      <div id className=Styles.groupLabel ariaHidden="true"> {Jsx.string(label)} </div>
+      {children->Option.getOr(Jsx.null)}
     </div>
   }
 }

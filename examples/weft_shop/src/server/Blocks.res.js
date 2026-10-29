@@ -473,7 +473,10 @@ function blockList(blocks, page, request) {
   return blocks.map(child => framed(child, undefined, page, request));
 }
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   railItems,
   unique,

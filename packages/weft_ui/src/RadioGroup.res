@@ -14,6 +14,7 @@ Without `value`, it keeps its own (from `defaultValue`). Each radio's `dataId` i
 Interactive: it uses context and `useId`, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -85,7 +86,7 @@ module Root = {
             ? Css.cx([Styles.items, Styles.horizontal])
             : Styles.items}
         >
-          {children->Option.getOr(WeftDom.Jsx.null)}
+          {children->Option.getOr(Jsx.null)}
         </div>
       </Provider>
     </Fieldset>

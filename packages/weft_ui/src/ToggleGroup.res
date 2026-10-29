@@ -16,6 +16,7 @@ is made. The group is one stop for Tab: the pressed item, or the one last focuse
 Interactive: it keeps state, so it renders inside an entrypoint.
 */
 open WeftCss
+module Jsx = WeftDom.Jsx
 
 module Styles = {
   let layer = Tokens.layer
@@ -110,7 +111,7 @@ module Root = {
         ?dataId
         dataOrientation={Variants.orientationName(orientation)}
       >
-        {children->Option.getOr(WeftDom.Jsx.null)}
+        {children->Option.getOr(Jsx.null)}
       </div>
     </Provider>
   }
@@ -125,7 +126,7 @@ module Item = {
     ~className as extra=?,
     ~style=?,
     ~dataId=?,
-    ~children=WeftDom.Jsx.null,
+    ~children=Jsx.null,
   ) => {
     let group = Weft.Hooks.useContext(context)
     let pressed = group.value->Array.includes(value)

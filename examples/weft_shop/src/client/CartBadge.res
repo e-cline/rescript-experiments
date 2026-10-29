@@ -5,6 +5,7 @@ on the button).
 */
 
 open Types
+module Jsx = WeftDom.Jsx
 
 module Ui = WeftUi
 
@@ -16,33 +17,33 @@ let make = () => {
   <div dataId="cart-badge">
     <Ui.Drawer.Root open_=isOpen onOpenChange={open_ => setOpen(_ => open_)}>
       <Ui.Drawer.Trigger dataId="cart-button">
-        {WeftDom.Jsx.string(`Cart (${Int.toString(cart.count)})`)}
+        {Jsx.string(`Cart (${Int.toString(cart.count)})`)}
       </Ui.Drawer.Trigger>
       <Ui.Drawer.Popup dataId="cart-drawer">
-        <Ui.Drawer.Title> {WeftDom.Jsx.string("Your cart")} </Ui.Drawer.Title>
+        <Ui.Drawer.Title> {Jsx.string("Your cart")} </Ui.Drawer.Title>
         {cart.lines == []
           ? <Ui.EmptyState.Root dataId="drawer-empty">
-              <Ui.EmptyState.Title> {WeftDom.Jsx.string("Nothing here yet.")} </Ui.EmptyState.Title>
+              <Ui.EmptyState.Title> {Jsx.string("Nothing here yet.")} </Ui.EmptyState.Title>
             </Ui.EmptyState.Root>
           : <Ui.List.Root divided=true dataId="drawer-lines">
               {cart.lines
               ->Array.map(line =>
                 <Ui.List.Item key=line.sku dataId={`drawer-${line.sku}`}>
-                  {WeftDom.Jsx.string(
+                  {Jsx.string(
                     `${line.name} (${line.variant}) × ${Int.toString(
                         line.quantity,
                       )}: ${Money.format(line.unitPrice * line.quantity, currency)}`,
                   )}
                 </Ui.List.Item>
               )
-              ->WeftDom.Jsx.array}
+              ->Jsx.array}
             </Ui.List.Root>}
         <Ui.Text weight=#semibold dataId="drawer-subtotal">
-          {WeftDom.Jsx.string(`Subtotal: ${Money.format(cart.subtotal, currency)}`)}
+          {Jsx.string(`Subtotal: ${Money.format(cart.subtotal, currency)}`)}
         </Ui.Text>
         <Ui.Drawer.Footer>
           <Ui.Drawer.Close dataId="drawer-close" variant=#ghost>
-            {WeftDom.Jsx.string("Close")}
+            {Jsx.string("Close")}
           </Ui.Drawer.Close>
           // Closing as the link is followed: the drawer is the badge's, which stays on the next page.
           <a
@@ -54,7 +55,7 @@ let make = () => {
               navigation->WeftServer.Navigation.followLink(event, ~href="/cart")->ignore
             }}
           >
-            {WeftDom.Jsx.string("View cart")}
+            {Jsx.string("View cart")}
           </a>
         </Ui.Drawer.Footer>
       </Ui.Drawer.Popup>

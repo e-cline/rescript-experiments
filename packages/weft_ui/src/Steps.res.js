@@ -176,7 +176,10 @@ let Step = {
   make: Steps$Step
 };
 
+let Jsx;
+
 export {
+  Jsx,
   Styles,
   Root,
   Step,

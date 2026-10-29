@@ -253,10 +253,13 @@ function LayoutPage(props) {
 
 let Ui;
 
+let Jsx;
+
 let make = LayoutPage;
 
 export {
   Ui,
+  Jsx,
   text,
   Styles,
   box$1 as box,
